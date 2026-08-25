@@ -94,10 +94,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
           const SizedBox(height: 6),
           Text(
             'Type: ${activeBiz?.type ?? "Retail"} - GSTIN: ${activeBiz?.gstNumber ?? "27AADCA1234F1Z5"}',
-            style: const TextStyle(
-              fontSize: 12,
-              color: Colors.white70,
-            ),
+            style: const TextStyle(fontSize: 12, color: Colors.white70),
           ),
         ],
       ),
@@ -160,25 +157,20 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: isDark ? AppColors.textDarkPrimary : AppColors.textLightPrimary,
+                    color: isDark
+                        ? AppColors.textDarkPrimary
+                        : AppColors.textLightPrimary,
                   ),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   subtitle,
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: Colors.grey.shade400,
-                  ),
+                  style: TextStyle(fontSize: 11, color: Colors.grey.shade400),
                 ),
               ],
             ),
           ),
-          Icon(
-            Icons.trending_up,
-            color: color.withOpacity(0.7),
-            size: 16,
-          ),
+          Icon(Icons.trending_up, color: color.withOpacity(0.7), size: 16),
         ],
       ),
     );
@@ -228,7 +220,9 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.bold,
-                      color: isDark ? AppColors.textDarkSecondary : Colors.grey.shade600,
+                      color: isDark
+                          ? AppColors.textDarkSecondary
+                          : Colors.grey.shade600,
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -243,10 +237,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                   const SizedBox(height: 2),
                   Text(
                     subtitle,
-                    style: TextStyle(
-                      fontSize: 10,
-                      color: Colors.grey.shade500,
-                    ),
+                    style: TextStyle(fontSize: 10, color: Colors.grey.shade500),
                   ),
                 ],
               ),
@@ -266,23 +257,48 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
           children: [
             Expanded(
               child: InkWell(
-                onTap: () => _navigateToModule('/customers', SubscriptionFeature.customers, 'Customers'),
+                onTap: () => _navigateToModule(
+                  '/customers',
+                  SubscriptionFeature.customers,
+                  'Customers',
+                ),
                 child: Container(
                   padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
                     color: isDark ? AppColors.surfaceDark : Colors.white,
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: isDark ? AppColors.borderDark : Colors.grey.shade100),
+                    border: Border.all(
+                      color: isDark
+                          ? AppColors.borderDark
+                          : Colors.grey.shade100,
+                    ),
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.person_outline, color: Colors.blue, size: 20),
+                      const Icon(
+                        Icons.person_outline,
+                        color: Colors.blue,
+                        size: 20,
+                      ),
                       const SizedBox(width: 10),
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Customer', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black)),
-                          Text('Manage customers', style: TextStyle(fontSize: 10, color: Colors.grey.shade400)),
+                          Text(
+                            'Customer',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
+                              color: isDark ? Colors.white : Colors.black,
+                            ),
+                          ),
+                          Text(
+                            'Manage customers',
+                            style: TextStyle(
+                              fontSize: 10,
+                              color: Colors.grey.shade400,
+                            ),
+                          ),
                         ],
                       ),
                     ],
@@ -293,23 +309,48 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
             const SizedBox(width: 12),
             Expanded(
               child: InkWell(
-                onTap: () => _navigateToModule('/suppliers', SubscriptionFeature.suppliers, 'Suppliers'),
+                onTap: () => _navigateToModule(
+                  '/suppliers',
+                  SubscriptionFeature.suppliers,
+                  'Suppliers',
+                ),
                 child: Container(
                   padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
                     color: isDark ? AppColors.surfaceDark : Colors.white,
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: isDark ? AppColors.borderDark : Colors.grey.shade100),
+                    border: Border.all(
+                      color: isDark
+                          ? AppColors.borderDark
+                          : Colors.grey.shade100,
+                    ),
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.local_shipping_outlined, color: Colors.green, size: 20),
+                      const Icon(
+                        Icons.local_shipping_outlined,
+                        color: Colors.green,
+                        size: 20,
+                      ),
                       const SizedBox(width: 10),
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Supplier', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black)),
-                          Text('Manage suppliers', style: TextStyle(fontSize: 10, color: Colors.grey.shade400)),
+                          Text(
+                            'Supplier',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
+                              color: isDark ? Colors.white : Colors.black,
+                            ),
+                          ),
+                          Text(
+                            'Manage suppliers',
+                            style: TextStyle(
+                              fontSize: 10,
+                              color: Colors.grey.shade400,
+                            ),
+                          ),
                         ],
                       ),
                     ],
@@ -321,28 +362,55 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
         ),
         const SizedBox(height: 12),
         InkWell(
-          onTap: () => _navigateToModule('/reports', SubscriptionFeature.reports, 'Reports'),
+          onTap: () => _navigateToModule(
+            '/reports',
+            SubscriptionFeature.reports,
+            'Reports',
+          ),
           child: Container(
             padding: const EdgeInsets.all(14),
             width: double.infinity,
             decoration: BoxDecoration(
               color: isDark ? AppColors.surfaceDark : Colors.white,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: isDark ? AppColors.borderDark : Colors.grey.shade100),
+              border: Border.all(
+                color: isDark ? AppColors.borderDark : Colors.grey.shade100,
+              ),
             ),
             child: Row(
               children: [
-                const Icon(Icons.analytics_outlined, color: Colors.blue, size: 20),
+                const Icon(
+                  Icons.analytics_outlined,
+                  color: Colors.blue,
+                  size: 20,
+                ),
                 const SizedBox(width: 12),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Reports', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black)),
-                    Text('Business insights', style: TextStyle(fontSize: 10, color: Colors.grey.shade400)),
+                    Text(
+                      'Reports',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                        color: isDark ? Colors.white : Colors.black,
+                      ),
+                    ),
+                    Text(
+                      'Business insights',
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: Colors.grey.shade400,
+                      ),
+                    ),
                   ],
                 ),
                 const Spacer(),
-                Icon(Icons.chevron_right, color: Colors.grey.shade400, size: 18),
+                Icon(
+                  Icons.chevron_right,
+                  color: Colors.grey.shade400,
+                  size: 18,
+                ),
               ],
             ),
           ),
@@ -383,10 +451,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                     SizedBox(height: 4),
                     Text(
                       'Use insights and reports to boost your profits',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Color(0xFF2E7D32),
-                      ),
+                      style: TextStyle(fontSize: 12, color: Color(0xFF2E7D32)),
                     ),
                   ],
                 ),
@@ -400,15 +465,35 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      Container(width: 6, height: 12, color: const Color(0xFF81C784)),
+                      Container(
+                        width: 6,
+                        height: 12,
+                        color: const Color(0xFF81C784),
+                      ),
                       const SizedBox(width: 3),
-                      Container(width: 6, height: 20, color: const Color(0xFF66BB6A)),
+                      Container(
+                        width: 6,
+                        height: 20,
+                        color: const Color(0xFF66BB6A),
+                      ),
                       const SizedBox(width: 3),
-                      Container(width: 6, height: 32, color: const Color(0xFF4CAF50)),
+                      Container(
+                        width: 6,
+                        height: 32,
+                        color: const Color(0xFF4CAF50),
+                      ),
                       const SizedBox(width: 3),
-                      Container(width: 6, height: 44, color: const Color(0xFF43A047)),
+                      Container(
+                        width: 6,
+                        height: 44,
+                        color: const Color(0xFF43A047),
+                      ),
                       const SizedBox(width: 3),
-                      Container(width: 6, height: 56, color: const Color(0xFF2E7D32)),
+                      Container(
+                        width: 6,
+                        height: 56,
+                        color: const Color(0xFF2E7D32),
+                      ),
                     ],
                   ),
                 ),
@@ -420,11 +505,32 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Container(width: 6, height: 6, decoration: const BoxDecoration(color: Color(0xFF2E7D32), shape: BoxShape.circle)),
+            Container(
+              width: 6,
+              height: 6,
+              decoration: const BoxDecoration(
+                color: Color(0xFF2E7D32),
+                shape: BoxShape.circle,
+              ),
+            ),
             const SizedBox(width: 6),
-            Container(width: 6, height: 6, decoration: BoxDecoration(color: Colors.grey.shade300, shape: BoxShape.circle)),
+            Container(
+              width: 6,
+              height: 6,
+              decoration: BoxDecoration(
+                color: Colors.grey.shade300,
+                shape: BoxShape.circle,
+              ),
+            ),
             const SizedBox(width: 6),
-            Container(width: 6, height: 6, decoration: BoxDecoration(color: Colors.grey.shade300, shape: BoxShape.circle)),
+            Container(
+              width: 6,
+              height: 6,
+              decoration: BoxDecoration(
+                color: Colors.grey.shade300,
+                shape: BoxShape.circle,
+              ),
+            ),
           ],
         ),
       ],
@@ -487,7 +593,11 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
               onTap: () {},
               child: const Text(
                 'View All',
-                style: TextStyle(color: Color(0xFF2E7D32), fontWeight: FontWeight.bold, fontSize: 12),
+                style: TextStyle(
+                  color: Color(0xFF2E7D32),
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12,
+                ),
               ),
             ),
           ],
@@ -504,11 +614,16 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
             return InkWell(
               onTap: () => _navigateToModule(act.path, act.feature, act.label),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
                 decoration: BoxDecoration(
                   color: isDark ? AppColors.surfaceDark : Colors.white,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: isDark ? AppColors.borderDark : Colors.grey.shade100),
+                  border: Border.all(
+                    color: isDark ? AppColors.borderDark : Colors.grey.shade100,
+                  ),
                 ),
                 child: Row(
                   children: [
@@ -518,7 +633,11 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                         color: Color(0xFFF1F8F5),
                         shape: BoxShape.circle,
                       ),
-                      child: Icon(act.icon, color: const Color(0xFF2E7D32), size: 18),
+                      child: Icon(
+                        act.icon,
+                        color: const Color(0xFF2E7D32),
+                        size: 18,
+                      ),
                     ),
                     const SizedBox(width: 8),
                     Expanded(
@@ -538,19 +657,29 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
         ),
         const SizedBox(height: 12),
         InkWell(
-          onTap: () => _navigateToModule('/reports', SubscriptionFeature.reports, 'Reports'),
+          onTap: () => _navigateToModule(
+            '/reports',
+            SubscriptionFeature.reports,
+            'Reports',
+          ),
           child: Container(
             padding: const EdgeInsets.all(12),
             width: double.infinity,
             decoration: BoxDecoration(
               color: isDark ? AppColors.surfaceDark : Colors.white,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: isDark ? AppColors.borderDark : Colors.grey.shade100),
+              border: Border.all(
+                color: isDark ? AppColors.borderDark : Colors.grey.shade100,
+              ),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: const [
-                Icon(Icons.analytics_outlined, color: Color(0xFF2E7D32), size: 18),
+                Icon(
+                  Icons.analytics_outlined,
+                  color: Color(0xFF2E7D32),
+                  size: 18,
+                ),
                 SizedBox(width: 8),
                 Text(
                   'Reports',
@@ -587,7 +716,10 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: isDark ? AppColors.surfaceDark : Colors.grey.shade50,
                   borderRadius: BorderRadius.circular(8),
@@ -595,9 +727,19 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                 ),
                 child: Row(
                   children: [
-                    Text('This Year', style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+                    Text(
+                      'This Year',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey.shade600,
+                      ),
+                    ),
                     const SizedBox(width: 4),
-                    const Icon(Icons.keyboard_arrow_down, size: 14, color: Colors.grey),
+                    const Icon(
+                      Icons.keyboard_arrow_down,
+                      size: 14,
+                      color: Colors.grey,
+                    ),
                   ],
                 ),
               ),
@@ -612,26 +754,51 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                   show: true,
                   drawVerticalLine: false,
                   getDrawingHorizontalLine: (value) {
-                    return FlLine(
-                      color: Colors.grey.shade100,
-                      strokeWidth: 1,
-                    );
+                    return FlLine(color: Colors.grey.shade100, strokeWidth: 1);
                   },
                 ),
                 titlesData: FlTitlesData(
-                  topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                  rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  topTitles: const AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
+                  rightTitles: const AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
                   leftTitles: AxisTitles(
                     sideTitles: SideTitles(
                       showTitles: true,
                       reservedSize: 35,
                       getTitlesWidget: (value, meta) {
-                        if (value == 0) return const Text('0', style: TextStyle(fontSize: 10, color: Colors.grey));
-                        if (value == 15000) return const Text('15K', style: TextStyle(fontSize: 10, color: Colors.grey));
-                        if (value == 30000) return const Text('30K', style: TextStyle(fontSize: 10, color: Colors.grey));
-                        if (value == 45000) return const Text('45K', style: TextStyle(fontSize: 10, color: Colors.grey));
-                        if (value == 60000) return const Text('60K', style: TextStyle(fontSize: 10, color: Colors.grey));
-                        if (value == 75000) return const Text('75K', style: TextStyle(fontSize: 10, color: Colors.grey));
+                        if (value == 0)
+                          return const Text(
+                            '0',
+                            style: TextStyle(fontSize: 10, color: Colors.grey),
+                          );
+                        if (value == 15000)
+                          return const Text(
+                            '15K',
+                            style: TextStyle(fontSize: 10, color: Colors.grey),
+                          );
+                        if (value == 30000)
+                          return const Text(
+                            '30K',
+                            style: TextStyle(fontSize: 10, color: Colors.grey),
+                          );
+                        if (value == 45000)
+                          return const Text(
+                            '45K',
+                            style: TextStyle(fontSize: 10, color: Colors.grey),
+                          );
+                        if (value == 60000)
+                          return const Text(
+                            '60K',
+                            style: TextStyle(fontSize: 10, color: Colors.grey),
+                          );
+                        if (value == 75000)
+                          return const Text(
+                            '75K',
+                            style: TextStyle(fontSize: 10, color: Colors.grey),
+                          );
                         return const Text('');
                       },
                     ),
@@ -641,10 +808,17 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                       showTitles: true,
                       getTitlesWidget: (value, meta) {
                         const months = ['Apr', 'May', 'Jun', 'Jul', 'Aug'];
-                        if (value.toInt() >= 0 && value.toInt() < months.length) {
+                        if (value.toInt() >= 0 &&
+                            value.toInt() < months.length) {
                           return Padding(
                             padding: const EdgeInsets.only(top: 6),
-                            child: Text(months[value.toInt()], style: const TextStyle(fontSize: 10, color: Colors.grey)),
+                            child: Text(
+                              months[value.toInt()],
+                              style: const TextStyle(
+                                fontSize: 10,
+                                color: Colors.grey,
+                              ),
+                            ),
                           );
                         }
                         return const Text('');
@@ -682,13 +856,33 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Container(width: 10, height: 10, decoration: const BoxDecoration(color: Color(0xFF2E7D32), shape: BoxShape.circle)),
+              Container(
+                width: 10,
+                height: 10,
+                decoration: const BoxDecoration(
+                  color: Color(0xFF2E7D32),
+                  shape: BoxShape.circle,
+                ),
+              ),
               const SizedBox(width: 4),
-              const Text('Sales (Dr)', style: TextStyle(fontSize: 11, color: Colors.grey)),
+              const Text(
+                'Sales (Dr)',
+                style: TextStyle(fontSize: 11, color: Colors.grey),
+              ),
               const SizedBox(width: 20),
-              Container(width: 10, height: 10, decoration: const BoxDecoration(color: Color(0xFFFF9800), shape: BoxShape.circle)),
+              Container(
+                width: 10,
+                height: 10,
+                decoration: const BoxDecoration(
+                  color: Color(0xFFFF9800),
+                  shape: BoxShape.circle,
+                ),
+              ),
               const SizedBox(width: 4),
-              const Text('Purchases (Cr)', style: TextStyle(fontSize: 11, color: Colors.grey)),
+              const Text(
+                'Purchases (Cr)',
+                style: TextStyle(fontSize: 11, color: Colors.grey),
+              ),
             ],
           ),
           const SizedBox(height: 16),
@@ -704,9 +898,22 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: const [
-                      Text('75K', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF2E7D32))),
-                      Text('Highest Sales', style: TextStyle(fontSize: 9, color: Colors.grey)),
-                      Text('Aug 2026', style: TextStyle(fontSize: 8, color: Colors.grey)),
+                      Text(
+                        '75K',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF2E7D32),
+                        ),
+                      ),
+                      Text(
+                        'Highest Sales',
+                        style: TextStyle(fontSize: 9, color: Colors.grey),
+                      ),
+                      Text(
+                        'Aug 2026',
+                        style: TextStyle(fontSize: 8, color: Colors.grey),
+                      ),
                     ],
                   ),
                 ),
@@ -722,9 +929,22 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: const [
-                      Text('40K', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFFFF9800))),
-                      Text('Highest Purchase', style: TextStyle(fontSize: 9, color: Colors.grey)),
-                      Text('Aug 2026', style: TextStyle(fontSize: 8, color: Colors.grey)),
+                      Text(
+                        '40K',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFFFF9800),
+                        ),
+                      ),
+                      Text(
+                        'Highest Purchase',
+                        style: TextStyle(fontSize: 9, color: Colors.grey),
+                      ),
+                      Text(
+                        'Aug 2026',
+                        style: TextStyle(fontSize: 8, color: Colors.grey),
+                      ),
                     ],
                   ),
                 ),
@@ -740,9 +960,22 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: const [
-                      Text('35K', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF1976D2))),
-                      Text('Avg. Monthly Sales', style: TextStyle(fontSize: 9, color: Colors.grey)),
-                      Text('This Year', style: TextStyle(fontSize: 8, color: Colors.grey)),
+                      Text(
+                        '35K',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF1976D2),
+                        ),
+                      ),
+                      Text(
+                        'Avg. Monthly Sales',
+                        style: TextStyle(fontSize: 9, color: Colors.grey),
+                      ),
+                      Text(
+                        'This Year',
+                        style: TextStyle(fontSize: 8, color: Colors.grey),
+                      ),
                     ],
                   ),
                 ),
@@ -764,20 +997,41 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                     color: Color(0xFFE8F5E9),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.bar_chart_outlined, color: Color(0xFF2E7D32), size: 18),
+                  child: const Icon(
+                    Icons.bar_chart_outlined,
+                    color: Color(0xFF2E7D32),
+                    size: 18,
+                  ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Track your growth', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black)),
+                      Text(
+                        'Track your growth',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                          color: isDark ? Colors.white : Colors.black,
+                        ),
+                      ),
                       const SizedBox(height: 2),
-                      Text('Monitor your business performance and make data-driven decisions.', style: TextStyle(fontSize: 10, color: Colors.grey.shade400)),
+                      Text(
+                        'Monitor your business performance and make data-driven decisions.',
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: Colors.grey.shade400,
+                        ),
+                      ),
                     ],
                   ),
                 ),
-                Icon(Icons.chevron_right, color: Colors.grey.shade400, size: 18),
+                Icon(
+                  Icons.chevron_right,
+                  color: Colors.grey.shade400,
+                  size: 18,
+                ),
               ],
             ),
           ),
@@ -842,7 +1096,11 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
               onTap: () {},
               child: const Text(
                 'View All',
-                style: TextStyle(color: Color(0xFF2E7D32), fontWeight: FontWeight.bold, fontSize: 12),
+                style: TextStyle(
+                  color: Color(0xFF2E7D32),
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12,
+                ),
               ),
             ),
           ],
@@ -862,23 +1120,31 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                 );
               }
               final act = displayList[idx];
-              final isSales = act.type == 'Sales Invoice' || act.type == 'Receipt Outward';
+              final isSales =
+                  act.type == 'Sales Invoice' || act.type == 'Receipt Outward';
               return ListTile(
                 leading: Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: isSales ? const Color(0xFFF1F8F5) : const Color(0xFFFFF8F1),
+                    color: isSales
+                        ? const Color(0xFFF1F8F5)
+                        : const Color(0xFFFFF8F1),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
                     isSales ? Icons.arrow_upward : Icons.arrow_downward,
-                    color: isSales ? const Color(0xFF2E7D32) : const Color(0xFFFF9800),
+                    color: isSales
+                        ? const Color(0xFF2E7D32)
+                        : const Color(0xFFFF9800),
                     size: 18,
                   ),
                 ),
                 title: Text(
                   act.id,
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                  ),
                 ),
                 subtitle: Text(
                   '${act.type} • ${act.party}\n${act.date.day} Aug 2026 • 02:05 PM',
@@ -890,7 +1156,10 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                   children: [
                     Text(
                       act.amount,
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
+                      ),
                     ),
                     const SizedBox(height: 2),
                     Text(
@@ -990,7 +1259,8 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
       0.0,
       (sum, e) => sum + e.amount,
     );
-    final cashBalance = 200000.0 + totalReceipts - totalPayments - totalExpenses;
+    final cashBalance =
+        200000.0 + totalReceipts - totalPayments - totalExpenses;
 
     final stockValuation = billingState.products.fold<double>(
       0.0,
@@ -1148,7 +1418,8 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                             title: Text(
                               item.title,
                               style: const TextStyle(
-                                  fontWeight: FontWeight.bold),
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                             subtitle: Text(item.subtitle),
                             onTap: () {
