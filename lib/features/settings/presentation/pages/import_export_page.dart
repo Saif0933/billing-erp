@@ -347,15 +347,15 @@ class _ImportExportPageState extends ConsumerState<ImportExportPage> {
                           TextButton.icon(
                             icon:
                                 const Icon(Icons.warning, color: Colors.amber, size: 18),
-                            label: const Text('Download Error Log', style: TextStyle(fontSize: 12)),
+                            label: const Text('Download Log', style: TextStyle(fontSize: 12)),
                             onPressed: () {
                               AppFeedback.showSnackbar(context,
                                   message: 'Downloaded validation error log.');
                             },
                           ),
-                        const SizedBox(width: 12),
+                        const SizedBox(width: 8),
                         AppButton(
-                          label: 'Commit Valid Rows',
+                          label: 'Commit Rows',
                           icon: Icons.check,
                           onPressed: _commitImport,
                         ),
