@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_radius.dart';
-import '../../core/constants/app_typography.dart';
 import '../../core/constants/app_spacing.dart';
+import '../../core/constants/app_typography.dart';
 
 class AppTextField extends StatelessWidget {
   final String label;
@@ -40,14 +41,16 @@ class AppTextField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           label,
           style: AppTypography.titleSmall.copyWith(
-            color: isDark ? AppColors.textDarkSecondary : AppColors.textLightSecondary,
+            color: isDark
+                ? AppColors.textDarkSecondary
+                : AppColors.textLightSecondary,
           ),
         ),
         const SizedBox(height: AppSpacing.xs),
@@ -62,12 +65,16 @@ class AppTextField extends StatelessWidget {
           maxLines: maxLines,
           onChanged: onChanged,
           style: AppTypography.bodyMedium.copyWith(
-            color: isDark ? AppColors.textDarkPrimary : AppColors.textLightPrimary,
+            color: isDark
+                ? AppColors.textDarkPrimary
+                : AppColors.textLightPrimary,
           ),
           decoration: InputDecoration(
             hintText: hintText,
             hintStyle: AppTypography.bodyMedium.copyWith(
-              color: isDark ? AppColors.textDarkMuted : AppColors.textLightMuted,
+              color: isDark
+                  ? AppColors.textDarkMuted
+                  : AppColors.textLightMuted,
             ),
             prefixIcon: prefixIcon,
             suffixIcon: suffixIcon,
@@ -157,18 +164,24 @@ class AppPhoneField extends StatelessWidget {
       hintText: '98765 43210',
       keyboardType: TextInputType.phone,
       prefixIcon: const Padding(
-        padding: EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.sm + 4),
+        padding: EdgeInsets.symmetric(
+          horizontal: AppSpacing.sm,
+          vertical: AppSpacing.sm + 4,
+        ),
         child: Text('+91 ', style: TextStyle(fontSize: 14)),
       ),
       inputFormatters: [
         FilteringTextInputFormatter.digitsOnly,
         LengthLimitingTextInputFormatter(10),
       ],
-      validator: validator ?? (value) {
-        if (value == null || value.isEmpty) return null;
-        if (value.length != 10) return 'Enter a valid 10-digit mobile number';
-        return null;
-      },
+      validator:
+          validator ??
+          (value) {
+            if (value == null || value.isEmpty) return null;
+            if (value.length != 10)
+              return 'Enter a valid 10-digit mobile number';
+            return null;
+          },
     );
   }
 }
@@ -192,9 +205,7 @@ class AppGstinField extends StatelessWidget {
       controller: controller,
       hintText: '27AADCA1234F1Z5',
       keyboardType: TextInputType.text,
-      inputFormatters: [
-        LengthLimitingTextInputFormatter(15),
-      ],
+      inputFormatters: [LengthLimitingTextInputFormatter(15)],
       onChanged: (val) {
         if (controller != null) {
           final upper = val.toUpperCase();
@@ -206,14 +217,18 @@ class AppGstinField extends StatelessWidget {
           }
         }
       },
-      validator: validator ?? (value) {
-        if (value == null || value.isEmpty) return null;
-        final regex = RegExp(r'^\d{2}[A-Z]{5}\d{4}[A-Z]{1}[A-Z\d]{1}[Z]{1}[A-Z\d]{1}$');
-        if (!regex.hasMatch(value)) {
-          return 'Enter a valid 15-character GSTIN format';
-        }
-        return null;
-      },
+      validator:
+          validator ??
+          (value) {
+            if (value == null || value.isEmpty) return null;
+            final regex = RegExp(
+              r'^\d{2}[A-Z]{5}\d{4}[A-Z]{1}[A-Z\d]{1}[Z]{1}[A-Z\d]{1}$',
+            );
+            if (!regex.hasMatch(value)) {
+              return 'Enter a valid 15-character GSTIN format';
+            }
+            return null;
+          },
     );
   }
 }
@@ -237,25 +252,30 @@ class AppDropdownField<T> extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           label,
           style: AppTypography.titleSmall.copyWith(
-            color: isDark ? AppColors.textDarkSecondary : AppColors.textLightSecondary,
+            color: isDark
+                ? AppColors.textDarkSecondary
+                : AppColors.textLightSecondary,
           ),
         ),
         const SizedBox(height: AppSpacing.xs),
         DropdownButtonFormField<T>(
+          isExpanded: true,
           value: value,
           items: items,
           onChanged: onChanged,
           validator: validator,
           dropdownColor: isDark ? AppColors.surfaceDark : Colors.white,
           style: AppTypography.bodyMedium.copyWith(
-            color: isDark ? AppColors.textDarkPrimary : AppColors.textLightPrimary,
+            color: isDark
+                ? AppColors.textDarkPrimary
+                : AppColors.textLightPrimary,
           ),
           decoration: InputDecoration(
             contentPadding: const EdgeInsets.symmetric(

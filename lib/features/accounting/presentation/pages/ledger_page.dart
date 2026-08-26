@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
+
 import '../../../../core/constants/app_spacing.dart';
-import '../../../../core/constants/app_typography.dart';
-import '../../../../core/responsive/responsive.dart';
 import '../../../../core/models/billing_models.dart';
+import '../../../../core/responsive/responsive.dart';
 import '../../../../shared/widgets/app_button.dart';
 import '../../../../shared/widgets/app_cards.dart';
 import '../../../../shared/widgets/app_input_fields.dart';
@@ -25,7 +24,6 @@ class _LedgerPageState extends ConsumerState<LedgerPage> {
   Customer? _selectedCustomer;
   Supplier? _selectedSupplier;
   DateTimeRange? _dateRange;
-
   @override
   Widget build(BuildContext context) {
     final billingState = ref.watch(billingRepositoryProvider);
@@ -35,34 +33,68 @@ class _LedgerPageState extends ConsumerState<LedgerPage> {
 
     if (_selectedPartyType == 'Customer' && _selectedCustomer != null) {
       final customerId = _selectedCustomer!.id;
-      final customerInvoices = billingState.invoices.where((inv) => inv.customerId == customerId).toList();
-      final customerReceipts = billingState.receipts.where((rec) => rec.customerId == customerId).toList();
+      final customerInvoices = billingState.invoices
+          .where((inv) => inv.customerId == customerId)
+          .toList();
+      final customerReceipts = billingState.receipts
+          .where((rec) => rec.customerId == customerId)
+          .toList();
 
-      final invoiceNumbers = customerInvoices.map((i) => i.invoiceNumber).toSet();
-      final receiptRefs = customerReceipts.map((r) => r.referenceNumber).toSet();
+      final invoiceNumbers = customerInvoices
+          .map((i) => i.invoiceNumber)
+          .toSet();
+      final receiptRefs = customerReceipts
+          .map((r) => r.referenceNumber)
+          .toSet();
 
       filteredLedger = billingState.ledgerEntries.where((entry) {
-        final matchesParty = invoiceNumbers.contains(entry.referenceNumber) ||
+        final matchesParty =
+            invoiceNumbers.contains(entry.referenceNumber) ||
             receiptRefs.contains(entry.referenceNumber) ||
             entry.particulars.contains(_selectedCustomer!.name) ||
-            (entry.type == LedgerTransactionType.openingBalance && entry.id.contains(customerId));
-        final matchesDate = _dateRange == null || (entry.date.isAfter(_dateRange!.start.subtract(const Duration(days: 1))) && entry.date.isBefore(_dateRange!.end.add(const Duration(days: 1))));
+            (entry.type == LedgerTransactionType.openingBalance &&
+                entry.id.contains(customerId));
+        final matchesDate =
+            _dateRange == null ||
+            (entry.date.isAfter(
+                  _dateRange!.start.subtract(const Duration(days: 1)),
+                ) &&
+                entry.date.isBefore(
+                  _dateRange!.end.add(const Duration(days: 1)),
+                ));
         return matchesParty && matchesDate;
       }).toList();
     } else if (_selectedPartyType == 'Supplier' && _selectedSupplier != null) {
       final supplierId = _selectedSupplier!.id;
-      final supplierPurchases = billingState.purchases.where((p) => p.supplierId == supplierId).toList();
-      final supplierPayments = billingState.payments.where((p) => p.supplierId == supplierId).toList();
+      final supplierPurchases = billingState.purchases
+          .where((p) => p.supplierId == supplierId)
+          .toList();
+      final supplierPayments = billingState.payments
+          .where((p) => p.supplierId == supplierId)
+          .toList();
 
-      final purchaseNumbers = supplierPurchases.map((p) => p.purchaseNumber).toSet();
-      final paymentRefs = supplierPayments.map((p) => p.referenceNumber).toSet();
+      final purchaseNumbers = supplierPurchases
+          .map((p) => p.purchaseNumber)
+          .toSet();
+      final paymentRefs = supplierPayments
+          .map((p) => p.referenceNumber)
+          .toSet();
 
       filteredLedger = billingState.ledgerEntries.where((entry) {
-        final matchesParty = purchaseNumbers.contains(entry.referenceNumber) ||
+        final matchesParty =
+            purchaseNumbers.contains(entry.referenceNumber) ||
             paymentRefs.contains(entry.referenceNumber) ||
             entry.particulars.contains(_selectedSupplier!.name) ||
-            (entry.type == LedgerTransactionType.openingBalance && entry.id.contains(supplierId));
-        final matchesDate = _dateRange == null || (entry.date.isAfter(_dateRange!.start.subtract(const Duration(days: 1))) && entry.date.isBefore(_dateRange!.end.add(const Duration(days: 1))));
+            (entry.type == LedgerTransactionType.openingBalance &&
+                entry.id.contains(supplierId));
+        final matchesDate =
+            _dateRange == null ||
+            (entry.date.isAfter(
+                  _dateRange!.start.subtract(const Duration(days: 1)),
+                ) &&
+                entry.date.isBefore(
+                  _dateRange!.end.add(const Duration(days: 1)),
+                ));
         return matchesParty && matchesDate;
       }).toList();
     }
@@ -102,7 +134,8 @@ class _LedgerPageState extends ConsumerState<LedgerPage> {
           children: [
             AppPageHeader(
               title: 'Party Ledger Statement',
-              description: 'View running audit balances of debits and credits for customers and vendors.',
+              description:
+                  'View running audit balances of debits and credits for customers and vendors.',
               breadcrumbs: const ['Dashboard', 'Accounting', 'Ledger'],
               actions: [
                 AppButton(
@@ -111,10 +144,16 @@ class _LedgerPageState extends ConsumerState<LedgerPage> {
                   type: AppButtonType.secondary,
                   onPressed: () {
                     if (auditedLedger.isEmpty) {
-                      AppFeedback.showSnackbar(context, message: 'Ledger is empty!', isError: true);
+                      AppFeedback.showSnackbar(
+                        context,
+                        message: 'Ledger is empty!',
+                        isError: true,
+                      );
                       return;
                     }
-                    Share.share('Party Ledger for ${_selectedPartyType == "Customer" ? _selectedCustomer?.name : _selectedSupplier?.name}\nTotal Entries: ${auditedLedger.length}\nClosing Balance: ₹${currentBal.toStringAsFixed(2)}');
+                    Share.share(
+                      'Party Ledger for ${_selectedPartyType == "Customer" ? _selectedCustomer?.name : _selectedSupplier?.name}\nTotal Entries: ${auditedLedger.length}\nClosing Balance: ₹${currentBal.toStringAsFixed(2)}',
+                    );
                   },
                 ),
               ],
@@ -131,8 +170,14 @@ class _LedgerPageState extends ConsumerState<LedgerPage> {
                           label: 'Party Type',
                           value: _selectedPartyType,
                           items: const [
-                            DropdownMenuItem(value: 'Customer', child: Text('Customer Account')),
-                            DropdownMenuItem(value: 'Supplier', child: Text('Supplier Account')),
+                            DropdownMenuItem(
+                              value: 'Customer',
+                              child: Text('Customer Account'),
+                            ),
+                            DropdownMenuItem(
+                              value: 'Supplier',
+                              child: Text('Supplier Account'),
+                            ),
                           ],
                           onChanged: (val) {
                             setState(() {
@@ -150,9 +195,13 @@ class _LedgerPageState extends ConsumerState<LedgerPage> {
                             label: 'Select Customer *',
                             value: _selectedCustomer,
                             items: billingState.customers.map((c) {
-                              return DropdownMenuItem(value: c, child: Text(c.name));
+                              return DropdownMenuItem(
+                                value: c,
+                                child: Text(c.name),
+                              );
                             }).toList(),
-                            onChanged: (c) => setState(() => _selectedCustomer = c),
+                            onChanged: (c) =>
+                                setState(() => _selectedCustomer = c),
                           ),
                         )
                       else
@@ -161,28 +210,42 @@ class _LedgerPageState extends ConsumerState<LedgerPage> {
                             label: 'Select Supplier *',
                             value: _selectedSupplier,
                             items: billingState.suppliers.map((s) {
-                              return DropdownMenuItem(value: s, child: Text(s.name));
+                              return DropdownMenuItem(
+                                value: s,
+                                child: Text(s.name),
+                              );
                             }).toList(),
-                            onChanged: (s) => setState(() => _selectedSupplier = s),
+                            onChanged: (s) =>
+                                setState(() => _selectedSupplier = s),
                           ),
                         ),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('Filter Date Range', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.grey)),
+                            const Text(
+                              'Filter Date Range',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 12,
+                                color: Colors.grey,
+                              ),
+                            ),
                             TextButton.icon(
                               icon: const Icon(Icons.date_range),
-                              label: Text(_dateRange == null
-                                  ? 'All Dates'
-                                  : '${_dateRange!.start.day}/${_dateRange!.start.month} to ${_dateRange!.end.day}/${_dateRange!.end.month}'),
+                              label: Text(
+                                _dateRange == null
+                                    ? 'All Dates'
+                                    : '${_dateRange!.start.day}/${_dateRange!.start.month} to ${_dateRange!.end.day}/${_dateRange!.end.month}',
+                              ),
                               onPressed: () async {
                                 final selected = await showDateRangePicker(
                                   context: context,
                                   firstDate: DateTime(2020),
                                   lastDate: DateTime(2030),
                                 );
-                                if (selected != null) setState(() => _dateRange = selected);
+                                if (selected != null)
+                                  setState(() => _dateRange = selected);
                               },
                             ),
                           ],
@@ -195,11 +258,14 @@ class _LedgerPageState extends ConsumerState<LedgerPage> {
 
                   AppTable<LedgerEntry>(
                     items: auditedLedger,
-                    emptyMessage: 'Select a party and date filters to generate the statement.',
+                    emptyMessage:
+                        'Select a party and date filters to generate the statement.',
                     columns: [
                       TableColumnSpec<LedgerEntry>(
                         label: 'Date',
-                        cellBuilder: (l) => Text('${l.date.day}/${l.date.month}/${l.date.year}'),
+                        cellBuilder: (l) => Text(
+                          '${l.date.day}/${l.date.month}/${l.date.year}',
+                        ),
                       ),
                       TableColumnSpec<LedgerEntry>(
                         label: 'Particulars',
@@ -213,12 +279,18 @@ class _LedgerPageState extends ConsumerState<LedgerPage> {
                       TableColumnSpec<LedgerEntry>(
                         label: 'Debit (Dr) (₹)',
                         isNumeric: true,
-                        cellBuilder: (l) => Text(l.debit > 0 ? '₹${l.debit.toStringAsFixed(2)}' : '-'),
+                        cellBuilder: (l) => Text(
+                          l.debit > 0 ? '₹${l.debit.toStringAsFixed(2)}' : '-',
+                        ),
                       ),
                       TableColumnSpec<LedgerEntry>(
                         label: 'Credit (Cr) (₹)',
                         isNumeric: true,
-                        cellBuilder: (l) => Text(l.credit > 0 ? '₹${l.credit.toStringAsFixed(2)}' : '-'),
+                        cellBuilder: (l) => Text(
+                          l.credit > 0
+                              ? '₹${l.credit.toStringAsFixed(2)}'
+                              : '-',
+                        ),
                       ),
                       TableColumnSpec<LedgerEntry>(
                         label: 'Running Balance',
@@ -227,7 +299,9 @@ class _LedgerPageState extends ConsumerState<LedgerPage> {
                           '₹${l.runningBalance.toStringAsFixed(2)}',
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
-                            color: l.runningBalance >= 0 ? Colors.green : Colors.red,
+                            color: l.runningBalance >= 0
+                                ? Colors.green
+                                : Colors.red,
                           ),
                         ),
                       ),
@@ -236,19 +310,30 @@ class _LedgerPageState extends ConsumerState<LedgerPage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('${l.date.day}/${l.date.month}/${l.date.year} • Ref: ${l.referenceNumber}'),
+                          Text(
+                            '${l.date.day}/${l.date.month}/${l.date.year} • Ref: ${l.referenceNumber}',
+                          ),
                           const SizedBox(height: 4),
-                          Text(l.particulars, style: const TextStyle(fontWeight: FontWeight.bold)),
+                          Text(
+                            l.particulars,
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
                           const Divider(),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text(l.debit > 0 ? 'Dr: ₹${l.debit}' : 'Cr: ₹${l.credit}'),
+                              Text(
+                                l.debit > 0
+                                    ? 'Dr: ₹${l.debit}'
+                                    : 'Cr: ₹${l.credit}',
+                              ),
                               Text(
                                 'Bal: ₹${l.runningBalance.toStringAsFixed(2)}',
                                 style: TextStyle(
                                   fontWeight: FontWeight.bold,
-                                  color: l.runningBalance >= 0 ? Colors.green : Colors.red,
+                                  color: l.runningBalance >= 0
+                                      ? Colors.green
+                                      : Colors.red,
                                 ),
                               ),
                             ],

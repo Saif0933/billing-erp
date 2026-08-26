@@ -500,7 +500,10 @@ class _InvoiceCreatePageState extends ConsumerState<InvoiceCreatePage> {
                                         return DropdownMenuItem(
                                             value: p,
                                             child: Text(
-                                                '${p.name} (Stock: ${p.currentStock})'));
+                                              '${p.name} (Stock: ${p.currentStock})',
+                                              overflow: TextOverflow.ellipsis,
+                                              maxLines: 1,
+                                            ));
                                       }).toList(),
                                       onChanged: (prod) {
                                         setState(() {

@@ -47,36 +47,43 @@ class _InventoryPageState extends ConsumerState<InventoryPage> {
           builder: (context, setDialogState) {
             return AlertDialog(
               title: const Text('Record Stock Adjustment'),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  AppDropdownField<Product>(
-                    label: 'Product Item *',
-                    value: _selectedProduct,
-                    items: products.map((p) {
-                      return DropdownMenuItem(
-                        value: p,
-                        child: Text('${p.name} (Current: ${p.currentStock})'),
-                      );
-                    }).toList(),
-                    onChanged: (p) =>
-                        setDialogState(() => _selectedProduct = p),
-                  ),
-                  const SizedBox(height: AppSpacing.md),
-                  AppTextField(
-                    label: 'Adjustment Quantity * (e.g. +10, -5)',
-                    controller: _adjustmentQtyController,
-                    keyboardType: const TextInputType.numberWithOptions(
-                      signed: true,
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    AppDropdownField<Product>(
+                      label: 'Product Item *',
+                      value: _selectedProduct,
+                      items: products.map((p) {
+                        return DropdownMenuItem(
+                          value: p,
+                          child: Text(
+                            '${p.name} (Current: ${p.currentStock})',
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
+                          ),
+                        );
+                      }).toList(),
+                      onChanged: (p) =>
+                          setDialogState(() => _selectedProduct = p),
                     ),
-                  ),
-                  const SizedBox(height: AppSpacing.md),
-                  AppTextField(
-                    label: 'Reason for Adjustment *',
-                    controller: _reasonController,
-                    hintText: 'e.g. Broken packaging, stock count mismatch',
-                  ),
-                ],
+                    const SizedBox(height: AppSpacing.md),
+                    AppTextField(
+                      label: 'Adjustment Quantity * (e.g. +10, -5)',
+                      controller: _adjustmentQtyController,
+                      keyboardType: const TextInputType.numberWithOptions(
+                        signed: true,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    AppTextField(
+                      label: 'Reason for Adjustment *',
+                      controller: _reasonController,
+                      hintText: 'e.g. Damaged, mismatch',
+                    ),
+                  ],
+                ),
               ),
               actions: [
                 TextButton(
