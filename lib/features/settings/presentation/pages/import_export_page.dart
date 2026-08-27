@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../../core/constants/app_spacing.dart';
+
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/constants/app_spacing.dart';
 import '../../../../core/models/billing_models.dart';
 import '../../../../core/responsive/responsive.dart';
 import '../../../../shared/widgets/app_button.dart';
@@ -53,28 +54,28 @@ class _ImportExportPageState extends ConsumerState<ImportExportPage> {
               'name': 'Aditya Birla Ltd',
               'mobile': '9890123456',
               'gstin': '27AADCB1234F1Z0',
-              'status': 'Valid'
+              'status': 'Valid',
             },
             {
               'row': '2',
               'name': 'Karan Johar',
               'mobile': '9123456780',
               'gstin': '',
-              'status': 'Valid'
+              'status': 'Valid',
             },
             {
               'row': '3',
               'name': 'Anonymous Buyer',
               'mobile': '12345',
               'gstin': 'invalid_gst',
-              'status': 'Error: Invalid Mobile & GSTIN format'
+              'status': 'Error: Invalid Mobile & GSTIN format',
             },
             {
               'row': '4',
               'name': 'Indore Agri Corp',
               'mobile': '9900990099',
               'gstin': '23AAAAA1234A1Z9',
-              'status': 'Valid'
+              'status': 'Valid',
             },
           ];
         } else {
@@ -87,21 +88,21 @@ class _ImportExportPageState extends ConsumerState<ImportExportPage> {
               'name': 'Organic Rice Bags (20kg)',
               'code': 'RCE20K',
               'price': '1500.0',
-              'status': 'Valid'
+              'status': 'Valid',
             },
             {
               'row': '2',
               'name': 'Invalid Item Name Empty',
               'code': '',
               'price': '-50.0',
-              'status': 'Error: Name/Code missing, Negative Price'
+              'status': 'Error: Name/Code missing, Negative Price',
             },
             {
               'row': '3',
               'name': 'Refined Sunflower Oil (5L)',
               'code': 'OIL5L',
               'price': '680.0',
-              'status': 'Valid'
+              'status': 'Valid',
             },
           ];
         }
@@ -114,71 +115,77 @@ class _ImportExportPageState extends ConsumerState<ImportExportPage> {
 
     if (_selectedImportEntity == 'Customer') {
       // Add valid mock rows
-      await notifier.addCustomer(const Customer(
-        id: 'imp_cust_1',
-        name: 'Aditya Birla Ltd',
-        type: 'Corporate',
-        gstin: '27AADCB1234F1Z0',
-        pan: 'AADCB1234F',
-        mobile: '9890123456',
-        email: 'billing@birla.com',
-        billingAddress: 'Mumbai Head Office',
-        shippingAddress: 'Mumbai Head Office',
-        state: 'Maharashtra',
-        stateCode: '27',
-        creditLimit: 200000.0,
-        creditPeriod: 45,
-        openingBalance: 0.0,
-        currentBalance: 0.0,
-        customerGroup: 'Corporate',
-        notes: 'Imported customer',
-        isRegistered: true,
-      ));
-      await notifier.addCustomer(const Customer(
-        id: 'imp_cust_2',
-        name: 'Karan Johar',
-        type: 'Retail',
-        gstin: '',
-        pan: '',
-        mobile: '9123456780',
-        email: 'karan@gmail.com',
-        billingAddress: 'Bandra, Mumbai',
-        shippingAddress: 'Bandra, Mumbai',
-        state: 'Maharashtra',
-        stateCode: '27',
-        creditLimit: 0.0,
-        creditPeriod: 0,
-        openingBalance: 0.0,
-        currentBalance: 0.0,
-        customerGroup: 'Retail',
-        notes: 'Imported customer',
-        isRegistered: false,
-      ));
+      await notifier.addCustomer(
+        const Customer(
+          id: 'imp_cust_1',
+          name: 'Aditya Birla Ltd',
+          type: 'Corporate',
+          gstin: '27AADCB1234F1Z0',
+          pan: 'AADCB1234F',
+          mobile: '9890123456',
+          email: 'billing@birla.com',
+          billingAddress: 'Mumbai Head Office',
+          shippingAddress: 'Mumbai Head Office',
+          state: 'Maharashtra',
+          stateCode: '27',
+          creditLimit: 200000.0,
+          creditPeriod: 45,
+          openingBalance: 0.0,
+          currentBalance: 0.0,
+          customerGroup: 'Corporate',
+          notes: 'Imported customer',
+          isRegistered: true,
+        ),
+      );
+      await notifier.addCustomer(
+        const Customer(
+          id: 'imp_cust_2',
+          name: 'Karan Johar',
+          type: 'Retail',
+          gstin: '',
+          pan: '',
+          mobile: '9123456780',
+          email: 'karan@gmail.com',
+          billingAddress: 'Bandra, Mumbai',
+          shippingAddress: 'Bandra, Mumbai',
+          state: 'Maharashtra',
+          stateCode: '27',
+          creditLimit: 0.0,
+          creditPeriod: 0,
+          openingBalance: 0.0,
+          currentBalance: 0.0,
+          customerGroup: 'Retail',
+          notes: 'Imported customer',
+          isRegistered: false,
+        ),
+      );
     } else {
       // Add valid products
-      await notifier.addProduct(const Product(
-        id: 'imp_prod_1',
-        name: 'Organic Rice Bags (20kg)',
-        code: 'RCE20K',
-        sku: 'RCE-020',
-        barcode: '8901234567899',
-        hsnCode: '1006',
-        primaryUnit: 'Bag',
-        secondaryUnit: 'Kg',
-        gstRate: 5.0,
-        purchasePrice: 1200.0,
-        sellingPrice: 1500.0,
-        mrp: 1800.0,
-        wholesalePrice: 1400.0,
-        minStockLevel: 5.0,
-        openingStock: 20.0,
-        currentStock: 20.0,
-        batchNumber: 'B-IMP-01',
-        expiryDate: '2027-12-31',
-        serialNumber: '',
-        category: 'Grocery',
-        brand: 'Bunny Farms',
-      ));
+      await notifier.addProduct(
+        const Product(
+          id: 'imp_prod_1',
+          name: 'Organic Rice Bags (20kg)',
+          code: 'RCE20K',
+          sku: 'RCE-020',
+          barcode: '8901234567899',
+          hsnCode: '1006',
+          primaryUnit: 'Bag',
+          secondaryUnit: 'Kg',
+          gstRate: 5.0,
+          purchasePrice: 1200.0,
+          sellingPrice: 1500.0,
+          mrp: 1800.0,
+          wholesalePrice: 1400.0,
+          minStockLevel: 5.0,
+          openingStock: 20.0,
+          currentStock: 20.0,
+          batchNumber: 'B-IMP-01',
+          expiryDate: '2027-12-31',
+          serialNumber: '',
+          category: 'Grocery',
+          brand: 'Bunny Farms',
+        ),
+      );
     }
 
     if (mounted) {
@@ -186,8 +193,10 @@ class _ImportExportPageState extends ConsumerState<ImportExportPage> {
         _uploadedFilename = null;
         _validationComplete = false;
       });
-      AppFeedback.showSnackbar(context,
-          message: 'Valid items successfully committed to database!');
+      AppFeedback.showSnackbar(
+        context,
+        message: 'Valid items successfully committed to database!',
+      );
     }
   }
 
@@ -201,21 +210,23 @@ class _ImportExportPageState extends ConsumerState<ImportExportPage> {
         color: isDark ? AppColors.surfaceDark : Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-            color: isDark ? AppColors.borderDark : Colors.grey.shade100),
+          color: isDark ? AppColors.borderDark : Colors.grey.shade100,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Row(
             children: const [
-              Icon(Icons.cloud_upload_outlined, color: Color(0xFF2E7D32), size: 20),
+              Icon(
+                Icons.cloud_upload_outlined,
+                color: Color(0xFF2E7D32),
+                size: 20,
+              ),
               SizedBox(width: 8),
               Text(
                 'Excel/CSV Import Panel',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 15,
-                ),
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
               ),
             ],
           ),
@@ -225,9 +236,13 @@ class _ImportExportPageState extends ConsumerState<ImportExportPage> {
             value: _selectedImportEntity,
             items: const [
               DropdownMenuItem(
-                  value: 'Customer', child: Text('Customers Directory')),
+                value: 'Customer',
+                child: Text('Customers Directory'),
+              ),
               DropdownMenuItem(
-                  value: 'Product', child: Text('Products Catalogue')),
+                value: 'Product',
+                child: Text('Products Catalogue'),
+              ),
             ],
             onChanged: (val) {
               if (val != null) {
@@ -245,8 +260,10 @@ class _ImportExportPageState extends ConsumerState<ImportExportPage> {
             icon: Icons.download_outlined,
             type: AppButtonType.secondary,
             onPressed: () {
-              AppFeedback.showSnackbar(context,
-                  message: 'Sample $_selectedImportEntity template downloaded!');
+              AppFeedback.showSnackbar(
+                context,
+                message: 'Sample $_selectedImportEntity template downloaded!',
+              );
             },
           ),
           const SizedBox(height: AppSpacing.md),
@@ -258,8 +275,11 @@ class _ImportExportPageState extends ConsumerState<ImportExportPage> {
                   const Icon(Icons.insert_drive_file, color: Colors.green),
                   const SizedBox(width: 8),
                   Expanded(
-                      child: Text(_uploadedFilename!,
-                          style: const TextStyle(fontWeight: FontWeight.bold))),
+                    child: Text(
+                      _uploadedFilename!,
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -283,7 +303,8 @@ class _ImportExportPageState extends ConsumerState<ImportExportPage> {
               color: isDark ? AppColors.surfaceDark : Colors.white,
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                  color: isDark ? AppColors.borderDark : Colors.grey.shade100),
+                color: isDark ? AppColors.borderDark : Colors.grey.shade100,
+              ),
             ),
             child: const SizedBox(
               height: 200,
@@ -294,8 +315,9 @@ class _ImportExportPageState extends ConsumerState<ImportExportPage> {
                     CircularProgressIndicator(color: Color(0xFF2E7D32)),
                     SizedBox(height: 16),
                     Text(
-                        'Parsing CSV contents and executing schema validation checks...',
-                        style: TextStyle(fontStyle: FontStyle.italic)),
+                      'Parsing CSV contents and executing schema validation checks...',
+                      style: TextStyle(fontStyle: FontStyle.italic),
+                    ),
                   ],
                 ),
               ),
@@ -311,15 +333,19 @@ class _ImportExportPageState extends ConsumerState<ImportExportPage> {
                   color: isDark ? AppColors.surfaceDark : Colors.white,
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                      color:
-                          isDark ? AppColors.borderDark : Colors.grey.shade100),
+                    color: isDark ? AppColors.borderDark : Colors.grey.shade100,
+                  ),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Row(
                       children: const [
-                        Icon(Icons.analytics_outlined, color: Color(0xFF2E7D32), size: 20),
+                        Icon(
+                          Icons.analytics_outlined,
+                          color: Color(0xFF2E7D32),
+                          size: 20,
+                        ),
                         SizedBox(width: 8),
                         Text(
                           'Dry-Run Validation Summary',
@@ -339,18 +365,27 @@ class _ImportExportPageState extends ConsumerState<ImportExportPage> {
                         _buildValStat('Error Rows', _errorRows, Colors.red),
                       ],
                     ),
+
                     const SizedBox(height: AppSpacing.md),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [
                         if (_errorRows > 0)
                           TextButton.icon(
-                            icon:
-                                const Icon(Icons.warning, color: Colors.amber, size: 18),
-                            label: const Text('Download Log', style: TextStyle(fontSize: 12)),
+                            icon: const Icon(
+                              Icons.warning,
+                              color: Colors.amber,
+                              size: 18,
+                            ),
+                            label: const Text(
+                              'Download Log',
+                              style: TextStyle(fontSize: 12),
+                            ),
                             onPressed: () {
-                              AppFeedback.showSnackbar(context,
-                                  message: 'Downloaded validation error log.');
+                              AppFeedback.showSnackbar(
+                                context,
+                                message: 'Downloaded validation error log.',
+                              );
                             },
                           ),
                         const SizedBox(width: 8),
@@ -371,15 +406,19 @@ class _ImportExportPageState extends ConsumerState<ImportExportPage> {
                   color: isDark ? AppColors.surfaceDark : Colors.white,
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                      color:
-                          isDark ? AppColors.borderDark : Colors.grey.shade100),
+                    color: isDark ? AppColors.borderDark : Colors.grey.shade100,
+                  ),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Row(
                       children: const [
-                        Icon(Icons.preview_outlined, color: Color(0xFF2E7D32), size: 20),
+                        Icon(
+                          Icons.preview_outlined,
+                          color: Color(0xFF2E7D32),
+                          size: 20,
+                        ),
                         SizedBox(width: 8),
                         Text(
                           'Import Data Preview Grid',
@@ -402,8 +441,10 @@ class _ImportExportPageState extends ConsumerState<ImportExportPage> {
                         TableColumnSpec<Map<String, String>>(
                           label: 'Name',
                           flex: 2,
-                          cellBuilder: (row) => Text(row['name'] ?? '',
-                              style: const TextStyle(fontWeight: FontWeight.bold)),
+                          cellBuilder: (row) => Text(
+                            row['name'] ?? '',
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
                         ),
                         TableColumnSpec<Map<String, String>>(
                           label: 'Identifier / SKU',
@@ -414,8 +455,9 @@ class _ImportExportPageState extends ConsumerState<ImportExportPage> {
                           label: 'Validation Status',
                           flex: 2,
                           cellBuilder: (row) {
-                            final isErr =
-                                (row['status'] ?? '').startsWith('Error');
+                            final isErr = (row['status'] ?? '').startsWith(
+                              'Error',
+                            );
                             return Text(
                               row['status'] ?? '',
                               style: TextStyle(
@@ -439,15 +481,17 @@ class _ImportExportPageState extends ConsumerState<ImportExportPage> {
               color: isDark ? AppColors.surfaceDark : Colors.white,
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                  color: isDark ? AppColors.borderDark : Colors.grey.shade100),
+                color: isDark ? AppColors.borderDark : Colors.grey.shade100,
+              ),
             ),
             child: const SizedBox(
               height: 200,
               child: Center(
                 child: Text(
-                    'Download the sample template, populate data, and upload the file to start validation.',
-                    style: TextStyle(color: Colors.grey, fontSize: 13),
-                    textAlign: TextAlign.center),
+                  'Download the sample template, populate data, and upload the file to start validation.',
+                  style: TextStyle(color: Colors.grey, fontSize: 13),
+                  textAlign: TextAlign.center,
+                ),
               ),
             ),
           ),
@@ -495,7 +539,10 @@ class _ImportExportPageState extends ConsumerState<ImportExportPage> {
           Text(
             value.toString(),
             style: TextStyle(
-                fontSize: 20, fontWeight: FontWeight.bold, color: color),
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
           ),
         ],
       ),
