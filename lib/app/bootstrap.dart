@@ -11,7 +11,14 @@ Future<ProviderContainer> bootstrap() async {
     await dotenv.load(fileName: ".env.development");
   } catch (_) {}
 
-  final sharedPrefs = await SharedPreferences.getInstance();
+  SharedPreferences sharedPrefs;
+  try {
+    sharedPrefs = await SharedPreferences.getInstance();
+  } catch (e) {
+    // Fallback to in-memory SharedPreferences if localStorage is blocked or throws an error
+    SharedPreferences.setMockInitialValues({});
+    sharedPrefs = await SharedPreferences.getInstance();
+  }
 
   final container = ProviderContainer(
     overrides: [
