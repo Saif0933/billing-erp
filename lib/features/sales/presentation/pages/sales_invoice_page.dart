@@ -386,7 +386,7 @@ class _SalesInvoicePageState extends ConsumerState<SalesInvoicePage> {
   @override
   Widget build(BuildContext context) {
     final billingState = ref.watch(billingRepositoryProvider);
-    final allInvoices = billingState.invoices;
+    final allInvoices = billingState.invoices.where((inv) => !inv.isCreditNote).toList();
 
     // Filter invoices
     final filteredInvoices = allInvoices.where((inv) {

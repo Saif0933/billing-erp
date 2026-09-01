@@ -127,7 +127,9 @@ class _InvoiceDetailPageState extends ConsumerState<InvoiceDetailPage> {
     final activeBiz = ref.watch(businessProvider).activeBusiness;
 
     final invoice = billingState.invoices.firstWhere(
-      (inv) => inv.id == widget.invoiceId,
+      (inv) =>
+          inv.id == widget.invoiceId ||
+          inv.invoiceNumber.toLowerCase() == widget.invoiceId.toLowerCase(),
       orElse: () => Invoice(
         id: '',
         invoiceNumber: 'Not Found',
@@ -182,6 +184,15 @@ class _InvoiceDetailPageState extends ConsumerState<InvoiceDetailPage> {
                           await ref.read(billingRepositoryProvider.notifier).confirmInvoice(invoice.id);
                           if (mounted) AppFeedback.showSnackbar(context, message: 'Invoice confirmed successfully!');
                         },
+                      ),
+                    if (!invoice.isCreditNote &&
+                        invoice.status != InvoiceStatus.cancelled &&
+                        invoice.status != InvoiceStatus.draft)
+                      AppButton(
+                        label: 'Create Return',
+                        icon: Icons.assignment_return_outlined,
+                        type: AppButtonType.secondary,
+                        onPressed: () => context.push('/sales/returns/new?invoiceId=${invoice.id}'),
                       ),
                     if (invoice.status != InvoiceStatus.cancelled)
                       AppButton(

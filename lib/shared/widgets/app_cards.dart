@@ -8,6 +8,8 @@ import '../../core/responsive/responsive.dart';
 
 class AppCard extends StatelessWidget {
   final Widget child;
+  final String? title;
+  final List<Widget>? actions;
   final EdgeInsetsGeometry padding;
   final Color? backgroundColor;
   final Border? border;
@@ -15,6 +17,8 @@ class AppCard extends StatelessWidget {
   const AppCard({
     super.key,
     required this.child,
+    this.title,
+    this.actions,
     this.padding = const EdgeInsets.all(AppSpacing.md),
     this.backgroundColor,
     this.border,
@@ -24,6 +28,39 @@ class AppCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     
+    Widget content = child;
+    if (title != null || (actions != null && actions!.isNotEmpty)) {
+      content = Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              if (title != null)
+                Expanded(
+                  child: Text(
+                    title!,
+                    style: AppTypography.titleMedium.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: isDark ? AppColors.textDarkPrimary : AppColors.textLightPrimary,
+                    ),
+                  ),
+                ),
+              if (actions != null && actions!.isNotEmpty)
+                Wrap(
+                  spacing: AppSpacing.sm,
+                  children: actions!,
+                ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.md),
+          child,
+        ],
+      );
+    }
+
     return Container(
       padding: padding,
       decoration: BoxDecoration(
@@ -35,7 +72,7 @@ class AppCard extends StatelessWidget {
         ),
         boxShadow: const [AppShadows.sm],
       ),
-      child: child,
+      child: content,
     );
   }
 }

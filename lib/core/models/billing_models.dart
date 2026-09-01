@@ -102,6 +102,14 @@ class Customer {
       isRegistered: isRegistered ?? this.isRegistered,
     );
   }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is Customer && runtimeType == other.runtimeType && id == other.id;
+
+  @override
+  int get hashCode => id.hashCode;
 }
 
 class Supplier {
@@ -394,6 +402,7 @@ class Invoice {
   final String termsConditions;
   final String originalInvoiceId; // Non-empty if this is a Credit Note (Sales Return)
   final String warehouseId;
+  final bool _isCreditNote;
 
   const Invoice({
     required this.id,
@@ -419,9 +428,10 @@ class Invoice {
     required this.termsConditions,
     this.originalInvoiceId = '',
     this.warehouseId = 'main',
-  });
+    bool isCreditNote = false,
+  }) : _isCreditNote = isCreditNote;
 
-  bool get isCreditNote => originalInvoiceId.isNotEmpty;
+  bool get isCreditNote => _isCreditNote || originalInvoiceId.isNotEmpty;
 
   Invoice copyWith({
     InvoiceStatus? status,
@@ -435,6 +445,7 @@ class Invoice {
     double? roundOff,
     double? grandTotal,
     String? warehouseId,
+    bool? isCreditNote,
   }) {
     return Invoice(
       id: id,
@@ -460,8 +471,17 @@ class Invoice {
       termsConditions: termsConditions,
       originalInvoiceId: originalInvoiceId,
       warehouseId: warehouseId ?? this.warehouseId,
+      isCreditNote: isCreditNote ?? this.isCreditNote,
     );
   }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is Invoice && runtimeType == other.runtimeType && id == other.id;
+
+  @override
+  int get hashCode => id.hashCode;
 }
 
 class PurchaseItem {

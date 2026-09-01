@@ -71,6 +71,13 @@ class NavigationConfig {
           requiredFeature: SubscriptionFeature.sales,
         ),
         NavigationItem(
+          id: 'sale_returns',
+          title: 'Sale Returns',
+          icon: Icons.assignment_return_outlined,
+          route: '/sales/returns',
+          requiredFeature: SubscriptionFeature.sales,
+        ),
+        NavigationItem(
           id: 'recurring_billing',
           title: 'Recurring Billing',
           icon: Icons.auto_delete_outlined,

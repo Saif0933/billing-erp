@@ -37,6 +37,9 @@ import '../../features/service/presentation/pages/service_form_page.dart';
 import '../../features/sales/presentation/pages/sales_invoice_page.dart';
 import '../../features/sales/presentation/pages/invoice_create_page.dart';
 import '../../features/sales/presentation/pages/invoice_detail_page.dart';
+import '../../features/sales/presentation/pages/sale_return_page.dart';
+import '../../features/sales/presentation/pages/sale_return_create_page.dart';
+import '../../features/sales/presentation/pages/sale_return_detail_page.dart';
 import '../../features/purchase/presentation/pages/purchase_page.dart';
 import '../../features/purchase/presentation/pages/purchase_create_page.dart';
 import '../../features/purchase/presentation/pages/purchase_detail_page.dart';
@@ -234,6 +237,25 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: '/sales/new',
             builder: (context, state) => const InvoiceCreatePage(),
+          ),
+          GoRoute(
+            path: '/sales/returns',
+            builder: (context, state) => const SaleReturnPage(),
+          ),
+          GoRoute(
+            path: '/sales/returns/new',
+            builder: (context, state) {
+              final extra = state.extra as Map<String, dynamic>?;
+              final originalInvoiceId = extra?['originalInvoiceId'] as String? ?? state.uri.queryParameters['invoiceId'] ?? '';
+              return SaleReturnCreatePage(originalInvoiceId: originalInvoiceId);
+            },
+          ),
+          GoRoute(
+            path: '/sales/returns/:id',
+            builder: (context, state) {
+              final id = state.pathParameters['id']!;
+              return SaleReturnDetailPage(returnId: id);
+            },
           ),
           GoRoute(
             path: '/sales/:id',

@@ -38,6 +38,8 @@ class MobileDrawer extends ConsumerWidget {
         return const Color(0xFF1976D2);
       case 'sales_group':
       case 'sales':
+      case 'sale_returns':
+      case 'sales_return':
       case 'recurring_billing':
         return const Color(0xFF00BCD4);
       case 'purchase_group':
