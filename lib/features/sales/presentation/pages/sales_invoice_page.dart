@@ -1,15 +1,14 @@
 import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_spacing.dart';
 import '../../../../core/constants/app_typography.dart';
-import '../../../../core/responsive/responsive.dart';
 import '../../../../core/models/billing_models.dart';
-import '../../../../shared/widgets/app_button.dart';
 import '../../../../shared/widgets/app_cards.dart';
-import '../../../../shared/widgets/app_input_fields.dart';
 import '../../../../shared/widgets/app_table.dart';
 import '../../../dashboard/presentation/providers/billing_repository.dart';
 
@@ -51,7 +50,9 @@ class _SalesInvoicePageState extends ConsumerState<SalesInvoicePage> {
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: isDark ? AppColors.textDarkPrimary : AppColors.textLightPrimary,
+                  color: isDark
+                      ? AppColors.textDarkPrimary
+                      : AppColors.textLightPrimary,
                 ),
               ),
               const SizedBox(height: 16),
@@ -60,39 +61,50 @@ class _SalesInvoicePageState extends ConsumerState<SalesInvoicePage> {
                   return Wrap(
                     spacing: 8,
                     runSpacing: 8,
-                    children: [
-                      'All',
-                      'Draft',
-                      'Confirmed',
-                      'PartiallyPaid',
-                      'Paid',
-                      'Cancelled'
-                    ].map((status) {
-                      final isSelected = _selectedStatusFilter == status;
-                      return ChoiceChip(
-                        label: Text(status == 'PartiallyPaid' ? 'Partially Paid' : status),
-                        selected: isSelected,
-                        selectedColor: isDark ? const Color(0xFF1E3A2F) : const Color(0xFFE8F5E9),
-                        checkmarkColor: const Color(0xFF2E7D32),
-                        labelStyle: TextStyle(
-                          color: isSelected
-                              ? const Color(0xFF2E7D32)
-                              : (isDark ? AppColors.textDarkSecondary : AppColors.textLightSecondary),
-                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                        ),
-                        onSelected: (selected) {
-                          if (selected) {
-                            setState(() {
-                              _selectedStatusFilter = status;
-                            });
-                            setModalState(() {});
-                            Navigator.pop(ctx);
-                          }
-                        },
-                      );
-                    }).toList(),
+                    children:
+                        [
+                          'All',
+                          'Draft',
+                          'Confirmed',
+                          'PartiallyPaid',
+                          'Paid',
+                          'Cancelled',
+                        ].map((status) {
+                          final isSelected = _selectedStatusFilter == status;
+                          return ChoiceChip(
+                            label: Text(
+                              status == 'PartiallyPaid'
+                                  ? 'Partially Paid'
+                                  : status,
+                            ),
+                            selected: isSelected,
+                            selectedColor: isDark
+                                ? const Color(0xFF1E3A2F)
+                                : const Color(0xFFE8F5E9),
+                            checkmarkColor: const Color(0xFF2E7D32),
+                            labelStyle: TextStyle(
+                              color: isSelected
+                                  ? const Color(0xFF2E7D32)
+                                  : (isDark
+                                        ? AppColors.textDarkSecondary
+                                        : AppColors.textLightSecondary),
+                              fontWeight: isSelected
+                                  ? FontWeight.bold
+                                  : FontWeight.normal,
+                            ),
+                            onSelected: (selected) {
+                              if (selected) {
+                                setState(() {
+                                  _selectedStatusFilter = status;
+                                });
+                                setModalState(() {});
+                                Navigator.pop(ctx);
+                              }
+                            },
+                          );
+                        }).toList(),
                   );
-                }
+                },
               ),
               const SizedBox(height: 16),
             ],
@@ -112,7 +124,9 @@ class _SalesInvoicePageState extends ConsumerState<SalesInvoicePage> {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF1E3A2F) : const Color(0xFFE8F5E9),
+                color: isDark
+                    ? const Color(0xFF1E3A2F)
+                    : const Color(0xFFE8F5E9),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: const Icon(
@@ -128,7 +142,9 @@ class _SalesInvoicePageState extends ConsumerState<SalesInvoicePage> {
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
-                  color: isDark ? AppColors.textDarkPrimary : AppColors.textLightPrimary,
+                  color: isDark
+                      ? AppColors.textDarkPrimary
+                      : AppColors.textLightPrimary,
                 ),
                 overflow: TextOverflow.ellipsis,
               ),
@@ -141,13 +157,27 @@ class _SalesInvoicePageState extends ConsumerState<SalesInvoicePage> {
             scrollDirection: Axis.horizontal,
             child: Row(
               children: [
-                Text('Dashboard', style: TextStyle(color: Colors.grey.shade500, fontSize: 13)),
+                Text(
+                  'Dashboard',
+                  style: TextStyle(color: Colors.grey.shade500, fontSize: 13),
+                ),
                 const SizedBox(width: 6),
-                Icon(Icons.chevron_right, size: 14, color: Colors.grey.shade400),
+                Icon(
+                  Icons.chevron_right,
+                  size: 14,
+                  color: Colors.grey.shade400,
+                ),
                 const SizedBox(width: 6),
-                Text('Sales', style: TextStyle(color: Colors.grey.shade500, fontSize: 13)),
+                Text(
+                  'Sales',
+                  style: TextStyle(color: Colors.grey.shade500, fontSize: 13),
+                ),
                 const SizedBox(width: 6),
-                Icon(Icons.chevron_right, size: 14, color: Colors.grey.shade400),
+                Icon(
+                  Icons.chevron_right,
+                  size: 14,
+                  color: Colors.grey.shade400,
+                ),
                 const SizedBox(width: 6),
                 const Text(
                   'Invoices',
@@ -226,12 +256,20 @@ class _SalesInvoicePageState extends ConsumerState<SalesInvoicePage> {
                       Positioned(
                         left: -15,
                         top: -10,
-                        child: Icon(Icons.bolt, color: Colors.green.shade300.withOpacity(0.5), size: 16),
+                        child: Icon(
+                          Icons.bolt,
+                          color: Colors.green.shade300.withOpacity(0.5),
+                          size: 16,
+                        ),
                       ),
                       Positioned(
                         right: -15,
                         bottom: 10,
-                        child: Icon(Icons.add, color: Colors.green.shade300.withOpacity(0.5), size: 14),
+                        child: Icon(
+                          Icons.add,
+                          color: Colors.green.shade300.withOpacity(0.5),
+                          size: 14,
+                        ),
                       ),
                       Transform.rotate(
                         angle: 0.1,
@@ -253,11 +291,35 @@ class _SalesInvoicePageState extends ConsumerState<SalesInvoicePage> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Container(width: 32, height: 5, color: const Color(0xFF81C784), margin: const EdgeInsets.only(bottom: 6)),
-                              Container(width: 42, height: 3, color: Colors.grey.shade200, margin: const EdgeInsets.only(bottom: 4)),
-                              Container(width: 38, height: 3, color: Colors.grey.shade200, margin: const EdgeInsets.only(bottom: 4)),
-                              Container(width: 25, height: 3, color: Colors.grey.shade200, margin: const EdgeInsets.only(bottom: 4)),
-                              Container(width: 40, height: 3, color: Colors.grey.shade200),
+                              Container(
+                                width: 32,
+                                height: 5,
+                                color: const Color(0xFF81C784),
+                                margin: const EdgeInsets.only(bottom: 6),
+                              ),
+                              Container(
+                                width: 42,
+                                height: 3,
+                                color: Colors.grey.shade200,
+                                margin: const EdgeInsets.only(bottom: 4),
+                              ),
+                              Container(
+                                width: 38,
+                                height: 3,
+                                color: Colors.grey.shade200,
+                                margin: const EdgeInsets.only(bottom: 4),
+                              ),
+                              Container(
+                                width: 25,
+                                height: 3,
+                                color: Colors.grey.shade200,
+                                margin: const EdgeInsets.only(bottom: 4),
+                              ),
+                              Container(
+                                width: 40,
+                                height: 3,
+                                color: Colors.grey.shade200,
+                              ),
                             ],
                           ),
                         ),
@@ -294,7 +356,11 @@ class _SalesInvoicePageState extends ConsumerState<SalesInvoicePage> {
           ),
           const SizedBox(height: 24),
           ElevatedButton.icon(
-            icon: const Icon(Icons.post_add_outlined, color: Color(0xFF0F5A3C), size: 20),
+            icon: const Icon(
+              Icons.post_add_outlined,
+              color: Color(0xFF0F5A3C),
+              size: 20,
+            ),
             label: const Text(
               'Create Invoice',
               style: TextStyle(
@@ -339,7 +405,9 @@ class _SalesInvoicePageState extends ConsumerState<SalesInvoicePage> {
                   width: 80,
                   height: 80,
                   decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF1E3A2F) : const Color(0xFFE8F5E9),
+                    color: isDark
+                        ? const Color(0xFF1E3A2F)
+                        : const Color(0xFFE8F5E9),
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(
@@ -356,7 +424,11 @@ class _SalesInvoicePageState extends ConsumerState<SalesInvoicePage> {
                 const Positioned(
                   top: 36,
                   right: -10,
-                  child: Icon(Icons.star_border, color: Color(0xFF81C784), size: 10),
+                  child: Icon(
+                    Icons.star_border,
+                    color: Color(0xFF81C784),
+                    size: 10,
+                  ),
                 ),
                 const Positioned(
                   bottom: 8,
@@ -371,7 +443,9 @@ class _SalesInvoicePageState extends ConsumerState<SalesInvoicePage> {
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
-                color: isDark ? AppColors.textDarkPrimary : AppColors.textLightPrimary,
+                color: isDark
+                    ? AppColors.textDarkPrimary
+                    : AppColors.textLightPrimary,
               ),
             ),
             const SizedBox(height: 8),
@@ -380,7 +454,9 @@ class _SalesInvoicePageState extends ConsumerState<SalesInvoicePage> {
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 14,
-                color: isDark ? AppColors.textDarkSecondary : Colors.grey.shade500,
+                color: isDark
+                    ? AppColors.textDarkSecondary
+                    : Colors.grey.shade500,
               ),
             ),
           ],
@@ -392,13 +468,20 @@ class _SalesInvoicePageState extends ConsumerState<SalesInvoicePage> {
   @override
   Widget build(BuildContext context) {
     final billingState = ref.watch(billingRepositoryProvider);
-    final allInvoices = billingState.invoices.where((inv) => !inv.isCreditNote).toList();
+    final allInvoices = billingState.invoices
+        .where((inv) => !inv.isCreditNote)
+        .toList();
 
     // Filter invoices
     final filteredInvoices = allInvoices.where((inv) {
-      final matchesSearch = inv.invoiceNumber.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+      final matchesSearch =
+          inv.invoiceNumber.toLowerCase().contains(
+            _searchQuery.toLowerCase(),
+          ) ||
           inv.customerName.toLowerCase().contains(_searchQuery.toLowerCase());
-      final matchesStatus = _selectedStatusFilter == 'All' || inv.status.name.toLowerCase() == _selectedStatusFilter.toLowerCase();
+      final matchesStatus =
+          _selectedStatusFilter == 'All' ||
+          inv.status.name.toLowerCase() == _selectedStatusFilter.toLowerCase();
       return matchesSearch && matchesStatus;
     }).toList();
 
@@ -431,31 +514,48 @@ class _SalesInvoicePageState extends ConsumerState<SalesInvoicePage> {
                       Expanded(
                         child: Container(
                           decoration: BoxDecoration(
-                            color: Theme.of(context).brightness == Brightness.dark
+                            color:
+                                Theme.of(context).brightness == Brightness.dark
                                 ? AppColors.surfaceDark
                                 : Colors.grey.shade50,
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: TextField(
                             controller: _searchController,
-                            onChanged: (val) => setState(() => _searchQuery = val),
+                            onChanged: (val) =>
+                                setState(() => _searchQuery = val),
                             decoration: InputDecoration(
                               hintText: 'Search by invoice number or name...',
-                              hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
-                              prefixIcon: Icon(Icons.search, color: Colors.grey.shade400),
+                              hintStyle: TextStyle(
+                                color: Colors.grey.shade400,
+                                fontSize: 14,
+                              ),
+                              prefixIcon: Icon(
+                                Icons.search,
+                                color: Colors.grey.shade400,
+                              ),
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(color: Colors.grey.shade200),
+                                borderSide: BorderSide(
+                                  color: Colors.grey.shade200,
+                                ),
                               ),
                               enabledBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(color: Colors.grey.shade200),
+                                borderSide: BorderSide(
+                                  color: Colors.grey.shade200,
+                                ),
                               ),
                               focusedBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
-                                borderSide: const BorderSide(color: Color(0xFF2E7D32)),
+                                borderSide: const BorderSide(
+                                  color: Color(0xFF2E7D32),
+                                ),
                               ),
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 12,
+                              ),
                             ),
                           ),
                         ),
@@ -470,14 +570,18 @@ class _SalesInvoicePageState extends ConsumerState<SalesInvoicePage> {
                               : const Color(0xFFF1F8F5),
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                            color: Theme.of(context).brightness == Brightness.dark
+                            color:
+                                Theme.of(context).brightness == Brightness.dark
                                 ? AppColors.borderDark
                                 : const Color(0xFFE8F5E9),
                             width: 1.5,
                           ),
                         ),
                         child: IconButton(
-                          icon: const Icon(Icons.filter_alt_outlined, color: Color(0xFF2E7D32)),
+                          icon: const Icon(
+                            Icons.filter_alt_outlined,
+                            color: Color(0xFF2E7D32),
+                          ),
                           onPressed: () => _showFilterBottomSheet(context),
                         ),
                       ),
@@ -494,7 +598,8 @@ class _SalesInvoicePageState extends ConsumerState<SalesInvoicePage> {
                 padding: EdgeInsets.zero,
                 child: AppTable<Invoice>(
                   items: filteredInvoices,
-                  emptyMessage: 'No invoices match the selected search criteria.',
+                  emptyMessage:
+                      'No invoices match the selected search criteria.',
                   columns: [
                     TableColumnSpec<Invoice>(
                       label: 'Invoice Number',
@@ -502,13 +607,18 @@ class _SalesInvoicePageState extends ConsumerState<SalesInvoicePage> {
                         onTap: () => context.push('/sales/${inv.id}'),
                         child: Text(
                           inv.invoiceNumber,
-                          style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.blue),
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.blue,
+                          ),
                         ),
                       ),
                     ),
                     TableColumnSpec<Invoice>(
                       label: 'Date',
-                      cellBuilder: (inv) => Text('${inv.invoiceDate.day}/${inv.invoiceDate.month}/${inv.invoiceDate.year}'),
+                      cellBuilder: (inv) => Text(
+                        '${inv.invoiceDate.day}/${inv.invoiceDate.month}/${inv.invoiceDate.year}',
+                      ),
                     ),
                     TableColumnSpec<Invoice>(
                       label: 'Customer',
@@ -534,7 +644,11 @@ class _SalesInvoicePageState extends ConsumerState<SalesInvoicePage> {
                         '₹${inv.balanceAmount.toStringAsFixed(2)}',
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
-                          color: inv.balanceAmount > 0 && inv.status != InvoiceStatus.cancelled ? Colors.red : Colors.green,
+                          color:
+                              inv.balanceAmount > 0 &&
+                                  inv.status != InvoiceStatus.cancelled
+                              ? Colors.red
+                              : Colors.green,
                         ),
                       ),
                     ),
@@ -560,14 +674,21 @@ class _SalesInvoicePageState extends ConsumerState<SalesInvoicePage> {
                             break;
                         }
                         return Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
                           decoration: BoxDecoration(
                             color: badgeColor.withOpacity(0.1),
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: Text(
                             inv.status.name.toUpperCase(),
-                            style: TextStyle(color: badgeColor, fontSize: 11, fontWeight: FontWeight.bold),
+                            style: TextStyle(
+                              color: badgeColor,
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         );
                       },
@@ -582,20 +703,29 @@ class _SalesInvoicePageState extends ConsumerState<SalesInvoicePage> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text(inv.invoiceNumber, style: AppTypography.titleMedium.copyWith(fontWeight: FontWeight.bold)),
+                              Text(
+                                inv.invoiceNumber,
+                                style: AppTypography.titleMedium.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
                               Text(
                                 inv.status.name.toUpperCase(),
                                 style: TextStyle(
                                   fontSize: 11,
                                   fontWeight: FontWeight.bold,
-                                  color: inv.status == InvoiceStatus.paid ? Colors.green : Colors.orange,
+                                  color: inv.status == InvoiceStatus.paid
+                                      ? Colors.green
+                                      : Colors.orange,
                                 ),
                               ),
                             ],
                           ),
                           const SizedBox(height: 4),
                           Text('Customer: ${inv.customerName}'),
-                          Text('Date: ${inv.invoiceDate.day}/${inv.invoiceDate.month}/${inv.invoiceDate.year}'),
+                          Text(
+                            'Date: ${inv.invoiceDate.day}/${inv.invoiceDate.month}/${inv.invoiceDate.year}',
+                          ),
                           const Divider(),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -603,11 +733,25 @@ class _SalesInvoicePageState extends ConsumerState<SalesInvoicePage> {
                               Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text('Total Amount: ₹${inv.grandTotal.toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.w500)),
-                                  Text('Balance: ₹${inv.balanceAmount.toStringAsFixed(2)}', style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                                  Text(
+                                    'Total Amount: ₹${inv.grandTotal.toStringAsFixed(2)}',
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                  Text(
+                                    'Balance: ₹${inv.balanceAmount.toStringAsFixed(2)}',
+                                    style: const TextStyle(
+                                      color: Colors.grey,
+                                      fontSize: 12,
+                                    ),
+                                  ),
                                 ],
                               ),
-                              const Icon(Icons.chevron_right, color: Colors.grey),
+                              const Icon(
+                                Icons.chevron_right,
+                                color: Colors.grey,
+                              ),
                             ],
                           ),
                         ],
@@ -644,10 +788,12 @@ class DashedRectPainter extends CustomPainter {
       ..style = PaintingStyle.stroke;
 
     final Path path = Path();
-    path.addRRect(RRect.fromRectAndRadius(
-      Rect.fromLTWH(0, 0, size.width, size.height),
-      Radius.circular(radius),
-    ));
+    path.addRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromLTWH(0, 0, size.width, size.height),
+        Radius.circular(radius),
+      ),
+    );
 
     final Path dashedPath = Path();
     for (final PathMetric metric in path.computeMetrics()) {

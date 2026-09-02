@@ -1,14 +1,13 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_spacing.dart';
 import '../../../../core/constants/app_typography.dart';
-import '../../../../core/responsive/responsive.dart';
 import '../../../../core/models/billing_models.dart';
+import '../../../../core/responsive/responsive.dart';
 import '../../../../core/services/invoice_pdf_service.dart';
-import '../../../../shared/widgets/app_button.dart';
 import '../../../../shared/widgets/app_cards.dart';
 import '../../../../shared/widgets/app_input_fields.dart';
 import '../../../../shared/widgets/app_table.dart';
@@ -54,25 +53,35 @@ class _SaleReturnPageState extends ConsumerState<SaleReturnPage> {
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: isDark ? AppColors.textDarkPrimary : AppColors.textLightPrimary,
+                  color: isDark
+                      ? AppColors.textDarkPrimary
+                      : AppColors.textLightPrimary,
                 ),
               ),
               const SizedBox(height: 16),
               Wrap(
                 spacing: 8,
                 runSpacing: 8,
-                children: ['All', 'Draft', 'Confirmed', 'Cancelled'].map((status) {
+                children: ['All', 'Draft', 'Confirmed', 'Cancelled'].map((
+                  status,
+                ) {
                   final isSelected = _selectedStatusFilter == status;
                   return ChoiceChip(
                     label: Text(status),
                     selected: isSelected,
-                    selectedColor: isDark ? const Color(0xFF1E3A2F) : const Color(0xFFE8F5E9),
+                    selectedColor: isDark
+                        ? const Color(0xFF1E3A2F)
+                        : const Color(0xFFE8F5E9),
                     checkmarkColor: const Color(0xFF2E7D32),
                     labelStyle: TextStyle(
                       color: isSelected
                           ? const Color(0xFF2E7D32)
-                          : (isDark ? AppColors.textDarkSecondary : AppColors.textLightSecondary),
-                      fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                          : (isDark
+                                ? AppColors.textDarkSecondary
+                                : AppColors.textLightSecondary),
+                      fontWeight: isSelected
+                          ? FontWeight.bold
+                          : FontWeight.normal,
                     ),
                     onSelected: (selected) {
                       if (selected) {
@@ -100,10 +109,24 @@ class _SaleReturnPageState extends ConsumerState<SaleReturnPage> {
       children: [
         Row(
           children: [
+            IconButton(
+              icon: const Icon(Icons.arrow_back),
+              tooltip: 'Back to Sales',
+              onPressed: () {
+                if (context.canPop()) {
+                  context.pop();
+                } else {
+                  context.go('/sales');
+                }
+              },
+            ),
+            const SizedBox(width: 4),
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF1E3A2F) : const Color(0xFFE0F2F1),
+                color: isDark
+                    ? const Color(0xFF1E3A2F)
+                    : const Color(0xFFE0F2F1),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: const Icon(
@@ -119,7 +142,9 @@ class _SaleReturnPageState extends ConsumerState<SaleReturnPage> {
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
-                  color: isDark ? AppColors.textDarkPrimary : AppColors.textLightPrimary,
+                  color: isDark
+                      ? AppColors.textDarkPrimary
+                      : AppColors.textLightPrimary,
                 ),
                 overflow: TextOverflow.ellipsis,
               ),
@@ -132,13 +157,27 @@ class _SaleReturnPageState extends ConsumerState<SaleReturnPage> {
             scrollDirection: Axis.horizontal,
             child: Row(
               children: [
-                Text('Dashboard', style: TextStyle(color: Colors.grey.shade500, fontSize: 13)),
+                Text(
+                  'Dashboard',
+                  style: TextStyle(color: Colors.grey.shade500, fontSize: 13),
+                ),
                 const SizedBox(width: 6),
-                Icon(Icons.chevron_right, size: 14, color: Colors.grey.shade400),
+                Icon(
+                  Icons.chevron_right,
+                  size: 14,
+                  color: Colors.grey.shade400,
+                ),
                 const SizedBox(width: 6),
-                Text('Sales', style: TextStyle(color: Colors.grey.shade500, fontSize: 13)),
+                Text(
+                  'Sales',
+                  style: TextStyle(color: Colors.grey.shade500, fontSize: 13),
+                ),
                 const SizedBox(width: 6),
-                Icon(Icons.chevron_right, size: 14, color: Colors.grey.shade400),
+                Icon(
+                  Icons.chevron_right,
+                  size: 14,
+                  color: Colors.grey.shade400,
+                ),
                 const SizedBox(width: 6),
                 const Text(
                   'Sale Returns (Credit Notes)',
@@ -185,7 +224,10 @@ class _SaleReturnPageState extends ConsumerState<SaleReturnPage> {
                 Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.white.withOpacity(0.15),
                         borderRadius: BorderRadius.circular(20),
@@ -193,7 +235,11 @@ class _SaleReturnPageState extends ConsumerState<SaleReturnPage> {
                       child: const Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.assignment_return, color: Colors.white, size: 14),
+                          Icon(
+                            Icons.assignment_return,
+                            color: Colors.white,
+                            size: 14,
+                          ),
                           SizedBox(width: 6),
                           Text(
                             'CREDIT NOTES & RETURNS',
@@ -236,8 +282,13 @@ class _SaleReturnPageState extends ConsumerState<SaleReturnPage> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.white,
                 foregroundColor: const Color(0xFF004D40),
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 16,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
                 elevation: 3,
               ),
               icon: const Icon(Icons.add_circle_outline, size: 20),
@@ -254,9 +305,16 @@ class _SaleReturnPageState extends ConsumerState<SaleReturnPage> {
   }
 
   Widget _buildSummaryCards(List<Invoice> returns) {
-    final confirmedReturns = returns.where((r) => r.status == InvoiceStatus.confirmed).toList();
-    final draftReturns = returns.where((r) => r.status == InvoiceStatus.draft).toList();
-    final totalReturnValue = confirmedReturns.fold(0.0, (sum, r) => sum + r.grandTotal);
+    final confirmedReturns = returns
+        .where((r) => r.status == InvoiceStatus.confirmed)
+        .toList();
+    final draftReturns = returns
+        .where((r) => r.status == InvoiceStatus.draft)
+        .toList();
+    final totalReturnValue = confirmedReturns.fold(
+      0.0,
+      (sum, r) => sum + r.grandTotal,
+    );
     final totalRestockedItems = confirmedReturns.fold(0.0, (sum, r) {
       return sum + r.items.fold(0.0, (iSum, item) => iSum + item.quantity);
     });
@@ -264,7 +322,8 @@ class _SaleReturnPageState extends ConsumerState<SaleReturnPage> {
     return LayoutBuilder(
       builder: (context, constraints) {
         final isMobile = constraints.maxWidth < 600;
-        final isTablet = constraints.maxWidth >= 600 && constraints.maxWidth < 1000;
+        final isTablet =
+            constraints.maxWidth >= 600 && constraints.maxWidth < 1000;
 
         final cards = [
           _buildStatCard(
@@ -303,7 +362,14 @@ class _SaleReturnPageState extends ConsumerState<SaleReturnPage> {
 
         if (isMobile) {
           return Column(
-            children: cards.map((c) => Padding(padding: const EdgeInsets.only(bottom: 12), child: c)).toList(),
+            children: cards
+                .map(
+                  (c) => Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: c,
+                  ),
+                )
+                .toList(),
           );
         } else if (isTablet) {
           return Column(
@@ -387,7 +453,9 @@ class _SaleReturnPageState extends ConsumerState<SaleReturnPage> {
                   title,
                   style: TextStyle(
                     fontSize: 12,
-                    color: isDark ? AppColors.textDarkSecondary : AppColors.textLightSecondary,
+                    color: isDark
+                        ? AppColors.textDarkSecondary
+                        : AppColors.textLightSecondary,
                     fontWeight: FontWeight.w500,
                   ),
                   maxLines: 1,
@@ -399,7 +467,9 @@ class _SaleReturnPageState extends ConsumerState<SaleReturnPage> {
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: isDark ? AppColors.textDarkPrimary : AppColors.textLightPrimary,
+                    color: isDark
+                        ? AppColors.textDarkPrimary
+                        : AppColors.textLightPrimary,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -407,10 +477,7 @@ class _SaleReturnPageState extends ConsumerState<SaleReturnPage> {
                 const SizedBox(height: 2),
                 Text(
                   subtitle,
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: Colors.grey.shade500,
-                  ),
+                  style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -490,9 +557,14 @@ class _SaleReturnPageState extends ConsumerState<SaleReturnPage> {
             child: const Text('Yes, Cancel Return'),
             onPressed: () async {
               Navigator.pop(ctx);
-              await ref.read(billingRepositoryProvider.notifier).cancelInvoice(ret.id);
+              await ref
+                  .read(billingRepositoryProvider.notifier)
+                  .cancelInvoice(ret.id);
               if (mounted) {
-                AppFeedback.showSnackbar(context, message: 'Sale return cancelled successfully.');
+                AppFeedback.showSnackbar(
+                  context,
+                  message: 'Sale return cancelled successfully.',
+                );
               }
             },
           ),
@@ -504,7 +576,11 @@ class _SaleReturnPageState extends ConsumerState<SaleReturnPage> {
   void _confirmReturn(BuildContext context, Invoice ret) async {
     await ref.read(billingRepositoryProvider.notifier).confirmInvoice(ret.id);
     if (mounted) {
-      AppFeedback.showSnackbar(context, message: 'Sale return confirmed! Inventory restocked & balance adjusted.');
+      AppFeedback.showSnackbar(
+        context,
+        message:
+            'Sale return confirmed! Inventory restocked & balance adjusted.',
+      );
     }
   }
 
@@ -515,15 +591,23 @@ class _SaleReturnPageState extends ConsumerState<SaleReturnPage> {
     final activeBiz = ref.watch(businessProvider).activeBusiness;
 
     // Filter to Credit Notes only
-    final allReturns = billingState.invoices.where((inv) => inv.isCreditNote).toList();
+    final allReturns = billingState.invoices
+        .where((inv) => inv.isCreditNote)
+        .toList();
 
     final filteredReturns = allReturns.where((ret) {
-      final matchesSearch = ret.invoiceNumber.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-          ret.originalInvoiceId.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+      final matchesSearch =
+          ret.invoiceNumber.toLowerCase().contains(
+            _searchQuery.toLowerCase(),
+          ) ||
+          ret.originalInvoiceId.toLowerCase().contains(
+            _searchQuery.toLowerCase(),
+          ) ||
           ret.customerName.toLowerCase().contains(_searchQuery.toLowerCase()) ||
           ret.notes.toLowerCase().contains(_searchQuery.toLowerCase());
 
-      final matchesStatus = _selectedStatusFilter == 'All' ||
+      final matchesStatus =
+          _selectedStatusFilter == 'All' ||
           ret.status.name.toLowerCase() == _selectedStatusFilter.toLowerCase();
 
       return matchesSearch && matchesStatus;
@@ -559,10 +643,12 @@ class _SaleReturnPageState extends ConsumerState<SaleReturnPage> {
                         flex: 3,
                         child: AppTextField(
                           label: 'Search Returns & Credit Notes',
-                          hintText: 'Search by return no., original invoice, customer, or reason...',
+                          hintText:
+                              'Search by return no., original invoice, customer, or reason...',
                           controller: _searchController,
                           prefixIcon: const Icon(Icons.search),
-                          onChanged: (val) => setState(() => _searchQuery = val),
+                          onChanged: (val) =>
+                              setState(() => _searchQuery = val),
                         ),
                       ),
                       if (!Responsive.isMobile(context))
@@ -572,12 +658,26 @@ class _SaleReturnPageState extends ConsumerState<SaleReturnPage> {
                             label: 'Filter Status',
                             value: _selectedStatusFilter,
                             items: const [
-                              DropdownMenuItem(value: 'All', child: Text('All Statuses')),
-                              DropdownMenuItem(value: 'Draft', child: Text('Draft')),
-                              DropdownMenuItem(value: 'Confirmed', child: Text('Confirmed')),
-                              DropdownMenuItem(value: 'Cancelled', child: Text('Cancelled')),
+                              DropdownMenuItem(
+                                value: 'All',
+                                child: Text('All Statuses'),
+                              ),
+                              DropdownMenuItem(
+                                value: 'Draft',
+                                child: Text('Draft'),
+                              ),
+                              DropdownMenuItem(
+                                value: 'Confirmed',
+                                child: Text('Confirmed'),
+                              ),
+                              DropdownMenuItem(
+                                value: 'Cancelled',
+                                child: Text('Cancelled'),
+                              ),
                             ],
-                            onChanged: (val) => setState(() => _selectedStatusFilter = val ?? 'All'),
+                            onChanged: (val) => setState(
+                              () => _selectedStatusFilter = val ?? 'All',
+                            ),
                           ),
                         ),
                       if (Responsive.isMobile(context))
@@ -616,7 +716,10 @@ class _SaleReturnPageState extends ConsumerState<SaleReturnPage> {
                               ),
                               Text(
                                 '${ret.invoiceDate.day}/${ret.invoiceDate.month}/${ret.invoiceDate.year}',
-                                style: TextStyle(color: Colors.grey.shade500, fontSize: 11),
+                                style: TextStyle(
+                                  color: Colors.grey.shade500,
+                                  fontSize: 11,
+                                ),
                               ),
                             ],
                           ),
@@ -626,26 +729,42 @@ class _SaleReturnPageState extends ConsumerState<SaleReturnPage> {
                         label: 'Original Invoice',
                         cellBuilder: (ret) {
                           final origInv = billingState.invoices.firstWhere(
-                            (i) => i.id == ret.originalInvoiceId || i.invoiceNumber == ret.originalInvoiceId,
+                            (i) =>
+                                i.id == ret.originalInvoiceId ||
+                                i.invoiceNumber == ret.originalInvoiceId,
                             orElse: () => ret,
                           );
-                          final origNo = origInv.invoiceNumber.isNotEmpty ? origInv.invoiceNumber : ret.originalInvoiceId;
+                          final origNo = origInv.invoiceNumber.isNotEmpty
+                              ? origInv.invoiceNumber
+                              : ret.originalInvoiceId;
 
                           return Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 3,
+                            ),
                             decoration: BoxDecoration(
-                              color: isDark ? Colors.white10 : Colors.grey.shade100,
+                              color: isDark
+                                  ? Colors.white10
+                                  : Colors.grey.shade100,
                               borderRadius: BorderRadius.circular(6),
                               border: Border.all(color: Colors.grey.shade300),
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                const Icon(Icons.receipt_outlined, size: 13, color: Colors.grey),
+                                const Icon(
+                                  Icons.receipt_outlined,
+                                  size: 13,
+                                  color: Colors.grey,
+                                ),
                                 const SizedBox(width: 4),
                                 Text(
                                   origNo.isNotEmpty ? origNo : 'Direct Return',
-                                  style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w500),
+                                  style: const TextStyle(
+                                    fontSize: 11.5,
+                                    fontWeight: FontWeight.w500,
+                                  ),
                                 ),
                               ],
                             ),
@@ -660,12 +779,17 @@ class _SaleReturnPageState extends ConsumerState<SaleReturnPage> {
                           children: [
                             Text(
                               ret.customerName,
-                              style: const TextStyle(fontWeight: FontWeight.w600),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                             if (ret.placeOfSupply.isNotEmpty)
                               Text(
                                 'POS: ${ret.placeOfSupply}',
-                                style: TextStyle(color: Colors.grey.shade500, fontSize: 11),
+                                style: TextStyle(
+                                  color: Colors.grey.shade500,
+                                  fontSize: 11,
+                                ),
                               ),
                           ],
                         ),
@@ -677,12 +801,18 @@ class _SaleReturnPageState extends ConsumerState<SaleReturnPage> {
                           children: [
                             Text(
                               '${ret.items.length} ${ret.items.length == 1 ? "item" : "items"} returned',
-                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                              ),
                             ),
                             if (ret.notes.isNotEmpty)
                               Text(
                                 ret.notes,
-                                style: TextStyle(color: Colors.grey.shade500, fontSize: 11),
+                                style: TextStyle(
+                                  color: Colors.grey.shade500,
+                                  fontSize: 11,
+                                ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                               ),
@@ -710,12 +840,21 @@ class _SaleReturnPageState extends ConsumerState<SaleReturnPage> {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             IconButton(
-                              icon: const Icon(Icons.visibility_outlined, size: 18, color: Color(0xFF00897B)),
+                              icon: const Icon(
+                                Icons.visibility_outlined,
+                                size: 18,
+                                color: Color(0xFF00897B),
+                              ),
                               tooltip: 'View Details',
-                              onPressed: () => context.push('/sales/returns/${ret.id}'),
+                              onPressed: () =>
+                                  context.push('/sales/returns/${ret.id}'),
                             ),
                             IconButton(
-                              icon: const Icon(Icons.print_outlined, size: 18, color: Colors.blueGrey),
+                              icon: const Icon(
+                                Icons.print_outlined,
+                                size: 18,
+                                color: Colors.blueGrey,
+                              ),
                               tooltip: 'Print Credit Note PDF',
                               onPressed: () {
                                 if (activeBiz != null) {
@@ -725,15 +864,24 @@ class _SaleReturnPageState extends ConsumerState<SaleReturnPage> {
                             ),
                             if (ret.status == InvoiceStatus.draft)
                               IconButton(
-                                icon: const Icon(Icons.check_circle_outline, size: 18, color: Colors.green),
+                                icon: const Icon(
+                                  Icons.check_circle_outline,
+                                  size: 18,
+                                  color: Colors.green,
+                                ),
                                 tooltip: 'Confirm Return',
                                 onPressed: () => _confirmReturn(context, ret),
                               ),
                             if (ret.status != InvoiceStatus.cancelled)
                               IconButton(
-                                icon: const Icon(Icons.cancel_outlined, size: 18, color: Colors.red),
+                                icon: const Icon(
+                                  Icons.cancel_outlined,
+                                  size: 18,
+                                  color: Colors.red,
+                                ),
                                 tooltip: 'Cancel Return',
-                                onPressed: () => _showCancelDialog(context, ret),
+                                onPressed: () =>
+                                    _showCancelDialog(context, ret),
                               ),
                           ],
                         ),
@@ -750,19 +898,24 @@ class _SaleReturnPageState extends ConsumerState<SaleReturnPage> {
                               children: [
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Text(
                                         ret.invoiceNumber,
-                                        style: AppTypography.titleMedium.copyWith(
-                                          fontWeight: FontWeight.bold,
-                                          color: const Color(0xFF00897B),
-                                        ),
+                                        style: AppTypography.titleMedium
+                                            .copyWith(
+                                              fontWeight: FontWeight.bold,
+                                              color: const Color(0xFF00897B),
+                                            ),
                                         overflow: TextOverflow.ellipsis,
                                       ),
                                       Text(
                                         '${ret.invoiceDate.day}/${ret.invoiceDate.month}/${ret.invoiceDate.year}',
-                                        style: TextStyle(color: Colors.grey.shade500, fontSize: 11),
+                                        style: TextStyle(
+                                          color: Colors.grey.shade500,
+                                          fontSize: 11,
+                                        ),
                                       ),
                                     ],
                                   ),
@@ -772,16 +925,33 @@ class _SaleReturnPageState extends ConsumerState<SaleReturnPage> {
                               ],
                             ),
                             const SizedBox(height: 8),
-                            Text('Customer: ${ret.customerName}', style: const TextStyle(fontWeight: FontWeight.w600)),
+                            Text(
+                              'Customer: ${ret.customerName}',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
                             if (ret.originalInvoiceId.isNotEmpty)
                               Padding(
                                 padding: const EdgeInsets.only(top: 2),
-                                child: Text('Linked Invoice: ${ret.originalInvoiceId}', style: TextStyle(color: Colors.grey.shade600, fontSize: 12)),
+                                child: Text(
+                                  'Linked Invoice: ${ret.originalInvoiceId}',
+                                  style: TextStyle(
+                                    color: Colors.grey.shade600,
+                                    fontSize: 12,
+                                  ),
+                                ),
                               ),
                             if (ret.notes.isNotEmpty)
                               Padding(
                                 padding: const EdgeInsets.only(top: 2),
-                                child: Text('Reason: ${ret.notes}', style: TextStyle(color: Colors.grey.shade500, fontSize: 12)),
+                                child: Text(
+                                  'Reason: ${ret.notes}',
+                                  style: TextStyle(
+                                    color: Colors.grey.shade500,
+                                    fontSize: 12,
+                                  ),
+                                ),
                               ),
                             const Divider(height: 20),
                             Row(
@@ -789,7 +959,8 @@ class _SaleReturnPageState extends ConsumerState<SaleReturnPage> {
                               children: [
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Text(
                                         'Return Value: ₹${ret.grandTotal.toStringAsFixed(2)}',
@@ -802,7 +973,10 @@ class _SaleReturnPageState extends ConsumerState<SaleReturnPage> {
                                       ),
                                       Text(
                                         '${ret.items.length} items returned',
-                                        style: TextStyle(color: Colors.grey.shade500, fontSize: 11),
+                                        style: TextStyle(
+                                          color: Colors.grey.shade500,
+                                          fontSize: 11,
+                                        ),
                                       ),
                                     ],
                                   ),
@@ -810,14 +984,23 @@ class _SaleReturnPageState extends ConsumerState<SaleReturnPage> {
                                 Row(
                                   children: [
                                     IconButton(
-                                      icon: const Icon(Icons.print_outlined, size: 18),
+                                      icon: const Icon(
+                                        Icons.print_outlined,
+                                        size: 18,
+                                      ),
                                       onPressed: () {
                                         if (activeBiz != null) {
-                                          InvoicePdfService.share(ret, activeBiz);
+                                          InvoicePdfService.share(
+                                            ret,
+                                            activeBiz,
+                                          );
                                         }
                                       },
                                     ),
-                                    const Icon(Icons.chevron_right, color: Colors.grey),
+                                    const Icon(
+                                      Icons.chevron_right,
+                                      color: Colors.grey,
+                                    ),
                                   ],
                                 ),
                               ],

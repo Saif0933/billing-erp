@@ -112,7 +112,10 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const CreateBusinessPage(),
       ),
       ShellRoute(
-        builder: (context, state, child) => AppShell(child: child),
+        builder: (context, state, child) => AppShell(
+          currentLocation: state.uri.path,
+          child: child,
+        ),
         routes: [
           GoRoute(
             path: '/dashboard',
