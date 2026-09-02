@@ -122,37 +122,43 @@ class _SalesInvoicePageState extends ConsumerState<SalesInvoicePage> {
               ),
             ),
             const SizedBox(width: 12),
-            Text(
-              'Sales & Billing',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: isDark ? AppColors.textDarkPrimary : AppColors.textLightPrimary,
+            Expanded(
+              child: Text(
+                'Sales & Billing',
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: isDark ? AppColors.textDarkPrimary : AppColors.textLightPrimary,
+                ),
+                overflow: TextOverflow.ellipsis,
               ),
             ),
           ],
         ),
         Padding(
           padding: const EdgeInsets.only(top: 8, bottom: 20),
-          child: Row(
-            children: [
-              Text('Dashboard', style: TextStyle(color: Colors.grey.shade500, fontSize: 13)),
-              const SizedBox(width: 6),
-              Icon(Icons.chevron_right, size: 14, color: Colors.grey.shade400),
-              const SizedBox(width: 6),
-              Text('Sales', style: TextStyle(color: Colors.grey.shade500, fontSize: 13)),
-              const SizedBox(width: 6),
-              Icon(Icons.chevron_right, size: 14, color: Colors.grey.shade400),
-              const SizedBox(width: 6),
-              const Text(
-                'Invoices',
-                style: TextStyle(
-                  color: Color(0xFF2E7D32),
-                  fontWeight: FontWeight.w600,
-                  fontSize: 13,
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                Text('Dashboard', style: TextStyle(color: Colors.grey.shade500, fontSize: 13)),
+                const SizedBox(width: 6),
+                Icon(Icons.chevron_right, size: 14, color: Colors.grey.shade400),
+                const SizedBox(width: 6),
+                Text('Sales', style: TextStyle(color: Colors.grey.shade500, fontSize: 13)),
+                const SizedBox(width: 6),
+                Icon(Icons.chevron_right, size: 14, color: Colors.grey.shade400),
+                const SizedBox(width: 6),
+                const Text(
+                  'Invoices',
+                  style: TextStyle(
+                    color: Color(0xFF2E7D32),
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ],

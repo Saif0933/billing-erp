@@ -113,37 +113,43 @@ class _SaleReturnPageState extends ConsumerState<SaleReturnPage> {
               ),
             ),
             const SizedBox(width: 12),
-            Text(
-              'Sales Operations',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: isDark ? AppColors.textDarkPrimary : AppColors.textLightPrimary,
+            Expanded(
+              child: Text(
+                'Sales Operations',
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: isDark ? AppColors.textDarkPrimary : AppColors.textLightPrimary,
+                ),
+                overflow: TextOverflow.ellipsis,
               ),
             ),
           ],
         ),
         Padding(
           padding: const EdgeInsets.only(top: 8, bottom: 20),
-          child: Row(
-            children: [
-              Text('Dashboard', style: TextStyle(color: Colors.grey.shade500, fontSize: 13)),
-              const SizedBox(width: 6),
-              Icon(Icons.chevron_right, size: 14, color: Colors.grey.shade400),
-              const SizedBox(width: 6),
-              Text('Sales', style: TextStyle(color: Colors.grey.shade500, fontSize: 13)),
-              const SizedBox(width: 6),
-              Icon(Icons.chevron_right, size: 14, color: Colors.grey.shade400),
-              const SizedBox(width: 6),
-              const Text(
-                'Sale Returns (Credit Notes)',
-                style: TextStyle(
-                  color: Color(0xFF00897B),
-                  fontWeight: FontWeight.w600,
-                  fontSize: 13,
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                Text('Dashboard', style: TextStyle(color: Colors.grey.shade500, fontSize: 13)),
+                const SizedBox(width: 6),
+                Icon(Icons.chevron_right, size: 14, color: Colors.grey.shade400),
+                const SizedBox(width: 6),
+                Text('Sales', style: TextStyle(color: Colors.grey.shade500, fontSize: 13)),
+                const SizedBox(width: 6),
+                Icon(Icons.chevron_right, size: 14, color: Colors.grey.shade400),
+                const SizedBox(width: 6),
+                const Text(
+                  'Sale Returns (Credit Notes)',
+                  style: TextStyle(
+                    color: Color(0xFF00897B),
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ],
@@ -384,6 +390,8 @@ class _SaleReturnPageState extends ConsumerState<SaleReturnPage> {
                     color: isDark ? AppColors.textDarkSecondary : AppColors.textLightSecondary,
                     fontWeight: FontWeight.w500,
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 4),
                 Text(
@@ -393,6 +401,8 @@ class _SaleReturnPageState extends ConsumerState<SaleReturnPage> {
                     fontWeight: FontWeight.bold,
                     color: isDark ? AppColors.textDarkPrimary : AppColors.textLightPrimary,
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 2),
                 Text(
@@ -738,22 +748,26 @@ class _SaleReturnPageState extends ConsumerState<SaleReturnPage> {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      ret.invoiceNumber,
-                                      style: AppTypography.titleMedium.copyWith(
-                                        fontWeight: FontWeight.bold,
-                                        color: const Color(0xFF00897B),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        ret.invoiceNumber,
+                                        style: AppTypography.titleMedium.copyWith(
+                                          fontWeight: FontWeight.bold,
+                                          color: const Color(0xFF00897B),
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
                                       ),
-                                    ),
-                                    Text(
-                                      '${ret.invoiceDate.day}/${ret.invoiceDate.month}/${ret.invoiceDate.year}',
-                                      style: TextStyle(color: Colors.grey.shade500, fontSize: 11),
-                                    ),
-                                  ],
+                                      Text(
+                                        '${ret.invoiceDate.day}/${ret.invoiceDate.month}/${ret.invoiceDate.year}',
+                                        style: TextStyle(color: Colors.grey.shade500, fontSize: 11),
+                                      ),
+                                    ],
+                                  ),
                                 ),
+                                const SizedBox(width: 8),
                                 _buildStatusBadge(ret.status),
                               ],
                             ),
@@ -773,22 +787,25 @@ class _SaleReturnPageState extends ConsumerState<SaleReturnPage> {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'Return Value: ₹${ret.grandTotal.toStringAsFixed(2)}',
-                                      style: const TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        color: Color(0xFF00897B),
-                                        fontSize: 14,
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Return Value: ₹${ret.grandTotal.toStringAsFixed(2)}',
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          color: Color(0xFF00897B),
+                                          fontSize: 14,
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
                                       ),
-                                    ),
-                                    Text(
-                                      '${ret.items.length} items returned',
-                                      style: TextStyle(color: Colors.grey.shade500, fontSize: 11),
-                                    ),
-                                  ],
+                                      Text(
+                                        '${ret.items.length} items returned',
+                                        style: TextStyle(color: Colors.grey.shade500, fontSize: 11),
+                                      ),
+                                    ],
+                                  ),
                                 ),
                                 Row(
                                   children: [

@@ -192,35 +192,38 @@ class AppPageHeader extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (breadcrumbs.isNotEmpty) ...[
-            Row(
-              children: breadcrumbs.asMap().entries.map((entry) {
-                final idx = entry.key;
-                final val = entry.value;
-                final isLast = idx == breadcrumbs.length - 1;
-                return Row(
-                  children: [
-                    Text(
-                      val,
-                      style: AppTypography.bodySmall.copyWith(
-                        color: isLast
-                            ? (isDark ? AppColors.accent : AppColors.primary)
-                            : (isDark ? AppColors.textDarkMuted : AppColors.textLightMuted),
-                        fontWeight: isLast ? FontWeight.w600 : FontWeight.normal,
-                      ),
-                    ),
-                    if (!isLast)
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
-                        child: Text(
-                          '/',
-                          style: AppTypography.bodySmall.copyWith(
-                            color: isDark ? AppColors.textDarkMuted : AppColors.textLightMuted,
-                          ),
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: breadcrumbs.asMap().entries.map((entry) {
+                  final idx = entry.key;
+                  final val = entry.value;
+                  final isLast = idx == breadcrumbs.length - 1;
+                  return Row(
+                    children: [
+                      Text(
+                        val,
+                        style: AppTypography.bodySmall.copyWith(
+                          color: isLast
+                              ? (isDark ? AppColors.accent : AppColors.primary)
+                              : (isDark ? AppColors.textDarkMuted : AppColors.textLightMuted),
+                          fontWeight: isLast ? FontWeight.w600 : FontWeight.normal,
                         ),
                       ),
-                  ],
-                );
-              }).toList(),
+                      if (!isLast)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
+                          child: Text(
+                            '/',
+                            style: AppTypography.bodySmall.copyWith(
+                              color: isDark ? AppColors.textDarkMuted : AppColors.textLightMuted,
+                            ),
+                          ),
+                        ),
+                    ],
+                  );
+                }).toList(),
+              ),
             ),
             const SizedBox(height: AppSpacing.xs),
           ],
