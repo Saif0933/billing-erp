@@ -17,18 +17,7 @@ class SubscriptionNotifier extends StateNotifier<SubscriptionModel> {
   static Set<SubscriptionFeature> _getFeaturesForPlan(PlanType plan) {
     switch (plan) {
       case PlanType.trial:
-        return {
-          SubscriptionFeature.dashboard,
-          SubscriptionFeature.customers,
-          SubscriptionFeature.suppliers,
-          SubscriptionFeature.products,
-          SubscriptionFeature.services,
-          SubscriptionFeature.sales,
-          SubscriptionFeature.purchase,
-          SubscriptionFeature.payments,
-          SubscriptionFeature.receipts,
-          SubscriptionFeature.reports,
-        };
+        return Set.from(SubscriptionFeature.values);
       case PlanType.basic:
         return {
           SubscriptionFeature.dashboard,
@@ -59,6 +48,8 @@ class SubscriptionNotifier extends StateNotifier<SubscriptionModel> {
           SubscriptionFeature.reports,
           SubscriptionFeature.pos,
           SubscriptionFeature.warehouse,
+          SubscriptionFeature.accounting,
+          SubscriptionFeature.manufacturing,
           SubscriptionFeature.eInvoice,
           SubscriptionFeature.eWayBill,
           SubscriptionFeature.banking,

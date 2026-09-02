@@ -45,7 +45,7 @@ import '../../features/purchase/presentation/pages/purchase_create_page.dart';
 import '../../features/purchase/presentation/pages/purchase_detail_page.dart';
 import '../../features/payments/presentation/pages/receipt_entry_page.dart';
 import '../../features/payments/presentation/pages/payment_entry_page.dart';
-import '../../features/accounting/presentation/pages/ledger_page.dart';
+import '../../features/double-entery-account/presentation/pages/general_ledger_page.dart';
 import '../../features/accounting/presentation/pages/outstanding_page.dart';
 import '../../features/inventory/presentation/pages/inventory_page.dart';
 import '../../features/expenses/presentation/pages/expense_page.dart';
@@ -298,7 +298,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           // Ledger, Outstanding, Inventory & Expenses
           GoRoute(
             path: '/ledger',
-            builder: (context, state) => const LedgerPage(),
+            builder: (context, state) => const GeneralLedgerPage(),
           ),
           GoRoute(
             path: '/outstanding',
