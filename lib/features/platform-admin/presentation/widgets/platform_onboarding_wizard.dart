@@ -1,6 +1,10 @@
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../core/utils/file_picker_helper.dart';
 import '../../../../shared/widgets/feedback.dart';
+import '../../../onboarding/domain/models/onboarding_models.dart';
+import '../../../onboarding/presentation/providers/onboarding_provider.dart';
 import '../../domain/models/platform_admin_models.dart';
 import '../providers/platform_admin_provider.dart';
 
@@ -16,33 +20,34 @@ class _PlatformOnboardingWizardState
     extends ConsumerState<PlatformOnboardingWizard> {
   int _currentStep = 0; // 0 to 6 (7 Steps)
 
+  // Logo file state
+  Uint8List? _logoBytes;
+  String? _logoFileName;
+
   // Step 1 Controllers
-  final _orgNameController =
-      TextEditingController(text: 'Tax Bunny Retail Store');
-  final _tradeNameController = TextEditingController(text: 'Tax Bunny');
+  final _orgNameController = TextEditingController();
+  final _tradeNameController = TextEditingController();
   String _orgType = 'Private Limited Company';
-  final _panController = TextEditingController(text: 'ABCDE1234F');
+  final _panController = TextEditingController();
   String _businessNature = 'Retail Trading';
-  final _doiController = TextEditingController(text: '01/06/2023');
-  final _emailController = TextEditingController(text: 'info@taxbunny.com');
+  final _doiController = TextEditingController();
+  final _emailController = TextEditingController();
   final String _countryCode = '+91';
-  final _mobileController = TextEditingController(text: '9876543210');
-  final _passwordController = TextEditingController(text: 'Admin@12345');
-  final _confirmPasswordController = TextEditingController(text: 'Admin@12345');
+  final _mobileController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
   bool _obscurePassword = true;
 
   // Step 2 Controllers
-  final _websiteController = TextEditingController(text: 'https://taxbunny.com');
-  final _altPhoneController = TextEditingController(text: '022 2899 4400');
+  final _websiteController = TextEditingController();
+  final _altPhoneController = TextEditingController();
   String _industry = 'Retail & Consumer Goods';
 
   // Step 3 Controllers
-  final _addressLine1Controller =
-      TextEditingController(text: 'Shop No. 12, Ground Floor, Phoenix Mall');
-  final _addressLine2Controller =
-      TextEditingController(text: 'Senapati Bapat Marg, Lower Parel');
-  final _cityController = TextEditingController(text: 'Mumbai');
-  final _pincodeController = TextEditingController(text: '400013');
+  final _addressLine1Controller = TextEditingController();
+  final _addressLine2Controller = TextEditingController();
+  final _cityController = TextEditingController();
+  final _pincodeController = TextEditingController();
   String _state = 'Maharashtra (27)';
 
   // Step 4 Controllers
@@ -51,14 +56,13 @@ class _PlatformOnboardingWizardState
   bool _isGstRegistered = true;
 
   // Step 5 Controllers
-  final _gstinController = TextEditingController(text: '27AABCU9603R1ZM');
-  final _msmeController = TextEditingController(text: 'UDYAM-MH-12-0044991');
+  final _gstinController = TextEditingController();
+  final _msmeController = TextEditingController();
 
   // Step 6 Controllers
-  final _adminNameController = TextEditingController(text: 'Rahul Sharma');
+  final _adminNameController = TextEditingController();
   final _adminRoleController = TextEditingController(text: 'Store Owner / MD');
-  final _teamInvitesController =
-      TextEditingController(text: 'manager@taxbunny.com, cashier@taxbunny.com');
+  final _teamInvitesController = TextEditingController();
 
   @override
   void dispose() {
@@ -98,36 +102,167 @@ class _PlatformOnboardingWizardState
     }
   }
 
-  void _finishOnboarding() {
-    final notifier = ref.read(platformAdminProvider.notifier);
-    final newTenant = OrganizationTenant(
-      id: 'org_${DateTime.now().millisecondsSinceEpoch}',
-      name: _orgNameController.text.trim(),
-      code: _orgNameController.text.replaceAll(RegExp(r'\s+'), '').toUpperCase().substring(0, 4),
-      domain: '${_orgNameController.text.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '')}.billing-erp.in',
-      gstin: _gstinController.text.trim().toUpperCase(),
-      contactPerson: _adminNameController.text.trim(),
-      contactEmail: _emailController.text.trim(),
-      contactPhone: _mobileController.text.trim(),
-      planId: 'plan_growth',
+  Future<void> _pickLogo() async {
+    try {
+      final picked = await pickImageFile();
+      if (picked != null) {
+        setState(() {
+          _logoBytes = picked.bytes;
+          _logoFileName = picked.name;
+        });
+        if (mounted) {
+          AppFeedback.showSnackbar(
+            context,
+            message: 'Logo selected: ${picked.name}',
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        AppFeedback.showSnackbar(
+          context,
+          message: 'Could not open file picker: $e',
+          isError: true,
+        );
+      }
+    }
+  }
+
+  Future<void> _finishOnboarding() async {
+    final onboardingState = ref.read(onboardingProvider);
+    if (onboardingState.isLoading) return;
+
+    final orgName = _orgNameController.text.trim();
+    if (orgName.isEmpty) {
+      AppFeedback.showSnackbar(context, message: 'Please enter Organization Name (Step 1)', isError: true);
+      setState(() => _currentStep = 0);
+      return;
+    }
+
+    final email = _emailController.text.trim().toLowerCase();
+    if (email.isEmpty || !email.contains('@')) {
+      AppFeedback.showSnackbar(context, message: 'Please enter a valid Organization Email (Step 1)', isError: true);
+      setState(() => _currentStep = 0);
+      return;
+    }
+
+    final mobile = _mobileController.text.trim();
+    if (mobile.isEmpty) {
+      AppFeedback.showSnackbar(context, message: 'Please enter Mobile Number (Step 1)', isError: true);
+      setState(() => _currentStep = 0);
+      return;
+    }
+
+    final password = _passwordController.text.trim();
+    if (password.length < 6) {
+      AppFeedback.showSnackbar(context, message: 'Master Password must be at least 6 characters long (Step 1)', isError: true);
+      setState(() => _currentStep = 0);
+      return;
+    }
+
+    final confirmPassword = _confirmPasswordController.text.trim();
+    if (password != confirmPassword) {
+      AppFeedback.showSnackbar(context, message: 'Password and Confirm Password do not match (Step 1)', isError: true);
+      setState(() => _currentStep = 0);
+      return;
+    }
+
+    final adminName = _adminNameController.text.trim().isNotEmpty
+        ? _adminNameController.text.trim()
+        : orgName;
+
+    final request = OnboardOrganizationRequest(
+      organizationName: orgName,
+      tradeName: _tradeNameController.text.trim().isNotEmpty
+          ? _tradeNameController.text.trim()
+          : null,
+      organizationType: _orgType,
+      businessNature: _businessNature,
+      pan: _panController.text.trim().isNotEmpty
+          ? _panController.text.trim().toUpperCase()
+          : null,
+      dateOfIncorporation: _doiController.text.trim(),
+      email: _emailController.text.trim().toLowerCase(),
+      mobileNumber: _mobileController.text.trim(),
+      password: _passwordController.text.trim(),
+      website: _websiteController.text.trim().isNotEmpty
+          ? _websiteController.text.trim()
+          : null,
+      altPhone: _altPhoneController.text.trim().isNotEmpty
+          ? _altPhoneController.text.trim()
+          : null,
+      industry: _industry,
+      addressLine1: _addressLine1Controller.text.trim(),
+      addressLine2: _addressLine2Controller.text.trim(),
+      city: _cityController.text.trim(),
+      state: _state,
+      pinCode: _pincodeController.text.trim(),
+      currency: _currency,
+      financialYearStart: _financialYear,
+      isGstRegistered: _isGstRegistered,
+      gstin: _isGstRegistered && _gstinController.text.trim().isNotEmpty
+          ? _gstinController.text.trim().toUpperCase()
+          : null,
+      msmeNumber: _msmeController.text.trim().isNotEmpty
+          ? _msmeController.text.trim()
+          : null,
+      adminName: adminName,
+      adminRole: _adminRoleController.text.trim(),
+      teamInvites: _teamInvitesController.text.trim().isNotEmpty
+          ? _teamInvitesController.text
+              .split(',')
+              .map((e) => e.trim().toLowerCase())
+              .where((e) => e.isNotEmpty)
+              .toList()
+          : [],
       planName: 'Growth',
-      status: TenantStatus.active,
-      monthlySpend: 2499.0,
-      totalInvoices: 0,
-      activeUsersCount: 1,
-      maxUsersLimit: 15,
-      storageUsedGb: 0.1,
-      storageLimitGb: 25.0,
-      createdAt: DateTime.now(),
-      renewalDate: DateTime.now().add(const Duration(days: 30)),
+      billingCycle: 'MONTHLY',
     );
 
-    notifier.addTenant(newTenant);
-    if (mounted) {
-      AppFeedback.showSnackbar(
-        context,
-        message: 'Organization "${newTenant.name}" Onboarding Completed & Live!',
+    final result = await ref
+        .read(onboardingProvider.notifier)
+        .submitOnboarding(request);
+
+    if (result != null) {
+      final notifier = ref.read(platformAdminProvider.notifier);
+      final newTenant = OrganizationTenant(
+        id: result.businessId,
+        name: result.businessName,
+        code: result.businessName.replaceAll(RegExp(r'\s+'), '').toUpperCase().substring(0, result.businessName.length >= 4 ? 4 : result.businessName.length),
+        domain: '${result.businessName.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '')}.billing-erp.in',
+        gstin: result.gstin ?? '',
+        contactPerson: result.adminUserName,
+        contactEmail: result.adminUserEmail,
+        contactPhone: result.mobileNumber,
+        planId: 'plan_growth',
+        planName: result.planName,
+        status: TenantStatus.active,
+        monthlySpend: 2499.0,
+        totalInvoices: 0,
+        activeUsersCount: 1,
+        maxUsersLimit: 15,
+        storageUsedGb: 0.1,
+        storageLimitGb: 25.0,
+        createdAt: DateTime.now(),
+        renewalDate: DateTime.now().add(const Duration(days: 30)),
       );
+
+      notifier.addTenant(newTenant);
+      if (mounted) {
+        AppFeedback.showSnackbar(
+          context,
+          message: 'Organization "${result.businessName}" Successfully Onboarded & Saved in Database!',
+        );
+      }
+    } else {
+      if (mounted) {
+        final errorMsg = ref.read(onboardingProvider).error ?? 'Could not complete onboarding. Please check your details.';
+        AppFeedback.showSnackbar(
+          context,
+          message: errorMsg,
+          isError: true,
+        );
+      }
     }
   }
 
@@ -220,7 +355,9 @@ class _PlatformOnboardingWizardState
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      'TAX BUNNY',
+                      _orgNameController.text.trim().isNotEmpty
+                          ? _orgNameController.text.trim().toUpperCase()
+                          : 'ORGANIZATION SETUP',
                       style: TextStyle(
                         fontSize: 13.5,
                         fontWeight: FontWeight.w900,
@@ -232,7 +369,9 @@ class _PlatformOnboardingWizardState
                     ),
                     if (!isNarrow)
                       Text(
-                        'Retail Store',
+                        _tradeNameController.text.trim().isNotEmpty
+                            ? _tradeNameController.text.trim()
+                            : 'New Tenant Onboarding',
                         style: TextStyle(
                           fontSize: 10,
                           color: isDark ? Colors.white54 : const Color(0xFF64748B),
@@ -480,7 +619,7 @@ class _PlatformOnboardingWizardState
                   ),
                   icon: const Icon(Icons.arrow_back, size: 15),
                   label: const Text('Back', style: TextStyle(fontSize: 12)),
-                  onPressed: _prevStep,
+                  onPressed: ref.watch(onboardingProvider).isLoading ? null : _prevStep,
                 )
               else
                 const SizedBox.shrink(),
@@ -491,16 +630,27 @@ class _PlatformOnboardingWizardState
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                   elevation: 0,
                 ),
-                icon: Text(
-                  _currentStep == 6 ? 'Launch Organization' : 'Save & Continue',
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
-                label: const Icon(Icons.arrow_forward, size: 15, color: Colors.white),
-                onPressed: _nextStep,
+                icon: ref.watch(onboardingProvider).isLoading && _currentStep == 6
+                    ? const SizedBox(
+                        width: 15,
+                        height: 15,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : Text(
+                        _currentStep == 6 ? 'Launch Organization' : 'Save & Continue',
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                label: ref.watch(onboardingProvider).isLoading && _currentStep == 6
+                    ? const SizedBox.shrink()
+                    : const Icon(Icons.arrow_forward, size: 15, color: Colors.white),
+                onPressed: ref.watch(onboardingProvider).isLoading ? null : _nextStep,
               ),
             ],
           ),
@@ -704,44 +854,83 @@ class _PlatformOnboardingWizardState
           style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: isDark ? Colors.white70 : const Color(0xFF475569)),
         ),
         const SizedBox(height: 6),
-        Container(
-          height: 125,
-          decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+        Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: _pickLogo,
             borderRadius: BorderRadius.circular(10),
-            border: Border.all(
-              color: isDark ? Colors.white24 : const Color(0xFFCBD5E1),
-              style: BorderStyle.solid,
-            ),
-          ),
-          child: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.file_upload_outlined, size: 22, color: Color(0xFF15803D)),
-                const SizedBox(height: 4),
-                Text(
-                  'Drag & drop your logo here or',
-                  style: TextStyle(fontSize: 11, color: isDark ? Colors.white60 : const Color(0xFF64748B)),
+            child: Container(
+              height: 125,
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(
+                  color: _logoBytes != null
+                      ? const Color(0xFF15803D)
+                      : (isDark ? Colors.white24 : const Color(0xFFCBD5E1)),
+                  style: BorderStyle.solid,
+                  width: _logoBytes != null ? 1.5 : 1.0,
                 ),
-                const SizedBox(height: 6),
-                OutlinedButton(
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: const Color(0xFF15803D),
-                    side: const BorderSide(color: Color(0xFF15803D)),
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                    minimumSize: Size.zero,
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  ),
-                  onPressed: () {},
-                  child: const Text('Browse File', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'PNG, JPG or JPEG (Max. 2MB)',
-                  style: TextStyle(fontSize: 9.5, color: isDark ? Colors.white38 : const Color(0xFF94A3B8)),
-                ),
-              ],
+              ),
+              child: Center(
+                child: _logoFileName != null
+                    ? Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.check_circle_outline, size: 26, color: Color(0xFF15803D)),
+                          const SizedBox(height: 4),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            child: Text(
+                              _logoFileName!,
+                              style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Color(0xFF15803D)),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          OutlinedButton(
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: const Color(0xFF15803D),
+                              side: const BorderSide(color: Color(0xFF15803D)),
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+                              minimumSize: Size.zero,
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            ),
+                            onPressed: _pickLogo,
+                            child: const Text('Change Logo', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold)),
+                          ),
+                        ],
+                      )
+                    : Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.file_upload_outlined, size: 22, color: Color(0xFF15803D)),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Drag & drop your logo here or',
+                            style: TextStyle(fontSize: 11, color: isDark ? Colors.white60 : const Color(0xFF64748B)),
+                          ),
+                          const SizedBox(height: 6),
+                          OutlinedButton(
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: const Color(0xFF15803D),
+                              side: const BorderSide(color: Color(0xFF15803D)),
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                              minimumSize: Size.zero,
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            ),
+                            onPressed: _pickLogo,
+                            child: const Text('Browse File', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'PNG, JPG or JPEG (Max. 2MB)',
+                            style: TextStyle(fontSize: 9.5, color: isDark ? Colors.white38 : const Color(0xFF94A3B8)),
+                          ),
+                        ],
+                      ),
+              ),
             ),
           ),
         ),
@@ -770,29 +959,50 @@ class _PlatformOnboardingWizardState
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(Icons.bolt, color: Color(0xFF15803D), size: 32),
-                const SizedBox(width: 8),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      'TAX BUNNY',
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w900,
-                        color: isDark ? Colors.white : const Color(0xFF0F172A),
-                        letterSpacing: 1.0,
-                      ),
+                if (_logoBytes != null)
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: Image.memory(
+                      _logoBytes!,
+                      width: 44,
+                      height: 44,
+                      fit: BoxFit.cover,
                     ),
-                    Text(
-                      'Retail Store',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: isDark ? Colors.white54 : const Color(0xFF64748B),
+                  )
+                else
+                  const Icon(Icons.bolt, color: Color(0xFF15803D), size: 32),
+                const SizedBox(width: 10),
+                Flexible(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        _orgNameController.text.trim().isNotEmpty
+                            ? _orgNameController.text.trim().toUpperCase()
+                            : 'YOUR ORGANIZATION',
+                        style: TextStyle(
+                          fontSize: 13.5,
+                          fontWeight: FontWeight.w900,
+                          color: isDark ? Colors.white : const Color(0xFF0F172A),
+                          letterSpacing: 0.8,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                    ),
-                  ],
+                      Text(
+                        _tradeNameController.text.trim().isNotEmpty
+                            ? _tradeNameController.text.trim()
+                            : 'Trade Name / Brand',
+                        style: TextStyle(
+                          fontSize: 10.5,
+                          color: isDark ? Colors.white54 : const Color(0xFF64748B),
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),

@@ -26,7 +26,7 @@ class ErrorHandler {
             return AuthenticationException(message?.toString() ?? 'Invalid credentials or expired session.');
           } else if (statusCode == 403) {
             return AuthorizationException(message?.toString() ?? 'You are not authorized to access this resource.');
-          } else if (statusCode == 422) {
+          } else if (statusCode == 400 || statusCode == 422) {
             final errorsMap = <String, List<String>>{};
             if (data is Map && data['errors'] is Map) {
               (data['errors'] as Map).forEach((key, value) {
@@ -38,8 +38,12 @@ class ErrorHandler {
               });
             }
             return ValidationException(
-              message?.toString() ?? 'Validation failed',
+              message?.toString() ?? 'Validation failed. Please check the entered fields.',
               errors: errorsMap,
+            );
+          } else if (statusCode == 409) {
+            return ValidationException(
+              message?.toString() ?? 'A record with these details already exists.',
             );
           } else if (statusCode != null && statusCode >= 500) {
             return ServerException(message?.toString() ?? 'Server encountered an issue.');

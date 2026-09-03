@@ -29,4 +29,11 @@ class ApiEndpoints {
   // Subscription & Plans
   static const String plans = '/api/v1/subscriptions/plans';
   static const String activeSubscription = '/api/v1/subscriptions/active';
+
+  // Onboarding endpoints
+  static const String onboardOrganization = '/api/v1/onboarding/organization';
+  static const String validateGstin = '/api/v1/onboarding/validate-gstin';
+  static const String checkNameAvailability = '/api/v1/onboarding/check-name';
+  static const String onboardingPlans = '/api/v1/onboarding/plans';
+  static const String onboardingOrganizations = '/api/v1/onboarding/organizations';
 }
