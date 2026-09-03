@@ -29,6 +29,29 @@ class PlatformAdminShellPage extends ConsumerWidget {
       });
     }
 
+    final authState = ref.watch(authProvider);
+    final authUser = authState.user;
+
+    final String adminName = (authUser?.fullName.trim().isNotEmpty == true)
+        ? authUser!.fullName.trim()
+        : ((state.currentUser?.name.trim().isNotEmpty == true)
+            ? state.currentUser!.name.trim()
+            : 'Super Administrator');
+
+    final String adminEmail = (authUser?.email.trim().isNotEmpty == true)
+        ? authUser!.email.trim()
+        : ((state.currentUser?.email.trim().isNotEmpty == true)
+            ? state.currentUser!.email.trim()
+            : 'admin@platform.com');
+
+    final String adminInitial = adminName.isNotEmpty
+        ? adminName.substring(0, 1).toUpperCase()
+        : 'A';
+
+    final String adminFirstName = adminName.contains(' ')
+        ? adminName.split(' ').first
+        : adminName;
+
     Widget contentBody;
     switch (state.selectedNavTab) {
       case 'organizations':
@@ -153,10 +176,11 @@ class PlatformAdminShellPage extends ConsumerWidget {
                     const SizedBox(width: 8),
                   ],
 
-                  // SuperAdmin Avatar & Logout
+                  // Dynamic SuperAdmin Avatar & Menu
                   PopupMenuButton<String>(
-                    tooltip: 'Admin Profile',
+                    tooltip: 'Admin Profile: $adminName',
                     offset: const Offset(0, 48),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     onSelected: (action) async {
                       if (action == 'logout') {
                         notifier.logout();
@@ -167,60 +191,182 @@ class PlatformAdminShellPage extends ConsumerWidget {
                         }
                       } else if (action == 'tenant_app') {
                         context.go('/dashboard');
+                      } else if (action == 'profile_details') {
+                        _showAdminProfileDialog(context, adminName, adminEmail, isDark);
                       }
                     },
                     itemBuilder: (ctx) => [
                       PopupMenuItem(
                         enabled: false,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 4),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 38,
+                                height: 38,
+                                decoration: const BoxDecoration(
+                                  gradient: LinearGradient(
+                                    colors: [Color(0xFF4F46E5), Color(0xFF7C3AED)],
+                                  ),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    adminInitial,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w900,
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      adminName,
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 13.5,
+                                        color: isDark ? Colors.white : const Color(0xFF0F172A),
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    Text(
+                                      adminEmail,
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        color: isDark ? Colors.white60 : const Color(0xFF64748B),
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    const SizedBox(height: 3),
+                                    Row(
+                                      children: [
+                                        Container(
+                                          width: 6,
+                                          height: 6,
+                                          decoration: const BoxDecoration(
+                                            color: Color(0xFF16A34A),
+                                            shape: BoxShape.circle,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 4),
+                                        const Text(
+                                          'Online • SuperAdmin',
+                                          style: TextStyle(
+                                            fontSize: 9.5,
+                                            fontWeight: FontWeight.w700,
+                                            color: Color(0xFF16A34A),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const PopupMenuDivider(),
+                      const PopupMenuItem(
+                        value: 'profile_details',
+                        child: Row(
                           children: [
-                            Text(state.currentUser?.name ?? 'Alexander Wright', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                            Text(state.currentUser?.email ?? 'admin@platform-billing.com', style: const TextStyle(fontSize: 11, color: Colors.grey)),
+                            Icon(Icons.badge_outlined, size: 16, color: Color(0xFF4F46E5)),
+                            SizedBox(width: 10),
+                            Text('View SuperAdmin Profile', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600)),
+                          ],
+                        ),
+                      ),
+                      const PopupMenuItem(
+                        value: 'tenant_app',
+                        child: Row(
+                          children: [
+                            Icon(Icons.storefront_outlined, size: 16, color: Color(0xFF4F46E5)),
+                            SizedBox(width: 10),
+                            Text('Open Tenant App', style: TextStyle(fontSize: 12.5)),
                           ],
                         ),
                       ),
                       const PopupMenuDivider(),
                       const PopupMenuItem(
-                        value: 'tenant_app',
-                        child: Row(
-                          children: [
-                            Icon(Icons.business, size: 16, color: Color(0xFF4F46E5)),
-                            SizedBox(width: 8),
-                            Text('Open Tenant App'),
-                          ],
-                        ),
-                      ),
-                      const PopupMenuItem(
                         value: 'logout',
                         child: Row(
                           children: [
-                            Icon(Icons.logout, size: 16, color: Colors.red),
-                            SizedBox(width: 8),
-                            Text('Sign Out', style: TextStyle(color: Colors.red)),
+                            Icon(Icons.logout, size: 16, color: Colors.redAccent),
+                            SizedBox(width: 10),
+                            Text('Sign Out', style: TextStyle(color: Colors.redAccent, fontSize: 12.5, fontWeight: FontWeight.w600)),
                           ],
                         ),
                       ),
                     ],
-                    child: Row(
-                      children: [
-                        CircleAvatar(
-                          radius: 16,
-                          backgroundColor: const Color(0xFF4F46E5),
-                          child: Text(
-                            state.currentUser?.name.substring(0, 1) ?? 'A',
-                            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(20),
+                        color: isDark ? Colors.white.withValues(alpha: 0.05) : const Color(0xFFF1F5F9),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            width: 30,
+                            height: 30,
+                            decoration: const BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [Color(0xFF4F46E5), Color(0xFF7C3AED)],
+                              ),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Center(
+                              child: Text(
+                                adminInitial,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w900,
+                                  fontSize: 13,
+                                ),
+                              ),
+                            ),
                           ),
-                        ),
-                        if (isDesktop) ...[
-                          const SizedBox(width: 8),
-                          Text(
-                            state.currentUser?.name.split(' ').first ?? 'Admin',
-                            style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold),
-                          ),
-                          const Icon(Icons.arrow_drop_down, size: 18),
+                          if (isDesktop) ...[
+                            const SizedBox(width: 8),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  adminFirstName,
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                    color: isDark ? Colors.white : const Color(0xFF0F172A),
+                                  ),
+                                ),
+                                const Text(
+                                  'SuperAdmin',
+                                  style: TextStyle(
+                                    fontSize: 9.5,
+                                    color: Color(0xFF4F46E5),
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(width: 4),
+                            Icon(Icons.keyboard_arrow_down, size: 16, color: isDark ? Colors.white70 : const Color(0xFF64748B)),
+                          ],
                         ],
-                      ],
+                      ),
                     ),
                   ),
                 ],
@@ -229,7 +375,7 @@ class PlatformAdminShellPage extends ConsumerWidget {
           ),
         ),
       ),
-      drawer: !isDesktop ? _buildDrawer(context, ref, notifier, state, isDark) : null,
+      drawer: !isDesktop ? _buildDrawer(context, ref, notifier, state, adminName, adminEmail, adminInitial, isDark) : null,
       bottomNavigationBar: !isDesktop
           ? NavigationBar(
               selectedIndex: _getTabIndex(state.selectedNavTab),
@@ -463,6 +609,9 @@ class PlatformAdminShellPage extends ConsumerWidget {
     WidgetRef ref,
     PlatformAdminNotifier notifier,
     PlatformAdminState state,
+    String adminName,
+    String adminEmail,
+    String adminInitial,
     bool isDark,
   ) {
     return Drawer(
@@ -470,20 +619,66 @@ class PlatformAdminShellPage extends ConsumerWidget {
       child: SafeArea(
         child: Column(
           children: [
+            // Dynamic SuperAdmin Header in Drawer
             Padding(
               padding: const EdgeInsets.all(16),
               child: Row(
                 children: [
                   Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(colors: [Color(0xFF4F46E5), Color(0xFF7C3AED)]),
-                      borderRadius: BorderRadius.circular(8),
+                    width: 42,
+                    height: 42,
+                    decoration: const BoxDecoration(
+                      gradient: LinearGradient(colors: [Color(0xFF4F46E5), Color(0xFF7C3AED)]),
+                      shape: BoxShape.circle,
                     ),
-                    child: const Icon(Icons.admin_panel_settings, size: 20, color: Colors.white),
+                    child: Center(
+                      child: Text(
+                        adminInitial,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w900,
+                          fontSize: 18,
+                        ),
+                      ),
+                    ),
                   ),
-                  const SizedBox(width: 10),
-                  const Text('Platform SuperAdmin', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          adminName,
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: isDark ? Colors.white : const Color(0xFF0F172A),
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        Text(
+                          adminEmail,
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: isDark ? Colors.white60 : const Color(0xFF64748B),
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 2),
+                        const Text(
+                          'SUPERADMIN',
+                          style: TextStyle(
+                            fontSize: 8.5,
+                            fontWeight: FontWeight.w900,
+                            color: Color(0xFF4F46E5),
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -541,6 +736,14 @@ class PlatformAdminShellPage extends ConsumerWidget {
             ),
             const Spacer(),
             ListTile(
+              leading: const Icon(Icons.badge_outlined, color: Color(0xFF4F46E5)),
+              title: const Text('Admin Profile Details', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+              onTap: () {
+                Navigator.pop(context);
+                _showAdminProfileDialog(context, adminName, adminEmail, isDark);
+              },
+            ),
+            ListTile(
               leading: const Icon(Icons.storefront_outlined, color: Color(0xFF4F46E5)),
               title: const Text('Tenant Billing App', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
               onTap: () => context.go('/dashboard'),
@@ -560,6 +763,82 @@ class PlatformAdminShellPage extends ConsumerWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  void _showAdminProfileDialog(BuildContext context, String adminName, String adminEmail, bool isDark) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(colors: [Color(0xFF4F46E5), Color(0xFF7C3AED)]),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(Icons.verified_user, color: Colors.white, size: 20),
+            ),
+            const SizedBox(width: 10),
+            const Text('SuperAdmin Profile', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildProfileInfoTile('Full Name', adminName, Icons.person_outline, isDark),
+            const SizedBox(height: 10),
+            _buildProfileInfoTile('Email Address', adminEmail, Icons.email_outlined, isDark),
+            const SizedBox(height: 10),
+            _buildProfileInfoTile('Access Level', 'Global Platform SuperAdmin', Icons.security_outlined, isDark),
+            const SizedBox(height: 10),
+            _buildProfileInfoTile('Session Status', 'Active & Authenticated', Icons.check_circle_outline, isDark, isGreen: true),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Close', style: TextStyle(fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProfileInfoTile(String label, String value, IconData icon, bool isDark, {bool isGreen = false}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: isDark ? Colors.white12 : const Color(0xFFE2E8F0)),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: 18, color: isGreen ? const Color(0xFF16A34A) : const Color(0xFF4F46E5)),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label, style: TextStyle(fontSize: 10.5, color: isDark ? Colors.white60 : const Color(0xFF64748B))),
+                Text(
+                  value,
+                  style: TextStyle(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.bold,
+                    color: isGreen ? const Color(0xFF16A34A) : (isDark ? Colors.white : const Color(0xFF0F172A)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
