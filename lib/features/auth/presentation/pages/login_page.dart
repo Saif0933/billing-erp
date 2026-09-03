@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_spacing.dart';
 import '../../../../core/constants/app_typography.dart';
@@ -11,10 +12,7 @@ import '../../../../shared/widgets/feedback.dart';
 import '../../../platform-admin/presentation/providers/platform_admin_provider.dart';
 import '../providers/auth_provider.dart';
 
-enum LoginPortalType {
-  organization,
-  platformAdmin,
-}
+enum LoginPortalType { organization, platformAdmin }
 
 class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({super.key});
@@ -58,14 +56,16 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
     if (_portalType == LoginPortalType.organization) {
       // Organization / Tenant Login -> /dashboard
-      final success = await ref.read(authProvider.notifier).login(
-            _emailController.text.trim(),
-            _passwordController.text.trim(),
-          );
+      final success = await ref
+          .read(authProvider.notifier)
+          .login(_emailController.text.trim(), _passwordController.text.trim());
       setState(() => _isLoading = false);
       if (mounted) {
         if (success) {
-          AppFeedback.showSnackbar(context, message: 'Welcome to Organization Portal!');
+          AppFeedback.showSnackbar(
+            context,
+            message: 'Welcome to Organization Portal!',
+          );
           context.go('/dashboard');
         } else {
           final error = ref.read(authProvider).error ?? 'Authentication failed';
@@ -75,17 +75,23 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     } else {
       // Platform SuperAdmin Login -> /platform-admin
       await Future.delayed(const Duration(milliseconds: 500));
-      final success = ref.read(platformAdminProvider.notifier).login(
-            _emailController.text.trim(),
-            _passwordController.text.trim(),
-          );
+      final success = ref
+          .read(platformAdminProvider.notifier)
+          .login(_emailController.text.trim(), _passwordController.text.trim());
       setState(() => _isLoading = false);
       if (mounted) {
         if (success) {
-          AppFeedback.showSnackbar(context, message: 'SuperAdmin Authenticated Successfully!');
+          AppFeedback.showSnackbar(
+            context,
+            message: 'SuperAdmin Authenticated Successfully!',
+          );
           context.go('/platform-admin');
         } else {
-          AppFeedback.showSnackbar(context, message: 'Invalid SuperAdmin credentials', isError: true);
+          AppFeedback.showSnackbar(
+            context,
+            message: 'Invalid SuperAdmin credentials',
+            isError: true,
+          );
         }
       }
     }
@@ -108,7 +114,9 @@ class _LoginPageState extends ConsumerState<LoginPage> {
               Container(
                 padding: const EdgeInsets.all(4),
                 decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+                  color: isDark
+                      ? const Color(0xFF1E293B)
+                      : const Color(0xFFF1F5F9),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
                     color: isDark ? Colors.white12 : const Color(0xFFE2E8F0),
@@ -118,20 +126,25 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                   children: [
                     Expanded(
                       child: InkWell(
-                        onTap: () => _switchPortal(LoginPortalType.organization),
+                        onTap: () =>
+                            _switchPortal(LoginPortalType.organization),
                         borderRadius: BorderRadius.circular(9),
                         child: AnimatedContainer(
                           duration: const Duration(milliseconds: 200),
                           padding: const EdgeInsets.symmetric(vertical: 10),
                           decoration: BoxDecoration(
                             color: !isSuperAdmin
-                                ? (isDark ? const Color(0xFF0F172A) : Colors.white)
+                                ? (isDark
+                                      ? const Color(0xFF0F172A)
+                                      : Colors.white)
                                 : Colors.transparent,
                             borderRadius: BorderRadius.circular(9),
                             boxShadow: !isSuperAdmin
                                 ? [
                                     BoxShadow(
-                                      color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.06),
+                                      color: Colors.black.withValues(
+                                        alpha: isDark ? 0.3 : 0.06,
+                                      ),
                                       blurRadius: 4,
                                       offset: const Offset(0, 2),
                                     ),
@@ -146,17 +159,25 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                                 size: 16,
                                 color: !isSuperAdmin
                                     ? const Color(0xFF15803D)
-                                    : (isDark ? Colors.white60 : const Color(0xFF64748B)),
+                                    : (isDark
+                                          ? Colors.white60
+                                          : const Color(0xFF64748B)),
                               ),
                               const SizedBox(width: 6),
                               Text(
                                 'Organization',
                                 style: TextStyle(
                                   fontSize: 12.5,
-                                  fontWeight: !isSuperAdmin ? FontWeight.bold : FontWeight.w500,
+                                  fontWeight: !isSuperAdmin
+                                      ? FontWeight.bold
+                                      : FontWeight.w500,
                                   color: !isSuperAdmin
-                                      ? (isDark ? Colors.white : const Color(0xFF0F172A))
-                                      : (isDark ? Colors.white60 : const Color(0xFF64748B)),
+                                      ? (isDark
+                                            ? Colors.white
+                                            : const Color(0xFF0F172A))
+                                      : (isDark
+                                            ? Colors.white60
+                                            : const Color(0xFF64748B)),
                                 ),
                               ),
                             ],
@@ -167,7 +188,8 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                     const SizedBox(width: 4),
                     Expanded(
                       child: InkWell(
-                        onTap: () => _switchPortal(LoginPortalType.platformAdmin),
+                        onTap: () =>
+                            _switchPortal(LoginPortalType.platformAdmin),
                         borderRadius: BorderRadius.circular(9),
                         child: AnimatedContainer(
                           duration: const Duration(milliseconds: 200),
@@ -180,7 +202,9 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                             boxShadow: isSuperAdmin
                                 ? [
                                     BoxShadow(
-                                      color: const Color(0xFF4F46E5).withValues(alpha: 0.3),
+                                      color: const Color(
+                                        0xFF4F46E5,
+                                      ).withValues(alpha: 0.3),
                                       blurRadius: 6,
                                       offset: const Offset(0, 2),
                                     ),
@@ -195,17 +219,23 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                                 size: 16,
                                 color: isSuperAdmin
                                     ? Colors.white
-                                    : (isDark ? Colors.white60 : const Color(0xFF64748B)),
+                                    : (isDark
+                                          ? Colors.white60
+                                          : const Color(0xFF64748B)),
                               ),
                               const SizedBox(width: 6),
                               Text(
                                 'Platform Admin',
                                 style: TextStyle(
                                   fontSize: 12.5,
-                                  fontWeight: isSuperAdmin ? FontWeight.bold : FontWeight.w500,
+                                  fontWeight: isSuperAdmin
+                                      ? FontWeight.bold
+                                      : FontWeight.w500,
                                   color: isSuperAdmin
                                       ? Colors.white
-                                      : (isDark ? Colors.white60 : const Color(0xFF64748B)),
+                                      : (isDark
+                                            ? Colors.white60
+                                            : const Color(0xFF64748B)),
                                 ),
                               ),
                             ],
@@ -234,7 +264,9 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                     ? 'Sign in to access global platform administration & multi-tenant operations'
                     : 'Sign in to access your business accounts, sales, GST & ledger',
                 style: AppTypography.bodyMedium.copyWith(
-                  color: isDark ? AppColors.textDarkSecondary : AppColors.textLightSecondary,
+                  color: isDark
+                      ? AppColors.textDarkSecondary
+                      : AppColors.textLightSecondary,
                 ),
               ),
               const SizedBox(height: AppSpacing.xl),
@@ -242,11 +274,14 @@ class _LoginPageState extends ConsumerState<LoginPage> {
               // Email Input
               AppTextField(
                 label: isSuperAdmin ? 'SuperAdmin Email' : 'Work Email Address',
-                hintText: isSuperAdmin ? 'admin@platform-billing.com' : 'name@business.com',
+                hintText: isSuperAdmin
+                    ? 'admin@platform-billing.com'
+                    : 'name@business.com',
                 controller: _emailController,
                 keyboardType: TextInputType.emailAddress,
                 validator: (value) {
-                  if (value == null || value.isEmpty) return 'Email is required';
+                  if (value == null || value.isEmpty)
+                    return 'Email is required';
                   if (!value.contains('@')) return 'Enter a valid email';
                   return null;
                 },
@@ -260,8 +295,10 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                 controller: _passwordController,
                 obscureText: true,
                 validator: (value) {
-                  if (value == null || value.isEmpty) return 'Password is required';
-                  if (value.length < 6) return 'Password must be at least 6 characters';
+                  if (value == null || value.isEmpty)
+                    return 'Password is required';
+                  if (value.length < 6)
+                    return 'Password must be at least 6 characters';
                   return null;
                 },
               ),
@@ -275,7 +312,9 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                     child: Text(
                       'Forgot password?',
                       style: AppTypography.labelLarge.copyWith(
-                        color: isDark ? AppColors.accentLight : AppColors.primary,
+                        color: isDark
+                            ? AppColors.accentLight
+                            : AppColors.primary,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -288,7 +327,9 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
               // Action Submit Button
               AppButton(
-                label: isSuperAdmin ? 'Sign In as SuperAdmin' : 'Sign In to Organization',
+                label: isSuperAdmin
+                    ? 'Sign In as SuperAdmin'
+                    : 'Sign In to Organization',
                 onPressed: _handleLogin,
                 isLoading: _isLoading,
                 icon: isSuperAdmin ? Icons.shield_outlined : Icons.login,
@@ -302,7 +343,9 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                     Text(
                       "Don't have an account?",
                       style: AppTypography.bodyMedium.copyWith(
-                        color: isDark ? AppColors.textDarkSecondary : AppColors.textLightSecondary,
+                        color: isDark
+                            ? AppColors.textDarkSecondary
+                            : AppColors.textLightSecondary,
                       ),
                     ),
                     TextButton(
@@ -310,7 +353,9 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                       child: Text(
                         'Register here',
                         style: AppTypography.labelLarge.copyWith(
-                          color: isDark ? AppColors.accentLight : AppColors.primary,
+                          color: isDark
+                              ? AppColors.accentLight
+                              : AppColors.primary,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -320,14 +365,21 @@ class _LoginPageState extends ConsumerState<LoginPage> {
               else
                 Center(
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: const Color(0xFF16A34A).withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: const Text(
                       '🔒 Zero-Trust SuperAdmin Security Active',
-                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF16A34A)),
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF16A34A),
+                      ),
                     ),
                   ),
                 ),
@@ -370,7 +422,9 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                     Icon(
                       isSuperAdmin ? Icons.shield_outlined : Icons.bolt,
                       size: 96,
-                      color: isSuperAdmin ? const Color(0xFF818CF8) : AppColors.accent,
+                      color: isSuperAdmin
+                          ? const Color(0xFF818CF8)
+                          : AppColors.accent,
                     ),
                     const SizedBox(height: AppSpacing.md),
                     Text(
