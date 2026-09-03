@@ -71,6 +71,8 @@ import '../../features/manufacturing/presentation/pages/production_orders_page.d
 import '../../features/manufacturing/presentation/pages/job_work_page.dart';
 import '../../features/manufacturing/presentation/pages/manufacturing_reports_page.dart';
 import '../../features/gstIn/presentation/pages/gst_portal_page.dart';
+import '../../features/platform-admin/presentation/pages/platform_admin_login_page.dart';
+import '../../features/platform-admin/presentation/pages/platform_admin_shell_page.dart';
 
 import '../../shared/widgets/app_states.dart';
 
@@ -112,6 +114,30 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/create-business',
         builder: (context, state) => const CreateBusinessPage(),
+      ),
+      GoRoute(
+        path: '/platform-admin/login',
+        builder: (context, state) => const PlatformAdminLoginPage(),
+      ),
+      GoRoute(
+        path: '/platform-admin',
+        builder: (context, state) => const PlatformAdminShellPage(),
+      ),
+      GoRoute(
+        path: '/platform-admin/dashboard',
+        builder: (context, state) => const PlatformAdminShellPage(initialTab: 'dashboard'),
+      ),
+      GoRoute(
+        path: '/platform-admin/organizations',
+        builder: (context, state) => const PlatformAdminShellPage(initialTab: 'organizations'),
+      ),
+      GoRoute(
+        path: '/platform-admin/subscriptions',
+        builder: (context, state) => const PlatformAdminShellPage(initialTab: 'subscriptions'),
+      ),
+      GoRoute(
+        path: '/platform-admin/onboarding',
+        builder: (context, state) => const PlatformAdminShellPage(initialTab: 'onboarding'),
       ),
       ShellRoute(
         builder: (context, state, child) => AppShell(
@@ -422,6 +448,11 @@ final routerProvider = Provider<GoRouter>((ref) {
       
       if (authState.status == AuthStatus.splash) {
         return '/splash';
+      }
+
+      final isPlatformAdminRoute = loc.startsWith('/platform-admin');
+      if (isPlatformAdminRoute) {
+        return null;
       }
 
       final isUnauthenticated = authState.status == AuthStatus.unauthenticated;

@@ -8,7 +8,13 @@ import '../../../../core/responsive/responsive.dart';
 import '../../../../shared/widgets/app_button.dart';
 import '../../../../shared/widgets/app_input_fields.dart';
 import '../../../../shared/widgets/feedback.dart';
+import '../../../platform-admin/presentation/providers/platform_admin_provider.dart';
 import '../providers/auth_provider.dart';
+
+enum LoginPortalType {
+  organization,
+  platformAdmin,
+}
 
 class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({super.key});
@@ -19,6 +25,8 @@ class LoginPage extends ConsumerStatefulWidget {
 
 class _LoginPageState extends ConsumerState<LoginPage> {
   final _formKey = GlobalKey<FormState>();
+  LoginPortalType _portalType = LoginPortalType.organization;
+
   final _emailController = TextEditingController(text: 'owner@taxbunny.com');
   final _passwordController = TextEditingController(text: 'password123');
   bool _isLoading = false;
@@ -30,19 +38,55 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     super.dispose();
   }
 
+  void _switchPortal(LoginPortalType type) {
+    setState(() {
+      _portalType = type;
+      if (type == LoginPortalType.organization) {
+        _emailController.text = 'owner@taxbunny.com';
+        _passwordController.text = 'password123';
+      } else {
+        _emailController.text = 'admin@platform-billing.com';
+        _passwordController.text = 'SuperAdmin@2026';
+      }
+    });
+  }
+
   Future<void> _handleLogin() async {
-    if (_formKey.currentState!.validate()) {
-      setState(() => _isLoading = true);
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() => _isLoading = true);
+
+    if (_portalType == LoginPortalType.organization) {
+      // Organization / Tenant Login -> /dashboard
       final success = await ref.read(authProvider.notifier).login(
-            _emailController.text,
-            _passwordController.text,
+            _emailController.text.trim(),
+            _passwordController.text.trim(),
           );
       setState(() => _isLoading = false);
-      if (success) {
-        context.go('/dashboard');
-      } else {
-        final error = ref.read(authProvider).error ?? 'Authentication failed';
-        AppFeedback.showSnackbar(context, message: error, isError: true);
+      if (mounted) {
+        if (success) {
+          AppFeedback.showSnackbar(context, message: 'Welcome to Organization Portal!');
+          context.go('/dashboard');
+        } else {
+          final error = ref.read(authProvider).error ?? 'Authentication failed';
+          AppFeedback.showSnackbar(context, message: error, isError: true);
+        }
+      }
+    } else {
+      // Platform SuperAdmin Login -> /platform-admin
+      await Future.delayed(const Duration(milliseconds: 500));
+      final success = ref.read(platformAdminProvider.notifier).login(
+            _emailController.text.trim(),
+            _passwordController.text.trim(),
+          );
+      setState(() => _isLoading = false);
+      if (mounted) {
+        if (success) {
+          AppFeedback.showSnackbar(context, message: 'SuperAdmin Authenticated Successfully!');
+          context.go('/platform-admin');
+        } else {
+          AppFeedback.showSnackbar(context, message: 'Invalid SuperAdmin credentials', isError: true);
+        }
       }
     }
   }
@@ -50,7 +94,8 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+    final isSuperAdmin = _portalType == LoginPortalType.platformAdmin;
+
     Widget formContent = Center(
       child: SingleChildScrollView(
         child: Form(
@@ -59,24 +104,145 @@ class _LoginPageState extends ConsumerState<LoginPage> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
+              // Portal Mode Segmented Selector
+              Container(
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: isDark ? Colors.white12 : const Color(0xFFE2E8F0),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: InkWell(
+                        onTap: () => _switchPortal(LoginPortalType.organization),
+                        borderRadius: BorderRadius.circular(9),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          padding: const EdgeInsets.symmetric(vertical: 10),
+                          decoration: BoxDecoration(
+                            color: !isSuperAdmin
+                                ? (isDark ? const Color(0xFF0F172A) : Colors.white)
+                                : Colors.transparent,
+                            borderRadius: BorderRadius.circular(9),
+                            boxShadow: !isSuperAdmin
+                                ? [
+                                    BoxShadow(
+                                      color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.06),
+                                      blurRadius: 4,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ]
+                                : null,
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.business_outlined,
+                                size: 16,
+                                color: !isSuperAdmin
+                                    ? const Color(0xFF15803D)
+                                    : (isDark ? Colors.white60 : const Color(0xFF64748B)),
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                'Organization',
+                                style: TextStyle(
+                                  fontSize: 12.5,
+                                  fontWeight: !isSuperAdmin ? FontWeight.bold : FontWeight.w500,
+                                  color: !isSuperAdmin
+                                      ? (isDark ? Colors.white : const Color(0xFF0F172A))
+                                      : (isDark ? Colors.white60 : const Color(0xFF64748B)),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    Expanded(
+                      child: InkWell(
+                        onTap: () => _switchPortal(LoginPortalType.platformAdmin),
+                        borderRadius: BorderRadius.circular(9),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          padding: const EdgeInsets.symmetric(vertical: 10),
+                          decoration: BoxDecoration(
+                            color: isSuperAdmin
+                                ? const Color(0xFF4F46E5)
+                                : Colors.transparent,
+                            borderRadius: BorderRadius.circular(9),
+                            boxShadow: isSuperAdmin
+                                ? [
+                                    BoxShadow(
+                                      color: const Color(0xFF4F46E5).withValues(alpha: 0.3),
+                                      blurRadius: 6,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ]
+                                : null,
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.admin_panel_settings_outlined,
+                                size: 16,
+                                color: isSuperAdmin
+                                    ? Colors.white
+                                    : (isDark ? Colors.white60 : const Color(0xFF64748B)),
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                'Platform Admin',
+                                style: TextStyle(
+                                  fontSize: 12.5,
+                                  fontWeight: isSuperAdmin ? FontWeight.bold : FontWeight.w500,
+                                  color: isSuperAdmin
+                                      ? Colors.white
+                                      : (isDark ? Colors.white60 : const Color(0xFF64748B)),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: AppSpacing.lg),
+
+              // Title & Subtitle based on selected portal
               Text(
-                'Welcome back',
+                isSuperAdmin ? 'Platform Control Plane' : 'Organization Portal',
                 style: AppTypography.headlineLarge.copyWith(
-                  color: isDark ? Colors.white : AppColors.primary,
+                  color: isSuperAdmin
+                      ? const Color(0xFF4F46E5)
+                      : (isDark ? Colors.white : AppColors.primary),
                   fontWeight: FontWeight.bold,
                 ),
               ),
               const SizedBox(height: AppSpacing.xs),
               Text(
-                'Sign in to access your business accounts',
+                isSuperAdmin
+                    ? 'Sign in to access global platform administration & multi-tenant operations'
+                    : 'Sign in to access your business accounts, sales, GST & ledger',
                 style: AppTypography.bodyMedium.copyWith(
                   color: isDark ? AppColors.textDarkSecondary : AppColors.textLightSecondary,
                 ),
               ),
               const SizedBox(height: AppSpacing.xl),
+
+              // Email Input
               AppTextField(
-                label: 'Email Address',
-                hintText: 'name@business.com',
+                label: isSuperAdmin ? 'SuperAdmin Email' : 'Work Email Address',
+                hintText: isSuperAdmin ? 'admin@platform-billing.com' : 'name@business.com',
                 controller: _emailController,
                 keyboardType: TextInputType.emailAddress,
                 validator: (value) {
@@ -86,8 +252,10 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                 },
               ),
               const SizedBox(height: AppSpacing.md),
+
+              // Password Input
               AppTextField(
-                label: 'Password',
+                label: isSuperAdmin ? 'Master Password' : 'Password',
                 hintText: '••••••••',
                 controller: _passwordController,
                 obscureText: true,
@@ -98,47 +266,71 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                 },
               ),
               const SizedBox(height: AppSpacing.xs),
-              Align(
-                alignment: Alignment.centerRight,
-                child: TextButton(
-                  onPressed: () => context.push('/forgot-password'),
-                  child: Text(
-                    'Forgot password?',
-                    style: AppTypography.labelLarge.copyWith(
-                      color: isDark ? AppColors.accentLight : AppColors.primary,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: AppSpacing.md),
-              AppButton(
-                label: 'Sign In',
-                onPressed: _handleLogin,
-                isLoading: _isLoading,
-              ),
-              const SizedBox(height: AppSpacing.lg),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    "Don't have an account?",
-                    style: AppTypography.bodyMedium.copyWith(
-                      color: isDark ? AppColors.textDarkSecondary : AppColors.textLightSecondary,
-                    ),
-                  ),
-                  TextButton(
-                    onPressed: () => context.push('/register'),
+
+              if (!isSuperAdmin)
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: () => context.push('/forgot-password'),
                     child: Text(
-                      'Register here',
+                      'Forgot password?',
                       style: AppTypography.labelLarge.copyWith(
                         color: isDark ? AppColors.accentLight : AppColors.primary,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
                   ),
-                ],
+                )
+              else
+                const SizedBox(height: 12),
+
+              const SizedBox(height: AppSpacing.md),
+
+              // Action Submit Button
+              AppButton(
+                label: isSuperAdmin ? 'Sign In as SuperAdmin' : 'Sign In to Organization',
+                onPressed: _handleLogin,
+                isLoading: _isLoading,
+                icon: isSuperAdmin ? Icons.shield_outlined : Icons.login,
               ),
+              const SizedBox(height: AppSpacing.lg),
+
+              if (!isSuperAdmin)
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      "Don't have an account?",
+                      style: AppTypography.bodyMedium.copyWith(
+                        color: isDark ? AppColors.textDarkSecondary : AppColors.textLightSecondary,
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () => context.push('/register'),
+                      child: Text(
+                        'Register here',
+                        style: AppTypography.labelLarge.copyWith(
+                          color: isDark ? AppColors.accentLight : AppColors.primary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                )
+              else
+                Center(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF16A34A).withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: const Text(
+                      '🔒 Zero-Trust SuperAdmin Security Active',
+                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF16A34A)),
+                    ),
+                  ),
+                ),
             ],
           ),
         ),
@@ -154,15 +346,35 @@ class _LoginPageState extends ConsumerState<LoginPage> {
         desktop: Row(
           children: [
             Expanded(
-              child: Container(
-                color: isDark ? AppColors.primaryLight : AppColors.primary,
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 300),
+                decoration: BoxDecoration(
+                  gradient: isSuperAdmin
+                      ? const LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            Color(0xFF090D16),
+                            Color(0xFF1E1B4B),
+                            Color(0xFF311042),
+                          ],
+                        )
+                      : null,
+                  color: !isSuperAdmin
+                      ? (isDark ? AppColors.primaryLight : AppColors.primary)
+                      : null,
+                ),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(Icons.bolt, size: 96, color: AppColors.accent),
+                    Icon(
+                      isSuperAdmin ? Icons.shield_outlined : Icons.bolt,
+                      size: 96,
+                      color: isSuperAdmin ? const Color(0xFF818CF8) : AppColors.accent,
+                    ),
                     const SizedBox(height: AppSpacing.md),
                     Text(
-                      'TAX BUNNY',
+                      isSuperAdmin ? 'PLATFORM ADMIN' : 'TAX BUNNY',
                       style: AppTypography.displaySmall.copyWith(
                         color: Colors.white,
                         fontWeight: FontWeight.w900,
@@ -170,10 +382,16 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                       ),
                     ),
                     const SizedBox(height: AppSpacing.sm),
-                    Text(
-                      'Simple for Business Owners. Powerful for Accountants.',
-                      style: AppTypography.bodyLarge.copyWith(
-                        color: Colors.white.withOpacity(0.8),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 32),
+                      child: Text(
+                        isSuperAdmin
+                            ? 'Multi-Tenant Governance, SaaS Subscriptions & Cloud Operations'
+                            : 'Simple for Business Owners. Powerful for Accountants.',
+                        style: AppTypography.bodyLarge.copyWith(
+                          color: Colors.white.withValues(alpha: 0.8),
+                        ),
+                        textAlign: TextAlign.center,
                       ),
                     ),
                   ],
@@ -182,7 +400,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
             ),
             Container(
               width: 520,
-              padding: const EdgeInsets.symmetric(horizontal: 64),
+              padding: const EdgeInsets.symmetric(horizontal: 48),
               child: formContent,
             ),
           ],

@@ -327,6 +327,12 @@ class NavigationConfig {
           icon: Icons.swap_vert_outlined,
           route: '/settings/import-export',
         ),
+        NavigationItem(
+          id: 'platform_admin',
+          title: 'Platform SuperAdmin',
+          icon: Icons.admin_panel_settings_outlined,
+          route: '/platform-admin',
+        ),
       ],
     ),
   ];
