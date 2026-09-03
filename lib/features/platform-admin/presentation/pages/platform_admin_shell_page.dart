@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../shared/widgets/feedback.dart';
+import '../../../auth/presentation/providers/auth_provider.dart';
 import '../providers/platform_admin_provider.dart';
 import 'platform_admin_dashboard_page.dart';
 import 'platform_admin_organization_page.dart';
@@ -156,11 +157,14 @@ class PlatformAdminShellPage extends ConsumerWidget {
                   PopupMenuButton<String>(
                     tooltip: 'Admin Profile',
                     offset: const Offset(0, 48),
-                    onSelected: (action) {
+                    onSelected: (action) async {
                       if (action == 'logout') {
                         notifier.logout();
-                        AppFeedback.showSnackbar(context, message: 'SuperAdmin signed out.');
-                        context.go('/platform-admin/login');
+                        await ref.read(authProvider.notifier).logout();
+                        if (context.mounted) {
+                          AppFeedback.showSnackbar(context, message: 'SuperAdmin signed out successfully.');
+                          context.go('/login');
+                        }
                       } else if (action == 'tenant_app') {
                         context.go('/dashboard');
                       }
@@ -225,7 +229,7 @@ class PlatformAdminShellPage extends ConsumerWidget {
           ),
         ),
       ),
-      drawer: !isDesktop ? _buildDrawer(context, notifier, state, isDark) : null,
+      drawer: !isDesktop ? _buildDrawer(context, ref, notifier, state, isDark) : null,
       bottomNavigationBar: !isDesktop
           ? NavigationBar(
               selectedIndex: _getTabIndex(state.selectedNavTab),
@@ -324,6 +328,30 @@ class PlatformAdminShellPage extends ConsumerWidget {
                             ),
                           ),
                         ],
+                      ),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(left: 16, right: 16, bottom: 16),
+                    child: SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Colors.redAccent,
+                          side: BorderSide(color: Colors.redAccent.withValues(alpha: 0.3)),
+                          padding: const EdgeInsets.symmetric(vertical: 10),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        ),
+                        icon: const Icon(Icons.logout, size: 16),
+                        label: const Text('Sign Out', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                        onPressed: () async {
+                          notifier.logout();
+                          await ref.read(authProvider.notifier).logout();
+                          if (context.mounted) {
+                            AppFeedback.showSnackbar(context, message: 'SuperAdmin signed out successfully.');
+                            context.go('/login');
+                          }
+                        },
                       ),
                     ),
                   ),
@@ -432,6 +460,7 @@ class PlatformAdminShellPage extends ConsumerWidget {
 
   Widget _buildDrawer(
     BuildContext context,
+    WidgetRef ref,
     PlatformAdminNotifier notifier,
     PlatformAdminState state,
     bool isDark,
@@ -515,6 +544,19 @@ class PlatformAdminShellPage extends ConsumerWidget {
               leading: const Icon(Icons.storefront_outlined, color: Color(0xFF4F46E5)),
               title: const Text('Tenant Billing App', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
               onTap: () => context.go('/dashboard'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.logout, color: Colors.redAccent),
+              title: const Text('Sign Out', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.redAccent)),
+              onTap: () async {
+                Navigator.pop(context);
+                notifier.logout();
+                await ref.read(authProvider.notifier).logout();
+                if (context.mounted) {
+                  AppFeedback.showSnackbar(context, message: 'SuperAdmin signed out successfully.');
+                  context.go('/login');
+                }
+              },
             ),
           ],
         ),

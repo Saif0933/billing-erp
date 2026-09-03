@@ -15,7 +15,7 @@ Future<ProviderContainer> bootstrap() async {
   try {
     sharedPrefs = await SharedPreferences.getInstance();
   } catch (e) {
-    // Fallback to in-memory SharedPreferences if localStorage is blocked or throws an error
+    // ignore: invalid_use_of_visible_for_testing_member
     SharedPreferences.setMockInitialValues({});
     sharedPrefs = await SharedPreferences.getInstance();
   }

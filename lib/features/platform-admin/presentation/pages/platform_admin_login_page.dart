@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../shared/widgets/feedback.dart';
+import '../../../auth/presentation/providers/auth_provider.dart';
 import '../providers/platform_admin_provider.dart';
 
 class PlatformAdminLoginPage extends ConsumerStatefulWidget {
@@ -12,8 +13,8 @@ class PlatformAdminLoginPage extends ConsumerStatefulWidget {
 }
 
 class _PlatformAdminLoginPageState extends ConsumerState<PlatformAdminLoginPage> {
-  final _emailController = TextEditingController(text: 'admin@platform-billing.com');
-  final _passwordController = TextEditingController(text: 'SuperAdmin@2026');
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
   bool _obscurePassword = true;
   bool _isLoading = false;
 
@@ -29,20 +30,28 @@ class _PlatformAdminLoginPageState extends ConsumerState<PlatformAdminLoginPage>
     final password = _passwordController.text.trim();
 
     if (email.isEmpty || password.isEmpty) {
-      AppFeedback.showSnackbar(context, message: 'Please enter both email and master password', isError: true);
+      AppFeedback.showSnackbar(context, message: 'Please enter both email and password', isError: true);
       return;
     }
 
     setState(() => _isLoading = true);
-    await Future.delayed(const Duration(milliseconds: 600));
+
+    final success = await ref.read(authProvider.notifier).login(
+          email,
+          password,
+          isPlatformAdminPortal: true,
+        );
 
     if (mounted) {
-      final success = ref.read(platformAdminProvider.notifier).login(email, password);
       setState(() => _isLoading = false);
 
       if (success) {
+        ref.read(platformAdminProvider.notifier).login(email, password);
         AppFeedback.showSnackbar(context, message: 'SuperAdmin Authentication Successful!');
         context.go('/platform-admin');
+      } else {
+        final error = ref.read(authProvider).error ?? 'Invalid SuperAdmin credentials';
+        AppFeedback.showSnackbar(context, message: error, isError: true);
       }
     }
   }
@@ -332,6 +341,29 @@ class _PlatformAdminLoginPageState extends ConsumerState<PlatformAdminLoginPage>
                   ),
           ),
           const SizedBox(height: 16),
+
+          // Register SuperAdmin link
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Text(
+                "Don't have a SuperAdmin account?",
+                style: TextStyle(fontSize: 12.5, color: Color(0xFFA1A1AA)),
+              ),
+              TextButton(
+                onPressed: () => context.push('/register'),
+                child: const Text(
+                  'Register here',
+                  style: TextStyle(
+                    fontSize: 12.5,
+                    color: Color(0xFF818CF8),
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
 
           // Back to Tenant App Link
           Center(

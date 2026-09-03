@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_spacing.dart';
 import '../../../../core/constants/app_typography.dart';
@@ -8,6 +9,7 @@ import '../../../../core/responsive/responsive.dart';
 import '../../../../shared/widgets/app_button.dart';
 import '../../../../shared/widgets/app_input_fields.dart';
 import '../../../../shared/widgets/feedback.dart';
+import '../../../platform-admin/presentation/providers/platform_admin_provider.dart';
 import '../providers/auth_provider.dart';
 
 class RegisterPage extends ConsumerStatefulWidget {
@@ -21,6 +23,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
+  final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isLoading = false;
 
@@ -28,6 +31,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
   void dispose() {
     _nameController.dispose();
     _emailController.dispose();
+    _phoneController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
@@ -35,17 +39,36 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
   Future<void> _handleRegister() async {
     if (_formKey.currentState!.validate()) {
       setState(() => _isLoading = true);
+      final email = _emailController.text.trim();
+      final password = _passwordController.text.trim();
+      final name = _nameController.text.trim();
+      final phone = _phoneController.text.trim().isNotEmpty
+          ? _phoneController.text.trim()
+          : null;
+
+      // Register always as Platform Administrator
       final success = await ref.read(authProvider.notifier).register(
-            _nameController.text,
-            _emailController.text,
-            _passwordController.text,
+            name,
+            email,
+            password,
+            phone: phone,
+            isPlatformAdmin: true,
           );
       setState(() => _isLoading = false);
-      if (success) {
-        context.go('/otp');
-      } else {
-        final error = ref.read(authProvider).error ?? 'Registration failed';
-        AppFeedback.showSnackbar(context, message: error, isError: true);
+
+      if (mounted) {
+        if (success) {
+          ref.read(platformAdminProvider.notifier).login(email, password);
+          AppFeedback.showSnackbar(
+            context,
+            message: 'Platform Administrator registered successfully!',
+          );
+          context.go('/platform-admin');
+        } else {
+          final error = ref.read(authProvider).error ??
+              'Registration failed. Please try again.';
+          AppFeedback.showSnackbar(context, message: error, isError: true);
+        }
       }
     }
   }
@@ -62,8 +85,40 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
+              // Shield badge header
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF4F46E5).withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: const Color(0xFF4F46E5).withValues(alpha: 0.3),
+                      ),
+                    ),
+                    child: const Icon(
+                      Icons.shield_outlined,
+                      color: Color(0xFF4F46E5),
+                      size: 22,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  const Text(
+                    'PLATFORM SUPERADMIN',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w900,
+                      color: Color(0xFF4F46E5),
+                      letterSpacing: 1.1,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.md),
+
               Text(
-                'Create your Account',
+                'Register Platform Admin',
                 style: AppTypography.headlineLarge.copyWith(
                   color: isDark ? Colors.white : AppColors.primary,
                   fontWeight: FontWeight.bold,
@@ -71,48 +126,63 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
               ),
               const SizedBox(height: AppSpacing.xs),
               Text(
-                'Get started with Tax Bunny Billing today',
+                'Create master administrator credentials for multi-tenant control plane',
                 style: AppTypography.bodyMedium.copyWith(
-                  color: isDark ? AppColors.textDarkSecondary : AppColors.textLightSecondary,
+                  color: isDark
+                      ? AppColors.textDarkSecondary
+                      : AppColors.textLightSecondary,
                 ),
               ),
-              const SizedBox(height: AppSpacing.xl),
+              const SizedBox(height: AppSpacing.lg),
+
               AppTextField(
                 label: 'Full Name',
-                hintText: 'Alex Bunny',
+                hintText: 'Alexander Wright',
                 controller: _nameController,
                 validator: (value) {
-                  if (value == null || value.isEmpty) return 'Name is required';
+                  if (value == null || value.trim().isEmpty) return 'Name is required';
+                  if (value.trim().length < 2) return 'Name must be at least 2 characters';
                   return null;
                 },
               ),
               const SizedBox(height: AppSpacing.md),
               AppTextField(
-                label: 'Email Address',
-                hintText: 'name@business.com',
+                label: 'SuperAdmin Email Address',
+                hintText: 'admin@platform-billing.com',
                 controller: _emailController,
                 keyboardType: TextInputType.emailAddress,
                 validator: (value) {
-                  if (value == null || value.isEmpty) return 'Email is required';
-                  if (!value.contains('@')) return 'Enter a valid email';
+                  if (value == null || value.trim().isEmpty) return 'Email is required';
+                  if (!value.contains('@') || !value.contains('.')) {
+                    return 'Enter a valid email address';
+                  }
                   return null;
                 },
               ),
               const SizedBox(height: AppSpacing.md),
               AppTextField(
-                label: 'Password',
+                label: 'Phone Number (Optional)',
+                hintText: '+91 98765 43210',
+                controller: _phoneController,
+                keyboardType: TextInputType.phone,
+              ),
+              const SizedBox(height: AppSpacing.md),
+              AppTextField(
+                label: 'Master Password',
                 hintText: 'At least 6 characters',
                 controller: _passwordController,
                 obscureText: true,
                 validator: (value) {
                   if (value == null || value.isEmpty) return 'Password is required';
-                  if (value.length < 6) return 'Password must be at least 6 characters';
+                  if (value.length < 6) {
+                    return 'Password must be at least 6 characters';
+                  }
                   return null;
                 },
               ),
               const SizedBox(height: AppSpacing.lg),
               AppButton(
-                label: 'Create Account',
+                label: 'Register Platform Admin',
                 onPressed: _handleRegister,
                 isLoading: _isLoading,
               ),
@@ -121,9 +191,11 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
-                    'Already have an account?',
+                    'Already have a SuperAdmin account?',
                     style: AppTypography.bodyMedium.copyWith(
-                      color: isDark ? AppColors.textDarkSecondary : AppColors.textLightSecondary,
+                      color: isDark
+                          ? AppColors.textDarkSecondary
+                          : AppColors.textLightSecondary,
                     ),
                   ),
                   TextButton(
@@ -154,14 +226,28 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
           children: [
             Expanded(
               child: Container(
-                color: isDark ? AppColors.primaryLight : AppColors.primary,
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      Color(0xFF090D16),
+                      Color(0xFF1E1B4B),
+                      Color(0xFF311042),
+                    ],
+                  ),
+                ),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(Icons.bolt, size: 96, color: AppColors.accent),
+                    const Icon(
+                      Icons.shield_outlined,
+                      size: 96,
+                      color: Color(0xFF818CF8),
+                    ),
                     const SizedBox(height: AppSpacing.md),
                     Text(
-                      'TAX BUNNY',
+                      'PLATFORM ADMIN',
                       style: AppTypography.displaySmall.copyWith(
                         color: Colors.white,
                         fontWeight: FontWeight.w900,
@@ -169,10 +255,14 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                       ),
                     ),
                     const SizedBox(height: AppSpacing.sm),
-                    Text(
-                      'Build the future of your company records.',
-                      style: AppTypography.bodyLarge.copyWith(
-                        color: Colors.white.withOpacity(0.8),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 32),
+                      child: Text(
+                        'Master control plane for multi-tenant governance, SaaS plans & billing infrastructure.',
+                        style: AppTypography.bodyLarge.copyWith(
+                          color: Colors.white.withValues(alpha: 0.8),
+                        ),
+                        textAlign: TextAlign.center,
                       ),
                     ),
                   ],

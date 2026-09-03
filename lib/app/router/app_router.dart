@@ -442,7 +442,6 @@ final routerProvider = Provider<GoRouter>((ref) {
     errorBuilder: (context, state) => const RouteNotFoundPage(),
     redirect: (context, state) {
       final authState = ref.read(authProvider);
-      final isOnboarded = ref.read(onboardingProvider);
       final businessState = ref.read(businessProvider);
       final loc = state.matchedLocation;
       
@@ -451,8 +450,24 @@ final routerProvider = Provider<GoRouter>((ref) {
       }
 
       final isPlatformAdminRoute = loc.startsWith('/platform-admin');
-      if (isPlatformAdminRoute) {
+
+      // 1. If authenticated as Platform Admin, always route to /platform-admin
+      if (authState.status == AuthStatus.authenticated && authState.isPlatformAdmin) {
+        if (!isPlatformAdminRoute) {
+          return '/platform-admin';
+        }
+        if (loc == '/platform-admin/login') {
+          return '/platform-admin';
+        }
         return null;
+      }
+
+      // 2. Protect /platform-admin routes from non-admin/unauthenticated users
+      if (isPlatformAdminRoute) {
+        if (loc == '/platform-admin/login') {
+          return null;
+        }
+        return '/platform-admin/login';
       }
 
       final isUnauthenticated = authState.status == AuthStatus.unauthenticated;
@@ -465,21 +480,17 @@ final routerProvider = Provider<GoRouter>((ref) {
       }
 
       if (isGoingToAuthRoute) {
-        if (!isOnboarded) return '/onboarding';
+        if (authState.isPlatformAdmin) return '/platform-admin';
         if (businessState.activeBusiness == null) return '/business-selection';
         return '/dashboard';
       }
 
-      if (!isOnboarded && loc != '/onboarding') {
-        return '/onboarding';
-      }
-
-      if (isOnboarded && loc == '/onboarding') {
+      if (loc == '/onboarding') {
         if (businessState.activeBusiness == null) return '/business-selection';
         return '/dashboard';
       }
 
-      if (isOnboarded && businessState.activeBusiness == null && loc != '/business-selection' && loc != '/create-business') {
+      if (businessState.activeBusiness == null && loc != '/business-selection' && loc != '/create-business') {
         return '/business-selection';
       }
 

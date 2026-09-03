@@ -1,22 +1,39 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../data/models/user_model.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import '../../../../core/errors/exceptions.dart';
+import '../../../../core/network/api_client.dart';
 import '../../../../core/storage/secure_storage_service.dart';
 import '../../../../core/storage/storage_service.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import '../../data/models/user_model.dart';
+import '../../data/services/auth_api_service.dart';
 
-final sharedPreferencesProvider = Provider<SharedPreferences>((ref) => throw UnimplementedError());
+final sharedPreferencesProvider =
+    Provider<SharedPreferences>((ref) => throw UnimplementedError());
 
 final storageServiceProvider = Provider<StorageService>((ref) {
   final prefs = ref.watch(sharedPreferencesProvider);
   return StorageService(prefs);
 });
 
-final secureStorageProvider = Provider<FlutterSecureStorage>((ref) => const FlutterSecureStorage());
+final secureStorageProvider =
+    Provider<FlutterSecureStorage>((ref) => const FlutterSecureStorage());
 
 final secureStorageServiceProvider = Provider<SecureStorageService>((ref) {
   final secure = ref.watch(secureStorageProvider);
   return SecureStorageService(secure);
+});
+
+final apiClientProvider = Provider<ApiClient>((ref) {
+  final secure = ref.watch(secureStorageServiceProvider);
+  final storage = ref.watch(storageServiceProvider);
+  return ApiClient(secure, storage);
+});
+
+final authApiServiceProvider = Provider<AuthApiService>((ref) {
+  final client = ref.watch(apiClientProvider);
+  return AuthApiService(client);
 });
 
 enum AuthStatus { splash, unauthenticated, authenticated }
@@ -33,70 +50,134 @@ class AuthState {
   });
 
   const AuthState.splash() : this(status: AuthStatus.splash);
-  const AuthState.unauthenticated({String? error}) : this(status: AuthStatus.unauthenticated, error: error);
-  const AuthState.authenticated(UserModel user) : this(status: AuthStatus.authenticated, user: user);
+  const AuthState.unauthenticated({String? error})
+      : this(status: AuthStatus.unauthenticated, error: error);
+  const AuthState.authenticated(UserModel user)
+      : this(status: AuthStatus.authenticated, user: user);
+
+  bool get isPlatformAdmin => user?.isPlatformAdmin ?? false;
 }
 
 class AuthNotifier extends StateNotifier<AuthState> {
+  final AuthApiService _apiService;
   final SecureStorageService _secureStorage;
   final StorageService _storage;
 
-  AuthNotifier(this._secureStorage, this._storage) : super(const AuthState.splash()) {
+  AuthNotifier(this._apiService, this._secureStorage, this._storage)
+      : super(const AuthState.splash()) {
     initialize();
   }
 
   Future<void> initialize() async {
-    await Future.delayed(const Duration(milliseconds: 1000));
     try {
       final token = await _secureStorage.getAccessToken();
-      if (token != null) {
-        final email = _storage.getCachedUserEmail() ?? 'owner@taxbunny.com';
-        state = AuthState.authenticated(
-          UserModel(id: 'usr_01', email: email, name: 'Alex Bunny'),
-        );
-      } else {
-        state = const AuthState.unauthenticated();
+      if (token != null && token.isNotEmpty) {
+        try {
+          final user = await _apiService.getMe();
+          state = AuthState.authenticated(user);
+          return;
+        } catch (_) {
+          // Fallback to local cache if network/token verification fails temporarily
+          final email = _storage.getCachedUserEmail();
+          if (email != null && email.isNotEmpty) {
+            state = AuthState.authenticated(
+              UserModel(
+                id: 'usr_cached',
+                fullName: email.split('@').first,
+                email: email,
+                isPlatformAdmin: email.contains('admin'),
+              ),
+            );
+            return;
+          }
+        }
       }
+      state = const AuthState.unauthenticated();
     } catch (_) {
       state = const AuthState.unauthenticated();
     }
   }
 
-  Future<bool> login(String email, String password) async {
+  Future<bool> login(
+    String email,
+    String password, {
+    bool isPlatformAdminPortal = false,
+  }) async {
     state = const AuthState.splash();
-    await Future.delayed(const Duration(milliseconds: 600));
+    try {
+      final response = await _apiService.login(
+        email: email.trim(),
+        password: password,
+        isPlatformAdminPortal: isPlatformAdminPortal,
+      );
 
-    if (email.contains('@') && password.length >= 6) {
-      await _secureStorage.setAccessToken('mock_access_token');
-      await _secureStorage.setRefreshToken('mock_refresh_token');
-      await _storage.setCachedUserEmail(email);
-      final user = UserModel(id: 'usr_01', email: email, name: 'Alex Bunny');
-      state = AuthState.authenticated(user);
+      await _secureStorage.setAccessToken(response.accessToken);
+      await _secureStorage.setRefreshToken(response.refreshToken);
+      await _storage.setCachedUserEmail(response.user.email);
+
+      // Set active business if available in memberships
+      if (response.user.businessMemberships != null &&
+          response.user.businessMemberships!.isNotEmpty) {
+        final firstMembership = response.user.businessMemberships!.first;
+        final businessId = firstMembership['businessId']?.toString();
+        if (businessId != null) {
+          await _storage.setActiveBusinessId(businessId);
+        }
+      }
+
+      state = AuthState.authenticated(response.user);
       return true;
-    } else {
-      state = const AuthState.unauthenticated(error: 'Invalid credentials. Password must be >= 6 characters.');
+    } on AppException catch (e) {
+      state = AuthState.unauthenticated(error: e.message);
+      return false;
+    } catch (e) {
+      state = AuthState.unauthenticated(
+        error: e.toString().replaceAll('Exception:', '').trim(),
+      );
       return false;
     }
   }
 
-  Future<bool> register(String name, String email, String password) async {
+  Future<bool> register(
+    String name,
+    String email,
+    String password, {
+    String? phone,
+    bool isPlatformAdmin = false,
+  }) async {
     state = const AuthState.splash();
-    await Future.delayed(const Duration(milliseconds: 600));
+    try {
+      final response = await _apiService.register(
+        fullName: name.trim(),
+        email: email.trim(),
+        password: password,
+        phone: phone?.trim(),
+        isPlatformAdmin: isPlatformAdmin,
+      );
 
-    if (name.isNotEmpty && email.contains('@') && password.length >= 6) {
-      await _secureStorage.setAccessToken('mock_access_token');
-      await _secureStorage.setRefreshToken('mock_refresh_token');
-      await _storage.setCachedUserEmail(email);
-      final user = UserModel(id: 'usr_01', email: email, name: name);
-      state = AuthState.authenticated(user);
+      await _secureStorage.setAccessToken(response.accessToken);
+      await _secureStorage.setRefreshToken(response.refreshToken);
+      await _storage.setCachedUserEmail(response.user.email);
+
+      state = AuthState.authenticated(response.user);
       return true;
-    } else {
-      state = const AuthState.unauthenticated(error: 'Registration failed. Fill all fields correctly.');
+    } on AppException catch (e) {
+      state = AuthState.unauthenticated(error: e.message);
+      return false;
+    } catch (e) {
+      state = AuthState.unauthenticated(
+        error: e.toString().replaceAll('Exception:', '').trim(),
+      );
       return false;
     }
   }
 
   Future<void> logout() async {
+    try {
+      final refreshToken = await _secureStorage.getRefreshToken();
+      await _apiService.logout(refreshToken: refreshToken);
+    } catch (_) {}
+
     await _secureStorage.deleteAccessToken();
     await _secureStorage.deleteRefreshToken();
     await _storage.setActiveBusinessId(null);
@@ -105,7 +186,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
 }
 
 final authProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {
+  final apiService = ref.watch(authApiServiceProvider);
   final secure = ref.watch(secureStorageServiceProvider);
   final storage = ref.watch(storageServiceProvider);
-  return AuthNotifier(secure, storage);
+  return AuthNotifier(apiService, secure, storage);
 });

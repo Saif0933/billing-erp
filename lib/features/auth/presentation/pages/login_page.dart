@@ -25,8 +25,8 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   final _formKey = GlobalKey<FormState>();
   LoginPortalType _portalType = LoginPortalType.organization;
 
-  final _emailController = TextEditingController(text: 'owner@taxbunny.com');
-  final _passwordController = TextEditingController(text: 'password123');
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
   bool _isLoading = false;
 
   @override
@@ -39,13 +39,6 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   void _switchPortal(LoginPortalType type) {
     setState(() {
       _portalType = type;
-      if (type == LoginPortalType.organization) {
-        _emailController.text = 'owner@taxbunny.com';
-        _passwordController.text = 'password123';
-      } else {
-        _emailController.text = 'admin@platform-billing.com';
-        _passwordController.text = 'SuperAdmin@2026';
-      }
     });
   }
 
@@ -53,46 +46,44 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isLoading = true);
+    final email = _emailController.text.trim();
+    final password = _passwordController.text.trim();
+    final isSuperAdminTab = _portalType == LoginPortalType.platformAdmin;
 
-    if (_portalType == LoginPortalType.organization) {
-      // Organization / Tenant Login -> /dashboard
-      final success = await ref
-          .read(authProvider.notifier)
-          .login(_emailController.text.trim(), _passwordController.text.trim());
-      setState(() => _isLoading = false);
-      if (mounted) {
-        if (success) {
-          AppFeedback.showSnackbar(
-            context,
-            message: 'Welcome to Organization Portal!',
-          );
-          context.go('/dashboard');
-        } else {
-          final error = ref.read(authProvider).error ?? 'Authentication failed';
-          AppFeedback.showSnackbar(context, message: error, isError: true);
-        }
-      }
-    } else {
-      // Platform SuperAdmin Login -> /platform-admin
-      await Future.delayed(const Duration(milliseconds: 500));
-      final success = ref
-          .read(platformAdminProvider.notifier)
-          .login(_emailController.text.trim(), _passwordController.text.trim());
-      setState(() => _isLoading = false);
-      if (mounted) {
-        if (success) {
+    final success = await ref
+        .read(authProvider.notifier)
+        .login(
+          email,
+          password,
+          isPlatformAdminPortal: isSuperAdminTab,
+        );
+
+    setState(() => _isLoading = false);
+
+    if (mounted) {
+      if (success) {
+        final authState = ref.read(authProvider);
+
+        // If account is a Platform Administrator, always route to /platform-admin
+        if (authState.isPlatformAdmin || isSuperAdminTab) {
+          ref.read(platformAdminProvider.notifier).login(email, password);
           AppFeedback.showSnackbar(
             context,
             message: 'SuperAdmin Authenticated Successfully!',
           );
           context.go('/platform-admin');
-        } else {
-          AppFeedback.showSnackbar(
-            context,
-            message: 'Invalid SuperAdmin credentials',
-            isError: true,
-          );
+          return;
         }
+
+        // Standard tenant organization user
+        AppFeedback.showSnackbar(
+          context,
+          message: 'Welcome to Organization Portal!',
+        );
+        context.go('/dashboard');
+      } else {
+        final error = ref.read(authProvider).error ?? 'Authentication failed';
+        AppFeedback.showSnackbar(context, message: error, isError: true);
       }
     }
   }
@@ -280,9 +271,12 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                 controller: _emailController,
                 keyboardType: TextInputType.emailAddress,
                 validator: (value) {
-                  if (value == null || value.isEmpty)
+                  if (value == null || value.isEmpty) {
                     return 'Email is required';
-                  if (!value.contains('@')) return 'Enter a valid email';
+                  }
+                  if (!value.contains('@')) {
+                    return 'Enter a valid email';
+                  }
                   return null;
                 },
               ),
@@ -295,10 +289,12 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                 controller: _passwordController,
                 obscureText: true,
                 validator: (value) {
-                  if (value == null || value.isEmpty)
+                  if (value == null || value.isEmpty) {
                     return 'Password is required';
-                  if (value.length < 6)
+                  }
+                  if (value.length < 6) {
                     return 'Password must be at least 6 characters';
+                  }
                   return null;
                 },
               ),
@@ -336,12 +332,12 @@ class _LoginPageState extends ConsumerState<LoginPage> {
               ),
               const SizedBox(height: AppSpacing.lg),
 
-              if (!isSuperAdmin)
+              if (isSuperAdmin)
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                      "Don't have an account?",
+                      "Don't have a SuperAdmin account?",
                       style: AppTypography.bodyMedium.copyWith(
                         color: isDark
                             ? AppColors.textDarkSecondary
@@ -353,10 +349,8 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                       child: Text(
                         'Register here',
                         style: AppTypography.labelLarge.copyWith(
-                          color: isDark
-                              ? AppColors.accentLight
-                              : AppColors.primary,
-                          fontWeight: FontWeight.w600,
+                          color: const Color(0xFF818CF8),
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
                     ),
@@ -364,21 +358,15 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                 )
               else
                 Center(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF16A34A).withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: const Text(
-                      '🔒 Zero-Trust SuperAdmin Security Active',
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF16A34A),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8.0),
+                    child: Text(
+                      'Organization access is provisioned by your Platform Administrator.',
+                      textAlign: TextAlign.center,
+                      style: AppTypography.bodySmall.copyWith(
+                        color: isDark
+                            ? AppColors.textDarkSecondary
+                            : AppColors.textLightSecondary,
                       ),
                     ),
                   ),

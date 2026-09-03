@@ -1,0 +1,32 @@
+class ApiEndpoints {
+  ApiEndpoints._();
+
+  // Auth endpoints (matching backend src/module/user/routes/auth.routes.ts)
+  static const String register = '/api/v1/auth/register';
+  static const String login = '/api/v1/auth/login';
+  static const String refreshToken = '/api/v1/auth/refresh-token';
+  static const String logout = '/api/v1/auth/logout';
+  static const String getMe = '/api/v1/auth/me';
+
+  // Business & multi-tenant endpoints
+  static const String businesses = '/api/v1/businesses';
+  static const String currentBusiness = '/api/v1/businesses/current';
+  static const String switchBusiness = '/api/v1/businesses/switch';
+
+  // Invoices & Billing
+  static const String invoices = '/api/v1/invoices';
+  static const String invoiceSeries = '/api/v1/invoices/series';
+
+  // Customer & Supplier
+  static const String customers = '/api/v1/customers';
+  static const String suppliers = '/api/v1/suppliers';
+
+  // Inventory & Products
+  static const String products = '/api/v1/products';
+  static const String warehouses = '/api/v1/warehouses';
+  static const String stockMovements = '/api/v1/inventory/movements';
+
+  // Subscription & Plans
+  static const String plans = '/api/v1/subscriptions/plans';
+  static const String activeSubscription = '/api/v1/subscriptions/active';
+}

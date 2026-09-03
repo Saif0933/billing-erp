@@ -26,7 +26,7 @@ class _OtpPageState extends State<OtpPage> {
       setState(() => _isLoading = false);
       if (mounted) {
         AppFeedback.showSnackbar(context, message: 'OTP Verified successfully!');
-        context.go('/onboarding');
+        context.go('/dashboard');
       }
     }
   }
