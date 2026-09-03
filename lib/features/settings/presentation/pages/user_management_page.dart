@@ -235,7 +235,7 @@ class _UserManagementPageState extends ConsumerState<UserManagementPage> {
             color: isDark ? AppColors.borderDark : Colors.grey.shade100),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Colors.black.withValues(alpha: 0.02),
             blurRadius: 8,
             offset: const Offset(0, 3),
           ),
@@ -251,7 +251,7 @@ class _UserManagementPageState extends ConsumerState<UserManagementPage> {
                 width: 44,
                 height: 44,
                 decoration: BoxDecoration(
-                  color: roleColor.withOpacity(0.1),
+                  color: roleColor.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
                 alignment: Alignment.center,
@@ -293,9 +293,9 @@ class _UserManagementPageState extends ConsumerState<UserManagementPage> {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color: roleColor.withOpacity(0.08),
+                  color: roleColor.withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: roleColor.withOpacity(0.2), width: 1),
+                  border: Border.all(color: roleColor.withValues(alpha: 0.2), width: 1),
                 ),
                 child: Text(
                   roleLabel,
@@ -387,15 +387,25 @@ class _UserManagementPageState extends ConsumerState<UserManagementPage> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Row(
-                  children: const [
-                    Icon(Icons.people_outline, color: Color(0xFF2E7D32), size: 22),
-                    SizedBox(width: 8),
-                    Text('Active Team Directory',
-                        style: TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.bold)),
-                  ],
+                Expanded(
+                  child: Row(
+                    children: const [
+                      Icon(Icons.people_outline, color: Color(0xFF2E7D32), size: 22),
+                      SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Active Team Directory',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
+                const SizedBox(width: 8),
                 AppButton(
                   label: 'Add Member',
                   icon: Icons.person_add,

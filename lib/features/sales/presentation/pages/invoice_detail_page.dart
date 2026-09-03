@@ -219,35 +219,56 @@ class _InvoiceDetailPageState extends ConsumerState<InvoiceDetailPage> {
 
                 // Invoice Meta Info
                 AppCard(
-                  child: Column(
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      final isSmall = constraints.maxWidth < 600;
+
+                      final billedToWidget = Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text('Billed To:', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
-                              const SizedBox(height: 4),
-                              Text(invoice.customerName, style: AppTypography.titleMedium.copyWith(fontWeight: FontWeight.bold)),
-                              Text(invoice.billingAddress),
-                            ],
-                          ),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              const Text('Invoice Details:', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
-                              const SizedBox(height: 4),
-                              Text('Date: ${invoice.invoiceDate.day}/${invoice.invoiceDate.month}/${invoice.invoiceDate.year}'),
-                              Text('Place of Supply: ${invoice.placeOfSupply}'),
-                              Text('Payment Mode: ${invoice.paymentMode}'),
-                              if (invoice.isCreditNote)
-                                Text('Original Invoice ID: ${invoice.originalInvoiceId}', style: const TextStyle(color: Colors.red)),
-                            ],
-                          ),
+                          const Text('Billed To:', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
+                          const SizedBox(height: 4),
+                          Text(invoice.customerName, style: AppTypography.titleMedium.copyWith(fontWeight: FontWeight.bold)),
+                          Text(invoice.billingAddress),
                         ],
-                      ),
-                    ],
+                      );
+
+                      final detailsWidget = Column(
+                        crossAxisAlignment: isSmall ? CrossAxisAlignment.start : CrossAxisAlignment.end,
+                        children: [
+                          const Text('Invoice Details:', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
+                          const SizedBox(height: 4),
+                          Text('Date: ${invoice.invoiceDate.day}/${invoice.invoiceDate.month}/${invoice.invoiceDate.year}'),
+                          Text('Place of Supply: ${invoice.placeOfSupply}'),
+                          Text('Payment Mode: ${invoice.paymentMode}'),
+                          if (invoice.isCreditNote)
+                            Text('Original Invoice ID: ${invoice.originalInvoiceId}', style: const TextStyle(color: Colors.red)),
+                        ],
+                      );
+
+                      if (isSmall) {
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            billedToWidget,
+                            const SizedBox(height: 12),
+                            const Divider(height: 1),
+                            const SizedBox(height: 12),
+                            detailsWidget,
+                          ],
+                        );
+                      }
+
+                      return Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(child: billedToWidget),
+                          const SizedBox(width: 16),
+                          Expanded(child: detailsWidget),
+                        ],
+                      );
+                    },
                   ),
                 ),
 
@@ -305,58 +326,73 @@ class _InvoiceDetailPageState extends ConsumerState<InvoiceDetailPage> {
                 const SizedBox(height: AppSpacing.md),
 
                 // Totals summary panel
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: AppCard(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text('Terms & Conditions:', style: TextStyle(fontWeight: FontWeight.bold)),
-                            const SizedBox(height: 4),
-                            Text(invoice.termsConditions.isNotEmpty ? invoice.termsConditions : 'No terms specified.'),
-                            if (invoice.notes.isNotEmpty) ...[
-                              const SizedBox(height: AppSpacing.md),
-                              const Text('Internal Notes:', style: TextStyle(fontWeight: FontWeight.bold)),
-                              Text(invoice.notes),
-                            ],
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    final isSmall = constraints.maxWidth < 700;
+
+                    final termsWidget = AppCard(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('Terms & Conditions:', style: TextStyle(fontWeight: FontWeight.bold)),
+                          const SizedBox(height: 4),
+                          Text(invoice.termsConditions.isNotEmpty ? invoice.termsConditions : 'No terms specified.'),
+                          if (invoice.notes.isNotEmpty) ...[
+                            const SizedBox(height: AppSpacing.md),
+                            const Text('Internal Notes:', style: TextStyle(fontWeight: FontWeight.bold)),
+                            Text(invoice.notes),
                           ],
-                        ),
+                        ],
                       ),
-                    ),
-                    const SizedBox(width: AppSpacing.md),
-                    SizedBox(
-                      width: 350,
-                      child: AppCard(
-                        child: Column(
-                          children: [
-                            _buildSummaryRow('Taxable Amount:', '₹${invoice.taxableAmount.toStringAsFixed(2)}'),
-                            if (invoice.cgst > 0) _buildSummaryRow('CGST Amount:', '₹${invoice.cgst.toStringAsFixed(2)}'),
-                            if (invoice.sgst > 0) _buildSummaryRow('SGST Amount:', '₹${invoice.sgst.toStringAsFixed(2)}'),
-                            if (invoice.igst > 0) _buildSummaryRow('IGST Amount:', '₹${invoice.igst.toStringAsFixed(2)}'),
-                            if (invoice.cess > 0) _buildSummaryRow('Cess Amount:', '₹${invoice.cess.toStringAsFixed(2)}'),
-                            _buildSummaryRow('Round Off:', '₹${invoice.roundOff.toStringAsFixed(2)}'),
-                            const Divider(),
-                            _buildSummaryRow(
-                              'Grand Total:',
-                              '₹${invoice.grandTotal.toStringAsFixed(2)}',
-                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.blue),
+                    );
+
+                    final totalsWidget = AppCard(
+                      child: Column(
+                        children: [
+                          _buildSummaryRow('Taxable Amount:', '₹${invoice.taxableAmount.toStringAsFixed(2)}'),
+                          if (invoice.cgst > 0) _buildSummaryRow('CGST Amount:', '₹${invoice.cgst.toStringAsFixed(2)}'),
+                          if (invoice.sgst > 0) _buildSummaryRow('SGST Amount:', '₹${invoice.sgst.toStringAsFixed(2)}'),
+                          if (invoice.igst > 0) _buildSummaryRow('IGST Amount:', '₹${invoice.igst.toStringAsFixed(2)}'),
+                          if (invoice.cess > 0) _buildSummaryRow('Cess Amount:', '₹${invoice.cess.toStringAsFixed(2)}'),
+                          _buildSummaryRow('Round Off:', '₹${invoice.roundOff.toStringAsFixed(2)}'),
+                          const Divider(),
+                          _buildSummaryRow(
+                            'Grand Total:',
+                            '₹${invoice.grandTotal.toStringAsFixed(2)}',
+                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.blue),
+                          ),
+                          _buildSummaryRow(
+                            'Balance Remaining:',
+                            '₹${invoice.balanceAmount.toStringAsFixed(2)}',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              color: invoice.balanceAmount > 0 && invoice.status != InvoiceStatus.cancelled ? Colors.red : Colors.green,
                             ),
-                            _buildSummaryRow(
-                              'Balance Remaining:',
-                              '₹${invoice.balanceAmount.toStringAsFixed(2)}',
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                                color: invoice.balanceAmount > 0 && invoice.status != InvoiceStatus.cancelled ? Colors.red : Colors.green,
-                              ),
-                            ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
-                    ),
-                  ],
+                    );
+
+                    if (isSmall) {
+                      return Column(
+                        children: [
+                          termsWidget,
+                          const SizedBox(height: AppSpacing.md),
+                          totalsWidget,
+                        ],
+                      );
+                    }
+
+                    return Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(child: termsWidget),
+                        const SizedBox(width: AppSpacing.md),
+                        SizedBox(width: 350, child: totalsWidget),
+                      ],
+                    );
+                  },
                 ),
 
                 const SizedBox(height: AppSpacing.lg),

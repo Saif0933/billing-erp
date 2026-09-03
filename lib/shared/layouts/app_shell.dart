@@ -192,6 +192,13 @@ class _AppShellState extends ConsumerState<AppShell> {
                           ),
                           _buildMoreItem(
                             context,
+                            'Purchase Returns',
+                            '/purchase/returns',
+                            Icons.assignment_return_outlined,
+                            SubscriptionFeature.purchase,
+                          ),
+                          _buildMoreItem(
+                            context,
                             'Expenses Tracker',
                             '/expenses',
                             Icons.money_off_outlined,
@@ -231,6 +238,13 @@ class _AppShellState extends ConsumerState<AppShell> {
                             'Products Directory',
                             '/products',
                             Icons.view_in_ar_outlined,
+                            SubscriptionFeature.products,
+                          ),
+                          _buildMoreItem(
+                            context,
+                            'Product Listing',
+                            '/product-listing',
+                            Icons.qr_code_scanner_outlined,
                             SubscriptionFeature.products,
                           ),
                         ],

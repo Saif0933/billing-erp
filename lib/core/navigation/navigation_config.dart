@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'navigation_item.dart';
-import '../permissions/permission_models.dart';
 import '../../features/subscription/domain/entities/subscription_models.dart';
 
 class NavigationConfig {
@@ -46,6 +45,13 @@ class NavigationConfig {
           title: 'Products',
           icon: Icons.view_in_ar_outlined,
           route: '/products',
+          requiredFeature: SubscriptionFeature.products,
+        ),
+        NavigationItem(
+          id: 'product_listing',
+          title: 'Product Listing',
+          icon: Icons.qr_code_scanner_outlined,
+          route: '/product-listing',
           requiredFeature: SubscriptionFeature.products,
         ),
         NavigationItem(
@@ -97,6 +103,13 @@ class NavigationConfig {
           title: 'Purchase Bills',
           icon: Icons.shopping_cart_outlined,
           route: '/purchase',
+          requiredFeature: SubscriptionFeature.purchase,
+        ),
+        NavigationItem(
+          id: 'purchase_returns',
+          title: 'Purchase Returns',
+          icon: Icons.assignment_return_outlined,
+          route: '/purchase/returns',
           requiredFeature: SubscriptionFeature.purchase,
         ),
       ],

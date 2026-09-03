@@ -34,6 +34,7 @@ class MobileDrawer extends ConsumerWidget {
       case 'customers':
       case 'suppliers':
       case 'products':
+      case 'product_listing':
       case 'services':
         return const Color(0xFF1976D2);
       case 'sales_group':

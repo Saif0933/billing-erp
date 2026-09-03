@@ -30,8 +30,8 @@ import '../../features/customer/presentation/pages/customer_detail_page.dart';
 import '../../features/supplier/presentation/pages/supplier_page.dart';
 import '../../features/supplier/presentation/pages/supplier_form_page.dart';
 import '../../features/supplier/presentation/pages/supplier_detail_page.dart';
-import '../../features/product/presentation/pages/product_page.dart';
 import '../../features/product/presentation/pages/product_form_page.dart';
+import '../../features/product-listing/presentation/pages/product_listing_page.dart';
 import '../../features/service/presentation/pages/service_page.dart';
 import '../../features/service/presentation/pages/service_form_page.dart';
 import '../../features/sales/presentation/pages/sales_invoice_page.dart';
@@ -43,6 +43,7 @@ import '../../features/sales/presentation/pages/sale_return_detail_page.dart';
 import '../../features/purchase/presentation/pages/purchase_page.dart';
 import '../../features/purchase/presentation/pages/purchase_create_page.dart';
 import '../../features/purchase/presentation/pages/purchase_detail_page.dart';
+import '../../features/purchase/presentation/pages/purchase_return_page.dart';
 import '../../features/payments/presentation/pages/receipt_entry_page.dart';
 import '../../features/payments/presentation/pages/payment_entry_page.dart';
 import '../../features/double-entery-account/presentation/pages/general_ledger_page.dart';
@@ -69,6 +70,7 @@ import '../../features/manufacturing/presentation/pages/bom_page.dart';
 import '../../features/manufacturing/presentation/pages/production_orders_page.dart';
 import '../../features/manufacturing/presentation/pages/job_work_page.dart';
 import '../../features/manufacturing/presentation/pages/manufacturing_reports_page.dart';
+import '../../features/gstIn/presentation/pages/gst_portal_page.dart';
 
 import '../../shared/widgets/app_states.dart';
 
@@ -201,7 +203,11 @@ final routerProvider = Provider<GoRouter>((ref) {
           // Products
           GoRoute(
             path: '/products',
-            builder: (context, state) => const ProductPage(),
+            builder: (context, state) => const ProductListingPage(),
+          ),
+          GoRoute(
+            path: '/product-listing',
+            builder: (context, state) => const ProductListingPage(),
           ),
           GoRoute(
             path: '/products/new',
@@ -270,6 +276,14 @@ final routerProvider = Provider<GoRouter>((ref) {
 
           // Purchases
           GoRoute(
+            path: '/purchase/returns',
+            builder: (context, state) => const PurchaseReturnPage(),
+          ),
+          GoRoute(
+            path: '/purchase/returns/new',
+            builder: (context, state) => const PurchaseReturnPage(),
+          ),
+          GoRoute(
             path: '/purchase',
             builder: (context, state) => const PurchasePage(),
           ),
@@ -281,6 +295,9 @@ final routerProvider = Provider<GoRouter>((ref) {
             path: '/purchase/:id',
             builder: (context, state) {
               final id = state.pathParameters['id']!;
+              if (id == 'returns') {
+                return const PurchaseReturnPage();
+              }
               return PurchaseDetailPage(purchaseId: id);
             },
           ),
@@ -320,6 +337,10 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: '/reports',
             builder: (context, state) => const ReportsPage(),
+          ),
+          GoRoute(
+            path: '/gst',
+            builder: (context, state) => const GstPortalPage(),
           ),
           GoRoute(
             path: '/settings/warehouses',

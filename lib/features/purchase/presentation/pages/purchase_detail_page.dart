@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_spacing.dart';
 import '../../../../core/constants/app_typography.dart';
 import '../../../../core/models/billing_models.dart';
@@ -193,34 +192,55 @@ class _PurchaseDetailPageState extends ConsumerState<PurchaseDetailPage> {
 
                 // Bill Metadata Card
                 AppCard(
-                  child: Column(
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      final isSmall = constraints.maxWidth < 600;
+
+                      final supplierWidget = Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text('Supplier Account:', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
-                              const SizedBox(height: 4),
-                              Text(purchase.supplierName, style: AppTypography.titleMedium.copyWith(fontWeight: FontWeight.bold)),
-                              Text('Supplier Invoice Ref: ${purchase.supplierInvoiceNumber}'),
-                            ],
-                          ),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              const Text('Bill Details:', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
-                              const SizedBox(height: 4),
-                              Text('Date: ${purchase.purchaseDate.day}/${purchase.purchaseDate.month}/${purchase.purchaseDate.year}'),
-                              Text('Payment Mode: ${purchase.paymentMode}'),
-                              if (purchase.isDebitNote)
-                                Text('Original Bill: ${purchase.originalPurchaseId}', style: const TextStyle(color: Colors.red)),
-                            ],
-                          ),
+                          const Text('Supplier Account:', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
+                          const SizedBox(height: 4),
+                          Text(purchase.supplierName, style: AppTypography.titleMedium.copyWith(fontWeight: FontWeight.bold)),
+                          Text('Supplier Invoice Ref: ${purchase.supplierInvoiceNumber}'),
                         ],
-                      ),
-                    ],
+                      );
+
+                      final detailsWidget = Column(
+                        crossAxisAlignment: isSmall ? CrossAxisAlignment.start : CrossAxisAlignment.end,
+                        children: [
+                          const Text('Bill Details:', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
+                          const SizedBox(height: 4),
+                          Text('Date: ${purchase.purchaseDate.day}/${purchase.purchaseDate.month}/${purchase.purchaseDate.year}'),
+                          Text('Payment Mode: ${purchase.paymentMode}'),
+                          if (purchase.isDebitNote)
+                            Text('Original Bill: ${purchase.originalPurchaseId}', style: const TextStyle(color: Colors.red)),
+                        ],
+                      );
+
+                      if (isSmall) {
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            supplierWidget,
+                            const SizedBox(height: 12),
+                            const Divider(height: 1),
+                            const SizedBox(height: 12),
+                            detailsWidget,
+                          ],
+                        );
+                      }
+
+                      return Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(child: supplierWidget),
+                          const SizedBox(width: 16),
+                          Expanded(child: detailsWidget),
+                        ],
+                      );
+                    },
                   ),
                 ),
 
@@ -278,55 +298,70 @@ class _PurchaseDetailPageState extends ConsumerState<PurchaseDetailPage> {
                 const SizedBox(height: AppSpacing.md),
 
                 // Totals
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: AppCard(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text('Audit & Notes:', style: TextStyle(fontWeight: FontWeight.bold)),
-                            const SizedBox(height: 4),
-                            Text(purchase.notes.isNotEmpty ? purchase.notes : 'No audit details specified.'),
-                          ],
-                        ),
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    final isSmall = constraints.maxWidth < 700;
+
+                    final notesWidget = AppCard(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('Audit & Notes:', style: TextStyle(fontWeight: FontWeight.bold)),
+                          const SizedBox(height: 4),
+                          Text(purchase.notes.isNotEmpty ? purchase.notes : 'No audit details specified.'),
+                        ],
                       ),
-                    ),
-                    const SizedBox(width: AppSpacing.md),
-                    SizedBox(
-                      width: 350,
-                      child: AppCard(
-                        child: Column(
-                          children: [
-                            _buildSummaryRow('Taxable Amount:', '₹${purchase.taxableAmount.toStringAsFixed(2)}'),
-                            if (purchase.cgst > 0) _buildSummaryRow('CGST Amount:', '₹${purchase.cgst.toStringAsFixed(2)}'),
-                            if (purchase.sgst > 0) _buildSummaryRow('SGST Amount:', '₹${purchase.sgst.toStringAsFixed(2)}'),
-                            if (purchase.igst > 0) _buildSummaryRow('IGST Amount:', '₹${purchase.igst.toStringAsFixed(2)}'),
-                            if (purchase.cess > 0) _buildSummaryRow('Cess Amount:', '₹${purchase.cess.toStringAsFixed(2)}'),
-                            _buildSummaryRow('Freight Charges:', '₹${purchase.freightCharges.toStringAsFixed(2)}'),
-                            _buildSummaryRow('Other Charges:', '₹${purchase.otherCharges.toStringAsFixed(2)}'),
-                            _buildSummaryRow('Round Off:', '₹${purchase.roundOff.toStringAsFixed(2)}'),
-                            const Divider(),
-                            _buildSummaryRow(
-                              'Grand Total:',
-                              '₹${purchase.grandTotal.toStringAsFixed(2)}',
-                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.blue),
+                    );
+
+                    final totalsWidget = AppCard(
+                      child: Column(
+                        children: [
+                          _buildSummaryRow('Taxable Amount:', '₹${purchase.taxableAmount.toStringAsFixed(2)}'),
+                          if (purchase.cgst > 0) _buildSummaryRow('CGST Amount:', '₹${purchase.cgst.toStringAsFixed(2)}'),
+                          if (purchase.sgst > 0) _buildSummaryRow('SGST Amount:', '₹${purchase.sgst.toStringAsFixed(2)}'),
+                          if (purchase.igst > 0) _buildSummaryRow('IGST Amount:', '₹${purchase.igst.toStringAsFixed(2)}'),
+                          if (purchase.cess > 0) _buildSummaryRow('Cess Amount:', '₹${purchase.cess.toStringAsFixed(2)}'),
+                          _buildSummaryRow('Freight Charges:', '₹${purchase.freightCharges.toStringAsFixed(2)}'),
+                          _buildSummaryRow('Other Charges:', '₹${purchase.otherCharges.toStringAsFixed(2)}'),
+                          _buildSummaryRow('Round Off:', '₹${purchase.roundOff.toStringAsFixed(2)}'),
+                          const Divider(),
+                          _buildSummaryRow(
+                            'Grand Total:',
+                            '₹${purchase.grandTotal.toStringAsFixed(2)}',
+                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.blue),
+                          ),
+                          _buildSummaryRow(
+                            'Payable Remaining:',
+                            '₹${purchase.balanceAmount.toStringAsFixed(2)}',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              color: purchase.balanceAmount > 0 && purchase.status != PurchaseStatus.cancelled ? Colors.red : Colors.green,
                             ),
-                            _buildSummaryRow(
-                              'Payable Remaining:',
-                              '₹${purchase.balanceAmount.toStringAsFixed(2)}',
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                                color: purchase.balanceAmount > 0 && purchase.status != PurchaseStatus.cancelled ? Colors.red : Colors.green,
-                              ),
-                            ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
-                    ),
-                  ],
+                    );
+
+                    if (isSmall) {
+                      return Column(
+                        children: [
+                          notesWidget,
+                          const SizedBox(height: AppSpacing.md),
+                          totalsWidget,
+                        ],
+                      );
+                    }
+
+                    return Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(child: notesWidget),
+                        const SizedBox(width: AppSpacing.md),
+                        SizedBox(width: 350, child: totalsWidget),
+                      ],
+                    );
+                  },
                 ),
 
                 const SizedBox(height: AppSpacing.lg),
