@@ -450,6 +450,15 @@ class PlatformAdminShellPage extends ConsumerWidget {
                     isDark: isDark,
                     badgeCount: state.onboardingRequests.isNotEmpty ? state.onboardingRequests.length : null,
                   ),
+                  _buildSidebarItem(
+                    title: 'Product Listing',
+                    icon: Icons.qr_code_scanner_outlined,
+                    activeIcon: Icons.qr_code_scanner,
+                    tabId: 'product_listing',
+                    isSelected: false,
+                    onTap: () => context.go('/product-listing'),
+                    isDark: isDark,
+                  ),
                   const Spacer(),
                   const Divider(height: 1),
                   Padding(
@@ -733,6 +742,18 @@ class PlatformAdminShellPage extends ConsumerWidget {
               },
               isDark: isDark,
               badgeCount: state.onboardingRequests.isNotEmpty ? state.onboardingRequests.length : null,
+            ),
+            _buildSidebarItem(
+              title: 'Product Listing',
+              icon: Icons.qr_code_scanner_outlined,
+              activeIcon: Icons.qr_code_scanner,
+              tabId: 'product_listing',
+              isSelected: false,
+              onTap: () {
+                Navigator.pop(context);
+                context.go('/product-listing');
+              },
+              isDark: isDark,
             ),
             const Spacer(),
             ListTile(

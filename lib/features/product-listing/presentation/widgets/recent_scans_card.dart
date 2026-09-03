@@ -103,8 +103,8 @@ class RecentScansCard extends ConsumerWidget {
       children: [
         // Product Thumbnail Box
         Container(
-          width: 42,
-          height: 42,
+          width: 40,
+          height: 40,
           decoration: BoxDecoration(
             color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
             borderRadius: BorderRadius.circular(8),
@@ -115,17 +115,18 @@ class RecentScansCard extends ConsumerWidget {
           child: Center(
             child: Icon(
               item.placeholderIcon,
-              size: 22,
+              size: 20,
               color: item.iconColor,
             ),
           ),
         ),
-        const SizedBox(width: 10),
+        const SizedBox(width: 8),
 
         // Product Name + Barcode + Time
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
             children: [
               Text(
                 item.name,
@@ -140,20 +141,25 @@ class RecentScansCard extends ConsumerWidget {
               const SizedBox(height: 2),
               Row(
                 children: [
-                  Text(
-                    item.barcode,
-                    style: TextStyle(
-                      fontSize: 10.5,
-                      color: isDark ? Colors.white54 : const Color(0xFF64748B),
+                  Flexible(
+                    child: Text(
+                      item.barcode,
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: isDark ? Colors.white54 : const Color(0xFF64748B),
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                  const SizedBox(width: 6),
+                  const SizedBox(width: 4),
                   Text(
-                    '•  ${_getRelativeTime(item.lastScannedAt)}',
+                    '• ${_getRelativeTime(item.lastScannedAt)}',
                     style: TextStyle(
-                      fontSize: 10,
+                      fontSize: 9.5,
                       color: isDark ? Colors.white38 : const Color(0xFF94A3B8),
                     ),
+                    maxLines: 1,
                   ),
                 ],
               ),
@@ -164,29 +170,29 @@ class RecentScansCard extends ConsumerWidget {
 
         // Price
         Text(
-          '₹ ${item.sellingPrice.toStringAsFixed(2)}',
+          '₹${item.sellingPrice.toStringAsFixed(2)}',
           style: TextStyle(
-            fontSize: 13,
+            fontSize: 12.5,
             fontWeight: FontWeight.bold,
             color: isDark ? Colors.white : const Color(0xFF0F172A),
           ),
         ),
-        const SizedBox(width: 8),
+        const SizedBox(width: 6),
 
         // Green Circular/Rounded Plus Button
         InkWell(
           onTap: () => ProductQuickAddModal.show(context, item),
           borderRadius: BorderRadius.circular(6),
           child: Container(
-            width: 28,
-            height: 28,
+            width: 26,
+            height: 26,
             decoration: BoxDecoration(
               color: const Color(0xFF15803D), // Green
               borderRadius: BorderRadius.circular(6),
             ),
             child: const Icon(
               Icons.add,
-              size: 16,
+              size: 15,
               color: Colors.white,
             ),
           ),

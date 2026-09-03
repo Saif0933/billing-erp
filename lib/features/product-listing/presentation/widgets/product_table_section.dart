@@ -32,7 +32,7 @@ class ProductTableSection extends ConsumerWidget {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             child: LayoutBuilder(
               builder: (context, constraints) {
-                final isSmall = constraints.maxWidth < 650;
+                final isSmall = constraints.maxWidth < 760;
 
                 final titleWidget = Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -58,7 +58,9 @@ class ProductTableSection extends ConsumerWidget {
 
                 final filtersWidget = SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
+                  physics: const BouncingScrollPhysics(),
                   child: Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
                       ...categories.map((cat) {
                         final isSelected = state.selectedCategory == cat;
@@ -149,10 +151,16 @@ class ProductTableSection extends ConsumerWidget {
 
                 return Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     titleWidget,
-                    const SizedBox(width: 12),
-                    filtersWidget,
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Align(
+                        alignment: Alignment.centerRight,
+                        child: filtersWidget,
+                      ),
+                    ),
                   ],
                 );
               },

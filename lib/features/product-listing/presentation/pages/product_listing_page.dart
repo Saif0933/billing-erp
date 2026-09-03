@@ -30,7 +30,7 @@ class ProductListingPage extends ConsumerWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
           child: LayoutBuilder(
             builder: (context, constraints) {
-              final isSmall = constraints.maxWidth < 900;
+              final isSmall = constraints.maxWidth < 960;
 
               // Left Panel (Scanner Card + Recent Scans Card)
               final leftPanel = Column(
@@ -60,7 +60,7 @@ class ProductListingPage extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   SizedBox(
-                    width: 320,
+                    width: 340,
                     child: leftPanel,
                   ),
                   const SizedBox(width: 16),
