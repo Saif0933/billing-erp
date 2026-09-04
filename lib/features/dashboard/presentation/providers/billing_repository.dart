@@ -2,8 +2,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/models/billing_models.dart';
 import '../../../../core/models/warehouse_models.dart';
 import '../../../../core/models/recurring_billing_models.dart';
-import '../../../../core/services/gst_calculation_service.dart';
 import '../../../business/presentation/providers/business_provider.dart';
+
 import '../../../../core/models/accounting_models.dart';
 import '../../../../core/models/manufacturing_models.dart';
 import '../../../notifications/data/models/notification_model.dart';
@@ -186,15 +186,8 @@ class BillingNotifier extends StateNotifier<BillingState> {
     }
   }
 
-  String get _businessStateCode {
-    try {
-      return _ref.read(businessProvider).activeBusiness?.stateCode ?? '27';
-    } catch (_) {
-      return '27';
-    }
-  }
-
   // --- Initial Mock Data ---
+
   void _loadInitialMockData() {
     // Pre-populate with realistic starting data
     final customers = [
@@ -865,6 +858,10 @@ class BillingNotifier extends StateNotifier<BillingState> {
     );
   }
 
+  void setCustomers(List<Customer> list) {
+    state = state.copyWith(customers: list);
+  }
+
   // --- Supplier CRUD ---
   Future<void> addSupplier(Supplier s) async {
     state = state.copyWith(suppliers: [...state.suppliers, s]);
@@ -881,6 +878,11 @@ class BillingNotifier extends StateNotifier<BillingState> {
       suppliers: state.suppliers.where((supp) => supp.id != id).toList(),
     );
   }
+
+  void setSuppliers(List<Supplier> list) {
+    state = state.copyWith(suppliers: list);
+  }
+
 
   // --- Product CRUD ---
   Future<void> addProduct(Product p) async {
@@ -978,9 +980,8 @@ class BillingNotifier extends StateNotifier<BillingState> {
   }
 
   Future<void> _processInvoiceConfirmation(Invoice invoice) async {
-    final now = DateTime.now();
-
     // 1. Update product stock levels & stock movements
+
     final List<Product> updatedProducts = List.from(state.products);
     final List<StockMovement> newMovements = List.from(state.stockMovements);
 

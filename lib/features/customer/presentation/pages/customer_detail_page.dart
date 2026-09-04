@@ -5,43 +5,112 @@ import '../../../../core/constants/app_spacing.dart';
 import '../../../../core/constants/app_typography.dart';
 import '../../../../core/responsive/responsive.dart';
 import '../../../../core/models/billing_models.dart';
-import '../../../../shared/widgets/app_button.dart';
 import '../../../../shared/widgets/app_cards.dart';
 import '../../../../shared/widgets/app_table.dart';
+import '../../../../shared/widgets/feedback.dart';
 import '../../../dashboard/presentation/providers/billing_repository.dart';
+import '../providers/customer_provider.dart';
 
 class CustomerDetailPage extends ConsumerWidget {
   final String customerId;
   const CustomerDetailPage({super.key, required this.customerId});
 
+  void _confirmDelete(BuildContext context, WidgetRef ref, Customer customer) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete Customer'),
+        content: Text(
+          'Are you sure you want to delete "${customer.name}"? '
+          'If the customer has existing invoices or ledger entries, they will be safely deactivated.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () async {
+              Navigator.of(ctx).pop();
+              try {
+                await ref.read(customerProvider.notifier).deleteCustomer(customer.id);
+                if (context.mounted) {
+                  AppFeedback.showSnackbar(
+                    context,
+                    message: 'Customer "${customer.name}" processed successfully.',
+                  );
+                  context.pop();
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  AppFeedback.showSnackbar(
+                    context,
+                    message: e.toString().replaceAll('Exception:', '').trim(),
+                    isError: true,
+                  );
+                }
+              }
+            },
+            child: const Text('Delete', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final billingState = ref.watch(billingRepositoryProvider);
-    
-    // Find customer
-    final customer = billingState.customers.firstWhere(
-      (c) => c.id == customerId,
-      orElse: () => Customer(
-        id: '',
-        name: 'Not Found',
-        type: '',
-        gstin: '',
-        pan: '',
-        mobile: '',
-        email: '',
-        billingAddress: '',
-        shippingAddress: '',
-        state: '',
-        stateCode: '',
-        creditLimit: 0,
-        creditPeriod: 0,
-        openingBalance: 0,
-        currentBalance: 0,
-        customerGroup: '',
-        notes: '',
-        isRegistered: false,
-      ),
-    );
+    final customerState = ref.watch(customerProvider);
+    final liveDetailAsync = ref.watch(customerDetailProvider(customerId));
+
+    // Resolve Customer from live backend detail or fallback to state
+    Customer? resolvedCustomer = liveDetailAsync.value?.customer;
+    if (resolvedCustomer == null) {
+      for (final c in customerState.customers) {
+        if (c.id == customerId) {
+          resolvedCustomer = c;
+          break;
+        }
+      }
+    }
+    if (resolvedCustomer == null) {
+      for (final c in billingState.customers) {
+        if (c.id == customerId) {
+          resolvedCustomer = c;
+          break;
+        }
+      }
+    }
+
+    final customer = resolvedCustomer ??
+        const Customer(
+          id: '',
+          name: 'Not Found',
+          type: '',
+          gstin: '',
+          pan: '',
+          mobile: '',
+          email: '',
+          billingAddress: '',
+          shippingAddress: '',
+          state: '',
+          stateCode: '',
+          creditLimit: 0,
+          creditPeriod: 0,
+          openingBalance: 0,
+          currentBalance: 0,
+          customerGroup: '',
+          notes: '',
+          isRegistered: false,
+        );
+
+    if (customer.id.isEmpty && liveDetailAsync.isLoading) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
 
     if (customer.id.isEmpty) {
       return const Scaffold(
@@ -70,7 +139,13 @@ class CustomerDetailPage extends ConsumerWidget {
           actions: [
             IconButton(
               icon: const Icon(Icons.edit_outlined),
+              tooltip: 'Edit Profile',
               onPressed: () => context.push('/customers/edit/${customer.id}'),
+            ),
+            IconButton(
+              icon: const Icon(Icons.delete_outline, color: Colors.red),
+              tooltip: 'Delete Profile',
+              onPressed: () => _confirmDelete(context, ref, customer),
             ),
           ],
         ),

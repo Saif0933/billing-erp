@@ -11,6 +11,7 @@ import '../../../../shared/widgets/app_cards.dart';
 import '../../../../shared/widgets/app_input_fields.dart';
 import '../../../../shared/widgets/feedback.dart';
 import '../../../dashboard/presentation/providers/billing_repository.dart';
+import '../providers/customer_provider.dart';
 
 class CustomerFormPage extends ConsumerStatefulWidget {
   final String? customerId; // Non-empty if editing
@@ -37,10 +38,18 @@ class _CustomerFormPageState extends ConsumerState<CustomerFormPage> {
   final _customerGroupController = TextEditingController(text: 'General');
   final _notesController = TextEditingController();
 
+  static const List<String> _customerTypes = [
+    'Retail',
+    'Wholesale',
+    'Corporate',
+    'General',
+  ];
+
   String _selectedType = 'Retail';
   bool _isRegistered = false;
   bool _isShippingSameAsBilling = true;
   bool _isEdit = false;
+  bool _isSaving = false;
 
   @override
   void initState() {
@@ -51,9 +60,38 @@ class _CustomerFormPageState extends ConsumerState<CustomerFormPage> {
     }
   }
 
-  void _loadCustomerDetails() {
-    final stateRepo = ref.read(billingRepositoryProvider);
-    final cust = stateRepo.customers.firstWhere((c) => c.id == widget.customerId);
+  Future<void> _loadCustomerDetails() async {
+    Customer? cust;
+    final customerList = ref.read(customerProvider).customers;
+    for (final c in customerList) {
+      if (c.id == widget.customerId) {
+        cust = c;
+        break;
+      }
+    }
+    if (cust == null) {
+      final billingList = ref.read(billingRepositoryProvider).customers;
+      for (final c in billingList) {
+        if (c.id == widget.customerId) {
+          cust = c;
+          break;
+        }
+      }
+    }
+
+    // Direct fetch from backend API if not yet in memory
+    if (cust == null && widget.customerId != null && widget.customerId!.isNotEmpty) {
+      try {
+        final api = ref.read(customerApiServiceProvider);
+        final detail = await api.getCustomerById(widget.customerId!);
+        cust = detail.customer;
+      } catch (_) {}
+    }
+
+    if (cust == null || !mounted) return;
+
+    final rawType = cust.type.trim();
+    final loadedType = rawType.isNotEmpty ? rawType : 'Retail';
 
     _nameController.text = cust.name;
     _mobileController.text = cust.mobile;
@@ -71,10 +109,20 @@ class _CustomerFormPageState extends ConsumerState<CustomerFormPage> {
     _notesController.text = cust.notes;
 
     setState(() {
-      _selectedType = cust.type;
-      _isRegistered = cust.isRegistered;
+      _selectedType = loadedType;
+      _isRegistered = cust!.isRegistered;
       _isShippingSameAsBilling = cust.billingAddress == cust.shippingAddress;
     });
+  }
+
+  List<DropdownMenuItem<String>> _buildTypeDropdownItems() {
+    final types = {
+      ..._customerTypes,
+      if (_selectedType.isNotEmpty) _selectedType,
+    };
+    return types
+        .map((t) => DropdownMenuItem<String>(value: t, child: Text(t)))
+        .toList();
   }
 
   @override
@@ -98,42 +146,59 @@ class _CustomerFormPageState extends ConsumerState<CustomerFormPage> {
 
   Future<void> _handleSave() async {
     if (_formKey.currentState!.validate()) {
-      final billingRepo = ref.read(billingRepositoryProvider.notifier);
-
-      final shipping = _isShippingSameAsBilling ? _billingAddressController.text : _shippingAddressController.text;
+      setState(() => _isSaving = true);
+      final shipping = _isShippingSameAsBilling
+          ? _billingAddressController.text
+          : _shippingAddressController.text;
 
       final customer = Customer(
-        id: _isEdit ? widget.customerId! : 'cust_${DateTime.now().millisecondsSinceEpoch}',
-        name: _nameController.text,
+        id: _isEdit ? widget.customerId! : '',
+        name: _nameController.text.trim(),
         type: _selectedType,
-        gstin: _isRegistered ? _gstinController.text : '',
-        pan: _panController.text,
-        mobile: _mobileController.text,
-        email: _emailController.text,
-        billingAddress: _billingAddressController.text,
-        shippingAddress: shipping,
-        state: _stateController.text,
-        stateCode: _stateCodeController.text,
+        gstin: _isRegistered ? _gstinController.text.trim().toUpperCase() : '',
+        pan: _panController.text.trim().toUpperCase(),
+        mobile: _mobileController.text.trim(),
+        email: _emailController.text.trim(),
+        billingAddress: _billingAddressController.text.trim(),
+        shippingAddress: shipping.trim(),
+        state: _stateController.text.trim(),
+        stateCode: _stateCodeController.text.trim(),
         creditLimit: double.tryParse(_creditLimitController.text) ?? 0.0,
         creditPeriod: int.tryParse(_creditPeriodController.text) ?? 0,
         openingBalance: double.tryParse(_openingBalanceController.text) ?? 0.0,
         currentBalance: double.tryParse(_openingBalanceController.text) ?? 0.0,
-        customerGroup: _customerGroupController.text,
-        notes: _notesController.text,
+        customerGroup: _customerGroupController.text.trim(),
+        notes: _notesController.text.trim(),
         isRegistered: _isRegistered,
       );
 
-      if (_isEdit) {
-        await billingRepo.updateCustomer(customer);
-        if (mounted) {
-          AppFeedback.showSnackbar(context, message: 'Customer updated successfully!');
-          context.pop();
+      try {
+        final customerNotifier = ref.read(customerProvider.notifier);
+        if (_isEdit) {
+          await customerNotifier.updateCustomer(customer);
+          if (mounted) {
+            AppFeedback.showSnackbar(context, message: 'Customer updated successfully!');
+            context.pop();
+          }
+        } else {
+          await customerNotifier.addCustomer(customer);
+          if (mounted) {
+            AppFeedback.showSnackbar(context, message: 'Customer created successfully!');
+            context.pop();
+          }
         }
-      } else {
-        await billingRepo.addCustomer(customer);
+      } catch (e) {
         if (mounted) {
-          AppFeedback.showSnackbar(context, message: 'Customer created successfully!');
-          context.pop();
+          final errorMsg = e.toString().replaceAll('Exception:', '').trim();
+          AppFeedback.showSnackbar(
+            context,
+            message: errorMsg.isNotEmpty ? errorMsg : 'Failed to save customer.',
+            isError: true,
+          );
+        }
+      } finally {
+        if (mounted) {
+          setState(() => _isSaving = false);
         }
       }
     }
@@ -182,11 +247,8 @@ class _CustomerFormPageState extends ConsumerState<CustomerFormPage> {
                             Expanded(
                               child: AppDropdownField<String>(
                                 label: 'Customer Type *',
-                                value: _selectedType,
-                                items: const [
-                                  DropdownMenuItem(value: 'Retail', child: Text('Retail')),
-                                  DropdownMenuItem(value: 'Wholesale', child: Text('Wholesale')),
-                                ],
+                                value: _selectedType.isNotEmpty ? _selectedType : 'Retail',
+                                items: _buildTypeDropdownItems(),
                                 onChanged: (val) => setState(() => _selectedType = val ?? 'Retail'),
                               ),
                             ),
@@ -403,8 +465,11 @@ class _CustomerFormPageState extends ConsumerState<CustomerFormPage> {
                             ),
                             const SizedBox(width: AppSpacing.md),
                             AppButton(
-                              label: 'Save Profile',
-                              onPressed: _handleSave,
+                              label: _isSaving
+                                  ? 'Saving...'
+                                  : (_isEdit ? 'Update Profile' : 'Save Profile'),
+                              isLoading: _isSaving,
+                              onPressed: _isSaving ? null : _handleSave,
                             ),
                           ],
                         ),

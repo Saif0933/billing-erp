@@ -105,31 +105,42 @@ class AppMetricCard extends StatelessWidget {
     return AppCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                title,
-                style: AppTypography.titleSmall.copyWith(
-                  color: secondaryTextColor,
-                  fontWeight: FontWeight.w600,
+              Expanded(
+                child: Text(
+                  title,
+                  style: AppTypography.titleSmall.copyWith(
+                    color: secondaryTextColor,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
-              if (icon != null)
+              if (icon != null) ...[
+                const SizedBox(width: AppSpacing.xs),
                 Icon(
                   icon,
                   color: iconColor ?? (isDark ? AppColors.accent : AppColors.primary),
                   size: 20,
                 ),
+              ],
             ],
           ),
-          const SizedBox(height: AppSpacing.sm),
-          Text(
-            value,
-            style: AppTypography.headlineMedium.copyWith(
-              fontWeight: FontWeight.bold,
-              color: isDark ? AppColors.textDarkPrimary : AppColors.textLightPrimary,
+          const SizedBox(height: AppSpacing.xs),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              value,
+              style: AppTypography.headlineMedium.copyWith(
+                fontWeight: FontWeight.bold,
+                color: isDark ? AppColors.textDarkPrimary : AppColors.textLightPrimary,
+              ),
             ),
           ),
           if (subtitle != null || trendLabel != null) ...[
