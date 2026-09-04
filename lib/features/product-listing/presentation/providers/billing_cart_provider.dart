@@ -1,12 +1,21 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../data/repositories/api_product_repository.dart';
+import '../../data/services/product_api_service.dart';
 import '../../domain/entities/cart_item.dart';
 import '../../domain/entities/product.dart';
 import '../../domain/repositories/product_repository.dart';
-import '../../data/repositories/mock_product_repository.dart';
+
+/// Provider for ProductApiService
+final productApiServiceProvider = Provider<ProductApiService>((ref) {
+  final apiClient = ref.watch(apiClientProvider);
+  return ProductApiService(apiClient);
+});
 
 /// Provider for the ProductRepository instance
 final productRepositoryProvider = Provider<ProductRepository>((ref) {
-  return MockProductRepository();
+  final apiService = ref.watch(productApiServiceProvider);
+  return ApiProductRepository(apiService);
 });
 
 /// Result type of a barcode processing action

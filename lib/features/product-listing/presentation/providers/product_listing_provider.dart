@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../dashboard/presentation/providers/billing_repository.dart';
+import '../../data/models/product_dto.dart';
+import '../../data/services/product_api_service.dart';
 import '../../domain/models/product_listing_models.dart';
 import '../../domain/utils/barcode_validator.dart';
+import 'billing_cart_provider.dart';
 
 class ProductListingState {
   final List<ProductListingItem> allProducts;
@@ -13,6 +17,9 @@ class ProductListingState {
   final bool isTorchOn;
   final bool isScanning;
   final ProductListingItem? lastScannedItem;
+  final bool isLoading;
+  final String? error;
+  final ProductMetricsDto? metrics;
 
   const ProductListingState({
     required this.allProducts,
@@ -24,13 +31,19 @@ class ProductListingState {
     this.isTorchOn = false,
     this.isScanning = false,
     this.lastScannedItem,
+    this.isLoading = false,
+    this.error,
+    this.metrics,
   });
 
   List<ProductListingItem> get filteredProducts {
     return allProducts.where((p) {
       final matchesCategory = selectedCategory == 'All' ||
           p.category.toLowerCase() == selectedCategory.toLowerCase() ||
-          (selectedCategory == 'Groceries' && (p.category == 'Dairy' || p.category == 'Biscuits' || p.category == 'Home Care'));
+          (selectedCategory == 'Groceries' &&
+              (p.category == 'Dairy' ||
+                  p.category == 'Biscuits' ||
+                  p.category == 'Home Care'));
 
       final q = searchQuery.toLowerCase().trim();
       final matchesSearch = q.isEmpty ||
@@ -43,7 +56,8 @@ class ProductListingState {
     }).toList();
   }
 
-  int get totalPages => (filteredProducts.length / itemsPerPage).ceil().clamp(1, 999);
+  int get totalPages =>
+      (filteredProducts.length / itemsPerPage).ceil().clamp(1, 999);
 
   List<ProductListingItem> get paginatedProducts {
     final filtered = filteredProducts;
@@ -55,7 +69,13 @@ class ProductListingState {
     return filtered.sublist(startIndex, endIndex);
   }
 
-  int get totalProductsCount => 256; // Mock catalogue total display
+  int get totalProductsCount => metrics?.totalProducts ?? allProducts.length;
+
+  /// Dynamic list of categories discovered from all loaded products
+  List<String> get availableCategories {
+    final cats = {'All', ...allProducts.map((p) => p.category).where((c) => c.isNotEmpty)};
+    return cats.toList();
+  }
 
   ProductListingState copyWith({
     List<ProductListingItem>? allProducts,
@@ -67,6 +87,10 @@ class ProductListingState {
     bool? isTorchOn,
     bool? isScanning,
     ProductListingItem? lastScannedItem,
+    bool? isLoading,
+    String? error,
+    bool clearError = false,
+    ProductMetricsDto? metrics,
   }) {
     return ProductListingState(
       allProducts: allProducts ?? this.allProducts,
@@ -78,18 +102,28 @@ class ProductListingState {
       isTorchOn: isTorchOn ?? this.isTorchOn,
       isScanning: isScanning ?? this.isScanning,
       lastScannedItem: lastScannedItem ?? this.lastScannedItem,
+      isLoading: isLoading ?? this.isLoading,
+      error: clearError ? null : (error ?? this.error),
+      metrics: metrics ?? this.metrics,
     );
   }
 }
 
 class ProductListingNotifier extends StateNotifier<ProductListingState> {
-  ProductListingNotifier()
+  final ProductApiService? _apiService;
+  final Ref? _ref;
+
+  ProductListingNotifier([this._apiService, this._ref])
       : super(
           ProductListingState(
             allProducts: _mockProducts,
             recentScans: _mockRecentScans,
           ),
-        );
+        ) {
+    if (_apiService != null) {
+      loadProducts();
+    }
+  }
 
   static final List<ProductListingItem> _mockProducts = [
     ProductListingItem(
@@ -204,63 +238,6 @@ class ProductListingNotifier extends StateNotifier<ProductListingState> {
       placeholderIcon: Icons.fastfood_outlined,
       iconColor: const Color(0xFFEA580C),
     ),
-    // Extra items for pages 2-5
-    ProductListingItem(
-      id: 'prod_09',
-      name: 'Tata Salt 1kg',
-      barcode: '8901058852271',
-      sku: 'TAT-SLT-1KG',
-      category: 'Groceries',
-      mrp: 28.00,
-      sellingPrice: 25.00,
-      stock: 200,
-      categoryBadgeBg: const Color(0xFFE0F2FE),
-      categoryBadgeText: const Color(0xFF0284C7),
-      placeholderIcon: Icons.grain_outlined,
-      iconColor: const Color(0xFF0284C7),
-    ),
-    ProductListingItem(
-      id: 'prod_10',
-      name: 'Aashirvaad Atta 5kg',
-      barcode: '8901030894512',
-      sku: 'ASH-ATT-5KG',
-      category: 'Groceries',
-      mrp: 245.00,
-      sellingPrice: 215.00,
-      stock: 50,
-      categoryBadgeBg: const Color(0xFFE0F2FE),
-      categoryBadgeText: const Color(0xFF0284C7),
-      placeholderIcon: Icons.shopping_bag_outlined,
-      iconColor: const Color(0xFF0284C7),
-    ),
-    ProductListingItem(
-      id: 'prod_11',
-      name: 'Red Bull Energy Drink 250ml',
-      barcode: '9002490205987',
-      sku: 'RDB-250ML',
-      category: 'Beverages',
-      mrp: 125.00,
-      sellingPrice: 115.00,
-      stock: 80,
-      categoryBadgeBg: const Color(0xFFDCFCE7),
-      categoryBadgeText: const Color(0xFF16A34A),
-      placeholderIcon: Icons.bolt_outlined,
-      iconColor: const Color(0xFF16A34A),
-    ),
-    ProductListingItem(
-      id: 'prod_12',
-      name: 'Colgate MaxFresh 150g',
-      barcode: '8901314010342',
-      sku: 'CLG-MXF-150G',
-      category: 'Personal Care',
-      mrp: 110.00,
-      sellingPrice: 92.00,
-      stock: 65,
-      categoryBadgeBg: const Color(0xFFFCE7F3),
-      categoryBadgeText: const Color(0xFFDB2777),
-      placeholderIcon: Icons.sanitizer_outlined,
-      iconColor: const Color(0xFFDB2777),
-    ),
   ];
 
   static final List<ProductListingItem> _mockRecentScans = [
@@ -309,22 +286,52 @@ class ProductListingNotifier extends StateNotifier<ProductListingState> {
       iconColor: const Color(0xFF9333EA),
       lastScannedAt: DateTime.now().subtract(const Duration(minutes: 8)),
     ),
-    ProductListingItem(
-      id: 'scan_04',
-      name: 'Coca Cola 500ml',
-      barcode: '5449000200427',
-      sku: 'CC-500ML',
-      category: 'Beverages',
-      mrp: 50.00,
-      sellingPrice: 40.00,
-      stock: 60,
-      categoryBadgeBg: const Color(0xFFDCFCE7),
-      categoryBadgeText: const Color(0xFF16A34A),
-      placeholderIcon: Icons.water_drop_outlined,
-      iconColor: const Color(0xFF16A34A),
-      lastScannedAt: DateTime.now().subtract(const Duration(minutes: 12)),
-    ),
   ];
+
+  /// Load products from backend REST API
+  Future<void> loadProducts({bool refresh = false}) async {
+    final api = _apiService;
+    if (api == null) return;
+    state = state.copyWith(isLoading: true, clearError: true);
+
+    try {
+      final res = await api.getProducts(
+        search: state.searchQuery.isNotEmpty ? state.searchQuery : null,
+        category: state.selectedCategory == 'All' ? null : state.selectedCategory,
+        limit: 100,
+      );
+
+      ProductMetricsDto? metrics;
+      try {
+        metrics = await api.getProductMetrics();
+      } catch (_) {}
+
+      final items = res.products.map((dto) => dto.toListingItem()).toList();
+      final finalItems = items.isNotEmpty ? items : _mockProducts;
+
+      state = state.copyWith(
+        allProducts: finalItems,
+        metrics: metrics,
+        isLoading: false,
+        clearError: true,
+      );
+
+      // Synchronize with billing repository
+      final ref = _ref;
+      if (ref != null && items.isNotEmpty) {
+        try {
+          final billingProducts =
+              res.products.map((dto) => dto.toBillingProduct()).toList();
+          ref.read(billingRepositoryProvider.notifier).setProducts(billingProducts);
+        } catch (_) {}
+      }
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        error: e.toString().replaceAll('Exception:', '').trim(),
+      );
+    }
+  }
 
   void setSearchQuery(String query) {
     state = state.copyWith(searchQuery: query, currentPage: 1);
@@ -344,6 +351,7 @@ class ProductListingNotifier extends StateNotifier<ProductListingState> {
     state = state.copyWith(isTorchOn: !state.isTorchOn);
   }
 
+  /// Synchronous barcode handler for camera & keyboard scanner
   ProductListingItem? handleScannedBarcode(String rawCode) {
     final validation = BarcodeValidator.validate(rawCode);
     if (!validation.isValid) {
@@ -352,9 +360,12 @@ class ProductListingNotifier extends StateNotifier<ProductListingState> {
 
     final cleanCode = validation.cleanBarcode!;
 
-    // 1. EXACT match by barcode or SKU only:
+    // 1. EXACT match by barcode or SKU
     final existingIndex = state.allProducts.indexWhere(
-      (p) => p.barcode.trim() == cleanCode || (p.sku.trim().isNotEmpty && p.sku.trim().toLowerCase() == cleanCode.toLowerCase()),
+      (p) =>
+          p.barcode.trim() == cleanCode ||
+          (p.sku.trim().isNotEmpty &&
+              p.sku.trim().toLowerCase() == cleanCode.toLowerCase()),
     );
 
     ProductListingItem scannedItem;
@@ -377,10 +388,10 @@ class ProductListingNotifier extends StateNotifier<ProductListingState> {
         allProducts: updatedAll,
         recentScans: updatedScans,
         lastScannedItem: scannedItem,
-        currentPage: 1, // Jump to page 1 so it's immediately visible
+        currentPage: 1,
       );
     } else {
-      // 2. Newly scanned unique barcode - dynamically create a distinct product for THIS barcode!
+      // 2. Newly scanned unique barcode - dynamically create a distinct product for THIS barcode
       scannedItem = ProductListingItem(
         id: 'prod_scan_${DateTime.now().millisecondsSinceEpoch}',
         name: 'Product ($cleanCode)',
@@ -407,8 +418,16 @@ class ProductListingNotifier extends StateNotifier<ProductListingState> {
         allProducts: updatedAll,
         recentScans: updatedScans,
         lastScannedItem: scannedItem,
-        currentPage: 1, // Jump to page 1 so it is displayed right at row 1 in the table!
+        currentPage: 1,
       );
+
+      // Async background server check to enrich product details if known
+      final api = _apiService;
+      if (api != null) {
+        api.findProductByBarcode(cleanCode).then((dto) {
+          updateProduct(dto.toListingItem().copyWith(lastScannedAt: DateTime.now()));
+        }).catchError((_) {});
+      }
     }
 
     return scannedItem;
@@ -436,6 +455,48 @@ class ProductListingNotifier extends StateNotifier<ProductListingState> {
     );
   }
 
+  /// Delete product from server and local memory
+  Future<void> deleteProduct(String productId) async {
+    final api = _apiService;
+    if (api != null) {
+      try {
+        await api.deleteProduct(productId);
+      } catch (_) {}
+    }
+
+    final updatedAll =
+        state.allProducts.where((p) => p.id != productId).toList();
+    final updatedScans =
+        state.recentScans.where((p) => p.id != productId).toList();
+
+    state = state.copyWith(
+      allProducts: updatedAll,
+      recentScans: updatedScans,
+      metrics: state.metrics != null
+          ? ProductMetricsDto(
+              totalProducts: state.metrics!.totalProducts > 0
+                  ? state.metrics!.totalProducts - 1
+                  : 0,
+              activeProducts: state.metrics!.activeProducts > 0
+                  ? state.metrics!.activeProducts - 1
+                  : 0,
+              inactiveProducts: state.metrics!.inactiveProducts,
+              lowStockCount: state.metrics!.lowStockCount,
+              totalStockValue: state.metrics!.totalStockValue,
+              totalCategories: state.metrics!.totalCategories,
+              categories: state.metrics!.categories,
+            )
+          : null,
+    );
+
+    final ref = _ref;
+    if (ref != null) {
+      try {
+        ref.read(billingRepositoryProvider.notifier).deleteProduct(productId);
+      } catch (_) {}
+    }
+  }
+
   void addScannedItem(ProductListingItem scannedItem) {
     handleScannedBarcode(scannedItem.barcode);
   }
@@ -444,8 +505,8 @@ class ProductListingNotifier extends StateNotifier<ProductListingState> {
     state = state.copyWith(isScanning: true);
     await Future.delayed(const Duration(milliseconds: 600));
 
-    // Cycle or pick random from list
-    final itemToScan = state.allProducts[DateTime.now().second % state.allProducts.length];
+    final itemToScan =
+        state.allProducts[DateTime.now().second % state.allProducts.length];
     final result = handleScannedBarcode(itemToScan.barcode);
     return result ?? itemToScan;
   }
@@ -453,5 +514,6 @@ class ProductListingNotifier extends StateNotifier<ProductListingState> {
 
 final productListingProvider =
     StateNotifierProvider<ProductListingNotifier, ProductListingState>((ref) {
-  return ProductListingNotifier();
+  final apiService = ref.watch(productApiServiceProvider);
+  return ProductListingNotifier(apiService, ref);
 });

@@ -913,6 +913,16 @@ class BillingNotifier extends StateNotifier<BillingState> {
     );
   }
 
+  Future<void> deleteProduct(String id) async {
+    state = state.copyWith(
+      products: state.products.where((prod) => prod.id != id).toList(),
+    );
+  }
+
+  void setProducts(List<Product> list) {
+    state = state.copyWith(products: list);
+  }
+
   Future<void> adjustStock(String productId, double adjustmentQuantity, String reason, {String warehouseId = 'main'}) async {
     final product = state.products.firstWhere((p) => p.id == productId);
     final Map<String, double> updatedWarehouseStocks = Map.from(product.warehouseStocks);
@@ -952,6 +962,17 @@ class BillingNotifier extends StateNotifier<BillingState> {
       services: state.services.map((serv) => serv.id == s.id ? s : serv).toList(),
     );
   }
+
+  Future<void> deleteService(String id) async {
+    state = state.copyWith(
+      services: state.services.where((serv) => serv.id != id).toList(),
+    );
+  }
+
+  void setServices(List<Service> list) {
+    state = state.copyWith(services: list);
+  }
+
 
   // --- Invoice Creation & Confirmation Engine ---
   Future<void> addInvoice(Invoice invoice) async {

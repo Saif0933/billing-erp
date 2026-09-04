@@ -17,9 +17,11 @@ class ApiEndpoints {
   static const String invoices = '/api/v1/invoices';
   static const String invoiceSeries = '/api/v1/invoices/series';
 
-  // Customer & Supplier
+  // Customer & Supplier & Services
   static const String customers = '/api/v1/customers';
   static const String suppliers = '/api/v1/suppliers';
+  static const String services = '/api/v1/services';
+
 
   // Inventory & Products
   static const String products = '/api/v1/products';
