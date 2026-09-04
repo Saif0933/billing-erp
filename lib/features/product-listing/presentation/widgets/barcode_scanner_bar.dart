@@ -81,10 +81,14 @@ class _BarcodeScannerBarState extends ConsumerState<BarcodeScannerBar> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         // Top Status Header: Label + Live Scanner Status Badge
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        Wrap(
+          alignment: WrapAlignment.spaceBetween,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          spacing: 8,
+          runSpacing: 6,
           children: [
             Row(
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(
                   Icons.barcode_reader,

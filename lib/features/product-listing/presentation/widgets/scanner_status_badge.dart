@@ -85,14 +85,18 @@ class _ScannerStatusBadgeState extends State<ScannerStatusBadge>
             },
           ),
           const SizedBox(width: 6),
-          Text(
-            widget.isReady ? widget.label : 'Scanner Disconnected',
-            style: TextStyle(
-              fontSize: 11.5,
-              fontWeight: FontWeight.w600,
-              color: widget.isReady
-                  ? (isDark ? const Color(0xFF6EE7B7) : const Color(0xFF15803D))
-                  : (isDark ? Colors.red.shade200 : Colors.red.shade700),
+          Flexible(
+            child: Text(
+              widget.isReady ? widget.label : 'Scanner Disconnected',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 11.5,
+                fontWeight: FontWeight.w600,
+                color: widget.isReady
+                    ? (isDark ? const Color(0xFF6EE7B7) : const Color(0xFF15803D))
+                    : (isDark ? Colors.red.shade200 : Colors.red.shade700),
+              ),
             ),
           ),
         ],

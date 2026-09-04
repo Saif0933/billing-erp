@@ -124,17 +124,19 @@ class _ProductListingPageState extends ConsumerState<ProductListingPage> {
         final titleSection = Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
+            Wrap(
+              crossAxisAlignment: WrapCrossAlignment.center,
+              spacing: 8,
+              runSpacing: 4,
               children: [
                 Text(
                   'New Sale / Create Invoice',
                   style: TextStyle(
-                    fontSize: 20,
+                    fontSize: isNarrow ? 18 : 20,
                     fontWeight: FontWeight.bold,
                     color: isDark ? Colors.white : const Color(0xFF0F172A),
                   ),
                 ),
-                const SizedBox(width: 10),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                   decoration: BoxDecoration(
@@ -182,27 +184,53 @@ class _ProductListingPageState extends ConsumerState<ProductListingPage> {
             borderRadius: BorderRadius.circular(10),
           ),
           child: Row(
-            mainAxisSize: MainAxisSize.min,
+            mainAxisSize: isNarrow ? MainAxisSize.max : MainAxisSize.min,
             children: [
-              _buildTabButton(
-                title: 'Barcode POS Billing',
-                icon: Icons.barcode_reader,
-                isSelected: _viewMode == ProductListingViewMode.posBilling,
-                onTap: () {
-                  setState(() => _viewMode = ProductListingViewMode.posBilling);
-                  _requestScannerFocus();
-                },
-                isDark: isDark,
-              ),
-              _buildTabButton(
-                title: 'Catalogue Directory',
-                icon: Icons.grid_view_outlined,
-                isSelected: _viewMode == ProductListingViewMode.catalogueDirectory,
-                onTap: () {
-                  setState(() => _viewMode = ProductListingViewMode.catalogueDirectory);
-                },
-                isDark: isDark,
-              ),
+              isNarrow
+                  ? Expanded(
+                      child: _buildTabButton(
+                        title: 'Barcode POS Billing',
+                        icon: Icons.barcode_reader,
+                        isSelected: _viewMode == ProductListingViewMode.posBilling,
+                        onTap: () {
+                          setState(() => _viewMode = ProductListingViewMode.posBilling);
+                          _requestScannerFocus();
+                        },
+                        isDark: isDark,
+                      ),
+                    )
+                  : _buildTabButton(
+                      title: 'Barcode POS Billing',
+                      icon: Icons.barcode_reader,
+                      isSelected: _viewMode == ProductListingViewMode.posBilling,
+                      onTap: () {
+                        setState(() => _viewMode = ProductListingViewMode.posBilling);
+                        _requestScannerFocus();
+                      },
+                      isDark: isDark,
+                    ),
+              if (isNarrow) const SizedBox(width: 4),
+              isNarrow
+                  ? Expanded(
+                      child: _buildTabButton(
+                        title: 'Catalogue Directory',
+                        icon: Icons.grid_view_outlined,
+                        isSelected: _viewMode == ProductListingViewMode.catalogueDirectory,
+                        onTap: () {
+                          setState(() => _viewMode = ProductListingViewMode.catalogueDirectory);
+                        },
+                        isDark: isDark,
+                      ),
+                    )
+                  : _buildTabButton(
+                      title: 'Catalogue Directory',
+                      icon: Icons.grid_view_outlined,
+                      isSelected: _viewMode == ProductListingViewMode.catalogueDirectory,
+                      onTap: () {
+                        setState(() => _viewMode = ProductListingViewMode.catalogueDirectory);
+                      },
+                      isDark: isDark,
+                    ),
             ],
           ),
         );
@@ -241,7 +269,7 @@ class _ProductListingPageState extends ConsumerState<ProductListingPage> {
       onTap: onTap,
       borderRadius: BorderRadius.circular(8),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
         decoration: BoxDecoration(
           color: isSelected
               ? (isDark ? const Color(0xFF0F172A) : Colors.white)
@@ -258,6 +286,7 @@ class _ProductListingPageState extends ConsumerState<ProductListingPage> {
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
               icon,
@@ -267,14 +296,18 @@ class _ProductListingPageState extends ConsumerState<ProductListingPage> {
                   : (isDark ? Colors.white60 : const Color(0xFF64748B)),
             ),
             const SizedBox(width: 6),
-            Text(
-              title,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                color: isSelected
-                    ? (isDark ? Colors.white : const Color(0xFF0F172A))
-                    : (isDark ? Colors.white60 : const Color(0xFF64748B)),
+            Flexible(
+              child: Text(
+                title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                  color: isSelected
+                      ? (isDark ? Colors.white : const Color(0xFF0F172A))
+                      : (isDark ? Colors.white60 : const Color(0xFF64748B)),
+                ),
               ),
             ),
           ],
