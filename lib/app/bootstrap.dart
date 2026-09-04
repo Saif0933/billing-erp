@@ -26,5 +26,8 @@ Future<ProviderContainer> bootstrap() async {
     ],
   );
 
+  // Probe and lock onto active backend URL in background
+  container.read(apiClientProvider).detectWorkingBaseUrl();
+
   return container;
 }

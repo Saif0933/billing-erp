@@ -103,7 +103,6 @@ class AuthNotifier extends StateNotifier<AuthState> {
     String password, {
     bool isPlatformAdminPortal = false,
   }) async {
-    state = const AuthState.splash();
     try {
       final response = await _apiService.login(
         email: email.trim(),
@@ -145,7 +144,6 @@ class AuthNotifier extends StateNotifier<AuthState> {
     String? phone,
     bool isPlatformAdmin = false,
   }) async {
-    state = const AuthState.splash();
     try {
       final response = await _apiService.register(
         fullName: name.trim(),

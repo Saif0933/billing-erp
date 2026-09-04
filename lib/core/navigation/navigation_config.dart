@@ -41,13 +41,6 @@ class NavigationConfig {
           requiredFeature: SubscriptionFeature.suppliers,
         ),
         NavigationItem(
-          id: 'products',
-          title: 'Products',
-          icon: Icons.view_in_ar_outlined,
-          route: '/products',
-          requiredFeature: SubscriptionFeature.products,
-        ),
-        NavigationItem(
           id: 'product_listing',
           title: 'Product Listing',
           icon: Icons.qr_code_scanner_outlined,

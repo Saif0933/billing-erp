@@ -47,7 +47,6 @@ dependencies:
   fl_chart: ^1.2.0
   mobile_scanner: ^7.4.0
   image_picker: ^1.2.3
-  file_picker: ^11.0.3
 
 dev_dependencies:
   flutter_test:

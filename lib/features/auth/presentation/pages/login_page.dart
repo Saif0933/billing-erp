@@ -9,6 +9,7 @@ import '../../../../core/responsive/responsive.dart';
 import '../../../../shared/widgets/app_button.dart';
 import '../../../../shared/widgets/app_input_fields.dart';
 import '../../../../shared/widgets/feedback.dart';
+import '../../../business/presentation/providers/business_provider.dart';
 import '../../../platform-admin/presentation/providers/platform_admin_provider.dart';
 import '../providers/auth_provider.dart';
 
@@ -76,6 +77,8 @@ class _LoginPageState extends ConsumerState<LoginPage> {
         }
 
         // Standard tenant organization user
+        await ref.read(businessProvider.notifier).loadBusinesses();
+        if (!mounted) return;
         AppFeedback.showSnackbar(
           context,
           message: 'Welcome to Organization Portal!',
