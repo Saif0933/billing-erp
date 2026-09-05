@@ -38,4 +38,15 @@ class ApiEndpoints {
   static const String checkNameAvailability = '/api/v1/onboarding/check-name';
   static const String onboardingPlans = '/api/v1/onboarding/plans';
   static const String onboardingOrganizations = '/api/v1/onboarding/organizations';
+
+  // GST Portal & Compliance
+  static const String gstProfile = '/api/v1/gst/profile';
+  static const String gstMetrics = '/api/v1/gst/metrics';
+  static const String gstReturns = '/api/v1/gst/returns';
+  static const String gstFileReturn = '/api/v1/gst/returns/file';
+  static const String gstLiabilitySummary = '/api/v1/gst/liability-summary';
+  static const String gstLookup = '/api/v1/gst/lookup';
+  static const String gstSync = '/api/v1/gst/sync';
+  static const String gstPayments = '/api/v1/gst/payments';
+  static const String gstExportGstr1 = '/api/v1/gst/export/json/gstr1';
 }

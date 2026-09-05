@@ -4,6 +4,7 @@ import '../../../../core/constants/app_radius.dart';
 import '../../../../core/constants/app_spacing.dart';
 import '../../../../shared/widgets/feedback.dart';
 import '../../domain/models/gst_models.dart';
+import '../providers/gst_provider.dart';
 
 class GstFileReturnDialog extends ConsumerStatefulWidget {
   final GstReturnRecord item;
@@ -222,12 +223,11 @@ class _GstFileReturnDialogState extends ConsumerState<GstFileReturnDialog> {
                             final navigator = Navigator.of(context);
                             final messenger = ScaffoldMessenger.of(context);
                             setState(() => _isFiling = true);
-                            await Future.delayed(const Duration(milliseconds: 800));
+                            final msg = await ref.read(gstStateProvider.notifier).fileReturn(item);
                             if (!mounted) return;
-                            final generatedArn = 'AA1906260${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}';
                             navigator.pop();
                             messenger.showSnackBar(
-                              SnackBar(content: Text('${item.returnType} filed successfully with ARN $generatedArn!')),
+                              SnackBar(content: Text(msg)),
                             );
                           },
                   ),

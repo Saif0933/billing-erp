@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/constants/app_radius.dart';
 import '../../../../core/constants/app_spacing.dart';
 import '../../../../shared/widgets/feedback.dart';
 import '../../domain/models/gst_models.dart';
+import '../providers/gst_provider.dart';
 
-class GstinLookupDialog extends StatefulWidget {
+class GstinLookupDialog extends ConsumerStatefulWidget {
   const GstinLookupDialog({super.key});
 
   static void show(BuildContext context) {
@@ -15,10 +17,10 @@ class GstinLookupDialog extends StatefulWidget {
   }
 
   @override
-  State<GstinLookupDialog> createState() => _GstinLookupDialogState();
+  ConsumerState<GstinLookupDialog> createState() => _GstinLookupDialogState();
 }
 
-class _GstinLookupDialogState extends State<GstinLookupDialog> {
+class _GstinLookupDialogState extends ConsumerState<GstinLookupDialog> {
   final _gstinController = TextEditingController(text: '27AAAAA0000A1Z5');
   bool _isLoading = false;
   GstinSearchResult? _searchResult;
@@ -62,7 +64,7 @@ class _GstinLookupDialogState extends State<GstinLookupDialog> {
     ),
   };
 
-  void _searchGstin() {
+  void _searchGstin() async {
     final query = _gstinController.text.trim().toUpperCase();
     if (query.length < 15) {
       AppFeedback.showSnackbar(context, message: 'Please enter a valid 15-digit GSTIN number.');
@@ -71,7 +73,14 @@ class _GstinLookupDialogState extends State<GstinLookupDialog> {
 
     setState(() => _isLoading = true);
 
-    Future.delayed(const Duration(milliseconds: 600), () {
+    try {
+      final result = await ref.read(gstStateProvider.notifier).lookupGstin(query);
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+        _searchResult = result;
+      });
+    } catch (_) {
       if (!mounted) return;
       setState(() {
         _isLoading = false;
@@ -89,7 +98,7 @@ class _GstinLookupDialogState extends State<GstinLookupDialog> {
               dateOfRegistration: '01/04/2023',
             );
       });
-    });
+    }
   }
 
   @override

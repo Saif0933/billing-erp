@@ -5,6 +5,7 @@ import '../../../../shared/widgets/feedback.dart';
 import '../../../subscription/domain/entities/subscription_models.dart';
 import '../../../subscription/presentation/pages/locked_feature_page.dart';
 import '../../../subscription/presentation/providers/subscription_provider.dart';
+import '../providers/gst_provider.dart';
 import '../widgets/gst_header_profile_card.dart';
 import '../widgets/gst_metric_cards.dart';
 import '../widgets/gst_navigation_tabs.dart';
@@ -37,7 +38,7 @@ class GstPortalPage extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               // Page Header: GST Portal - GSTIN + [ Refresh from GST Portal ] + [ Go to GST Portal ↗ ]
-              _buildPageHeader(context, isDark),
+              _buildPageHeader(context, ref, isDark),
               const SizedBox(height: 14),
 
               // 1. GSTIN Profile Card (Top Box)
@@ -95,7 +96,7 @@ class GstPortalPage extends ConsumerWidget {
     );
   }
 
-  Widget _buildPageHeader(BuildContext context, bool isDark) {
+  Widget _buildPageHeader(BuildContext context, WidgetRef ref, bool isDark) {
     return LayoutBuilder(
       builder: (context, constraints) {
         final isSmall = constraints.maxWidth < 650;
@@ -150,8 +151,12 @@ class GstPortalPage extends ConsumerWidget {
                   color: isDark ? Colors.white70 : const Color(0xFF334155),
                 ),
               ),
-              onPressed: () {
+              onPressed: () async {
                 AppFeedback.showSnackbar(context, message: 'Syncing live data from GSTN Portal...');
+                final msg = await ref.read(gstStateProvider.notifier).syncFromPortal();
+                if (context.mounted) {
+                  AppFeedback.showSnackbar(context, message: msg);
+                }
               },
             ),
 
