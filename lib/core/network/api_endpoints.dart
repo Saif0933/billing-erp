@@ -50,7 +50,8 @@ class ApiEndpoints {
   static const String gstPayments = '/api/v1/gst/payments';
   static const String gstExportGstr1 = '/api/v1/gst/export/json/gstr1';
 
-  // Platform Admin Directory & KPIs
+  // Platform Admin Directory & KPIs & Plans
   static const String platformAdminOrganizations = '/api/v1/platform-admin/organizations';
   static const String platformAdminKPIs = '/api/v1/platform-admin/organizations/kpis';
+  static const String platformAdminPlans = '/api/v1/platform-admin/plans';
 }

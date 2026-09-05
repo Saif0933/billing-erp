@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import '../../domain/models/platform_admin_models.dart';
 
 /// DTO for serializing and deserializing OrganizationTenant data between Frontend and Backend
@@ -274,5 +275,135 @@ class OrganizationListResponseDto {
       total: total,
       kpis: kpis,
     );
+  }
+}
+
+/// Color parsing helper
+Color parseHexColor(String hexString) {
+  try {
+    final buffer = StringBuffer();
+    if (hexString.length == 6 || hexString.length == 7) buffer.write('ff');
+    buffer.write(hexString.replaceFirst('#', ''));
+    return Color(int.parse(buffer.toString(), radix: 16));
+  } catch (_) {
+    return const Color(0xFF4F46E5);
+  }
+}
+
+/// Color formatting helper
+String colorToHex(Color color) {
+  final r = (color.r * 255).round().toRadixString(16).padLeft(2, '0');
+  final g = (color.g * 255).round().toRadixString(16).padLeft(2, '0');
+  final b = (color.b * 255).round().toRadixString(16).padLeft(2, '0');
+  return '#$r$g$b'.toUpperCase();
+}
+
+/// DTO for PlatformPlan
+class PlatformPlanDto {
+  final String id;
+  final String name;
+  final String tagline;
+  final double priceMonthly;
+  final double priceYearly;
+  final int maxUsers;
+  final int maxInvoicesPerMonth;
+  final double storageLimitGb;
+  final List<String> features;
+  final bool isPopular;
+  final int activeTenantsCount;
+  final String themeColor;
+
+  const PlatformPlanDto({
+    required this.id,
+    required this.name,
+    required this.tagline,
+    required this.priceMonthly,
+    required this.priceYearly,
+    required this.maxUsers,
+    required this.maxInvoicesPerMonth,
+    required this.storageLimitGb,
+    required this.features,
+    required this.isPopular,
+    required this.activeTenantsCount,
+    required this.themeColor,
+  });
+
+  factory PlatformPlanDto.fromJson(Map<String, dynamic> json) {
+    final rawFeatures = json['features'];
+    final features = <String>[];
+    if (rawFeatures is List) {
+      for (final f in rawFeatures) {
+        if (f != null) features.add(f.toString());
+      }
+    }
+
+    final priceMonthly = (json['priceMonthly'] as num?)?.toDouble() ?? 0.0;
+    final priceYearly =
+        (json['priceYearly'] as num?)?.toDouble() ?? (priceMonthly * 10);
+
+    return PlatformPlanDto(
+      id: json['id']?.toString() ?? '',
+      name: json['name']?.toString() ?? '',
+      tagline: json['tagline']?.toString() ?? '',
+      priceMonthly: priceMonthly,
+      priceYearly: priceYearly,
+      maxUsers: (json['maxUsers'] as num?)?.toInt() ?? 10,
+      maxInvoicesPerMonth:
+          (json['maxInvoicesPerMonth'] as num?)?.toInt() ?? 5000,
+      storageLimitGb: (json['storageLimitGb'] as num?)?.toDouble() ?? 25.0,
+      features: features,
+      isPopular: json['isPopular'] == true,
+      activeTenantsCount: (json['activeTenantsCount'] as num?)?.toInt() ?? 0,
+      themeColor: json['themeColor']?.toString() ?? '#4F46E5',
+    );
+  }
+
+  PlatformPlan toDomain() {
+    return PlatformPlan(
+      id: id,
+      name: name,
+      tagline: tagline,
+      priceMonthly: priceMonthly,
+      priceYearly: priceYearly,
+      maxUsers: maxUsers,
+      maxInvoicesPerMonth: maxInvoicesPerMonth,
+      storageLimitGb: storageLimitGb,
+      features: features,
+      isPopular: isPopular,
+      activeTenantsCount: activeTenantsCount,
+      themeColor: parseHexColor(themeColor),
+    );
+  }
+
+  factory PlatformPlanDto.fromDomain(PlatformPlan domain) {
+    return PlatformPlanDto(
+      id: domain.id,
+      name: domain.name,
+      tagline: domain.tagline,
+      priceMonthly: domain.priceMonthly,
+      priceYearly: domain.priceYearly,
+      maxUsers: domain.maxUsers,
+      maxInvoicesPerMonth: domain.maxInvoicesPerMonth,
+      storageLimitGb: domain.storageLimitGb,
+      features: domain.features,
+      isPopular: domain.isPopular,
+      activeTenantsCount: domain.activeTenantsCount,
+      themeColor: colorToHex(domain.themeColor),
+    );
+  }
+
+  Map<String, dynamic> toJson({bool isUpdate = false}) {
+    return {
+      'name': name,
+      'tagline': tagline,
+      'priceMonthly': priceMonthly,
+      'priceYearly': priceYearly,
+      'maxUsers': maxUsers,
+      'maxInvoicesPerMonth': maxInvoicesPerMonth,
+      'storageLimitGb': storageLimitGb,
+      'features': features,
+      'isPopular': isPopular,
+      'themeColor': themeColor,
+    };
   }
 }

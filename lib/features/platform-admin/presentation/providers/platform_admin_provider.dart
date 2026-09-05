@@ -116,6 +116,72 @@ class PlatformAdminNotifier extends StateNotifier<PlatformAdminState> {
           ),
         ) {
     loadOrganizations();
+    loadPlans();
+  }
+
+  /// Load plans from backend API
+  Future<void> loadPlans() async {
+    if (_apiService == null) return;
+    try {
+      final plans = await _apiService.getPlans();
+      if (plans.isNotEmpty) {
+        state = state.copyWith(plans: plans);
+      }
+    } catch (_) {
+      // Retain existing plans
+    }
+  }
+
+  /// Create new SaaS subscription plan
+  Future<void> createPlan(PlatformPlan plan) async {
+    // 1. Optimistic update
+    final updatedList = [...state.plans, plan];
+    state = state.copyWith(plans: updatedList);
+
+    // 2. Sync with backend API
+    if (_apiService != null) {
+      try {
+        final serverPlan = await _apiService.createPlan(plan);
+        final syncedList = state.plans.map((p) => p.id == plan.id ? serverPlan : p).toList();
+        state = state.copyWith(plans: syncedList);
+      } catch (_) {
+        // Retain optimistic state
+      }
+    }
+  }
+
+  /// Update existing SaaS subscription plan
+  Future<void> updatePlan(PlatformPlan plan) async {
+    // 1. Optimistic update
+    final updatedList = state.plans.map((p) => p.id == plan.id ? plan : p).toList();
+    state = state.copyWith(plans: updatedList);
+
+    // 2. Sync with backend API
+    if (_apiService != null) {
+      try {
+        final serverPlan = await _apiService.updatePlan(plan);
+        final syncedList = state.plans.map((p) => p.id == plan.id ? serverPlan : p).toList();
+        state = state.copyWith(plans: syncedList);
+      } catch (_) {
+        // Retain optimistic state
+      }
+    }
+  }
+
+  /// Delete SaaS subscription plan
+  Future<void> deletePlan(String planId) async {
+    // 1. Optimistic update
+    final updatedList = state.plans.where((p) => p.id != planId).toList();
+    state = state.copyWith(plans: updatedList);
+
+    // 2. Sync with backend API
+    if (_apiService != null) {
+      try {
+        await _apiService.deletePlan(planId);
+      } catch (_) {
+        // Retain optimistic state
+      }
+    }
   }
 
   /// Load organizations directory and KPIs from backend REST API

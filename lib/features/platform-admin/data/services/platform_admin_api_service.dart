@@ -166,4 +166,65 @@ class PlatformAdminApiService {
     }
     throw Exception('Invalid Impersonation response structure');
   }
+
+  /// Get all active SaaS subscription plans
+  /// GET /api/v1/platform-admin/plans
+  Future<List<PlatformPlan>> getPlans() async {
+    final response = await _apiClient.get(ApiEndpoints.platformAdminPlans);
+    final data = _extractData(response.data);
+
+    if (data is List) {
+      return data
+          .map((item) =>
+              PlatformPlanDto.fromJson(item as Map<String, dynamic>).toDomain())
+          .toList();
+    }
+    return [];
+  }
+
+  /// Create a new SaaS subscription plan
+  /// POST /api/v1/platform-admin/plans
+  Future<PlatformPlan> createPlan(PlatformPlan plan) async {
+    final dto = PlatformPlanDto.fromDomain(plan);
+    final response = await _apiClient.post(
+      ApiEndpoints.platformAdminPlans,
+      data: dto.toJson(isUpdate: false),
+    );
+
+    final data = _extractData(response.data);
+    if (data is Map<String, dynamic>) {
+      return PlatformPlanDto.fromJson(data).toDomain();
+    }
+    throw Exception('Invalid Plan creation response structure');
+  }
+
+  /// Update an existing SaaS subscription plan
+  /// PUT /api/v1/platform-admin/plans/:id
+  Future<PlatformPlan> updatePlan(PlatformPlan plan) async {
+    final dto = PlatformPlanDto.fromDomain(plan);
+    final response = await _apiClient.put(
+      '${ApiEndpoints.platformAdminPlans}/${plan.id}',
+      data: dto.toJson(isUpdate: true),
+    );
+
+    final data = _extractData(response.data);
+    if (data is Map<String, dynamic>) {
+      return PlatformPlanDto.fromJson(data).toDomain();
+    }
+    throw Exception('Invalid Plan update response structure');
+  }
+
+  /// Delete a SaaS subscription plan
+  /// DELETE /api/v1/platform-admin/plans/:id
+  Future<Map<String, dynamic>> deletePlan(String id) async {
+    final response = await _apiClient.delete(
+      '${ApiEndpoints.platformAdminPlans}/$id',
+    );
+
+    final data = _extractData(response.data);
+    if (data is Map<String, dynamic>) {
+      return data;
+    }
+    return {'success': true};
+  }
 }
