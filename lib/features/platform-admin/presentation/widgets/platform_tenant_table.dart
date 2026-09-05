@@ -447,6 +447,7 @@ class PlatformTenantTable extends ConsumerWidget {
             break;
           case 'login_as':
             AppFeedback.showSnackbar(context, message: 'Impersonating ${tenant.name} admin session...');
+            notifier.impersonateTenant(tenant.id);
             break;
           case 'delete':
             notifier.deleteTenant(tenant.id);

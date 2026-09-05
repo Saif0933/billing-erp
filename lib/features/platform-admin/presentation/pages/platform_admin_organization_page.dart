@@ -59,13 +59,48 @@ class PlatformAdminOrganizationPage extends ConsumerWidget {
                 onPressed: () => PlatformTenantModal.show(context),
               );
 
+              final actionButtons = Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  OutlinedButton.icon(
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      side: BorderSide(color: isDark ? Colors.white24 : const Color(0xFFCBD5E1)),
+                    ),
+                    icon: state.isLoading
+                        ? const SizedBox(
+                            width: 14,
+                            height: 14,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : Icon(
+                            Icons.refresh,
+                            size: 16,
+                            color: isDark ? Colors.white70 : const Color(0xFF475569),
+                          ),
+                    label: Text(
+                      'Refresh',
+                      style: TextStyle(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w600,
+                        color: isDark ? Colors.white70 : const Color(0xFF475569),
+                      ),
+                    ),
+                    onPressed: state.isLoading ? null : () => notifier.loadOrganizations(),
+                  ),
+                  const SizedBox(width: 10),
+                  addButton,
+                ],
+              );
+
               if (isSmall) {
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     titleSection,
                     const SizedBox(height: 12),
-                    addButton,
+                    actionButtons,
                   ],
                 );
               }
@@ -74,7 +109,7 @@ class PlatformAdminOrganizationPage extends ConsumerWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   titleSection,
-                  addButton,
+                  actionButtons,
                 ],
               );
             },

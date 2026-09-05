@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../data/services/platform_admin_api_service.dart';
 import '../../domain/models/platform_admin_models.dart';
 
 class PlatformAdminState {
@@ -82,7 +84,9 @@ class PlatformAdminState {
 }
 
 class PlatformAdminNotifier extends StateNotifier<PlatformAdminState> {
-  PlatformAdminNotifier()
+  final PlatformAdminApiService? _apiService;
+
+  PlatformAdminNotifier([this._apiService])
       : super(
           PlatformAdminState(
             currentUser: SuperAdminUser(
@@ -110,7 +114,42 @@ class PlatformAdminNotifier extends StateNotifier<PlatformAdminState> {
               pendingOnboardings: 4,
             ),
           ),
-        );
+        ) {
+    loadOrganizations();
+  }
+
+  /// Load organizations directory and KPIs from backend REST API
+  Future<void> loadOrganizations() async {
+    if (_apiService == null) return;
+    try {
+      state = state.copyWith(isLoading: true);
+      final res = await _apiService.getOrganizations(
+        search: state.searchQuery,
+        status: state.selectedStatusFilter,
+        plan: state.selectedPlanFilter,
+      );
+
+      state = state.copyWith(
+        tenants: res.tenants.isNotEmpty ? res.tenants : state.tenants,
+        kpis: res.kpis ?? state.kpis,
+        isLoading: false,
+      );
+    } catch (_) {
+      // Gracefully retain cached state on connection error
+      state = state.copyWith(isLoading: false);
+    }
+  }
+
+  /// Refresh platform KPIs from backend
+  Future<void> refreshKPIs() async {
+    if (_apiService == null) return;
+    try {
+      final kpis = await _apiService.getKPIs();
+      state = state.copyWith(kpis: kpis);
+    } catch (_) {
+      // Keep existing
+    }
+  }
 
   void setNavTab(String tab) {
     state = state.copyWith(selectedNavTab: tab);
@@ -152,7 +191,8 @@ class PlatformAdminNotifier extends StateNotifier<PlatformAdminState> {
     );
   }
 
-  void toggleTenantStatus(String tenantId, TenantStatus newStatus) {
+  Future<void> toggleTenantStatus(String tenantId, TenantStatus newStatus) async {
+    // 1. Optimistic update
     final updatedList = state.tenants.map((t) {
       if (t.id == tenantId) {
         return t.copyWith(status: newStatus);
@@ -162,15 +202,41 @@ class PlatformAdminNotifier extends StateNotifier<PlatformAdminState> {
 
     state = state.copyWith(tenants: updatedList);
     _recalculateKpis();
+
+    // 2. Sync with backend API
+    if (_apiService != null) {
+      try {
+        final syncedTenant = await _apiService.toggleStatus(tenantId, newStatus);
+        final syncedList = state.tenants.map((t) => t.id == tenantId ? syncedTenant : t).toList();
+        state = state.copyWith(tenants: syncedList);
+        _recalculateKpis();
+      } catch (_) {
+        // Retain optimistic state
+      }
+    }
   }
 
-  void addTenant(OrganizationTenant tenant) {
+  Future<void> addTenant(OrganizationTenant tenant, {String? password}) async {
+    // 1. Optimistic update
     final updatedList = [tenant, ...state.tenants];
     state = state.copyWith(tenants: updatedList);
     _recalculateKpis();
+
+    // 2. Sync with backend API
+    if (_apiService != null) {
+      try {
+        final serverTenant = await _apiService.createOrganization(tenant, password: password);
+        final syncedList = state.tenants.map((t) => t.id == tenant.id ? serverTenant : t).toList();
+        state = state.copyWith(tenants: syncedList);
+        _recalculateKpis();
+      } catch (_) {
+        // Retain optimistic state
+      }
+    }
   }
 
-  void updateTenant(OrganizationTenant tenant) {
+  Future<void> updateTenant(OrganizationTenant tenant) async {
+    // 1. Optimistic update
     final updatedList = state.tenants.map((t) {
       if (t.id == tenant.id) {
         return tenant;
@@ -180,12 +246,45 @@ class PlatformAdminNotifier extends StateNotifier<PlatformAdminState> {
 
     state = state.copyWith(tenants: updatedList);
     _recalculateKpis();
+
+    // 2. Sync with backend API
+    if (_apiService != null) {
+      try {
+        final serverTenant = await _apiService.updateOrganization(tenant);
+        final syncedList = state.tenants.map((t) => t.id == tenant.id ? serverTenant : t).toList();
+        state = state.copyWith(tenants: syncedList);
+        _recalculateKpis();
+      } catch (_) {
+        // Retain optimistic state
+      }
+    }
   }
 
-  void deleteTenant(String tenantId) {
+  Future<void> deleteTenant(String tenantId) async {
+    // 1. Optimistic update
     final updatedList = state.tenants.where((t) => t.id != tenantId).toList();
     state = state.copyWith(tenants: updatedList);
     _recalculateKpis();
+
+    // 2. Sync with backend API
+    if (_apiService != null) {
+      try {
+        await _apiService.deleteOrganization(tenantId);
+      } catch (_) {
+        // Retain optimistic state
+      }
+    }
+  }
+
+  Future<Map<String, dynamic>?> impersonateTenant(String tenantId) async {
+    if (_apiService != null) {
+      try {
+        return await _apiService.impersonateTenant(tenantId);
+      } catch (_) {
+        return null;
+      }
+    }
+    return null;
   }
 
   void approveOnboardingRequest(String requestId) {
@@ -520,7 +619,13 @@ class PlatformAdminNotifier extends StateNotifier<PlatformAdminState> {
   ];
 }
 
+final platformAdminApiServiceProvider = Provider<PlatformAdminApiService>((ref) {
+  final apiClient = ref.watch(apiClientProvider);
+  return PlatformAdminApiService(apiClient);
+});
+
 final platformAdminProvider =
     StateNotifierProvider<PlatformAdminNotifier, PlatformAdminState>((ref) {
-  return PlatformAdminNotifier();
+  final apiService = ref.watch(platformAdminApiServiceProvider);
+  return PlatformAdminNotifier(apiService);
 });
