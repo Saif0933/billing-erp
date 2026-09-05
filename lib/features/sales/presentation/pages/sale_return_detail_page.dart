@@ -3,12 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_spacing.dart';
-import '../../../../core/constants/app_typography.dart';
 import '../../../../core/responsive/responsive.dart';
 import '../../../../core/models/billing_models.dart';
 import '../../../../core/models/warehouse_models.dart';
 import '../../../../core/services/invoice_pdf_service.dart';
-import '../../../../shared/widgets/app_button.dart';
 import '../../../../shared/widgets/app_cards.dart';
 import '../../../../shared/widgets/app_table.dart';
 import '../../../../shared/widgets/feedback.dart';
@@ -40,8 +38,13 @@ class SaleReturnDetailPage extends ConsumerWidget {
             child: const Text('Yes, Cancel Return'),
             onPressed: () async {
               Navigator.pop(ctx);
-              await ref.read(billingRepositoryProvider.notifier).cancelInvoice(ret.id);
-              AppFeedback.showSnackbar(context, message: 'Sale return cancelled successfully.');
+              await ref
+                  .read(billingRepositoryProvider.notifier)
+                  .cancelInvoice(ret.id);
+              AppFeedback.showSnackbar(
+                context,
+                message: 'Sale return cancelled successfully.',
+              );
             },
           ),
         ],
@@ -51,7 +54,10 @@ class SaleReturnDetailPage extends ConsumerWidget {
 
   void _confirmReturn(BuildContext context, WidgetRef ref, Invoice ret) async {
     await ref.read(billingRepositoryProvider.notifier).confirmInvoice(ret.id);
-    AppFeedback.showSnackbar(context, message: 'Sale return confirmed! Inventory restocked & balance adjusted.');
+    AppFeedback.showSnackbar(
+      context,
+      message: 'Sale return confirmed! Inventory restocked & balance adjusted.',
+    );
   }
 
   Widget _buildStatusBadge(InvoiceStatus status) {
@@ -145,7 +151,10 @@ class SaleReturnDetailPage extends ConsumerWidget {
             children: [
               const Icon(Icons.error_outline, size: 48, color: Colors.grey),
               const SizedBox(height: 16),
-              const Text('Sale Return Not Found', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              const Text(
+                'Sale Return Not Found',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
               const SizedBox(height: 12),
               ElevatedButton(
                 onPressed: () => context.go('/sales/returns'),
@@ -158,17 +167,27 @@ class SaleReturnDetailPage extends ConsumerWidget {
     }
 
     final originalInvoice = billingState.invoices.cast<Invoice?>().firstWhere(
-          (i) =>
-              i != null &&
-              !i.isCreditNote &&
-              (i.id == ret.originalInvoiceId ||
-                  i.invoiceNumber.toLowerCase() == ret.originalInvoiceId.toLowerCase()),
-          orElse: () => null,
-        );
+      (i) =>
+          i != null &&
+          !i.isCreditNote &&
+          (i.id == ret.originalInvoiceId ||
+              i.invoiceNumber.toLowerCase() ==
+                  ret.originalInvoiceId.toLowerCase()),
+      orElse: () => null,
+    );
 
     final warehouse = billingState.warehouses.firstWhere(
       (w) => w.id == ret.warehouseId,
-      orElse: () => billingState.warehouses.isNotEmpty ? billingState.warehouses.first : const Warehouse(id: 'main', name: 'Main Warehouse', code: 'M-WH', address: '', contact: '', isActive: true),
+      orElse: () => billingState.warehouses.isNotEmpty
+          ? billingState.warehouses.first
+          : const Warehouse(
+              id: 'main',
+              name: 'Main Warehouse',
+              code: 'M-WH',
+              address: '',
+              contact: '',
+              isActive: true,
+            ),
     );
 
     return Scaffold(
@@ -195,8 +214,14 @@ class SaleReturnDetailPage extends ConsumerWidget {
             // Top Bar
             AppPageHeader(
               title: 'Credit Note / Sale Return',
-              description: 'Detailed breakdown of returned products, tax credits, and customer balance adjustment.',
-              breadcrumbs: ['Dashboard', 'Sales', 'Sale Returns', ret.invoiceNumber],
+              description:
+                  'Detailed breakdown of returned products, tax credits, and customer balance adjustment.',
+              breadcrumbs: [
+                'Dashboard',
+                'Sales',
+                'Sale Returns',
+                ret.invoiceNumber,
+              ],
               actions: [
                 OutlinedButton.icon(
                   icon: const Icon(Icons.print, size: 18),
@@ -222,7 +247,9 @@ class SaleReturnDetailPage extends ConsumerWidget {
                 if (ret.status != InvoiceStatus.cancelled) ...[
                   const SizedBox(width: 8),
                   OutlinedButton.icon(
-                    style: OutlinedButton.styleFrom(foregroundColor: Colors.red),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.red,
+                    ),
                     icon: const Icon(Icons.cancel_outlined, size: 18),
                     label: const Text('Cancel Return'),
                     onPressed: () => _showCancelDialog(context, ref, ret),
@@ -237,9 +264,15 @@ class SaleReturnDetailPage extends ConsumerWidget {
               decoration: BoxDecoration(
                 color: isDark ? AppColors.surfaceDark : Colors.white,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: isDark ? Colors.white10 : Colors.grey.shade200),
+                border: Border.all(
+                  color: isDark ? Colors.white10 : Colors.grey.shade200,
+                ),
                 boxShadow: [
-                  BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4)),
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.03),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
                 ],
               ),
               child: Column(
@@ -269,14 +302,20 @@ class SaleReturnDetailPage extends ConsumerWidget {
                           const SizedBox(height: 6),
                           Text(
                             'Return Date: ${ret.invoiceDate.day}/${ret.invoiceDate.month}/${ret.invoiceDate.year}',
-                            style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+                            style: TextStyle(
+                              color: Colors.grey.shade600,
+                              fontSize: 13,
+                            ),
                           ),
                         ],
                       ),
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
-                          const Text('Total Credit Amount', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                          const Text(
+                            'Total Credit Amount',
+                            style: TextStyle(fontSize: 12, color: Colors.grey),
+                          ),
                           Text(
                             '₹${ret.grandTotal.toStringAsFixed(2)}',
                             style: const TextStyle(
@@ -296,18 +335,44 @@ class SaleReturnDetailPage extends ConsumerWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('CUSTOMER INFORMATION', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey, letterSpacing: 0.5)),
+                            const Text(
+                              'CUSTOMER INFORMATION',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.grey,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
                             const SizedBox(height: 6),
-                            Text(ret.customerName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                            Text(
+                              ret.customerName,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 15,
+                              ),
+                            ),
                             if (ret.billingAddress.isNotEmpty)
                               Padding(
                                 padding: const EdgeInsets.only(top: 2),
-                                child: Text(ret.billingAddress, style: TextStyle(color: Colors.grey.shade600, fontSize: 12)),
+                                child: Text(
+                                  ret.billingAddress,
+                                  style: TextStyle(
+                                    color: Colors.grey.shade600,
+                                    fontSize: 12,
+                                  ),
+                                ),
                               ),
                             if (ret.placeOfSupply.isNotEmpty)
                               Padding(
                                 padding: const EdgeInsets.only(top: 2),
-                                child: Text('Place of Supply: ${ret.placeOfSupply}', style: TextStyle(color: Colors.grey.shade600, fontSize: 12)),
+                                child: Text(
+                                  'Place of Supply: ${ret.placeOfSupply}',
+                                  style: TextStyle(
+                                    color: Colors.grey.shade600,
+                                    fontSize: 12,
+                                  ),
+                                ),
                               ),
                           ],
                         ),
@@ -316,22 +381,45 @@ class SaleReturnDetailPage extends ConsumerWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('ORIGINAL INVOICE LINK', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey, letterSpacing: 0.5)),
+                            const Text(
+                              'ORIGINAL INVOICE LINK',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.grey,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
                             const SizedBox(height: 6),
                             if (originalInvoice != null) ...[
                               InkWell(
-                                onTap: () => context.push('/sales/${originalInvoice.id}'),
+                                onTap: () => context.push(
+                                  '/sales/${originalInvoice.id}',
+                                ),
                                 child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 6,
+                                  ),
                                   decoration: BoxDecoration(
-                                    color: isDark ? const Color(0xFF0F3D32) : const Color(0xFFE0F2F1),
+                                    color: isDark
+                                        ? const Color(0xFF0F3D32)
+                                        : const Color(0xFFE0F2F1),
                                     borderRadius: BorderRadius.circular(8),
-                                    border: Border.all(color: const Color(0xFF00897B).withOpacity(0.3)),
+                                    border: Border.all(
+                                      color: const Color(
+                                        0xFF00897B,
+                                      ).withOpacity(0.3),
+                                    ),
                                   ),
                                   child: Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      const Icon(Icons.receipt_long, size: 16, color: Color(0xFF00897B)),
+                                      const Icon(
+                                        Icons.receipt_long,
+                                        size: 16,
+                                        color: Color(0xFF00897B),
+                                      ),
                                       const SizedBox(width: 6),
                                       Text(
                                         '${originalInvoice.invoiceNumber} (View)',
@@ -348,12 +436,19 @@ class SaleReturnDetailPage extends ConsumerWidget {
                               const SizedBox(height: 4),
                               Text(
                                 'Dated: ${originalInvoice.invoiceDate.day}/${originalInvoice.invoiceDate.month}/${originalInvoice.invoiceDate.year} • Amount: ₹${originalInvoice.grandTotal.toStringAsFixed(2)}',
-                                style: TextStyle(color: Colors.grey.shade600, fontSize: 11),
+                                style: TextStyle(
+                                  color: Colors.grey.shade600,
+                                  fontSize: 11,
+                                ),
                               ),
                             ] else ...[
                               Text(
-                                ret.originalInvoiceId.isNotEmpty ? ret.originalInvoiceId : 'Direct Return (No Reference)',
-                                style: const TextStyle(fontWeight: FontWeight.w600),
+                                ret.originalInvoiceId.isNotEmpty
+                                    ? ret.originalInvoiceId
+                                    : 'Direct Return (No Reference)',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                ),
                               ),
                             ],
                           ],
@@ -363,21 +458,49 @@ class SaleReturnDetailPage extends ConsumerWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('RESTOCK & SETTLEMENT', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey, letterSpacing: 0.5)),
+                            const Text(
+                              'RESTOCK & SETTLEMENT',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.grey,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
                             const SizedBox(height: 6),
                             Row(
                               children: [
-                                const Icon(Icons.warehouse_outlined, size: 16, color: Colors.grey),
+                                const Icon(
+                                  Icons.warehouse_outlined,
+                                  size: 16,
+                                  color: Colors.grey,
+                                ),
                                 const SizedBox(width: 6),
-                                Text('Restock Godown: ${warehouse.name}', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
+                                Text(
+                                  'Restock Godown: ${warehouse.name}',
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
                               ],
                             ),
                             const SizedBox(height: 4),
                             Row(
                               children: [
-                                const Icon(Icons.payment_outlined, size: 16, color: Colors.grey),
+                                const Icon(
+                                  Icons.payment_outlined,
+                                  size: 16,
+                                  color: Colors.grey,
+                                ),
                                 const SizedBox(width: 6),
-                                Text('Settlement: ${ret.paymentMode.isNotEmpty ? ret.paymentMode : "Credit Note"}', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
+                                Text(
+                                  'Settlement: ${ret.paymentMode.isNotEmpty ? ret.paymentMode : "Credit Note"}',
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
                               ],
                             ),
                           ],
@@ -404,8 +527,17 @@ class SaleReturnDetailPage extends ConsumerWidget {
                     cellBuilder: (item) => Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(item.name, style: const TextStyle(fontWeight: FontWeight.bold)),
-                        Text('HSN/SAC: ${item.hsnSac}', style: TextStyle(color: Colors.grey.shade600, fontSize: 11)),
+                        Text(
+                          item.name,
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        Text(
+                          'HSN/SAC: ${item.hsnSac}',
+                          style: TextStyle(
+                            color: Colors.grey.shade600,
+                            fontSize: 11,
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -420,17 +552,20 @@ class SaleReturnDetailPage extends ConsumerWidget {
                   TableColumnSpec<InvoiceItem>(
                     label: 'Rate / Unit',
                     isNumeric: true,
-                    cellBuilder: (item) => Text('₹${item.rate.toStringAsFixed(2)}'),
+                    cellBuilder: (item) =>
+                        Text('₹${item.rate.toStringAsFixed(2)}'),
                   ),
                   TableColumnSpec<InvoiceItem>(
                     label: 'Taxable Value',
                     isNumeric: true,
-                    cellBuilder: (item) => Text('₹${item.taxableValue.toStringAsFixed(2)}'),
+                    cellBuilder: (item) =>
+                        Text('₹${item.taxableValue.toStringAsFixed(2)}'),
                   ),
                   TableColumnSpec<InvoiceItem>(
                     label: 'GST Rate',
                     isNumeric: true,
-                    cellBuilder: (item) => Text('${item.gstRate.toStringAsFixed(0)}%'),
+                    cellBuilder: (item) =>
+                        Text('${item.gstRate.toStringAsFixed(0)}%'),
                   ),
                   TableColumnSpec<InvoiceItem>(
                     label: 'Total Tax',
@@ -444,10 +579,18 @@ class SaleReturnDetailPage extends ConsumerWidget {
                     label: 'Total Credit',
                     isNumeric: true,
                     cellBuilder: (item) {
-                      final total = item.taxableValue + item.cgst + item.sgst + item.igst + item.cess;
+                      final total =
+                          item.taxableValue +
+                          item.cgst +
+                          item.sgst +
+                          item.igst +
+                          item.cess;
                       return Text(
                         '₹${total.toStringAsFixed(2)}',
-                        style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF00897B)),
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF00897B),
+                        ),
                       );
                     },
                   ),
@@ -469,15 +612,39 @@ class SaleReturnDetailPage extends ConsumerWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         if (ret.notes.isNotEmpty) ...[
-                          const Text('Return Justification / Notes:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                          const Text(
+                            'Return Justification / Notes:',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 13,
+                            ),
+                          ),
                           const SizedBox(height: 4),
-                          Text(ret.notes, style: TextStyle(color: Colors.grey.shade700, fontSize: 13)),
+                          Text(
+                            ret.notes,
+                            style: TextStyle(
+                              color: Colors.grey.shade700,
+                              fontSize: 13,
+                            ),
+                          ),
                           const SizedBox(height: 16),
                         ],
                         if (ret.termsConditions.isNotEmpty) ...[
-                          const Text('Terms & Conditions:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                          const Text(
+                            'Terms & Conditions:',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 13,
+                            ),
+                          ),
                           const SizedBox(height: 4),
-                          Text(ret.termsConditions, style: TextStyle(color: Colors.grey.shade700, fontSize: 13)),
+                          Text(
+                            ret.termsConditions,
+                            style: TextStyle(
+                              color: Colors.grey.shade700,
+                              fontSize: 13,
+                            ),
+                          ),
                         ],
                       ],
                     ),
@@ -490,22 +657,42 @@ class SaleReturnDetailPage extends ConsumerWidget {
                     title: 'Financial Breakdown',
                     child: Column(
                       children: [
-                        _buildSummaryLine('Taxable Amount', '₹${ret.taxableAmount.toStringAsFixed(2)}'),
+                        _buildSummaryLine(
+                          'Taxable Amount',
+                          '₹${ret.taxableAmount.toStringAsFixed(2)}',
+                        ),
                         if (ret.cgst > 0)
-                          _buildSummaryLine('CGST', '₹${ret.cgst.toStringAsFixed(2)}'),
+                          _buildSummaryLine(
+                            'CGST',
+                            '₹${ret.cgst.toStringAsFixed(2)}',
+                          ),
                         if (ret.sgst > 0)
-                          _buildSummaryLine('SGST', '₹${ret.sgst.toStringAsFixed(2)}'),
+                          _buildSummaryLine(
+                            'SGST',
+                            '₹${ret.sgst.toStringAsFixed(2)}',
+                          ),
                         if (ret.igst > 0)
-                          _buildSummaryLine('IGST', '₹${ret.igst.toStringAsFixed(2)}'),
+                          _buildSummaryLine(
+                            'IGST',
+                            '₹${ret.igst.toStringAsFixed(2)}',
+                          ),
                         if (ret.cess > 0)
-                          _buildSummaryLine('Cess', '₹${ret.cess.toStringAsFixed(2)}'),
+                          _buildSummaryLine(
+                            'Cess',
+                            '₹${ret.cess.toStringAsFixed(2)}',
+                          ),
                         if (ret.roundOff != 0)
-                          _buildSummaryLine('Round Off', '₹${ret.roundOff.toStringAsFixed(2)}'),
+                          _buildSummaryLine(
+                            'Round Off',
+                            '₹${ret.roundOff.toStringAsFixed(2)}',
+                          ),
                         const Divider(height: 24),
                         Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: isDark ? const Color(0xFF00382E) : const Color(0xFFE0F2F1),
+                            color: isDark
+                                ? const Color(0xFF00382E)
+                                : const Color(0xFFE0F2F1),
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: Row(
@@ -513,7 +700,10 @@ class SaleReturnDetailPage extends ConsumerWidget {
                             children: [
                               const Text(
                                 'Grand Total Credit',
-                                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
+                                ),
                               ),
                               Text(
                                 '₹${ret.grandTotal.toStringAsFixed(2)}',
@@ -544,8 +734,14 @@ class SaleReturnDetailPage extends ConsumerWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(title, style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
-          Text(val, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+          Text(
+            title,
+            style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+          ),
+          Text(
+            val,
+            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+          ),
         ],
       ),
     );

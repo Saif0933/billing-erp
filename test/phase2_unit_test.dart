@@ -1,10 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:frontend/core/models/billing_models.dart';
-import 'package:frontend/core/models/warehouse_models.dart';
 import 'package:frontend/core/models/recurring_billing_models.dart';
+import 'package:frontend/core/models/warehouse_models.dart';
 import 'package:frontend/core/services/payment_reminder_service.dart';
-import 'package:frontend/features/dashboard/presentation/providers/billing_repository.dart';
 
 void main() {
   group('Phase 2 Operation & Logic Tests', () {
@@ -65,14 +63,21 @@ void main() {
       expect(overdue.length, 1);
       expect(overdue.first.id, 'inv_1');
 
-      final msg = PaymentReminderService.generateReminderMessage(overdue.first, 'Email');
+      final msg = PaymentReminderService.generateReminderMessage(
+        overdue.first,
+        'Email',
+      );
       expect(msg, contains('Aman'));
       expect(msg, contains('INV-1'));
     });
 
     test('Warehouse StockTransfer state mutations simulation', () {
       // Mocking StockTransfer item
-      final item = TransferItem(productId: 'prod_1', productName: 'Flour', quantity: 5.0);
+      final item = TransferItem(
+        productId: 'prod_1',
+        productName: 'Flour',
+        quantity: 5.0,
+      );
       final transfer = StockTransfer(
         id: 'st_1',
         sourceWarehouseId: 'main',

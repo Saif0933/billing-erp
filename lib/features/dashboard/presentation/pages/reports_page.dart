@@ -12,7 +12,6 @@ import '../../../../shared/widgets/app_input_fields.dart';
 import '../../../../shared/widgets/app_table.dart';
 import '../../../../shared/widgets/feedback.dart';
 import '../../../dashboard/presentation/providers/billing_repository.dart';
-import '../../../subscription/domain/entities/subscription_models.dart';
 import '../../../subscription/domain/services/feature_access_service.dart';
 
 class ReportsPage extends ConsumerStatefulWidget {
@@ -41,14 +40,17 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
       builder: (ctx) => AlertDialog(
         title: Row(
           children: [
-            Icon(format == 'Excel' ? Icons.table_view : Icons.picture_as_pdf,
-                color: const Color(0xFF2E7D32)),
+            Icon(
+              format == 'Excel' ? Icons.table_view : Icons.picture_as_pdf,
+              color: const Color(0xFF2E7D32),
+            ),
             const SizedBox(width: 8),
             Text('Export Report ($format)'),
           ],
         ),
         content: Text(
-            'Your request to export "$reportName" in $format format has been processed. Click Download to save the document.'),
+          'Your request to export "$reportName" in $format format has been processed. Click Download to save the document.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
@@ -59,8 +61,10 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
             onPressed: () {
               Navigator.pop(ctx);
               if (context.mounted) {
-                AppFeedback.showSnackbar(context,
-                    message: '$reportName downloaded successfully!');
+                AppFeedback.showSnackbar(
+                  context,
+                  message: '$reportName downloaded successfully!',
+                );
               }
             },
           ),
@@ -85,10 +89,13 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
                 children: [
                   const Icon(Icons.lock, size: 48, color: AppColors.warning),
                   const SizedBox(height: AppSpacing.md),
-                  Text('Advanced Reports Locked',
-                      style: AppTypography.titleLarge),
+                  Text(
+                    'Advanced Reports Locked',
+                    style: AppTypography.titleLarge,
+                  ),
                   const Text(
-                      'Upgrade to Premium or Enterprise plan to access advanced multi-dimensional sales, purchase, GST, and inventory reporting.'),
+                    'Upgrade to Premium or Enterprise plan to access advanced multi-dimensional sales, purchase, GST, and inventory reporting.',
+                  ),
                   const SizedBox(height: AppSpacing.lg),
                   AppButton(
                     label: 'Upgrade Subscription Now',
@@ -103,18 +110,22 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
     }
 
     final filteredInvoices = billingState.invoices.where((inv) {
-      final dateMatch = inv.invoiceDate.isAfter(_selectedDateRange!.start) &&
+      final dateMatch =
+          inv.invoiceDate.isAfter(_selectedDateRange!.start) &&
           inv.invoiceDate.isBefore(_selectedDateRange!.end);
-      final whMatch = _selectedWarehouseId == 'all' ||
+      final whMatch =
+          _selectedWarehouseId == 'all' ||
           inv.warehouseId == _selectedWarehouseId;
       return dateMatch && whMatch;
     }).toList();
 
     final filteredPurchases = billingState.purchases.where((p) {
-      final dateMatch = p.purchaseDate.isAfter(_selectedDateRange!.start) &&
+      final dateMatch =
+          p.purchaseDate.isAfter(_selectedDateRange!.start) &&
           p.purchaseDate.isBefore(_selectedDateRange!.end);
       final whMatch =
-          _selectedWarehouseId == 'all' || p.warehouseId == _selectedWarehouseId;
+          _selectedWarehouseId == 'all' ||
+          p.warehouseId == _selectedWarehouseId;
       return dateMatch && whMatch;
     }).toList();
 
@@ -135,9 +146,11 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
                 style: OutlinedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 12),
                   side: BorderSide(
-                      color: isDark ? AppColors.borderDark : Colors.grey.shade300),
+                    color: isDark ? AppColors.borderDark : Colors.grey.shade300,
+                  ),
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10)),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
                 ),
                 onPressed: () async {
                   final picked = await showDateRangePicker(
@@ -157,9 +170,13 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
                 value: _selectedWarehouseId,
                 items: [
                   const DropdownMenuItem(
-                      value: 'all', child: Text('All Locations / Warehouses')),
-                  ...billingState.warehouses.map((wh) =>
-                      DropdownMenuItem(value: wh.id, child: Text(wh.name))),
+                    value: 'all',
+                    child: Text('All Locations / Warehouses'),
+                  ),
+                  ...billingState.warehouses.map(
+                    (wh) =>
+                        DropdownMenuItem(value: wh.id, child: Text(wh.name)),
+                  ),
                 ],
                 onChanged: (val) {
                   if (val != null) setState(() => _selectedWarehouseId = val);
@@ -177,11 +194,15 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
                 ),
                 style: OutlinedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 16, vertical: 14),
+                    horizontal: 16,
+                    vertical: 14,
+                  ),
                   side: BorderSide(
-                      color: isDark ? AppColors.borderDark : Colors.grey.shade300),
+                    color: isDark ? AppColors.borderDark : Colors.grey.shade300,
+                  ),
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10)),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
                 ),
                 onPressed: () async {
                   final picked = await showDateRangePicker(
@@ -203,9 +224,13 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
                   value: _selectedWarehouseId,
                   items: [
                     const DropdownMenuItem(
-                        value: 'all', child: Text('All Locations / Warehouses')),
-                    ...billingState.warehouses.map((wh) =>
-                        DropdownMenuItem(value: wh.id, child: Text(wh.name))),
+                      value: 'all',
+                      child: Text('All Locations / Warehouses'),
+                    ),
+                    ...billingState.warehouses.map(
+                      (wh) =>
+                          DropdownMenuItem(value: wh.id, child: Text(wh.name)),
+                    ),
                   ],
                   onChanged: (val) {
                     if (val != null) setState(() => _selectedWarehouseId = val);
@@ -281,12 +306,15 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
                         const SizedBox(height: 12),
                         Container(
                           decoration: BoxDecoration(
-                            color: isDark ? AppColors.surfaceDark : Colors.white,
+                            color: isDark
+                                ? AppColors.surfaceDark
+                                : Colors.white,
                             borderRadius: BorderRadius.circular(16),
                             border: Border.all(
-                                color: isDark
-                                    ? AppColors.borderDark
-                                    : Colors.grey.shade100),
+                              color: isDark
+                                  ? AppColors.borderDark
+                                  : Colors.grey.shade100,
+                            ),
                           ),
                           child: AppTable<Invoice>(
                             items: filteredInvoices,
@@ -295,30 +323,37 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
                             columns: [
                               TableColumnSpec<Invoice>(
                                 label: 'Invoice No',
-                                cellBuilder: (inv) => Text(inv.invoiceNumber,
-                                    style: const TextStyle(
-                                        fontWeight: FontWeight.bold)),
+                                cellBuilder: (inv) => Text(
+                                  inv.invoiceNumber,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
                               ),
                               TableColumnSpec<Invoice>(
                                 label: 'Date',
                                 cellBuilder: (inv) => Text(
-                                    '${inv.invoiceDate.day}/${inv.invoiceDate.month}/${inv.invoiceDate.year}'),
+                                  '${inv.invoiceDate.day}/${inv.invoiceDate.month}/${inv.invoiceDate.year}',
+                                ),
                               ),
                               TableColumnSpec<Invoice>(
-                                  label: 'Customer',
-                                  flex: 2,
-                                  cellBuilder: (inv) => Text(inv.customerName)),
+                                label: 'Customer',
+                                flex: 2,
+                                cellBuilder: (inv) => Text(inv.customerName),
+                              ),
                               TableColumnSpec<Invoice>(
                                 label: 'Taxable Amt',
                                 isNumeric: true,
                                 cellBuilder: (inv) => Text(
-                                    '₹${inv.taxableAmount.toStringAsFixed(2)}'),
+                                  '₹${inv.taxableAmount.toStringAsFixed(2)}',
+                                ),
                               ),
                               TableColumnSpec<Invoice>(
                                 label: 'GST (₹)',
                                 isNumeric: true,
                                 cellBuilder: (inv) => Text(
-                                    '₹${(inv.cgst + inv.sgst + inv.igst).toStringAsFixed(2)}'),
+                                  '₹${(inv.cgst + inv.sgst + inv.igst).toStringAsFixed(2)}',
+                                ),
                               ),
                               TableColumnSpec<Invoice>(
                                 label: 'Grand Total',
@@ -326,8 +361,9 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
                                 cellBuilder: (inv) => Text(
                                   '₹${inv.grandTotal.toStringAsFixed(2)}',
                                   style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      color: Color(0xFF2E7D32)),
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFF2E7D32),
+                                  ),
                                 ),
                               ),
                             ],
@@ -366,12 +402,15 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
                         const SizedBox(height: 12),
                         Container(
                           decoration: BoxDecoration(
-                            color: isDark ? AppColors.surfaceDark : Colors.white,
+                            color: isDark
+                                ? AppColors.surfaceDark
+                                : Colors.white,
                             borderRadius: BorderRadius.circular(16),
                             border: Border.all(
-                                color: isDark
-                                    ? AppColors.borderDark
-                                    : Colors.grey.shade100),
+                              color: isDark
+                                  ? AppColors.borderDark
+                                  : Colors.grey.shade100,
+                            ),
                           ),
                           child: AppTable<Purchase>(
                             items: filteredPurchases,
@@ -380,38 +419,47 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
                             columns: [
                               TableColumnSpec<Purchase>(
                                 label: 'Bill No',
-                                cellBuilder: (p) => Text(p.purchaseNumber,
-                                    style: const TextStyle(
-                                        fontWeight: FontWeight.bold)),
+                                cellBuilder: (p) => Text(
+                                  p.purchaseNumber,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
                               ),
                               TableColumnSpec<Purchase>(
                                 label: 'Date',
                                 cellBuilder: (p) => Text(
-                                    '${p.purchaseDate.day}/${p.purchaseDate.month}/${p.purchaseDate.year}'),
+                                  '${p.purchaseDate.day}/${p.purchaseDate.month}/${p.purchaseDate.year}',
+                                ),
                               ),
                               TableColumnSpec<Purchase>(
-                                  label: 'Supplier',
-                                  flex: 2,
-                                  cellBuilder: (p) => Text(p.supplierName)),
+                                label: 'Supplier',
+                                flex: 2,
+                                cellBuilder: (p) => Text(p.supplierName),
+                              ),
                               TableColumnSpec<Purchase>(
                                 label: 'Taxable Value',
                                 isNumeric: true,
                                 cellBuilder: (p) => Text(
-                                    '₹${p.taxableAmount.toStringAsFixed(2)}'),
+                                  '₹${p.taxableAmount.toStringAsFixed(2)}',
+                                ),
                               ),
                               TableColumnSpec<Purchase>(
-                                  label: 'GST Input (₹)',
-                                  isNumeric: true,
-                                  cellBuilder: (p) => Text(
-                                      '₹${(p.cgst + p.sgst + p.igst).toStringAsFixed(2)}')),
+                                label: 'GST Input (₹)',
+                                isNumeric: true,
+                                cellBuilder: (p) => Text(
+                                  '₹${(p.cgst + p.sgst + p.igst).toStringAsFixed(2)}',
+                                ),
+                              ),
                               TableColumnSpec<Purchase>(
                                 label: 'Total Value',
                                 isNumeric: true,
                                 cellBuilder: (p) => Text(
                                   '₹${p.grandTotal.toStringAsFixed(2)}',
                                   style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      color: Color(0xFF2E7D32)),
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFF2E7D32),
+                                  ),
                                 ),
                               ),
                             ],
@@ -435,7 +483,9 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
                               label: 'Export GSTR-1',
                               icon: Icons.upload_file,
                               onPressed: () => _triggerExport(
-                                  'Excel', 'GST Liability Summary'),
+                                'Excel',
+                                'GST Liability Summary',
+                              ),
                             ),
                           ],
                         ),
@@ -443,20 +493,23 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
                         Container(
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: isDark ? AppColors.surfaceDark : Colors.white,
+                            color: isDark
+                                ? AppColors.surfaceDark
+                                : Colors.white,
                             borderRadius: BorderRadius.circular(16),
                             border: Border.all(
-                                color: isDark
-                                    ? AppColors.borderDark
-                                    : Colors.grey.shade100),
+                              color: isDark
+                                  ? AppColors.borderDark
+                                  : Colors.grey.shade100,
+                            ),
                           ),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
                               const Text(
-                                  'Computed Summary of GST Rates for Invoiced Transactions:',
-                                  style:
-                                      TextStyle(fontWeight: FontWeight.bold)),
+                                'Computed Summary of GST Rates for Invoiced Transactions:',
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              ),
                               const SizedBox(height: 16),
                               Wrap(
                                 spacing: 12,
@@ -466,27 +519,27 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
                                   _buildGSTRateCard(
                                     'GST 5% Sale',
                                     filteredInvoices.fold(
-                                        0.0,
-                                        (sum, inv) =>
-                                            sum + inv.cgst + inv.sgst),
+                                      0.0,
+                                      (sum, inv) => sum + inv.cgst + inv.sgst,
+                                    ),
                                     const Color(0xFFE8F5E9),
                                     const Color(0xFF2E7D32),
                                   ),
                                   _buildGSTRateCard(
                                     'GST 12% Sale',
                                     filteredInvoices.fold(
-                                        0.0,
-                                        (sum, inv) =>
-                                            sum + (inv.cgst * 1.2)),
+                                      0.0,
+                                      (sum, inv) => sum + (inv.cgst * 1.2),
+                                    ),
                                     const Color(0xFFE3F2FD),
                                     const Color(0xFF1976D2),
                                   ),
                                   _buildGSTRateCard(
                                     'GST 18% Sale',
                                     filteredInvoices.fold(
-                                        0.0,
-                                        (sum, inv) =>
-                                            sum + (inv.cgst * 1.8)),
+                                      0.0,
+                                      (sum, inv) => sum + (inv.cgst * 1.8),
+                                    ),
                                     const Color(0xFFEDE7F6),
                                     const Color(0xFF673AB7),
                                   ),
@@ -513,19 +566,24 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
                               label: 'Export Asset Valuation',
                               icon: Icons.assessment,
                               onPressed: () => _triggerExport(
-                                  'Excel', 'Inventory Valuation'),
+                                'Excel',
+                                'Inventory Valuation',
+                              ),
                             ),
                           ],
                         ),
                         const SizedBox(height: 12),
                         Container(
                           decoration: BoxDecoration(
-                            color: isDark ? AppColors.surfaceDark : Colors.white,
+                            color: isDark
+                                ? AppColors.surfaceDark
+                                : Colors.white,
                             borderRadius: BorderRadius.circular(16),
                             border: Border.all(
-                                color: isDark
-                                    ? AppColors.borderDark
-                                    : Colors.grey.shade100),
+                              color: isDark
+                                  ? AppColors.borderDark
+                                  : Colors.grey.shade100,
+                            ),
                           ),
                           child: AppTable<Product>(
                             items: billingState.products,
@@ -534,9 +592,12 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
                               TableColumnSpec<Product>(
                                 label: 'Product Name',
                                 flex: 2,
-                                cellBuilder: (p) => Text(p.name,
-                                    style: const TextStyle(
-                                        fontWeight: FontWeight.bold)),
+                                cellBuilder: (p) => Text(
+                                  p.name,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
                               ),
                               TableColumnSpec<Product>(
                                 label: 'SKU Code',
@@ -548,10 +609,9 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
                                 cellBuilder: (p) {
                                   final double qty =
                                       _selectedWarehouseId == 'all'
-                                          ? p.currentStock
-                                          : (p.warehouseStocks[
-                                                  _selectedWarehouseId] ??
-                                              0.0);
+                                      ? p.currentStock
+                                      : (p.warehouseStocks[_selectedWarehouseId] ??
+                                            0.0);
                                   return Text('${qty.toInt()} units');
                                 },
                               ),
@@ -559,7 +619,8 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
                                 label: 'Cost Price',
                                 isNumeric: true,
                                 cellBuilder: (p) => Text(
-                                    '₹${p.purchasePrice.toStringAsFixed(2)}'),
+                                  '₹${p.purchasePrice.toStringAsFixed(2)}',
+                                ),
                               ),
                               TableColumnSpec<Product>(
                                 label: 'Asset Value (Cost)',
@@ -567,15 +628,16 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
                                 cellBuilder: (p) {
                                   final double qty =
                                       _selectedWarehouseId == 'all'
-                                          ? p.currentStock
-                                          : (p.warehouseStocks[
-                                                  _selectedWarehouseId] ??
-                                              0.0);
+                                      ? p.currentStock
+                                      : (p.warehouseStocks[_selectedWarehouseId] ??
+                                            0.0);
                                   return Text(
-                                      '₹${(qty * p.purchasePrice).toStringAsFixed(2)}',
-                                      style: const TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          color: Color(0xFF2E7D32)));
+                                    '₹${(qty * p.purchasePrice).toStringAsFixed(2)}',
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      color: Color(0xFF2E7D32),
+                                    ),
+                                  );
                                 },
                               ),
                             ],
@@ -602,21 +664,22 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(title,
-              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 8),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: actions,
+          Text(
+            title,
+            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
           ),
+          const SizedBox(height: 8),
+          Row(mainAxisAlignment: MainAxisAlignment.end, children: actions),
         ],
       );
     }
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(title,
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+        Text(
+          title,
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        ),
         Row(children: actions),
       ],
     );
@@ -641,15 +704,19 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
           Text(
             title,
             style: TextStyle(
-                color: textCol.withValues(alpha: 0.8),
-                fontSize: 11,
-                fontWeight: FontWeight.w600),
+              color: textCol.withValues(alpha: 0.8),
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+            ),
           ),
           const SizedBox(height: 6),
           Text(
             '₹${value.toStringAsFixed(2)}',
             style: TextStyle(
-                fontSize: 15, fontWeight: FontWeight.bold, color: textCol),
+              fontSize: 15,
+              fontWeight: FontWeight.bold,
+              color: textCol,
+            ),
           ),
         ],
       ),

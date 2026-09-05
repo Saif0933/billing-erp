@@ -1,5 +1,3 @@
-import 'package:flutter/foundation.dart';
-
 class BOM {
   final String id;
   final String businessId;
@@ -266,7 +264,8 @@ class JobWorkOrder {
       finishedProductId: finishedProductId,
       finishedProductName: finishedProductName,
       expectedFinishedQuantity: expectedFinishedQuantity,
-      receivedFinishedQuantity: receivedFinishedQuantity ?? this.receivedFinishedQuantity,
+      receivedFinishedQuantity:
+          receivedFinishedQuantity ?? this.receivedFinishedQuantity,
       scrapQuantity: scrapQuantity ?? this.scrapQuantity,
       jobWorkCharges: jobWorkCharges,
       status: status ?? this.status,

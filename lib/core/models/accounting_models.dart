@@ -1,5 +1,3 @@
-import 'package:flutter/foundation.dart';
-
 enum AccountType {
   asset('Asset'),
   liability('Liability'),
@@ -17,7 +15,8 @@ class Account {
   final String code;
   final String name;
   final AccountType type;
-  final String groupName; // e.g., 'Current Assets', 'Current Liabilities', 'Indirect Expenses'
+  final String
+  groupName; // e.g., 'Current Assets', 'Current Liabilities', 'Indirect Expenses'
   final String? parentId;
   final bool isSystemAccount;
   final bool isActive;
@@ -72,17 +71,14 @@ class Account {
   }
 }
 
-enum JournalStatus {
-  draft,
-  posted,
-  cancelled;
-}
+enum JournalStatus { draft, posted, cancelled }
 
 class JournalEntry {
   final String id;
   final String businessId;
   final DateTime date;
-  final String referenceType; // e.g. 'Invoice', 'Purchase', 'Payment', 'Receipt', 'Expense', 'Production', 'Manual'
+  final String
+  referenceType; // e.g. 'Invoice', 'Purchase', 'Payment', 'Receipt', 'Expense', 'Production', 'Manual'
   final String referenceId;
   final String narration;
   final JournalStatus status;
@@ -191,11 +187,7 @@ class BankAccount {
   }
 }
 
-enum PeriodStatus {
-  open,
-  locked,
-  closed;
-}
+enum PeriodStatus { open, locked, closed }
 
 class AccountingPeriod {
   final String id;
@@ -214,9 +206,7 @@ class AccountingPeriod {
     required this.status,
   });
 
-  AccountingPeriod copyWith({
-    PeriodStatus? status,
-  }) {
+  AccountingPeriod copyWith({PeriodStatus? status}) {
     return AccountingPeriod(
       id: id,
       businessId: businessId,

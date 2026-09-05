@@ -3,11 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_spacing.dart';
-import '../../../../core/constants/app_typography.dart';
 import '../../../../core/responsive/responsive.dart';
 import '../../../../core/models/billing_models.dart';
 import '../../../../core/services/gst_calculation_service.dart';
-import '../../../../shared/widgets/app_button.dart';
 import '../../../../shared/widgets/app_cards.dart';
 import '../../../../shared/widgets/app_input_fields.dart';
 import '../../../../shared/widgets/feedback.dart';
@@ -54,7 +52,8 @@ class SaleReturnCreatePage extends ConsumerStatefulWidget {
   const SaleReturnCreatePage({super.key, this.originalInvoiceId = ''});
 
   @override
-  ConsumerState<SaleReturnCreatePage> createState() => _SaleReturnCreatePageState();
+  ConsumerState<SaleReturnCreatePage> createState() =>
+      _SaleReturnCreatePageState();
 }
 
 class _SaleReturnCreatePageState extends ConsumerState<SaleReturnCreatePage> {
@@ -64,7 +63,8 @@ class _SaleReturnCreatePageState extends ConsumerState<SaleReturnCreatePage> {
   final _shippingAddressController = TextEditingController();
   final _placeOfSupplyController = TextEditingController(text: 'Maharashtra');
   final _termsController = TextEditingController(
-    text: '1. Credit note issued for returned goods.\n2. Amount will be credited to customer balance or refunded.',
+    text:
+        '1. Credit note issued for returned goods.\n2. Amount will be credited to customer balance or refunded.',
   );
   final _notesController = TextEditingController();
 
@@ -111,7 +111,8 @@ class _SaleReturnCreatePageState extends ConsumerState<SaleReturnCreatePage> {
   void _initForm() {
     final billingState = ref.read(billingRepositoryProvider);
     final count = billingState.invoices.where((i) => i.isCreditNote).length + 1;
-    _creditNoteNumberController.text = 'CN/26-27/${count.toString().padLeft(4, '0')}';
+    _creditNoteNumberController.text =
+        'CN/26-27/${count.toString().padLeft(4, '0')}';
 
     if (widget.originalInvoiceId.isNotEmpty) {
       final invoice = billingState.invoices.cast<Invoice?>().firstWhere(
@@ -119,7 +120,8 @@ class _SaleReturnCreatePageState extends ConsumerState<SaleReturnCreatePage> {
             inv != null &&
             !inv.isCreditNote &&
             (inv.id == widget.originalInvoiceId ||
-                inv.invoiceNumber.toLowerCase() == widget.originalInvoiceId.toLowerCase()),
+                inv.invoiceNumber.toLowerCase() ==
+                    widget.originalInvoiceId.toLowerCase()),
         orElse: () => null,
       );
       if (invoice != null) {
@@ -193,7 +195,9 @@ class _SaleReturnCreatePageState extends ConsumerState<SaleReturnCreatePage> {
       _billingAddressController.text = invoice.billingAddress;
       _shippingAddressController.text = invoice.shippingAddress;
       _placeOfSupplyController.text = invoice.placeOfSupply;
-      _selectedWarehouseId = invoice.warehouseId.isNotEmpty ? invoice.warehouseId : 'main';
+      _selectedWarehouseId = invoice.warehouseId.isNotEmpty
+          ? invoice.warehouseId
+          : 'main';
 
       _items.clear();
       for (var item in invoice.items) {
@@ -220,7 +224,11 @@ class _SaleReturnCreatePageState extends ConsumerState<SaleReturnCreatePage> {
 
   void _addManualItem() {
     if (_manualProduct == null && _manualService == null) {
-      AppFeedback.showSnackbar(context, message: 'Please select a product or service!', isError: true);
+      AppFeedback.showSnackbar(
+        context,
+        message: 'Please select a product or service!',
+        isError: true,
+      );
       return;
     }
 
@@ -228,7 +236,11 @@ class _SaleReturnCreatePageState extends ConsumerState<SaleReturnCreatePage> {
     final double rate = double.tryParse(_manualRateController.text) ?? 0.0;
 
     if (qty <= 0) {
-      AppFeedback.showSnackbar(context, message: 'Return quantity must be greater than 0!', isError: true);
+      AppFeedback.showSnackbar(
+        context,
+        message: 'Return quantity must be greater than 0!',
+        isError: true,
+      );
       return;
     }
 
@@ -241,7 +253,9 @@ class _SaleReturnCreatePageState extends ConsumerState<SaleReturnCreatePage> {
       quantity: qty,
       unit: _manualProduct?.primaryUnit ?? _manualService!.unit,
       rate: rate,
-      gstRate: _manualProduct != null ? _manualProduct!.gstRate : _manualService!.gstRate,
+      gstRate: _manualProduct != null
+          ? _manualProduct!.gstRate
+          : _manualService!.gstRate,
       reason: _manualReason,
     );
 
@@ -257,7 +271,6 @@ class _SaleReturnCreatePageState extends ConsumerState<SaleReturnCreatePage> {
 
   void _showAddItemDialog() {
     final billingState = ref.read(billingRepositoryProvider);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     showDialog(
       context: context,
@@ -272,9 +285,15 @@ class _SaleReturnCreatePageState extends ConsumerState<SaleReturnCreatePage> {
                   label: 'Select Product',
                   value: _manualProduct,
                   items: [
-                    const DropdownMenuItem(value: null, child: Text('None (Service)')),
+                    const DropdownMenuItem(
+                      value: null,
+                      child: Text('None (Service)'),
+                    ),
                     ...billingState.products.map(
-                      (p) => DropdownMenuItem(value: p, child: Text('${p.name} (₹${p.sellingPrice})')),
+                      (p) => DropdownMenuItem(
+                        value: p,
+                        child: Text('${p.name} (₹${p.sellingPrice})'),
+                      ),
                     ),
                   ],
                   onChanged: (p) {
@@ -295,7 +314,10 @@ class _SaleReturnCreatePageState extends ConsumerState<SaleReturnCreatePage> {
                     items: [
                       const DropdownMenuItem(value: null, child: Text('None')),
                       ...billingState.services.map(
-                        (s) => DropdownMenuItem(value: s, child: Text('${s.name} (₹${s.rate})')),
+                        (s) => DropdownMenuItem(
+                          value: s,
+                          child: Text('${s.name} (₹${s.rate})'),
+                        ),
                       ),
                     ],
                     onChanged: (s) {
@@ -332,8 +354,12 @@ class _SaleReturnCreatePageState extends ConsumerState<SaleReturnCreatePage> {
                 AppDropdownField<String>(
                   label: 'Item Return Reason',
                   value: _manualReason,
-                  items: _returnReasons.map((r) => DropdownMenuItem(value: r, child: Text(r))).toList(),
-                  onChanged: (r) => setDialogState(() => _manualReason = r ?? _returnReasons.first),
+                  items: _returnReasons
+                      .map((r) => DropdownMenuItem(value: r, child: Text(r)))
+                      .toList(),
+                  onChanged: (r) => setDialogState(
+                    () => _manualReason = r ?? _returnReasons.first,
+                  ),
                 ),
               ],
             ),
@@ -362,24 +388,37 @@ class _SaleReturnCreatePageState extends ConsumerState<SaleReturnCreatePage> {
 
   void _saveReturn(InvoiceStatus status) async {
     if (_selectedCustomer == null) {
-      AppFeedback.showSnackbar(context, message: 'Please select a customer!', isError: true);
+      AppFeedback.showSnackbar(
+        context,
+        message: 'Please select a customer!',
+        isError: true,
+      );
       return;
     }
 
     if (_items.isEmpty) {
-      AppFeedback.showSnackbar(context, message: 'Please add at least one returned item!', isError: true);
+      AppFeedback.showSnackbar(
+        context,
+        message: 'Please add at least one returned item!',
+        isError: true,
+      );
       return;
     }
 
     for (var item in _items) {
       if (item.quantity <= 0) {
-        AppFeedback.showSnackbar(context, message: 'Return quantity for ${item.name} must be greater than 0!', isError: true);
+        AppFeedback.showSnackbar(
+          context,
+          message: 'Return quantity for ${item.name} must be greater than 0!',
+          isError: true,
+        );
         return;
       }
       if (item.quantity > item.maxQuantity) {
         AppFeedback.showSnackbar(
           context,
-          message: 'Return quantity for ${item.name} cannot exceed original invoiced quantity (${item.maxQuantity})!',
+          message:
+              'Return quantity for ${item.name} cannot exceed original invoiced quantity (${item.maxQuantity})!',
           isError: true,
         );
         return;
@@ -387,9 +426,12 @@ class _SaleReturnCreatePageState extends ConsumerState<SaleReturnCreatePage> {
     }
 
     if (_formKey.currentState!.validate()) {
-      final businessStateCode = ref.read(businessProvider).activeBusiness?.stateCode ?? '27';
+      final businessStateCode =
+          ref.read(businessProvider).activeBusiness?.stateCode ?? '27';
       final customerStateCode = _selectedCustomer?.stateCode ?? '27';
-      final custGstType = _selectedCustomer?.isRegistered == true ? 'Regular' : 'Unregistered';
+      final custGstType = _selectedCustomer?.isRegistered == true
+          ? 'Regular'
+          : 'Unregistered';
 
       final List<InvoiceItem> invoiceItems = [];
       double subTotal = 0;
@@ -440,7 +482,9 @@ class _SaleReturnCreatePageState extends ConsumerState<SaleReturnCreatePage> {
       final double totalTax = totalCgst + totalSgst + totalIgst + totalCess;
       final double grossGrand = subTotal + totalTax;
       final double roundedGrand = grossGrand.roundToDouble();
-      final double roundOff = double.parse((roundedGrand - grossGrand).toStringAsFixed(2));
+      final double roundOff = double.parse(
+        (roundedGrand - grossGrand).toStringAsFixed(2),
+      );
 
       final returnInvoice = Invoice(
         id: 'ret_${DateTime.now().millisecondsSinceEpoch}',
@@ -466,12 +510,15 @@ class _SaleReturnCreatePageState extends ConsumerState<SaleReturnCreatePage> {
             ? '${_notesController.text.trim()} (Reason: $_overallReason)'
             : 'Reason: $_overallReason',
         termsConditions: _termsController.text.trim(),
-        originalInvoiceId: _selectedInvoice?.invoiceNumber ?? (_selectedInvoice?.id ?? ''),
+        originalInvoiceId:
+            _selectedInvoice?.invoiceNumber ?? (_selectedInvoice?.id ?? ''),
         warehouseId: _selectedWarehouseId,
         isCreditNote: true,
       );
 
-      await ref.read(billingRepositoryProvider.notifier).addInvoice(returnInvoice);
+      await ref
+          .read(billingRepositoryProvider.notifier)
+          .addInvoice(returnInvoice);
 
       if (mounted) {
         AppFeedback.showSnackbar(
@@ -493,24 +540,32 @@ class _SaleReturnCreatePageState extends ConsumerState<SaleReturnCreatePage> {
     // Filter eligible invoices for selected customer (confirmed or paid, not already a credit note)
     final eligibleInvoices = billingState.invoices.where((inv) {
       if (inv.isCreditNote) return false;
-      if (_selectedCustomer != null && inv.customerId != _selectedCustomer!.id) return false;
+      if (_selectedCustomer != null && inv.customerId != _selectedCustomer!.id)
+        return false;
       return inv.status != InvoiceStatus.cancelled;
     }).toList();
 
-    final currentSelectedCustomer = (_selectedCustomer != null &&
+    final currentSelectedCustomer =
+        (_selectedCustomer != null &&
             billingState.customers.any((c) => c.id == _selectedCustomer!.id))
-        ? billingState.customers.firstWhere((c) => c.id == _selectedCustomer!.id)
+        ? billingState.customers.firstWhere(
+            (c) => c.id == _selectedCustomer!.id,
+          )
         : null;
 
-    final currentSelectedInvoice = (_selectedInvoice != null &&
+    final currentSelectedInvoice =
+        (_selectedInvoice != null &&
             eligibleInvoices.any((inv) => inv.id == _selectedInvoice!.id))
         ? eligibleInvoices.firstWhere((inv) => inv.id == _selectedInvoice!.id)
         : null;
 
     // Real-time calculations for preview
-    final businessStateCode = ref.watch(businessProvider).activeBusiness?.stateCode ?? '27';
+    final businessStateCode =
+        ref.watch(businessProvider).activeBusiness?.stateCode ?? '27';
     final customerStateCode = _selectedCustomer?.stateCode ?? '27';
-    final custGstType = _selectedCustomer?.isRegistered == true ? 'Regular' : 'Unregistered';
+    final custGstType = _selectedCustomer?.isRegistered == true
+        ? 'Regular'
+        : 'Unregistered';
 
     double subTotal = 0;
     double totalCgst = 0;
@@ -553,8 +608,14 @@ class _SaleReturnCreatePageState extends ConsumerState<SaleReturnCreatePage> {
             children: [
               AppPageHeader(
                 title: 'New Sale Return',
-                description: 'Issue a Credit Note, restock returned inventory items, and adjust customer accounts.',
-                breadcrumbs: const ['Dashboard', 'Sales', 'Sale Returns', 'New Return'],
+                description:
+                    'Issue a Credit Note, restock returned inventory items, and adjust customer accounts.',
+                breadcrumbs: const [
+                  'Dashboard',
+                  'Sales',
+                  'Sale Returns',
+                  'New Return',
+                ],
               ),
 
               // Customer & Invoice Reference Card
@@ -584,12 +645,16 @@ class _SaleReturnCreatePageState extends ConsumerState<SaleReturnCreatePage> {
                             items: [
                               const DropdownMenuItem(
                                 value: null,
-                                child: Text('Direct Return (No Linked Invoice)'),
+                                child: Text(
+                                  'Direct Return (No Linked Invoice)',
+                                ),
                               ),
                               ...eligibleInvoices.map((inv) {
                                 return DropdownMenuItem(
                                   value: inv,
-                                  child: Text('${inv.invoiceNumber} • ₹${inv.grandTotal.toStringAsFixed(2)} (${inv.invoiceDate.day}/${inv.invoiceDate.month}/${inv.invoiceDate.year})'),
+                                  child: Text(
+                                    '${inv.invoiceNumber} • ₹${inv.grandTotal.toStringAsFixed(2)} (${inv.invoiceDate.day}/${inv.invoiceDate.month}/${inv.invoiceDate.year})',
+                                  ),
                                 );
                               }),
                             ],
@@ -605,7 +670,8 @@ class _SaleReturnCreatePageState extends ConsumerState<SaleReturnCreatePage> {
                           child: AppTextField(
                             label: 'Credit Note / Return Number *',
                             controller: _creditNoteNumberController,
-                            validator: (val) => val == null || val.isEmpty ? 'Required' : null,
+                            validator: (val) =>
+                                val == null || val.isEmpty ? 'Required' : null,
                           ),
                         ),
                         Expanded(
@@ -624,7 +690,9 @@ class _SaleReturnCreatePageState extends ConsumerState<SaleReturnCreatePage> {
                                 labelText: 'Return Date *',
                                 suffixIcon: Icon(Icons.calendar_today),
                               ),
-                              child: Text('${_returnDate.day}/${_returnDate.month}/${_returnDate.year}'),
+                              child: Text(
+                                '${_returnDate.day}/${_returnDate.month}/${_returnDate.year}',
+                              ),
                             ),
                           ),
                         ),
@@ -637,7 +705,14 @@ class _SaleReturnCreatePageState extends ConsumerState<SaleReturnCreatePage> {
                           child: AppDropdownField<String>(
                             label: 'Primary Return Reason',
                             value: _overallReason,
-                            items: _returnReasons.map((r) => DropdownMenuItem(value: r, child: Text(r))).toList(),
+                            items: _returnReasons
+                                .map(
+                                  (r) => DropdownMenuItem(
+                                    value: r,
+                                    child: Text(r),
+                                  ),
+                                )
+                                .toList(),
                             onChanged: (r) {
                               if (r != null) {
                                 setState(() {
@@ -655,9 +730,14 @@ class _SaleReturnCreatePageState extends ConsumerState<SaleReturnCreatePage> {
                             label: 'Restock Godown / Warehouse *',
                             value: _selectedWarehouseId,
                             items: billingState.warehouses.map((w) {
-                              return DropdownMenuItem(value: w.id, child: Text('${w.name} (${w.code})'));
+                              return DropdownMenuItem(
+                                value: w.id,
+                                child: Text('${w.name} (${w.code})'),
+                              );
                             }).toList(),
-                            onChanged: (w) => setState(() => _selectedWarehouseId = w ?? 'main'),
+                            onChanged: (w) => setState(
+                              () => _selectedWarehouseId = w ?? 'main',
+                            ),
                           ),
                         ),
                       ],
@@ -676,7 +756,8 @@ class _SaleReturnCreatePageState extends ConsumerState<SaleReturnCreatePage> {
                           child: AppTextField(
                             label: 'Place of Supply State *',
                             controller: _placeOfSupplyController,
-                            validator: (val) => val == null || val.isEmpty ? 'Required' : null,
+                            validator: (val) =>
+                                val == null || val.isEmpty ? 'Required' : null,
                           ),
                         ),
                       ],
@@ -695,7 +776,10 @@ class _SaleReturnCreatePageState extends ConsumerState<SaleReturnCreatePage> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF00897B),
                       foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 8,
+                      ),
                     ),
                     icon: const Icon(Icons.add, size: 16),
                     label: const Text('Add Custom Item'),
@@ -708,7 +792,11 @@ class _SaleReturnCreatePageState extends ConsumerState<SaleReturnCreatePage> {
                         alignment: Alignment.center,
                         child: Column(
                           children: [
-                            Icon(Icons.assignment_return_outlined, size: 48, color: Colors.grey.shade400),
+                            Icon(
+                              Icons.assignment_return_outlined,
+                              size: 48,
+                              color: Colors.grey.shade400,
+                            ),
                             const SizedBox(height: 12),
                             Text(
                               _selectedInvoice != null
@@ -726,46 +814,66 @@ class _SaleReturnCreatePageState extends ConsumerState<SaleReturnCreatePage> {
                             shrinkWrap: true,
                             physics: const NeverScrollableScrollPhysics(),
                             itemCount: _items.length,
-                            separatorBuilder: (_, __) => const Divider(height: 24),
+                            separatorBuilder: (_, __) =>
+                                const Divider(height: 24),
                             itemBuilder: (ctx, index) {
                               final item = _items[index];
-                              final itemTotal = (item.quantity * item.rate) * (1 + (item.gstRate / 100));
+                              final itemTotal =
+                                  (item.quantity * item.rate) *
+                                  (1 + (item.gstRate / 100));
 
                               return Container(
                                 padding: const EdgeInsets.all(12),
                                 decoration: BoxDecoration(
-                                  color: isDark ? AppColors.surfaceDark : Colors.grey.shade50,
+                                  color: isDark
+                                      ? AppColors.surfaceDark
+                                      : Colors.grey.shade50,
                                   borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(color: Colors.grey.shade200),
+                                  border: Border.all(
+                                    color: Colors.grey.shade200,
+                                  ),
                                 ),
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Row(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         Expanded(
                                           child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
                                             children: [
                                               Text(
                                                 item.name,
-                                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                                                style: const TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 15,
+                                                ),
                                               ),
                                               const SizedBox(height: 2),
                                               Text(
                                                 'HSN/SAC: ${item.hsnSac} • GST: ${item.gstRate.toStringAsFixed(0)}% • Unit: ${item.unit}',
-                                                style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                                                style: TextStyle(
+                                                  color: Colors.grey.shade600,
+                                                  fontSize: 12,
+                                                ),
                                               ),
-                                              if (item.maxQuantity != double.infinity)
+                                              if (item.maxQuantity !=
+                                                  double.infinity)
                                                 Padding(
-                                                  padding: const EdgeInsets.only(top: 2),
+                                                  padding:
+                                                      const EdgeInsets.only(
+                                                        top: 2,
+                                                      ),
                                                   child: Text(
                                                     'Invoiced Qty: ${item.maxQuantity} ${item.unit}',
                                                     style: const TextStyle(
                                                       color: Color(0xFF00897B),
                                                       fontSize: 11,
-                                                      fontWeight: FontWeight.w600,
+                                                      fontWeight:
+                                                          FontWeight.w600,
                                                     ),
                                                   ),
                                                 ),
@@ -773,9 +881,15 @@ class _SaleReturnCreatePageState extends ConsumerState<SaleReturnCreatePage> {
                                           ),
                                         ),
                                         IconButton(
-                                          icon: const Icon(Icons.delete_outline, color: Colors.red, size: 20),
+                                          icon: const Icon(
+                                            Icons.delete_outline,
+                                            color: Colors.red,
+                                            size: 20,
+                                          ),
                                           tooltip: 'Remove Item',
-                                          onPressed: () => setState(() => _items.removeAt(index)),
+                                          onPressed: () => setState(
+                                            () => _items.removeAt(index),
+                                          ),
                                         ),
                                       ],
                                     ),
@@ -786,33 +900,55 @@ class _SaleReturnCreatePageState extends ConsumerState<SaleReturnCreatePage> {
                                           child: Row(
                                             children: [
                                               IconButton(
-                                                icon: const Icon(Icons.remove_circle_outline, size: 20),
+                                                icon: const Icon(
+                                                  Icons.remove_circle_outline,
+                                                  size: 20,
+                                                ),
                                                 onPressed: () {
                                                   if (item.quantity > 1) {
-                                                    setState(() => item.quantity -= 1);
+                                                    setState(
+                                                      () => item.quantity -= 1,
+                                                    );
                                                   }
                                                 },
                                               ),
                                               Expanded(
                                                 child: TextFormField(
-                                                  initialValue: item.quantity.toString(),
-                                                  keyboardType: TextInputType.number,
+                                                  initialValue: item.quantity
+                                                      .toString(),
+                                                  keyboardType:
+                                                      TextInputType.number,
                                                   textAlign: TextAlign.center,
-                                                  decoration: const InputDecoration(
-                                                    labelText: 'Return Qty',
-                                                    contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                                                  ),
+                                                  decoration:
+                                                      const InputDecoration(
+                                                        labelText: 'Return Qty',
+                                                        contentPadding:
+                                                            EdgeInsets.symmetric(
+                                                              horizontal: 8,
+                                                              vertical: 8,
+                                                            ),
+                                                      ),
                                                   onChanged: (val) {
-                                                    final q = double.tryParse(val) ?? 1.0;
-                                                    setState(() => item.quantity = q);
+                                                    final q =
+                                                        double.tryParse(val) ??
+                                                        1.0;
+                                                    setState(
+                                                      () => item.quantity = q,
+                                                    );
                                                   },
                                                 ),
                                               ),
                                               IconButton(
-                                                icon: const Icon(Icons.add_circle_outline, size: 20),
+                                                icon: const Icon(
+                                                  Icons.add_circle_outline,
+                                                  size: 20,
+                                                ),
                                                 onPressed: () {
-                                                  if (item.quantity < item.maxQuantity) {
-                                                    setState(() => item.quantity += 1);
+                                                  if (item.quantity <
+                                                      item.maxQuantity) {
+                                                    setState(
+                                                      () => item.quantity += 1,
+                                                    );
                                                   }
                                                 },
                                               ),
@@ -825,10 +961,16 @@ class _SaleReturnCreatePageState extends ConsumerState<SaleReturnCreatePage> {
                                             keyboardType: TextInputType.number,
                                             decoration: const InputDecoration(
                                               labelText: 'Rate / Unit (₹)',
-                                              contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                              contentPadding:
+                                                  EdgeInsets.symmetric(
+                                                    horizontal: 12,
+                                                    vertical: 8,
+                                                  ),
                                             ),
                                             onChanged: (val) {
-                                              final r = double.tryParse(val) ?? item.rate;
+                                              final r =
+                                                  double.tryParse(val) ??
+                                                  item.rate;
                                               setState(() => item.rate = r);
                                             },
                                           ),
@@ -837,17 +979,39 @@ class _SaleReturnCreatePageState extends ConsumerState<SaleReturnCreatePage> {
                                           child: AppDropdownField<String>(
                                             label: 'Item Reason',
                                             value: item.reason,
-                                            items: _returnReasons.map((r) => DropdownMenuItem(value: r, child: Text(r, style: const TextStyle(fontSize: 12)))).toList(),
-                                            onChanged: (r) => setState(() => item.reason = r ?? item.reason),
+                                            items: _returnReasons
+                                                .map(
+                                                  (r) => DropdownMenuItem(
+                                                    value: r,
+                                                    child: Text(
+                                                      r,
+                                                      style: const TextStyle(
+                                                        fontSize: 12,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                )
+                                                .toList(),
+                                            onChanged: (r) => setState(
+                                              () => item.reason =
+                                                  r ?? item.reason,
+                                            ),
                                           ),
                                         ),
                                         Container(
                                           padding: const EdgeInsets.all(8),
                                           alignment: Alignment.centerRight,
                                           child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.end,
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.end,
                                             children: [
-                                              const Text('Item Total', style: TextStyle(fontSize: 11, color: Colors.grey)),
+                                              const Text(
+                                                'Item Total',
+                                                style: TextStyle(
+                                                  fontSize: 11,
+                                                  color: Colors.grey,
+                                                ),
+                                              ),
                                               Text(
                                                 '₹${itemTotal.toStringAsFixed(2)}',
                                                 style: const TextStyle(
@@ -885,13 +1049,23 @@ class _SaleReturnCreatePageState extends ConsumerState<SaleReturnCreatePage> {
                           AppDropdownField<String>(
                             label: 'Refund / Credit Settlement *',
                             value: _refundMode,
-                            items: _refundModes.map((m) => DropdownMenuItem(value: m, child: Text(m))).toList(),
-                            onChanged: (m) => setState(() => _refundMode = m ?? _refundModes.first),
+                            items: _refundModes
+                                .map(
+                                  (m) => DropdownMenuItem(
+                                    value: m,
+                                    child: Text(m),
+                                  ),
+                                )
+                                .toList(),
+                            onChanged: (m) => setState(
+                              () => _refundMode = m ?? _refundModes.first,
+                            ),
                           ),
                           const SizedBox(height: AppSpacing.md),
                           AppTextField(
                             label: 'Return Notes & Justification',
-                            hintText: 'Additional details regarding condition of goods...',
+                            hintText:
+                                'Additional details regarding condition of goods...',
                             controller: _notesController,
                             maxLines: 2,
                           ),
@@ -912,22 +1086,42 @@ class _SaleReturnCreatePageState extends ConsumerState<SaleReturnCreatePage> {
                       title: 'Credit Summary',
                       child: Column(
                         children: [
-                          _buildSummaryRow('Taxable Return Value', '₹${subTotal.toStringAsFixed(2)}'),
+                          _buildSummaryRow(
+                            'Taxable Return Value',
+                            '₹${subTotal.toStringAsFixed(2)}',
+                          ),
                           if (totalCgst > 0)
-                            _buildSummaryRow('CGST Amount', '₹${totalCgst.toStringAsFixed(2)}'),
+                            _buildSummaryRow(
+                              'CGST Amount',
+                              '₹${totalCgst.toStringAsFixed(2)}',
+                            ),
                           if (totalSgst > 0)
-                            _buildSummaryRow('SGST Amount', '₹${totalSgst.toStringAsFixed(2)}'),
+                            _buildSummaryRow(
+                              'SGST Amount',
+                              '₹${totalSgst.toStringAsFixed(2)}',
+                            ),
                           if (totalIgst > 0)
-                            _buildSummaryRow('IGST Amount', '₹${totalIgst.toStringAsFixed(2)}'),
+                            _buildSummaryRow(
+                              'IGST Amount',
+                              '₹${totalIgst.toStringAsFixed(2)}',
+                            ),
                           if (totalCess > 0)
-                            _buildSummaryRow('Cess', '₹${totalCess.toStringAsFixed(2)}'),
+                            _buildSummaryRow(
+                              'Cess',
+                              '₹${totalCess.toStringAsFixed(2)}',
+                            ),
                           const Divider(height: 20),
-                          _buildSummaryRow('Total Tax', '₹${totalTax.toStringAsFixed(2)}'),
+                          _buildSummaryRow(
+                            'Total Tax',
+                            '₹${totalTax.toStringAsFixed(2)}',
+                          ),
                           const SizedBox(height: 4),
                           Container(
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              color: isDark ? const Color(0xFF00382E) : const Color(0xFFE0F2F1),
+                              color: isDark
+                                  ? const Color(0xFF00382E)
+                                  : const Color(0xFFE0F2F1),
                               borderRadius: BorderRadius.circular(10),
                             ),
                             child: Row(
@@ -935,7 +1129,10 @@ class _SaleReturnCreatePageState extends ConsumerState<SaleReturnCreatePage> {
                               children: [
                                 const Text(
                                   'Credit Note Total',
-                                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                  ),
                                 ),
                                 Text(
                                   '₹${roundedGrand.toStringAsFixed(2)}',
@@ -954,9 +1151,12 @@ class _SaleReturnCreatePageState extends ConsumerState<SaleReturnCreatePage> {
                               Expanded(
                                 child: OutlinedButton(
                                   style: OutlinedButton.styleFrom(
-                                    padding: const EdgeInsets.symmetric(vertical: 12),
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 12,
+                                    ),
                                   ),
-                                  onPressed: () => _saveReturn(InvoiceStatus.draft),
+                                  onPressed: () =>
+                                      _saveReturn(InvoiceStatus.draft),
                                   child: const Text('Save as Draft'),
                                 ),
                               ),
@@ -966,9 +1166,12 @@ class _SaleReturnCreatePageState extends ConsumerState<SaleReturnCreatePage> {
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: const Color(0xFF00897B),
                                     foregroundColor: Colors.white,
-                                    padding: const EdgeInsets.symmetric(vertical: 12),
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 12,
+                                    ),
                                   ),
-                                  onPressed: () => _saveReturn(InvoiceStatus.confirmed),
+                                  onPressed: () =>
+                                      _saveReturn(InvoiceStatus.confirmed),
                                   child: const Text('Confirm Return'),
                                 ),
                               ),
@@ -993,8 +1196,14 @@ class _SaleReturnCreatePageState extends ConsumerState<SaleReturnCreatePage> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
-          Text(value, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+          Text(
+            label,
+            style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+          ),
+          Text(
+            value,
+            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+          ),
         ],
       ),
     );

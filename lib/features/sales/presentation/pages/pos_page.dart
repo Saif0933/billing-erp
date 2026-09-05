@@ -9,10 +9,8 @@ import '../../../../core/responsive/responsive.dart';
 import '../../../../shared/widgets/app_button.dart';
 import '../../../../shared/widgets/app_cards.dart';
 import '../../../../shared/widgets/app_input_fields.dart';
-import '../../../../shared/widgets/app_table.dart';
 import '../../../../shared/widgets/feedback.dart';
 import '../../../dashboard/presentation/providers/billing_repository.dart';
-import '../../../subscription/domain/entities/subscription_models.dart';
 import '../../../subscription/domain/services/feature_access_service.dart';
 
 class POSPage extends ConsumerStatefulWidget {
@@ -53,7 +51,9 @@ class _POSPageState extends ConsumerState<POSPage> {
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text('Enter the opening cash balance in the register to start the POS billing session.'),
+              const Text(
+                'Enter the opening cash balance in the register to start the POS billing session.',
+              ),
               const SizedBox(height: AppSpacing.md),
               AppTextField(
                 label: 'Opening Cash (₹) *',
@@ -73,11 +73,17 @@ class _POSPageState extends ConsumerState<POSPage> {
             AppButton(
               label: 'Open Session',
               onPressed: () async {
-                final double amt = double.tryParse(_openingCashController.text) ?? 0.0;
-                await ref.read(billingRepositoryProvider.notifier).openPOSSession(amt);
+                final double amt =
+                    double.tryParse(_openingCashController.text) ?? 0.0;
+                await ref
+                    .read(billingRepositoryProvider.notifier)
+                    .openPOSSession(amt);
                 if (mounted) {
                   Navigator.pop(ctx);
-                  AppFeedback.showSnackbar(context, message: 'POS Register session opened successfully!');
+                  AppFeedback.showSnackbar(
+                    context,
+                    message: 'POS Register session opened successfully!',
+                  );
                 }
               },
             ),
@@ -88,7 +94,8 @@ class _POSPageState extends ConsumerState<POSPage> {
   }
 
   void _showCloseSessionDialog(POSSession session, double totalSales) {
-    _closingCashController.text = (session.openingCash + totalSales).toStringAsFixed(2);
+    _closingCashController.text = (session.openingCash + totalSales)
+        .toStringAsFixed(2);
     showDialog(
       context: context,
       builder: (ctx) {
@@ -116,11 +123,17 @@ class _POSPageState extends ConsumerState<POSPage> {
             AppButton(
               label: 'Close Session',
               onPressed: () async {
-                final double amt = double.tryParse(_closingCashController.text) ?? 0.0;
-                await ref.read(billingRepositoryProvider.notifier).closePOSSession(amt);
+                final double amt =
+                    double.tryParse(_closingCashController.text) ?? 0.0;
+                await ref
+                    .read(billingRepositoryProvider.notifier)
+                    .closePOSSession(amt);
                 if (mounted) {
                   Navigator.pop(ctx);
-                  AppFeedback.showSnackbar(context, message: 'POS session closed. Register consolidated!');
+                  AppFeedback.showSnackbar(
+                    context,
+                    message: 'POS session closed. Register consolidated!',
+                  );
                   context.go('/dashboard');
                 }
               },
@@ -196,25 +209,36 @@ class _POSPageState extends ConsumerState<POSPage> {
     });
   }
 
-  double get _subtotal => _cartItems.fold(0.0, (sum, item) => sum + item.taxableValue);
-  double get _tax => _cartItems.fold(0.0, (sum, item) => sum + item.cgst + item.sgst);
+  double get _subtotal =>
+      _cartItems.fold(0.0, (sum, item) => sum + item.taxableValue);
+  double get _tax =>
+      _cartItems.fold(0.0, (sum, item) => sum + item.cgst + item.sgst);
   double get _discountValue => (_subtotal * _cartDiscountPercent) / 100.0;
   double get _grandTotal => (_subtotal + _tax) - _discountValue;
 
   void _processPayment(String mode) async {
     if (_cartItems.isEmpty) {
-      AppFeedback.showSnackbar(context, message: 'Cart is empty!', isError: true);
+      AppFeedback.showSnackbar(
+        context,
+        message: 'Cart is empty!',
+        isError: true,
+      );
       return;
     }
     if (_selectedCustomer == null) {
-      AppFeedback.showSnackbar(context, message: 'Please select a customer first!', isError: true);
+      AppFeedback.showSnackbar(
+        context,
+        message: 'Please select a customer first!',
+        isError: true,
+      );
       return;
     }
 
     final now = DateTime.now();
     final invoice = Invoice(
       id: 'inv_pos_${now.millisecondsSinceEpoch}',
-      invoiceNumber: 'INV-POS-${now.year}-${now.month}-${now.day}-${DateTime.now().second}',
+      invoiceNumber:
+          'INV-POS-${now.year}-${now.month}-${now.day}-${DateTime.now().second}',
       invoiceDate: now,
       customerId: _selectedCustomer!.id,
       customerName: _selectedCustomer!.name,
@@ -268,22 +292,39 @@ class _POSPageState extends ConsumerState<POSPage> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const Text('Receipt Layout (80mm Thermal Printer preview):', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                const Text(
+                  'Receipt Layout (80mm Thermal Printer preview):',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                ),
                 const Divider(),
-                Text('TAX BUNNY BILLING RECEIPT', textAlign: TextAlign.center, style: AppTypography.titleMedium.copyWith(fontWeight: FontWeight.bold)),
-                Text('Invoice: ${invoice.invoiceNumber}', textAlign: TextAlign.center),
-                Text('Date: ${invoice.invoiceDate.day}/${invoice.invoiceDate.month}/${invoice.invoiceDate.year}', textAlign: TextAlign.center),
+                Text(
+                  'TAX BUNNY BILLING RECEIPT',
+                  textAlign: TextAlign.center,
+                  style: AppTypography.titleMedium.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Text(
+                  'Invoice: ${invoice.invoiceNumber}',
+                  textAlign: TextAlign.center,
+                ),
+                Text(
+                  'Date: ${invoice.invoiceDate.day}/${invoice.invoiceDate.month}/${invoice.invoiceDate.year}',
+                  textAlign: TextAlign.center,
+                ),
                 const Divider(),
-                ...invoice.items.map((item) => Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 2.0),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text('${item.name} x${item.quantity.toInt()}'),
-                          Text('₹${item.taxableValue.toStringAsFixed(2)}'),
-                        ],
-                      ),
-                    )),
+                ...invoice.items.map(
+                  (item) => Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 2.0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text('${item.name} x${item.quantity.toInt()}'),
+                        Text('₹${item.taxableValue.toStringAsFixed(2)}'),
+                      ],
+                    ),
+                  ),
+                ),
                 const Divider(),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -296,19 +337,34 @@ class _POSPageState extends ConsumerState<POSPage> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     const Text('Tax (GST):'),
-                    Text('₹${(invoice.cgst + invoice.sgst).toStringAsFixed(2)}'),
+                    Text(
+                      '₹${(invoice.cgst + invoice.sgst).toStringAsFixed(2)}',
+                    ),
                   ],
                 ),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('GRAND TOTAL:', style: TextStyle(fontWeight: FontWeight.bold)),
-                    Text('₹${invoice.grandTotal.toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                    const Text(
+                      'GRAND TOTAL:',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    Text(
+                      '₹${invoice.grandTotal.toStringAsFixed(2)}',
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
                   ],
                 ),
                 const Divider(),
-                Text('Mode: ${invoice.paymentMode}', textAlign: TextAlign.center),
-                const Text('Thank you for shopping!', textAlign: TextAlign.center, style: TextStyle(fontStyle: FontStyle.italic)),
+                Text(
+                  'Mode: ${invoice.paymentMode}',
+                  textAlign: TextAlign.center,
+                ),
+                const Text(
+                  'Thank you for shopping!',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontStyle: FontStyle.italic),
+                ),
               ],
             ),
           ),
@@ -322,7 +378,10 @@ class _POSPageState extends ConsumerState<POSPage> {
               icon: Icons.print,
               onPressed: () {
                 Navigator.pop(ctx);
-                AppFeedback.showSnackbar(context, message: 'Sent to thermal printer queue!');
+                AppFeedback.showSnackbar(
+                  context,
+                  message: 'Sent to thermal printer queue!',
+                );
               },
             ),
           ],
@@ -351,30 +410,55 @@ class _POSPageState extends ConsumerState<POSPage> {
                     itemBuilder: (context, idx) {
                       final cart = heldCarts[idx];
                       return ListTile(
-                        title: Text('${cart.customerName} - Total: ₹${cart.grandTotal.toStringAsFixed(2)}'),
-                        subtitle: Text('Items: ${cart.items.length} | Date: ${cart.invoiceDate.toLocal().toString().substring(11, 16)}'),
+                        title: Text(
+                          '${cart.customerName} - Total: ₹${cart.grandTotal.toStringAsFixed(2)}',
+                        ),
+                        subtitle: Text(
+                          'Items: ${cart.items.length} | Date: ${cart.invoiceDate.toLocal().toString().substring(11, 16)}',
+                        ),
                         trailing: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             IconButton(
-                              icon: const Icon(Icons.delete_outline, color: Colors.red),
+                              icon: const Icon(
+                                Icons.delete_outline,
+                                color: Colors.red,
+                              ),
                               onPressed: () async {
-                                await ref.read(billingRepositoryProvider.notifier).deleteHeldPOSCart(cart.id);
+                                await ref
+                                    .read(billingRepositoryProvider.notifier)
+                                    .deleteHeldPOSCart(cart.id);
                                 Navigator.pop(ctx);
-                                AppFeedback.showSnackbar(context, message: 'Held cart removed.');
+                                AppFeedback.showSnackbar(
+                                  context,
+                                  message: 'Held cart removed.',
+                                );
                               },
                             ),
                             IconButton(
-                              icon: const Icon(Icons.play_arrow_outlined, color: Colors.green),
+                              icon: const Icon(
+                                Icons.play_arrow_outlined,
+                                color: Colors.green,
+                              ),
                               onPressed: () async {
                                 setState(() {
                                   _cartItems = cart.items;
-                                  _selectedCustomer = ref.read(billingRepositoryProvider).customers.firstWhere((c) => c.id == cart.customerId);
+                                  _selectedCustomer = ref
+                                      .read(billingRepositoryProvider)
+                                      .customers
+                                      .firstWhere(
+                                        (c) => c.id == cart.customerId,
+                                      );
                                   _selectedWarehouseId = cart.warehouseId;
                                 });
-                                await ref.read(billingRepositoryProvider.notifier).resumePOSCart(cart.id);
+                                await ref
+                                    .read(billingRepositoryProvider.notifier)
+                                    .resumePOSCart(cart.id);
                                 Navigator.pop(ctx);
-                                AppFeedback.showSnackbar(context, message: 'POS Cart Resumed!');
+                                AppFeedback.showSnackbar(
+                                  context,
+                                  message: 'POS Cart Resumed!',
+                                );
                               },
                             ),
                           ],
@@ -387,7 +471,7 @@ class _POSPageState extends ConsumerState<POSPage> {
             TextButton(
               onPressed: () => Navigator.pop(ctx),
               child: const Text('Close'),
-            )
+            ),
           ],
         );
       },
@@ -408,28 +492,33 @@ class _POSPageState extends ConsumerState<POSPage> {
             child: AppCard(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.lock, size: 48, color: AppColors.warning),
-                const SizedBox(height: AppSpacing.md),
-                Text('POS Gated Feature', style: AppTypography.titleLarge),
-                const Text('Upgrade to Premium or Enterprise plan to access POS fast retail billing.'),
-                const SizedBox(height: AppSpacing.lg),
-                AppButton(
-                  label: 'Upgrade Subscription Now',
-                  onPressed: () => context.go('/subscription'),
-                ),
-              ],
+                children: [
+                  const Icon(Icons.lock, size: 48, color: AppColors.warning),
+                  const SizedBox(height: AppSpacing.md),
+                  Text('POS Gated Feature', style: AppTypography.titleLarge),
+                  const Text(
+                    'Upgrade to Premium or Enterprise plan to access POS fast retail billing.',
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+                  AppButton(
+                    label: 'Upgrade Subscription Now',
+                    onPressed: () => context.go('/subscription'),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
-      ));
+      );
     }
 
     final activeSession = billingState.activePOSSession;
 
     // Trigger session open dialog if no active session
     if (activeSession == null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) => _showOpenSessionDialog());
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => _showOpenSessionDialog(),
+      );
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
@@ -489,10 +578,14 @@ class _POSPageState extends ConsumerState<POSPage> {
                     label: 'Billing Warehouse',
                     value: _selectedWarehouseId,
                     items: billingState.warehouses.map((wh) {
-                      return DropdownMenuItem(value: wh.id, child: Text(wh.name));
+                      return DropdownMenuItem(
+                        value: wh.id,
+                        child: Text(wh.name),
+                      );
                     }).toList(),
                     onChanged: (val) {
-                      if (val != null) setState(() => _selectedWarehouseId = val);
+                      if (val != null)
+                        setState(() => _selectedWarehouseId = val);
                     },
                   ),
                 ),
@@ -512,11 +605,14 @@ class _POSPageState extends ConsumerState<POSPage> {
                     ),
                     itemBuilder: (context, index) {
                       final prod = matchingProducts[index];
-                      final whStock = prod.warehouseStocks[_selectedWarehouseId] ?? 0.0;
+                      final whStock =
+                          prod.warehouseStocks[_selectedWarehouseId] ?? 0.0;
                       final isOutOfStock = whStock <= 0;
 
                       return Card(
-                        color: isOutOfStock ? Colors.grey.shade300 : AppColors.accent.withOpacity(0.08),
+                        color: isOutOfStock
+                            ? Colors.grey.shade300
+                            : AppColors.accent.withOpacity(0.08),
                         elevation: 0,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
@@ -525,7 +621,9 @@ class _POSPageState extends ConsumerState<POSPage> {
                           ),
                         ),
                         child: InkWell(
-                          onTap: isOutOfStock ? null : () => _addProductToCart(prod),
+                          onTap: isOutOfStock
+                              ? null
+                              : () => _addProductToCart(prod),
                           child: Padding(
                             padding: const EdgeInsets.all(AppSpacing.sm),
                             child: Column(
@@ -535,18 +633,32 @@ class _POSPageState extends ConsumerState<POSPage> {
                                 Text(
                                   prod.name,
                                   maxLines: 2,
-                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 13,
+                                  ),
                                 ),
                                 Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
                                   children: [
-                                    Text('₹${prod.sellingPrice}', style: const TextStyle(color: AppColors.accentDark, fontWeight: FontWeight.bold)),
                                     Text(
-                                      isOutOfStock ? 'OUT OF STOCK' : 'Stock: ${whStock.toInt()}',
+                                      '₹${prod.sellingPrice}',
+                                      style: const TextStyle(
+                                        color: AppColors.accentDark,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    Text(
+                                      isOutOfStock
+                                          ? 'OUT OF STOCK'
+                                          : 'Stock: ${whStock.toInt()}',
                                       style: TextStyle(
                                         fontSize: 10,
                                         fontWeight: FontWeight.bold,
-                                        color: isOutOfStock ? Colors.red : Colors.green,
+                                        color: isOutOfStock
+                                            ? Colors.red
+                                            : Colors.green,
                                       ),
                                     ),
                                   ],
@@ -567,9 +679,7 @@ class _POSPageState extends ConsumerState<POSPage> {
       decoration: BoxDecoration(
         border: isMobile
             ? null
-            : Border(
-                left: BorderSide(color: Colors.grey.shade300, width: 1),
-              ),
+            : Border(left: BorderSide(color: Colors.grey.shade300, width: 1)),
       ),
       padding: const EdgeInsets.all(AppSpacing.md),
       child: Column(
@@ -582,12 +692,22 @@ class _POSPageState extends ConsumerState<POSPage> {
                   icon: const Icon(Icons.arrow_back),
                   onPressed: () => setState(() => _showCartOnMobile = false),
                 ),
-                Text('Current Transaction', style: AppTypography.titleLarge.copyWith(fontWeight: FontWeight.bold)),
+                Text(
+                  'Current Transaction',
+                  style: AppTypography.titleLarge.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ],
             ),
             const SizedBox(height: AppSpacing.sm),
           ] else ...[
-            Text('Current Transaction', style: AppTypography.titleLarge.copyWith(fontWeight: FontWeight.bold)),
+            Text(
+              'Current Transaction',
+              style: AppTypography.titleLarge.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
             const SizedBox(height: AppSpacing.md),
           ],
           // Customer Selector
@@ -611,19 +731,31 @@ class _POSPageState extends ConsumerState<POSPage> {
                       final item = _cartItems[idx];
                       return ListTile(
                         contentPadding: EdgeInsets.zero,
-                        title: Text(item.name, style: const TextStyle(fontWeight: FontWeight.bold)),
-                        subtitle: Text('₹${item.rate} x ${item.quantity.toInt()}'),
+                        title: Text(
+                          item.name,
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        subtitle: Text(
+                          '₹${item.rate} x ${item.quantity.toInt()}',
+                        ),
                         trailing: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             IconButton(
                               icon: const Icon(Icons.remove_circle_outline),
-                              onPressed: () => _updateCartItemQty(idx, item.quantity - 1),
+                              onPressed: () =>
+                                  _updateCartItemQty(idx, item.quantity - 1),
                             ),
-                            Text('${item.quantity.toInt()}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                            Text(
+                              '${item.quantity.toInt()}',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                             IconButton(
                               icon: const Icon(Icons.add_circle_outline),
-                              onPressed: () => _updateCartItemQty(idx, item.quantity + 1),
+                              onPressed: () =>
+                                  _updateCartItemQty(idx, item.quantity + 1),
                             ),
                           ],
                         ),
@@ -656,7 +788,12 @@ class _POSPageState extends ConsumerState<POSPage> {
                 height: 35,
                 child: TextField(
                   keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 4)),
+                  decoration: const InputDecoration(
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                  ),
                   onChanged: (val) {
                     setState(() {
                       _cartDiscountPercent = double.tryParse(val) ?? 0.0;
@@ -670,8 +807,19 @@ class _POSPageState extends ConsumerState<POSPage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('GRAND TOTAL:', style: AppTypography.titleMedium.copyWith(fontWeight: FontWeight.bold)),
-              Text('₹${_grandTotal.toStringAsFixed(2)}', style: AppTypography.titleLarge.copyWith(fontWeight: FontWeight.bold, color: AppColors.accentDark)),
+              Text(
+                'GRAND TOTAL:',
+                style: AppTypography.titleMedium.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              Text(
+                '₹${_grandTotal.toStringAsFixed(2)}',
+                style: AppTypography.titleLarge.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.accentDark,
+                ),
+              ),
             ],
           ),
           const SizedBox(height: AppSpacing.lg),
@@ -684,7 +832,11 @@ class _POSPageState extends ConsumerState<POSPage> {
                       ? null
                       : () async {
                           if (_selectedCustomer == null) {
-                            AppFeedback.showSnackbar(context, message: 'Select customer first!', isError: true);
+                            AppFeedback.showSnackbar(
+                              context,
+                              message: 'Select customer first!',
+                              isError: true,
+                            );
                             return;
                           }
                           final holdInvoice = Invoice(
@@ -698,8 +850,14 @@ class _POSPageState extends ConsumerState<POSPage> {
                             placeOfSupply: _selectedCustomer!.state,
                             items: _cartItems,
                             taxableAmount: _subtotal,
-                            cgst: _cartItems.fold(0.0, (sum, item) => sum + item.cgst),
-                            sgst: _cartItems.fold(0.0, (sum, item) => sum + item.sgst),
+                            cgst: _cartItems.fold(
+                              0.0,
+                              (sum, item) => sum + item.cgst,
+                            ),
+                            sgst: _cartItems.fold(
+                              0.0,
+                              (sum, item) => sum + item.sgst,
+                            ),
                             igst: 0.0,
                             cess: 0.0,
                             roundOff: 0.0,
@@ -711,13 +869,18 @@ class _POSPageState extends ConsumerState<POSPage> {
                             termsConditions: '',
                             warehouseId: _selectedWarehouseId,
                           );
-                          await ref.read(billingRepositoryProvider.notifier).holdPOSCart(holdInvoice);
+                          await ref
+                              .read(billingRepositoryProvider.notifier)
+                              .holdPOSCart(holdInvoice);
                           setState(() {
                             _cartItems = [];
                             _selectedCustomer = null;
                           });
                           if (mounted) {
-                            AppFeedback.showSnackbar(context, message: 'POS sale held successfully!');
+                            AppFeedback.showSnackbar(
+                              context,
+                              message: 'POS sale held successfully!',
+                            );
                           }
                         },
                   child: const Text('Hold Bill'),
@@ -729,7 +892,11 @@ class _POSPageState extends ConsumerState<POSPage> {
                   label: 'Checkout',
                   onPressed: () {
                     if (_cartItems.isEmpty || _selectedCustomer == null) {
-                      AppFeedback.showSnackbar(context, message: 'Please select customer and add items!', isError: true);
+                      AppFeedback.showSnackbar(
+                        context,
+                        message: 'Please select customer and add items!',
+                        isError: true,
+                      );
                       return;
                     }
                     showModalBottomSheet(
@@ -740,10 +907,16 @@ class _POSPageState extends ConsumerState<POSPage> {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               const ListTile(
-                                title: Text('Select Payment Mode', style: TextStyle(fontWeight: FontWeight.bold)),
+                                title: Text(
+                                  'Select Payment Mode',
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
                               ),
                               ListTile(
-                                leading: const Icon(Icons.money, color: Colors.green),
+                                leading: const Icon(
+                                  Icons.money,
+                                  color: Colors.green,
+                                ),
                                 title: const Text('Cash Payment'),
                                 onTap: () {
                                   Navigator.pop(ctx);
@@ -751,7 +924,10 @@ class _POSPageState extends ConsumerState<POSPage> {
                                 },
                               ),
                               ListTile(
-                                leading: const Icon(Icons.qr_code, color: Colors.blue),
+                                leading: const Icon(
+                                  Icons.qr_code,
+                                  color: Colors.blue,
+                                ),
                                 title: const Text('UPI / QR Scan'),
                                 onTap: () {
                                   Navigator.pop(ctx);
@@ -759,7 +935,10 @@ class _POSPageState extends ConsumerState<POSPage> {
                                 },
                               ),
                               ListTile(
-                                leading: const Icon(Icons.credit_card, color: Colors.purple),
+                                leading: const Icon(
+                                  Icons.credit_card,
+                                  color: Colors.purple,
+                                ),
                                 title: const Text('Card Swipe'),
                                 onTap: () {
                                   Navigator.pop(ctx);
@@ -767,8 +946,13 @@ class _POSPageState extends ConsumerState<POSPage> {
                                 },
                               ),
                               ListTile(
-                                leading: const Icon(Icons.person_outline, color: Colors.orange),
-                                title: const Text('Credit Sale (Ledger Outstanding)'),
+                                leading: const Icon(
+                                  Icons.person_outline,
+                                  color: Colors.orange,
+                                ),
+                                title: const Text(
+                                  'Credit Sale (Ledger Outstanding)',
+                                ),
                                 onTap: () {
                                   Navigator.pop(ctx);
                                   _processPayment('Credit');
@@ -790,9 +974,11 @@ class _POSPageState extends ConsumerState<POSPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(isMobile && _showCartOnMobile
-            ? 'POS Cart (${_cartItems.length})'
-            : 'Retail POS Terminal'),
+        title: Text(
+          isMobile && _showCartOnMobile
+              ? 'POS Cart (${_cartItems.length})'
+              : 'Retail POS Terminal',
+        ),
         actions: [
           if (isMobile) ...[
             if (_showCartOnMobile)
@@ -833,10 +1019,16 @@ class _POSPageState extends ConsumerState<POSPage> {
                   value: 'close',
                   child: Row(
                     children: [
-                      Icon(Icons.power_settings_new,
-                          size: 18, color: Colors.red),
+                      Icon(
+                        Icons.power_settings_new,
+                        size: 18,
+                        color: Colors.red,
+                      ),
                       SizedBox(width: 8),
-                      Text('Close Session', style: TextStyle(color: Colors.red)),
+                      Text(
+                        'Close Session',
+                        style: TextStyle(color: Colors.red),
+                      ),
                     ],
                   ),
                 ),
@@ -873,52 +1065,56 @@ class _POSPageState extends ConsumerState<POSPage> {
             ),
       bottomNavigationBar:
           isMobile && !_showCartOnMobile && _cartItems.isNotEmpty
-              ? Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: AppSpacing.md, vertical: AppSpacing.sm),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).primaryColor,
-                    boxShadow: const [
-                      BoxShadow(color: Colors.black12, blurRadius: 4)
-                    ],
-                  ),
-                  child: SafeArea(
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          ? Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.md,
+                vertical: AppSpacing.sm,
+              ),
+              decoration: BoxDecoration(
+                color: Theme.of(context).primaryColor,
+                boxShadow: const [
+                  BoxShadow(color: Colors.black12, blurRadius: 4),
+                ],
+              ),
+              child: SafeArea(
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              '${_cartItems.length} Items | Total',
-                              style: const TextStyle(
-                                  color: Colors.white70, fontSize: 12),
-                            ),
-                            Text(
-                              '₹${_grandTotal.toStringAsFixed(2)}',
-                              style: const TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 18),
-                            ),
-                          ],
-                        ),
-                        ElevatedButton.icon(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.accentDark,
-                            foregroundColor: Colors.white,
+                        Text(
+                          '${_cartItems.length} Items | Total',
+                          style: const TextStyle(
+                            color: Colors.white70,
+                            fontSize: 12,
                           ),
-                          icon: const Icon(Icons.shopping_cart),
-                          label: const Text('View Cart'),
-                          onPressed: () =>
-                              setState(() => _showCartOnMobile = true),
+                        ),
+                        Text(
+                          '₹${_grandTotal.toStringAsFixed(2)}',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 18,
+                          ),
                         ),
                       ],
                     ),
-                  ),
-                )
-              : null,
+                    ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.accentDark,
+                        foregroundColor: Colors.white,
+                      ),
+                      icon: const Icon(Icons.shopping_cart),
+                      label: const Text('View Cart'),
+                      onPressed: () => setState(() => _showCartOnMobile = true),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          : null,
     );
   }
 }

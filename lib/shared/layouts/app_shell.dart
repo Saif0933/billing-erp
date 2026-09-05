@@ -141,6 +141,7 @@ class _AppShellState extends ConsumerState<AppShell> {
                           ),
                         ],
                       ),
+                      /*
                       const SizedBox(height: AppSpacing.lg),
                       _buildMoreGroup(
                         context,
@@ -177,6 +178,7 @@ class _AppShellState extends ConsumerState<AppShell> {
                           ),
                         ],
                       ),
+                      */
                       const SizedBox(height: AppSpacing.lg),
                       _buildMoreGroup(
                         context,

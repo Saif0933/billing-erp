@@ -1,25 +1,8 @@
-import 'package:flutter/foundation.dart';
+enum PartyType { customer, supplier }
 
-enum PartyType {
-  customer,
-  supplier,
-}
+enum InvoiceStatus { draft, confirmed, partiallyPaid, paid, cancelled }
 
-enum InvoiceStatus {
-  draft,
-  confirmed,
-  partiallyPaid,
-  paid,
-  cancelled;
-}
-
-enum PurchaseStatus {
-  draft,
-  confirmed,
-  partiallyPaid,
-  paid,
-  cancelled;
-}
+enum PurchaseStatus { draft, confirmed, partiallyPaid, paid, cancelled }
 
 class Customer {
   final String id;
@@ -400,7 +383,8 @@ class Invoice {
   final InvoiceStatus status;
   final String notes;
   final String termsConditions;
-  final String originalInvoiceId; // Non-empty if this is a Credit Note (Sales Return)
+  final String
+  originalInvoiceId; // Non-empty if this is a Credit Note (Sales Return)
   final String warehouseId;
   final bool _isCreditNote;
 
@@ -541,7 +525,8 @@ class Purchase {
   final String paymentMode;
   final PurchaseStatus status;
   final String notes;
-  final String originalPurchaseId; // Non-empty if this is a Debit Note (Purchase Return)
+  final String
+  originalPurchaseId; // Non-empty if this is a Debit Note (Purchase Return)
   final String warehouseId;
 
   const Purchase({
@@ -678,7 +663,7 @@ enum LedgerTransactionType {
   payment,
   creditNote,
   debitNote,
-  openingBalance;
+  openingBalance,
 }
 
 class LedgerEntry {
@@ -709,7 +694,7 @@ enum StockMovementType {
   sale,
   salesReturn,
   purchaseReturn,
-  adjustment;
+  adjustment,
 }
 
 class StockMovement {
@@ -758,10 +743,7 @@ class Expense {
   });
 }
 
-enum POSSessionStatus {
-  open,
-  closed;
-}
+enum POSSessionStatus { open, closed }
 
 class POSSession {
   final String id;
@@ -841,7 +823,8 @@ class InvoiceBrandingConfig {
       bankAccountNumber: bankAccountNumber ?? this.bankAccountNumber,
       bankIfsc: bankIfsc ?? this.bankIfsc,
       upiId: upiId ?? this.upiId,
-      authorizedSignatoryName: authorizedSignatoryName ?? this.authorizedSignatoryName,
+      authorizedSignatoryName:
+          authorizedSignatoryName ?? this.authorizedSignatoryName,
       termsConditions: termsConditions ?? this.termsConditions,
       footerText: footerText ?? this.footerText,
     );
@@ -869,4 +852,3 @@ class AuditLogEntry {
     required this.timestamp,
   });
 }
-

@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_spacing.dart';
-import '../../../../core/constants/app_typography.dart';
 import '../../../../core/models/billing_models.dart';
 import '../../../../shared/widgets/app_button.dart';
 import '../../../../shared/widgets/app_cards.dart';
@@ -78,13 +76,17 @@ class _ExpensePageState extends ConsumerState<ExpensePage> {
                         items: categories.map((cat) {
                           return DropdownMenuItem(value: cat, child: Text(cat));
                         }).toList(),
-                        onChanged: (val) => setDialogState(() => _selectedCategory = val ?? 'Office Expenses'),
+                        onChanged: (val) => setDialogState(
+                          () => _selectedCategory = val ?? 'Office Expenses',
+                        ),
                       ),
                       const SizedBox(height: AppSpacing.md),
                       AppTextField(
                         label: 'Vendor / Payee Name *',
                         controller: _vendorController,
-                        validator: (val) => val == null || val.isEmpty ? 'Vendor name is required' : null,
+                        validator: (val) => val == null || val.isEmpty
+                            ? 'Vendor name is required'
+                            : null,
                       ),
                       const SizedBox(height: AppSpacing.md),
                       Row(
@@ -94,7 +96,10 @@ class _ExpensePageState extends ConsumerState<ExpensePage> {
                               label: 'Expense Amount (₹) *',
                               controller: _amountController,
                               keyboardType: TextInputType.number,
-                              validator: (val) => val == null || double.tryParse(val) == null ? 'Invalid amount' : null,
+                              validator: (val) =>
+                                  val == null || double.tryParse(val) == null
+                                  ? 'Invalid amount'
+                                  : null,
                             ),
                           ),
                           const SizedBox(width: AppSpacing.md),
@@ -115,11 +120,22 @@ class _ExpensePageState extends ConsumerState<ExpensePage> {
                               label: 'Payment Mode',
                               value: _paymentMode,
                               items: const [
-                                DropdownMenuItem(value: 'Cash', child: Text('Cash')),
-                                DropdownMenuItem(value: 'Bank', child: Text('Bank Transfer')),
-                                DropdownMenuItem(value: 'UPI', child: Text('UPI / QR')),
+                                DropdownMenuItem(
+                                  value: 'Cash',
+                                  child: Text('Cash'),
+                                ),
+                                DropdownMenuItem(
+                                  value: 'Bank',
+                                  child: Text('Bank Transfer'),
+                                ),
+                                DropdownMenuItem(
+                                  value: 'UPI',
+                                  child: Text('UPI / QR'),
+                                ),
                               ],
-                              onChanged: (val) => setDialogState(() => _paymentMode = val ?? 'Bank'),
+                              onChanged: (val) => setDialogState(
+                                () => _paymentMode = val ?? 'Bank',
+                              ),
                             ),
                           ),
                           const SizedBox(width: AppSpacing.md),
@@ -127,10 +143,22 @@ class _ExpensePageState extends ConsumerState<ExpensePage> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Text('Date *', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.grey)),
+                                const Text(
+                                  'Date *',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 12,
+                                    color: Colors.grey,
+                                  ),
+                                ),
                                 TextButton.icon(
-                                  icon: const Icon(Icons.calendar_today_outlined, size: 16),
-                                  label: Text('${_expenseDate.day}/${_expenseDate.month}/${_expenseDate.year}'),
+                                  icon: const Icon(
+                                    Icons.calendar_today_outlined,
+                                    size: 16,
+                                  ),
+                                  label: Text(
+                                    '${_expenseDate.day}/${_expenseDate.month}/${_expenseDate.year}',
+                                  ),
                                   onPressed: () async {
                                     final selected = await showDatePicker(
                                       context: context,
@@ -169,8 +197,10 @@ class _ExpensePageState extends ConsumerState<ExpensePage> {
                   label: 'Save Expense',
                   onPressed: () async {
                     if (_formKey.currentState!.validate()) {
-                      final double amount = double.tryParse(_amountController.text) ?? 0.0;
-                      final double gst = double.tryParse(_gstController.text) ?? 0.0;
+                      final double amount =
+                          double.tryParse(_amountController.text) ?? 0.0;
+                      final double gst =
+                          double.tryParse(_gstController.text) ?? 0.0;
 
                       final exp = Expense(
                         id: 'exp_${DateTime.now().millisecondsSinceEpoch}',
@@ -184,11 +214,16 @@ class _ExpensePageState extends ConsumerState<ExpensePage> {
                         notes: _notesController.text,
                       );
 
-                      await ref.read(billingRepositoryProvider.notifier).addExpense(exp);
+                      await ref
+                          .read(billingRepositoryProvider.notifier)
+                          .addExpense(exp);
 
                       if (mounted) {
                         Navigator.pop(ctx);
-                        AppFeedback.showSnackbar(context, message: 'Expense entry saved successfully!');
+                        AppFeedback.showSnackbar(
+                          context,
+                          message: 'Expense entry saved successfully!',
+                        );
                       }
                     }
                   },
@@ -207,7 +242,10 @@ class _ExpensePageState extends ConsumerState<ExpensePage> {
     final expenses = billingState.expenses;
 
     // Filter categories
-    final totalExpensesSum = expenses.fold<double>(0.0, (sum, e) => sum + e.amount);
+    final totalExpensesSum = expenses.fold<double>(
+      0.0,
+      (sum, e) => sum + e.amount,
+    );
 
     return Scaffold(
       appBar: AppBar(title: const Text('Expenses')),
@@ -218,7 +256,8 @@ class _ExpensePageState extends ConsumerState<ExpensePage> {
           children: [
             AppPageHeader(
               title: 'Business Expenses',
-              description: 'Record operating expenses (electricity, rent, packaging) to track cash outflows.',
+              description:
+                  'Record operating expenses (electricity, rent, packaging) to track cash outflows.',
               breadcrumbs: const ['Dashboard', 'Expenses'],
               actions: [
                 AppButton(
@@ -245,15 +284,20 @@ class _ExpensePageState extends ConsumerState<ExpensePage> {
               padding: EdgeInsets.zero,
               child: AppTable<Expense>(
                 items: expenses,
-                emptyMessage: 'No expenses recorded yet. Click Record Expense to log a cash outflow.',
+                emptyMessage:
+                    'No expenses recorded yet. Click Record Expense to log a cash outflow.',
                 columns: [
                   TableColumnSpec<Expense>(
                     label: 'Date',
-                    cellBuilder: (e) => Text('${e.date.day}/${e.date.month}/${e.date.year}'),
+                    cellBuilder: (e) =>
+                        Text('${e.date.day}/${e.date.month}/${e.date.year}'),
                   ),
                   TableColumnSpec<Expense>(
                     label: 'Category',
-                    cellBuilder: (e) => Text(e.category, style: const TextStyle(fontWeight: FontWeight.bold)),
+                    cellBuilder: (e) => Text(
+                      e.category,
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
                   ),
                   TableColumnSpec<Expense>(
                     label: 'Vendor / Payee',
@@ -274,7 +318,10 @@ class _ExpensePageState extends ConsumerState<ExpensePage> {
                     isNumeric: true,
                     cellBuilder: (e) => Text(
                       '₹${e.amount.toStringAsFixed(2)}',
-                      style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.red),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.red,
+                      ),
                     ),
                   ),
                 ],

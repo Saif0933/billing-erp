@@ -3,11 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_spacing.dart';
-import '../../../../core/constants/app_typography.dart';
 import '../../../../core/responsive/responsive.dart';
 import '../../../../core/models/billing_models.dart';
 import '../../../../core/services/gst_calculation_service.dart';
-import '../../../../shared/widgets/app_button.dart';
 import '../../../../shared/widgets/app_cards.dart';
 import '../../../../shared/widgets/app_input_fields.dart';
 import '../../../../shared/widgets/app_table.dart';
@@ -29,8 +27,9 @@ class _InvoiceCreatePageState extends ConsumerState<InvoiceCreatePage> {
   final _shippingAddressController = TextEditingController();
   final _placeOfSupplyController = TextEditingController(text: 'Maharashtra');
   final _termsController = TextEditingController(
-      text:
-          '1. Interest @18% will be charged if not paid within due date.\n2. Goods once sold will not be taken back.');
+    text:
+        '1. Interest @18% will be charged if not paid within due date.\n2. Goods once sold will not be taken back.',
+  );
   final _notesController = TextEditingController();
 
   DateTime _invoiceDate = DateTime.now();
@@ -86,8 +85,11 @@ class _InvoiceCreatePageState extends ConsumerState<InvoiceCreatePage> {
 
   void _addItem() {
     if (_selectedProduct == null && _selectedService == null) {
-      AppFeedback.showSnackbar(context,
-          message: 'Please select an item first!', isError: true);
+      AppFeedback.showSnackbar(
+        context,
+        message: 'Please select an item first!',
+        isError: true,
+      );
       return;
     }
 
@@ -97,13 +99,13 @@ class _InvoiceCreatePageState extends ConsumerState<InvoiceCreatePage> {
 
     final double grossAmount = qty * rate;
     final double discAmt = grossAmount * (disc / 100.0);
-    final double taxable = grossAmount - discAmt;
 
     final businessStateCode =
         ref.read(businessProvider).activeBusiness?.stateCode ?? '27';
     final customerStateCode = _selectedCustomer?.stateCode ?? '27';
-    final custGstType =
-        _selectedCustomer?.isRegistered == true ? 'Regular' : 'Unregistered';
+    final custGstType = _selectedCustomer?.isRegistered == true
+        ? 'Regular'
+        : 'Unregistered';
     final gstRate = _selectedProduct != null
         ? _selectedProduct!.gstRate
         : _selectedService!.gstRate;
@@ -149,20 +151,28 @@ class _InvoiceCreatePageState extends ConsumerState<InvoiceCreatePage> {
 
   void _saveInvoice(InvoiceStatus status) async {
     if (_selectedCustomer == null) {
-      AppFeedback.showSnackbar(context,
-          message: 'Please select a customer!', isError: true);
+      AppFeedback.showSnackbar(
+        context,
+        message: 'Please select a customer!',
+        isError: true,
+      );
       return;
     }
 
     if (_items.isEmpty) {
-      AppFeedback.showSnackbar(context,
-          message: 'Please add at least one item!', isError: true);
+      AppFeedback.showSnackbar(
+        context,
+        message: 'Please add at least one item!',
+        isError: true,
+      );
       return;
     }
 
     if (_formKey.currentState!.validate()) {
-      final double subTotal =
-          _items.fold(0, (sum, item) => sum + item.taxableValue);
+      final double subTotal = _items.fold(
+        0,
+        (sum, item) => sum + item.taxableValue,
+      );
       final double cgst = _items.fold(0, (sum, item) => sum + item.cgst);
       final double sgst = _items.fold(0, (sum, item) => sum + item.sgst);
       final double igst = _items.fold(0, (sum, item) => sum + item.igst);
@@ -171,8 +181,9 @@ class _InvoiceCreatePageState extends ConsumerState<InvoiceCreatePage> {
       final double totalTax = cgst + sgst + igst + cess;
       final double grossGrand = subTotal + totalTax;
       final double roundedGrand = grossGrand.roundToDouble();
-      final double roundOff =
-          double.parse((roundedGrand - grossGrand).toStringAsFixed(2));
+      final double roundOff = double.parse(
+        (roundedGrand - grossGrand).toStringAsFixed(2),
+      );
 
       final invoice = Invoice(
         id: 'inv_${DateTime.now().millisecondsSinceEpoch}',
@@ -203,8 +214,10 @@ class _InvoiceCreatePageState extends ConsumerState<InvoiceCreatePage> {
       await ref.read(billingRepositoryProvider.notifier).addInvoice(invoice);
 
       if (mounted) {
-        AppFeedback.showSnackbar(context,
-            message: 'Invoice saved successfully!');
+        AppFeedback.showSnackbar(
+          context,
+          message: 'Invoice saved successfully!',
+        );
         context.pop();
       }
     }
@@ -213,10 +226,11 @@ class _InvoiceCreatePageState extends ConsumerState<InvoiceCreatePage> {
   @override
   Widget build(BuildContext context) {
     final billingState = ref.watch(billingRepositoryProvider);
-    final activeBiz = ref.watch(businessProvider).activeBusiness;
 
-    final double subTotal =
-        _items.fold(0, (sum, item) => sum + item.taxableValue);
+    final double subTotal = _items.fold(
+      0,
+      (sum, item) => sum + item.taxableValue,
+    );
     final double cgst = _items.fold(0, (sum, item) => sum + item.cgst);
     final double sgst = _items.fold(0, (sum, item) => sum + item.sgst);
     final double igst = _items.fold(0, (sum, item) => sum + item.igst);
@@ -229,7 +243,9 @@ class _InvoiceCreatePageState extends ConsumerState<InvoiceCreatePage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(_isCreditNote ? 'Create Credit Note' : 'Create Sales Invoice'),
+        title: Text(
+          _isCreditNote ? 'Create Credit Note' : 'Create Sales Invoice',
+        ),
         elevation: 0.5,
       ),
       body: SingleChildScrollView(
@@ -248,7 +264,7 @@ class _InvoiceCreatePageState extends ConsumerState<InvoiceCreatePage> {
                 breadcrumbs: [
                   'Dashboard',
                   'Sales',
-                  _isCreditNote ? 'Credit Note' : 'Invoice'
+                  _isCreditNote ? 'Credit Note' : 'Invoice',
                 ],
               ),
               const SizedBox(height: 12),
@@ -257,7 +273,9 @@ class _InvoiceCreatePageState extends ConsumerState<InvoiceCreatePage> {
               Container(
                 padding: const EdgeInsets.all(4),
                 decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF1E1E1E) : Colors.grey.shade100,
+                  color: isDark
+                      ? const Color(0xFF1E1E1E)
+                      : Colors.grey.shade100,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Row(
@@ -275,7 +293,9 @@ class _InvoiceCreatePageState extends ConsumerState<InvoiceCreatePage> {
                           padding: const EdgeInsets.symmetric(vertical: 10),
                           decoration: BoxDecoration(
                             color: !_isCreditNote
-                                ? (isDark ? const Color(0xFF2E2E2E) : Colors.white)
+                                ? (isDark
+                                      ? const Color(0xFF2E2E2E)
+                                      : Colors.white)
                                 : Colors.transparent,
                             borderRadius: BorderRadius.circular(10),
                             boxShadow: !_isCreditNote
@@ -284,7 +304,7 @@ class _InvoiceCreatePageState extends ConsumerState<InvoiceCreatePage> {
                                       color: Colors.black.withOpacity(0.04),
                                       blurRadius: 4,
                                       offset: const Offset(0, 2),
-                                    )
+                                    ),
                                   ]
                                 : null,
                           ),
@@ -314,7 +334,9 @@ class _InvoiceCreatePageState extends ConsumerState<InvoiceCreatePage> {
                           padding: const EdgeInsets.symmetric(vertical: 10),
                           decoration: BoxDecoration(
                             color: _isCreditNote
-                                ? (isDark ? const Color(0xFF2E2E2E) : Colors.white)
+                                ? (isDark
+                                      ? const Color(0xFF2E2E2E)
+                                      : Colors.white)
                                 : Colors.transparent,
                             borderRadius: BorderRadius.circular(10),
                             boxShadow: _isCreditNote
@@ -323,7 +345,7 @@ class _InvoiceCreatePageState extends ConsumerState<InvoiceCreatePage> {
                                       color: Colors.black.withOpacity(0.04),
                                       blurRadius: 4,
                                       offset: const Offset(0, 2),
-                                    )
+                                    ),
                                   ]
                                 : null,
                           ),
@@ -360,20 +382,26 @@ class _InvoiceCreatePageState extends ConsumerState<InvoiceCreatePage> {
                         Container(
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: isDark ? AppColors.surfaceDark : Colors.white,
+                            color: isDark
+                                ? AppColors.surfaceDark
+                                : Colors.white,
                             borderRadius: BorderRadius.circular(16),
                             border: Border.all(
-                                color: isDark
-                                    ? AppColors.borderDark
-                                    : Colors.grey.shade100),
+                              color: isDark
+                                  ? AppColors.borderDark
+                                  : Colors.grey.shade100,
+                            ),
                           ),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Row(
                                 children: const [
-                                  Icon(Icons.person_outline,
-                                      color: Color(0xFF2E7D32), size: 20),
+                                  Icon(
+                                    Icons.person_outline,
+                                    color: Color(0xFF2E7D32),
+                                    size: 20,
+                                  ),
                                   SizedBox(width: 8),
                                   Text(
                                     'Customer Parameters',
@@ -393,8 +421,9 @@ class _InvoiceCreatePageState extends ConsumerState<InvoiceCreatePage> {
                                       value: _selectedCustomer,
                                       items: billingState.customers.map((c) {
                                         return DropdownMenuItem(
-                                            value: c,
-                                            child: Text('${c.name} (${c.type})'));
+                                          value: c,
+                                          child: Text('${c.name} (${c.type})'),
+                                        );
                                       }).toList(),
                                       onChanged: _onCustomerSelected,
                                     ),
@@ -415,18 +444,23 @@ class _InvoiceCreatePageState extends ConsumerState<InvoiceCreatePage> {
                                       ? null
                                       : _originalInvoiceId,
                                   items: billingState.invoices
-                                      .where((inv) =>
-                                          inv.customerId ==
-                                              _selectedCustomer?.id &&
-                                          inv.status !=
-                                              InvoiceStatus.cancelled &&
-                                          !inv.isCreditNote)
+                                      .where(
+                                        (inv) =>
+                                            inv.customerId ==
+                                                _selectedCustomer?.id &&
+                                            inv.status !=
+                                                InvoiceStatus.cancelled &&
+                                            !inv.isCreditNote,
+                                      )
                                       .map((inv) {
-                                    return DropdownMenuItem(
-                                        value: inv.id,
-                                        child: Text(
-                                            '${inv.invoiceNumber} (₹${inv.grandTotal})'));
-                                  }).toList(),
+                                        return DropdownMenuItem(
+                                          value: inv.id,
+                                          child: Text(
+                                            '${inv.invoiceNumber} (₹${inv.grandTotal})',
+                                          ),
+                                        );
+                                      })
+                                      .toList(),
                                   onChanged: (val) {
                                     setState(() {
                                       _originalInvoiceId = val ?? '';
@@ -463,20 +497,26 @@ class _InvoiceCreatePageState extends ConsumerState<InvoiceCreatePage> {
                         Container(
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: isDark ? AppColors.surfaceDark : Colors.white,
+                            color: isDark
+                                ? AppColors.surfaceDark
+                                : Colors.white,
                             borderRadius: BorderRadius.circular(16),
                             border: Border.all(
-                                color: isDark
-                                    ? AppColors.borderDark
-                                    : Colors.grey.shade100),
+                              color: isDark
+                                  ? AppColors.borderDark
+                                  : Colors.grey.shade100,
+                            ),
                           ),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Row(
                                 children: const [
-                                  Icon(Icons.add_shopping_cart,
-                                      color: Color(0xFF2E7D32), size: 20),
+                                  Icon(
+                                    Icons.add_shopping_cart,
+                                    color: Color(0xFF2E7D32),
+                                    size: 20,
+                                  ),
                                   SizedBox(width: 8),
                                   Text(
                                     'Add Product or Service Item',
@@ -497,21 +537,24 @@ class _InvoiceCreatePageState extends ConsumerState<InvoiceCreatePage> {
                                       items: billingState.products
                                           .where((p) => p.isActive)
                                           .map((p) {
-                                        return DropdownMenuItem(
-                                            value: p,
-                                            child: Text(
-                                              '${p.name} (Stock: ${p.currentStock})',
-                                              overflow: TextOverflow.ellipsis,
-                                              maxLines: 1,
-                                            ));
-                                      }).toList(),
+                                            return DropdownMenuItem(
+                                              value: p,
+                                              child: Text(
+                                                '${p.name} (Stock: ${p.currentStock})',
+                                                overflow: TextOverflow.ellipsis,
+                                                maxLines: 1,
+                                              ),
+                                            );
+                                          })
+                                          .toList(),
                                       onChanged: (prod) {
                                         setState(() {
                                           _selectedProduct = prod;
                                           _selectedService = null;
                                           if (prod != null) {
-                                            _rateController.text =
-                                                prod.sellingPrice.toString();
+                                            _rateController.text = prod
+                                                .sellingPrice
+                                                .toString();
                                             _quantityController.text = '1';
                                           }
                                         });
@@ -525,16 +568,19 @@ class _InvoiceCreatePageState extends ConsumerState<InvoiceCreatePage> {
                                       items: billingState.services
                                           .where((s) => s.isActive)
                                           .map((s) {
-                                        return DropdownMenuItem(
-                                            value: s, child: Text(s.name));
-                                      }).toList(),
+                                            return DropdownMenuItem(
+                                              value: s,
+                                              child: Text(s.name),
+                                            );
+                                          })
+                                          .toList(),
                                       onChanged: (serv) {
                                         setState(() {
                                           _selectedService = serv;
                                           _selectedProduct = null;
                                           if (serv != null) {
-                                            _rateController.text =
-                                                serv.rate.toString();
+                                            _rateController.text = serv.rate
+                                                .toString();
                                             _quantityController.text = '1';
                                           }
                                         });
@@ -573,13 +619,18 @@ class _InvoiceCreatePageState extends ConsumerState<InvoiceCreatePage> {
                                       icon: const Icon(Icons.add, size: 16),
                                       label: const Text('Add Item'),
                                       style: ElevatedButton.styleFrom(
-                                        backgroundColor: const Color(0xFF2E7D32),
+                                        backgroundColor: const Color(
+                                          0xFF2E7D32,
+                                        ),
                                         foregroundColor: Colors.white,
                                         padding: const EdgeInsets.symmetric(
-                                            horizontal: 16, vertical: 12),
+                                          horizontal: 16,
+                                          vertical: 12,
+                                        ),
                                         shape: RoundedRectangleBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(10),
+                                          borderRadius: BorderRadius.circular(
+                                            10,
+                                          ),
                                         ),
                                       ),
                                       onPressed: _addItem,
@@ -597,12 +648,15 @@ class _InvoiceCreatePageState extends ConsumerState<InvoiceCreatePage> {
                         Container(
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: isDark ? AppColors.surfaceDark : Colors.white,
+                            color: isDark
+                                ? AppColors.surfaceDark
+                                : Colors.white,
                             borderRadius: BorderRadius.circular(16),
                             border: Border.all(
-                                color: isDark
-                                    ? AppColors.borderDark
-                                    : Colors.grey.shade100),
+                              color: isDark
+                                  ? AppColors.borderDark
+                                  : Colors.grey.shade100,
+                            ),
                           ),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -610,7 +664,9 @@ class _InvoiceCreatePageState extends ConsumerState<InvoiceCreatePage> {
                               const Text(
                                 'Added Items List',
                                 style: TextStyle(
-                                    fontWeight: FontWeight.bold, fontSize: 15),
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 15,
+                                ),
                               ),
                               const SizedBox(height: 12),
                               AppTable<InvoiceItem>(
@@ -631,22 +687,25 @@ class _InvoiceCreatePageState extends ConsumerState<InvoiceCreatePage> {
                                               child: Text(
                                                 item.name,
                                                 style: const TextStyle(
-                                                    fontWeight: FontWeight.bold,
-                                                    fontSize: 14),
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 14,
+                                                ),
                                               ),
                                             ),
                                             IconButton(
                                               icon: const Icon(
-                                                  Icons.delete_outline,
-                                                  color: Colors.red,
-                                                  size: 18),
+                                                Icons.delete_outline,
+                                                color: Colors.red,
+                                                size: 18,
+                                              ),
                                               padding: EdgeInsets.zero,
                                               constraints:
                                                   const BoxConstraints(),
                                               onPressed: () {
                                                 setState(() {
                                                   _items.removeWhere(
-                                                      (it) => it.id == item.id);
+                                                    (it) => it.id == item.id,
+                                                  );
                                                 });
                                               },
                                             ),
@@ -658,10 +717,12 @@ class _InvoiceCreatePageState extends ConsumerState<InvoiceCreatePage> {
                                               MainAxisAlignment.spaceBetween,
                                           children: [
                                             Text(
-                                                '${item.quantity} ${item.unit} @ ₹${item.rate.toStringAsFixed(2)}'),
+                                              '${item.quantity} ${item.unit} @ ₹${item.rate.toStringAsFixed(2)}',
+                                            ),
                                             if (item.discountPercentage > 0)
                                               Text(
-                                                  'Disc: ${item.discountPercentage.toStringAsFixed(0)}%'),
+                                                'Disc: ${item.discountPercentage.toStringAsFixed(0)}%',
+                                              ),
                                           ],
                                         ),
                                         const SizedBox(height: AppSpacing.xs),
@@ -670,15 +731,19 @@ class _InvoiceCreatePageState extends ConsumerState<InvoiceCreatePage> {
                                               MainAxisAlignment.spaceBetween,
                                           children: [
                                             Text(
-                                                'Taxable: ₹${item.taxableValue.toStringAsFixed(2)}',
-                                                style: const TextStyle(
-                                                    color: Colors.grey,
-                                                    fontSize: 11)),
+                                              'Taxable: ₹${item.taxableValue.toStringAsFixed(2)}',
+                                              style: const TextStyle(
+                                                color: Colors.grey,
+                                                fontSize: 11,
+                                              ),
+                                            ),
                                             Text(
-                                                'GST: ${item.gstRate.toStringAsFixed(0)}% (₹${(item.cgst + item.sgst + item.igst).toStringAsFixed(2)})',
-                                                style: const TextStyle(
-                                                    color: Colors.grey,
-                                                    fontSize: 11)),
+                                              'GST: ${item.gstRate.toStringAsFixed(0)}% (₹${(item.cgst + item.sgst + item.igst).toStringAsFixed(2)})',
+                                              style: const TextStyle(
+                                                color: Colors.grey,
+                                                fontSize: 11,
+                                              ),
+                                            ),
                                           ],
                                         ),
                                         const Divider(),
@@ -686,17 +751,20 @@ class _InvoiceCreatePageState extends ConsumerState<InvoiceCreatePage> {
                                           mainAxisAlignment:
                                               MainAxisAlignment.spaceBetween,
                                           children: [
-                                            const Text('Total Item Amount:',
-                                                style: TextStyle(
-                                                    fontWeight:
-                                                        FontWeight.w600,
-                                                    fontSize: 13)),
+                                            const Text(
+                                              'Total Item Amount:',
+                                              style: TextStyle(
+                                                fontWeight: FontWeight.w600,
+                                                fontSize: 13,
+                                              ),
+                                            ),
                                             Text(
-                                                '₹${(item.taxableValue + item.cgst + item.sgst + item.igst).toStringAsFixed(2)}',
-                                                style: const TextStyle(
-                                                    fontWeight: FontWeight.bold,
-                                                    color:
-                                                        Color(0xFF2E7D32))),
+                                              '₹${(item.taxableValue + item.cgst + item.sgst + item.igst).toStringAsFixed(2)}',
+                                              style: const TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                color: Color(0xFF2E7D32),
+                                              ),
+                                            ),
                                           ],
                                         ),
                                       ],
@@ -707,9 +775,12 @@ class _InvoiceCreatePageState extends ConsumerState<InvoiceCreatePage> {
                                   TableColumnSpec<InvoiceItem>(
                                     label: 'Item Details',
                                     flex: 2,
-                                    cellBuilder: (item) => Text(item.name,
-                                        style: const TextStyle(
-                                            fontWeight: FontWeight.bold)),
+                                    cellBuilder: (item) => Text(
+                                      item.name,
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
                                   ),
                                   TableColumnSpec<InvoiceItem>(
                                     label: 'Qty',
@@ -727,35 +798,43 @@ class _InvoiceCreatePageState extends ConsumerState<InvoiceCreatePage> {
                                     label: 'Disc%',
                                     isNumeric: true,
                                     cellBuilder: (item) => Text(
-                                        '${item.discountPercentage.toStringAsFixed(0)}%'),
+                                      '${item.discountPercentage.toStringAsFixed(0)}%',
+                                    ),
                                   ),
                                   TableColumnSpec<InvoiceItem>(
                                     label: 'Taxable (₹)',
                                     isNumeric: true,
                                     cellBuilder: (item) => Text(
-                                        item.taxableValue.toStringAsFixed(2)),
+                                      item.taxableValue.toStringAsFixed(2),
+                                    ),
                                   ),
                                   TableColumnSpec<InvoiceItem>(
                                     label: 'GST',
                                     cellBuilder: (item) => Text(
-                                        '${item.gstRate.toStringAsFixed(0)}%'),
+                                      '${item.gstRate.toStringAsFixed(0)}%',
+                                    ),
                                   ),
                                   TableColumnSpec<InvoiceItem>(
                                     label: 'Total GST (₹)',
                                     isNumeric: true,
                                     cellBuilder: (item) => Text(
-                                        (item.cgst + item.sgst + item.igst)
-                                            .toStringAsFixed(2)),
+                                      (item.cgst + item.sgst + item.igst)
+                                          .toStringAsFixed(2),
+                                    ),
                                   ),
                                   TableColumnSpec<InvoiceItem>(
                                     label: 'Actions',
                                     cellBuilder: (item) => IconButton(
-                                      icon: const Icon(Icons.delete_outline,
-                                          color: Colors.red, size: 18),
+                                      icon: const Icon(
+                                        Icons.delete_outline,
+                                        color: Colors.red,
+                                        size: 18,
+                                      ),
                                       onPressed: () {
                                         setState(() {
                                           _items.removeWhere(
-                                              (it) => it.id == item.id);
+                                            (it) => it.id == item.id,
+                                          );
                                         });
                                       },
                                     ),
@@ -780,20 +859,26 @@ class _InvoiceCreatePageState extends ConsumerState<InvoiceCreatePage> {
                         Container(
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: isDark ? AppColors.surfaceDark : Colors.white,
+                            color: isDark
+                                ? AppColors.surfaceDark
+                                : Colors.white,
                             borderRadius: BorderRadius.circular(16),
                             border: Border.all(
-                                color: isDark
-                                    ? AppColors.borderDark
-                                    : Colors.grey.shade100),
+                              color: isDark
+                                  ? AppColors.borderDark
+                                  : Colors.grey.shade100,
+                            ),
                           ),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
                               Row(
                                 children: const [
-                                  Icon(Icons.feed_outlined,
-                                      color: Color(0xFF2E7D32), size: 20),
+                                  Icon(
+                                    Icons.feed_outlined,
+                                    color: Color(0xFF2E7D32),
+                                    size: 20,
+                                  ),
                                   SizedBox(width: 8),
                                   Text(
                                     'Document Settings',
@@ -817,15 +902,20 @@ class _InvoiceCreatePageState extends ConsumerState<InvoiceCreatePage> {
                                 mainAxisAlignment:
                                     MainAxisAlignment.spaceBetween,
                                 children: [
-                                  const Text('Invoice Date: ',
-                                      style: TextStyle(
-                                          fontWeight: FontWeight.bold)),
+                                  const Text(
+                                    'Invoice Date: ',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
                                   TextButton.icon(
                                     icon: const Icon(
-                                        Icons.calendar_month_outlined,
-                                        size: 18),
+                                      Icons.calendar_month_outlined,
+                                      size: 18,
+                                    ),
                                     label: Text(
-                                        '${_invoiceDate.day}/${_invoiceDate.month}/${_invoiceDate.year}'),
+                                      '${_invoiceDate.day}/${_invoiceDate.month}/${_invoiceDate.year}',
+                                    ),
                                     onPressed: () async {
                                       final selected = await showDatePicker(
                                         context: context,
@@ -848,17 +938,25 @@ class _InvoiceCreatePageState extends ConsumerState<InvoiceCreatePage> {
                                 value: _paymentMode,
                                 items: const [
                                   DropdownMenuItem(
-                                      value: 'Cash', child: Text('Cash Payment')),
+                                    value: 'Cash',
+                                    child: Text('Cash Payment'),
+                                  ),
                                   DropdownMenuItem(
-                                      value: 'Bank', child: Text('Bank Transfer')),
+                                    value: 'Bank',
+                                    child: Text('Bank Transfer'),
+                                  ),
                                   DropdownMenuItem(
-                                      value: 'UPI', child: Text('UPI / QR')),
+                                    value: 'UPI',
+                                    child: Text('UPI / QR'),
+                                  ),
                                   DropdownMenuItem(
-                                      value: 'Card',
-                                      child: Text('Credit/Debit Card')),
+                                    value: 'Card',
+                                    child: Text('Credit/Debit Card'),
+                                  ),
                                 ],
-                                onChanged: (val) =>
-                                    setState(() => _paymentMode = val ?? 'Bank'),
+                                onChanged: (val) => setState(
+                                  () => _paymentMode = val ?? 'Bank',
+                                ),
                               ),
                             ],
                           ),
@@ -870,20 +968,26 @@ class _InvoiceCreatePageState extends ConsumerState<InvoiceCreatePage> {
                         Container(
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: isDark ? AppColors.surfaceDark : Colors.white,
+                            color: isDark
+                                ? AppColors.surfaceDark
+                                : Colors.white,
                             borderRadius: BorderRadius.circular(16),
                             border: Border.all(
-                                color: isDark
-                                    ? AppColors.borderDark
-                                    : Colors.grey.shade100),
+                              color: isDark
+                                  ? AppColors.borderDark
+                                  : Colors.grey.shade100,
+                            ),
                           ),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
                               Row(
                                 children: const [
-                                  Icon(Icons.analytics_outlined,
-                                      color: Color(0xFF2E7D32), size: 20),
+                                  Icon(
+                                    Icons.analytics_outlined,
+                                    color: Color(0xFF2E7D32),
+                                    size: 20,
+                                  ),
                                   SizedBox(width: 8),
                                   Text(
                                     'Invoice Totals',
@@ -895,24 +999,37 @@ class _InvoiceCreatePageState extends ConsumerState<InvoiceCreatePage> {
                                 ],
                               ),
                               const Divider(height: 24),
-                              _buildTotalRow('Total Taxable Value:',
-                                  '₹${subTotal.toStringAsFixed(2)}'),
-                              if (cgst > 0)
-                                _buildTotalRow('CGST Amount:',
-                                    '₹${cgst.toStringAsFixed(2)}'),
-                              if (sgst > 0)
-                                _buildTotalRow('SGST Amount:',
-                                    '₹${sgst.toStringAsFixed(2)}'),
-                              if (igst > 0)
-                                _buildTotalRow('IGST Amount:',
-                                    '₹${igst.toStringAsFixed(2)}'),
-                              if (cess > 0)
-                                _buildTotalRow('Cess Amount:',
-                                    '₹${cess.toStringAsFixed(2)}'),
                               _buildTotalRow(
-                                  'Tax Payable:', '₹${totalTax.toStringAsFixed(2)}',
-                                  style: const TextStyle(
-                                      fontWeight: FontWeight.bold)),
+                                'Total Taxable Value:',
+                                '₹${subTotal.toStringAsFixed(2)}',
+                              ),
+                              if (cgst > 0)
+                                _buildTotalRow(
+                                  'CGST Amount:',
+                                  '₹${cgst.toStringAsFixed(2)}',
+                                ),
+                              if (sgst > 0)
+                                _buildTotalRow(
+                                  'SGST Amount:',
+                                  '₹${sgst.toStringAsFixed(2)}',
+                                ),
+                              if (igst > 0)
+                                _buildTotalRow(
+                                  'IGST Amount:',
+                                  '₹${igst.toStringAsFixed(2)}',
+                                ),
+                              if (cess > 0)
+                                _buildTotalRow(
+                                  'Cess Amount:',
+                                  '₹${cess.toStringAsFixed(2)}',
+                                ),
+                              _buildTotalRow(
+                                'Tax Payable:',
+                                '₹${totalTax.toStringAsFixed(2)}',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
                               const Divider(height: 20),
                               // Highlighted Grand Total Segment
                               Container(
@@ -921,7 +1038,7 @@ class _InvoiceCreatePageState extends ConsumerState<InvoiceCreatePage> {
                                   gradient: const LinearGradient(
                                     colors: [
                                       Color(0xFFE8F5E9),
-                                      Color(0xFFC8E6C9)
+                                      Color(0xFFC8E6C9),
                                     ],
                                     begin: Alignment.topLeft,
                                     end: Alignment.bottomRight,
@@ -950,7 +1067,7 @@ class _InvoiceCreatePageState extends ConsumerState<InvoiceCreatePage> {
                                     ),
                                   ],
                                 ),
-                              )
+                              ),
                             ],
                           ),
                         ),
@@ -961,12 +1078,15 @@ class _InvoiceCreatePageState extends ConsumerState<InvoiceCreatePage> {
                         Container(
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: isDark ? AppColors.surfaceDark : Colors.white,
+                            color: isDark
+                                ? AppColors.surfaceDark
+                                : Colors.white,
                             borderRadius: BorderRadius.circular(16),
                             border: Border.all(
-                                color: isDark
-                                    ? AppColors.borderDark
-                                    : Colors.grey.shade100),
+                              color: isDark
+                                  ? AppColors.borderDark
+                                  : Colors.grey.shade100,
+                            ),
                           ),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -994,20 +1114,23 @@ class _InvoiceCreatePageState extends ConsumerState<InvoiceCreatePage> {
                             Expanded(
                               child: OutlinedButton(
                                 style: OutlinedButton.styleFrom(
-                                  padding:
-                                      const EdgeInsets.symmetric(vertical: 14),
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 14,
+                                  ),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(10),
                                   ),
-                                  side:
-                                      const BorderSide(color: Colors.grey),
+                                  side: const BorderSide(color: Colors.grey),
                                 ),
                                 onPressed: () =>
                                     _saveInvoice(InvoiceStatus.draft),
-                                child: const Text('Save Draft',
-                                    style: TextStyle(
-                                        color: Colors.grey,
-                                        fontWeight: FontWeight.bold)),
+                                child: const Text(
+                                  'Save Draft',
+                                  style: TextStyle(
+                                    color: Colors.grey,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
                               ),
                             ),
                             const SizedBox(width: 12),
@@ -1019,8 +1142,9 @@ class _InvoiceCreatePageState extends ConsumerState<InvoiceCreatePage> {
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: const Color(0xFF2E7D32),
                                   foregroundColor: Colors.white,
-                                  padding:
-                                      const EdgeInsets.symmetric(vertical: 14),
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 14,
+                                  ),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(10),
                                   ),
@@ -1051,8 +1175,10 @@ class _InvoiceCreatePageState extends ConsumerState<InvoiceCreatePage> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(label, style: style ?? const TextStyle(color: Colors.grey)),
-          Text(value,
-              style: style ?? const TextStyle(fontWeight: FontWeight.w600)),
+          Text(
+            value,
+            style: style ?? const TextStyle(fontWeight: FontWeight.w600),
+          ),
         ],
       ),
     );

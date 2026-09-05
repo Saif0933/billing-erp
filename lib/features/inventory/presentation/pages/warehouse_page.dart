@@ -12,7 +12,6 @@ import '../../../../shared/widgets/app_input_fields.dart';
 import '../../../../shared/widgets/app_table.dart';
 import '../../../../shared/widgets/feedback.dart';
 import '../../../dashboard/presentation/providers/billing_repository.dart';
-import '../../../subscription/domain/entities/subscription_models.dart';
 import '../../../subscription/domain/services/feature_access_service.dart';
 
 class WarehousePage extends ConsumerStatefulWidget {
@@ -65,7 +64,11 @@ class _WarehousePageState extends ConsumerState<WarehousePage> {
       context: context,
       builder: (ctx) {
         return AlertDialog(
-          title: Text(warehouse == null ? 'Add Warehouse Location' : 'Edit Warehouse Details'),
+          title: Text(
+            warehouse == null
+                ? 'Add Warehouse Location'
+                : 'Edit Warehouse Details',
+          ),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -104,7 +107,11 @@ class _WarehousePageState extends ConsumerState<WarehousePage> {
                     _codeController.text.isEmpty ||
                     _addressController.text.isEmpty ||
                     _contactController.text.isEmpty) {
-                  AppFeedback.showSnackbar(context, message: 'Please fill in all fields!', isError: true);
+                  AppFeedback.showSnackbar(
+                    context,
+                    message: 'Please fill in all fields!',
+                    isError: true,
+                  );
                   return;
                 }
 
@@ -116,7 +123,9 @@ class _WarehousePageState extends ConsumerState<WarehousePage> {
                     address: _addressController.text,
                     contact: _contactController.text,
                   );
-                  await ref.read(billingRepositoryProvider.notifier).addWarehouse(newW);
+                  await ref
+                      .read(billingRepositoryProvider.notifier)
+                      .addWarehouse(newW);
                 } else {
                   final editW = warehouse.copyWith(
                     name: _nameController.text,
@@ -124,12 +133,17 @@ class _WarehousePageState extends ConsumerState<WarehousePage> {
                     address: _addressController.text,
                     contact: _contactController.text,
                   );
-                  await ref.read(billingRepositoryProvider.notifier).updateWarehouse(editW);
+                  await ref
+                      .read(billingRepositoryProvider.notifier)
+                      .updateWarehouse(editW);
                 }
 
                 if (mounted) {
                   Navigator.pop(ctx);
-                  AppFeedback.showSnackbar(context, message: 'Warehouse configuration saved successfully!');
+                  AppFeedback.showSnackbar(
+                    context,
+                    message: 'Warehouse configuration saved successfully!',
+                  );
                 }
               },
             ),
@@ -141,12 +155,20 @@ class _WarehousePageState extends ConsumerState<WarehousePage> {
 
   void _addTransferItem() {
     if (_selectedProduct == null) {
-      AppFeedback.showSnackbar(context, message: 'Please select a product!', isError: true);
+      AppFeedback.showSnackbar(
+        context,
+        message: 'Please select a product!',
+        isError: true,
+      );
       return;
     }
     final double qty = double.tryParse(_qtyController.text) ?? 0.0;
     if (qty <= 0) {
-      AppFeedback.showSnackbar(context, message: 'Quantity must be positive!', isError: true);
+      AppFeedback.showSnackbar(
+        context,
+        message: 'Quantity must be positive!',
+        isError: true,
+      );
       return;
     }
 
@@ -164,15 +186,27 @@ class _WarehousePageState extends ConsumerState<WarehousePage> {
 
   void _submitTransfer() async {
     if (_srcWhId == _destWhId) {
-      AppFeedback.showSnackbar(context, message: 'Source and Destination Warehouses must be different!', isError: true);
+      AppFeedback.showSnackbar(
+        context,
+        message: 'Source and Destination Warehouses must be different!',
+        isError: true,
+      );
       return;
     }
     if (_transferItems.isEmpty) {
-      AppFeedback.showSnackbar(context, message: 'No items added to transfer list!', isError: true);
+      AppFeedback.showSnackbar(
+        context,
+        message: 'No items added to transfer list!',
+        isError: true,
+      );
       return;
     }
     if (_refController.text.isEmpty) {
-      AppFeedback.showSnackbar(context, message: 'Please enter a reference number!', isError: true);
+      AppFeedback.showSnackbar(
+        context,
+        message: 'Please enter a reference number!',
+        isError: true,
+      );
       return;
     }
 
@@ -195,7 +229,10 @@ class _WarehousePageState extends ConsumerState<WarehousePage> {
         _refController.clear();
         _notesController.clear();
       });
-      AppFeedback.showSnackbar(context, message: 'Stock transfer confirmed and inventory mutated!');
+      AppFeedback.showSnackbar(
+        context,
+        message: 'Stock transfer confirmed and inventory mutated!',
+      );
     }
   }
 
@@ -215,8 +252,13 @@ class _WarehousePageState extends ConsumerState<WarehousePage> {
                 children: [
                   const Icon(Icons.lock, size: 48, color: AppColors.warning),
                   const SizedBox(height: AppSpacing.md),
-                  Text('Multi-Warehouse Locked', style: AppTypography.titleLarge),
-                  const Text('Upgrade to Premium or Enterprise plan to enable multi-location tracking and warehouse stock transfers.'),
+                  Text(
+                    'Multi-Warehouse Locked',
+                    style: AppTypography.titleLarge,
+                  ),
+                  const Text(
+                    'Upgrade to Premium or Enterprise plan to enable multi-location tracking and warehouse stock transfers.',
+                  ),
                   const SizedBox(height: AppSpacing.lg),
                   AppButton(
                     label: 'Upgrade Subscription Now',
@@ -254,7 +296,12 @@ class _WarehousePageState extends ConsumerState<WarehousePage> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text('Configured Warehouses', style: AppTypography.titleMedium.copyWith(fontWeight: FontWeight.bold)),
+                      Text(
+                        'Configured Warehouses',
+                        style: AppTypography.titleMedium.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                       AppButton(
                         label: 'Configure New Godown',
                         icon: Icons.add,
@@ -271,7 +318,10 @@ class _WarehousePageState extends ConsumerState<WarehousePage> {
                       columns: [
                         TableColumnSpec<Warehouse>(
                           label: 'Code',
-                          cellBuilder: (w) => Text(w.code, style: const TextStyle(fontWeight: FontWeight.bold)),
+                          cellBuilder: (w) => Text(
+                            w.code,
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
                         ),
                         TableColumnSpec<Warehouse>(
                           label: 'Name',
@@ -293,7 +343,8 @@ class _WarehousePageState extends ConsumerState<WarehousePage> {
                             children: [
                               IconButton(
                                 icon: const Icon(Icons.edit_outlined),
-                                onPressed: () => _showAddWarehouseDialog(warehouse: w),
+                                onPressed: () =>
+                                    _showAddWarehouseDialog(warehouse: w),
                               ),
                             ],
                           ),
@@ -318,13 +369,21 @@ class _WarehousePageState extends ConsumerState<WarehousePage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          Text('Transfer Configurations', style: AppTypography.titleMedium.copyWith(fontWeight: FontWeight.bold)),
+                          Text(
+                            'Transfer Configurations',
+                            style: AppTypography.titleMedium.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                           const Divider(),
                           AppDropdownField<String>(
                             label: 'Source Warehouse *',
                             value: _srcWhId,
                             items: billingState.warehouses.map((wh) {
-                              return DropdownMenuItem(value: wh.id, child: Text(wh.name));
+                              return DropdownMenuItem(
+                                value: wh.id,
+                                child: Text(wh.name),
+                              );
                             }).toList(),
                             onChanged: (val) {
                               if (val != null) setState(() => _srcWhId = val);
@@ -335,7 +394,10 @@ class _WarehousePageState extends ConsumerState<WarehousePage> {
                             label: 'Destination Warehouse *',
                             value: _destWhId,
                             items: billingState.warehouses.map((wh) {
-                              return DropdownMenuItem(value: wh.id, child: Text(wh.name));
+                              return DropdownMenuItem(
+                                value: wh.id,
+                                child: Text(wh.name),
+                              );
                             }).toList(),
                             onChanged: (val) {
                               if (val != null) setState(() => _destWhId = val);
@@ -351,7 +413,8 @@ class _WarehousePageState extends ConsumerState<WarehousePage> {
                           AppTextField(
                             label: 'Notes / Remarks',
                             controller: _notesController,
-                            hintText: 'e.g. Stock replenishment for retail front',
+                            hintText:
+                                'e.g. Stock replenishment for retail front',
                           ),
                           const SizedBox(height: AppSpacing.lg),
                           AppButton(
@@ -371,7 +434,12 @@ class _WarehousePageState extends ConsumerState<WarehousePage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          Text('Add Items to Transfer', style: AppTypography.titleMedium.copyWith(fontWeight: FontWeight.bold)),
+                          Text(
+                            'Add Items to Transfer',
+                            style: AppTypography.titleMedium.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                           const Divider(),
                           Row(
                             children: [
@@ -381,10 +449,17 @@ class _WarehousePageState extends ConsumerState<WarehousePage> {
                                   label: 'Select Product Item *',
                                   value: _selectedProduct,
                                   items: billingState.products.map((p) {
-                                    final stock = p.warehouseStocks[_srcWhId] ?? 0.0;
-                                    return DropdownMenuItem(value: p, child: Text('${p.name} (Avail: ${stock.toInt()})'));
+                                    final stock =
+                                        p.warehouseStocks[_srcWhId] ?? 0.0;
+                                    return DropdownMenuItem(
+                                      value: p,
+                                      child: Text(
+                                        '${p.name} (Avail: ${stock.toInt()})',
+                                      ),
+                                    );
                                   }).toList(),
-                                  onChanged: (p) => setState(() => _selectedProduct = p),
+                                  onChanged: (p) =>
+                                      setState(() => _selectedProduct = p),
                                 ),
                               ),
                               const SizedBox(width: 8),
@@ -407,19 +482,29 @@ class _WarehousePageState extends ConsumerState<WarehousePage> {
                             ],
                           ),
                           const SizedBox(height: AppSpacing.lg),
-                          Text('Transfer Items List', style: AppTypography.bodyMedium.copyWith(fontWeight: FontWeight.bold)),
+                          Text(
+                            'Transfer Items List',
+                            style: AppTypography.bodyMedium.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                           const SizedBox(height: AppSpacing.sm),
                           if (_transferItems.isEmpty)
                             const SizedBox(
                               height: 100,
-                              child: Center(child: Text('No items added. Select product and click Add.')),
+                              child: Center(
+                                child: Text(
+                                  'No items added. Select product and click Add.',
+                                ),
+                              ),
                             )
                           else
                             ListView.separated(
                               shrinkWrap: true,
                               physics: const NeverScrollableScrollPhysics(),
                               itemCount: _transferItems.length,
-                              separatorBuilder: (_, __) => const Divider(height: 1),
+                              separatorBuilder: (_, __) =>
+                                  const Divider(height: 1),
                               itemBuilder: (context, idx) {
                                 final item = _transferItems[idx];
                                 return ListTile(
@@ -428,12 +513,22 @@ class _WarehousePageState extends ConsumerState<WarehousePage> {
                                   trailing: Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      Text('${item.quantity.toInt()} units', style: const TextStyle(fontWeight: FontWeight.bold)),
+                                      Text(
+                                        '${item.quantity.toInt()} units',
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
                                       IconButton(
-                                        icon: const Icon(Icons.remove_circle_outline, color: Colors.red),
+                                        icon: const Icon(
+                                          Icons.remove_circle_outline,
+                                          color: Colors.red,
+                                        ),
                                         onPressed: () {
                                           setState(() {
-                                            _transferItems = List.from(_transferItems)..removeAt(idx);
+                                            _transferItems = List.from(
+                                              _transferItems,
+                                            )..removeAt(idx);
                                           });
                                         },
                                       ),
@@ -456,7 +551,12 @@ class _WarehousePageState extends ConsumerState<WarehousePage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Text('Warehouse Stock Transfer History', style: AppTypography.titleMedium.copyWith(fontWeight: FontWeight.bold)),
+                  Text(
+                    'Warehouse Stock Transfer History',
+                    style: AppTypography.titleMedium.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                   const SizedBox(height: AppSpacing.md),
                   AppCard(
                     padding: EdgeInsets.zero,
@@ -466,23 +566,34 @@ class _WarehousePageState extends ConsumerState<WarehousePage> {
                       columns: [
                         TableColumnSpec<StockTransfer>(
                           label: 'Transfer Date',
-                          cellBuilder: (st) => Text('${st.transferDate.day}/${st.transferDate.month}/${st.transferDate.year}'),
+                          cellBuilder: (st) => Text(
+                            '${st.transferDate.day}/${st.transferDate.month}/${st.transferDate.year}',
+                          ),
                         ),
                         TableColumnSpec<StockTransfer>(
                           label: 'Ref Challan',
-                          cellBuilder: (st) => Text(st.referenceNumber, style: const TextStyle(fontWeight: FontWeight.bold)),
+                          cellBuilder: (st) => Text(
+                            st.referenceNumber,
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
                         ),
                         TableColumnSpec<StockTransfer>(
                           label: 'From Location',
                           cellBuilder: (st) {
-                            final name = billingState.warehouses.firstWhere((w) => w.id == st.sourceWarehouseId).name;
+                            final name = billingState.warehouses
+                                .firstWhere((w) => w.id == st.sourceWarehouseId)
+                                .name;
                             return Text(name);
                           },
                         ),
                         TableColumnSpec<StockTransfer>(
                           label: 'To Location',
                           cellBuilder: (st) {
-                            final name = billingState.warehouses.firstWhere((w) => w.id == st.destinationWarehouseId).name;
+                            final name = billingState.warehouses
+                                .firstWhere(
+                                  (w) => w.id == st.destinationWarehouseId,
+                                )
+                                .name;
                             return Text(name);
                           },
                         ),
@@ -490,7 +601,10 @@ class _WarehousePageState extends ConsumerState<WarehousePage> {
                           label: 'Status',
                           cellBuilder: (st) => Text(
                             st.status.displayName,
-                            style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.green),
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.green,
+                            ),
                           ),
                         ),
                         TableColumnSpec<StockTransfer>(

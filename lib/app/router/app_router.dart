@@ -66,10 +66,10 @@ import '../../features/accounting/presentation/pages/chart_of_accounts_page.dart
 import '../../features/accounting/presentation/pages/journal_entries_page.dart';
 import '../../features/accounting/presentation/pages/financial_reports_page.dart';
 import '../../features/accounting/presentation/pages/bank_management_page.dart';
-import '../../features/manufacturing/presentation/pages/bom_page.dart';
-import '../../features/manufacturing/presentation/pages/production_orders_page.dart';
-import '../../features/manufacturing/presentation/pages/job_work_page.dart';
-import '../../features/manufacturing/presentation/pages/manufacturing_reports_page.dart';
+// import '../../features/manufacturing/presentation/pages/bom_page.dart';
+// import '../../features/manufacturing/presentation/pages/production_orders_page.dart';
+// import '../../features/manufacturing/presentation/pages/job_work_page.dart';
+// import '../../features/manufacturing/presentation/pages/manufacturing_reports_page.dart';
 import '../../features/gstIn/presentation/pages/gst_portal_page.dart';
 import '../../features/platform-admin/presentation/pages/platform_admin_login_page.dart';
 import '../../features/platform-admin/presentation/pages/platform_admin_shell_page.dart';
@@ -411,6 +411,7 @@ final routerProvider = Provider<GoRouter>((ref) {
             builder: (context, state) => const BankManagementPage(),
           ),
 
+          /*
           // Phase 3: Manufacturing Routes
           GoRoute(
             path: '/manufacturing/bom',
@@ -428,6 +429,7 @@ final routerProvider = Provider<GoRouter>((ref) {
             path: '/manufacturing/reports',
             builder: (context, state) => const ManufacturingReportsPage(),
           ),
+          */
 
           // Placeholder / Future scope
           ...['gst'].map((path) {

@@ -76,8 +76,11 @@ class _PurchaseCreatePageState extends ConsumerState<PurchaseCreatePage> {
 
   void _addItem() {
     if (_selectedProduct == null) {
-      AppFeedback.showSnackbar(context,
-          message: 'Please select a product first!', isError: true);
+      AppFeedback.showSnackbar(
+        context,
+        message: 'Please select a product first!',
+        isError: true,
+      );
       return;
     }
 
@@ -87,7 +90,6 @@ class _PurchaseCreatePageState extends ConsumerState<PurchaseCreatePage> {
 
     final double grossAmount = qty * rate;
     final double discAmt = grossAmount * (disc / 100.0);
-    final double taxable = grossAmount - discAmt;
 
     final businessStateCode =
         ref.read(businessProvider).activeBusiness?.stateCode ?? '27';
@@ -134,20 +136,28 @@ class _PurchaseCreatePageState extends ConsumerState<PurchaseCreatePage> {
 
   void _savePurchase(PurchaseStatus status) async {
     if (_selectedSupplier == null) {
-      AppFeedback.showSnackbar(context,
-          message: 'Please select a supplier!', isError: true);
+      AppFeedback.showSnackbar(
+        context,
+        message: 'Please select a supplier!',
+        isError: true,
+      );
       return;
     }
 
     if (_items.isEmpty) {
-      AppFeedback.showSnackbar(context,
-          message: 'Please add at least one item!', isError: true);
+      AppFeedback.showSnackbar(
+        context,
+        message: 'Please add at least one item!',
+        isError: true,
+      );
       return;
     }
 
     if (_formKey.currentState!.validate()) {
-      final double subTotal =
-          _items.fold(0, (sum, item) => sum + item.taxableValue);
+      final double subTotal = _items.fold(
+        0,
+        (sum, item) => sum + item.taxableValue,
+      );
       final double cgst = _items.fold(0, (sum, item) => sum + item.cgst);
       final double sgst = _items.fold(0, (sum, item) => sum + item.sgst);
       final double igst = _items.fold(0, (sum, item) => sum + item.igst);
@@ -160,8 +170,9 @@ class _PurchaseCreatePageState extends ConsumerState<PurchaseCreatePage> {
       final double totalTax = cgst + sgst + igst + cess;
       final double grossGrand = subTotal + totalTax + freight + other;
       final double roundedGrand = grossGrand.roundToDouble();
-      final double roundOff =
-          double.parse((roundedGrand - grossGrand).toStringAsFixed(2));
+      final double roundOff = double.parse(
+        (roundedGrand - grossGrand).toStringAsFixed(2),
+      );
 
       final purchase = Purchase(
         id: 'pur_${DateTime.now().millisecondsSinceEpoch}',
@@ -192,8 +203,10 @@ class _PurchaseCreatePageState extends ConsumerState<PurchaseCreatePage> {
       await ref.read(billingRepositoryProvider.notifier).addPurchase(purchase);
 
       if (mounted) {
-        AppFeedback.showSnackbar(context,
-            message: 'Purchase bill recorded successfully!');
+        AppFeedback.showSnackbar(
+          context,
+          message: 'Purchase bill recorded successfully!',
+        );
         context.pop();
       }
     }
@@ -203,8 +216,10 @@ class _PurchaseCreatePageState extends ConsumerState<PurchaseCreatePage> {
   Widget build(BuildContext context) {
     final billingState = ref.watch(billingRepositoryProvider);
 
-    final double subTotal =
-        _items.fold(0, (sum, item) => sum + item.taxableValue);
+    final double subTotal = _items.fold(
+      0,
+      (sum, item) => sum + item.taxableValue,
+    );
     final double cgst = _items.fold(0, (sum, item) => sum + item.cgst);
     final double sgst = _items.fold(0, (sum, item) => sum + item.sgst);
     final double igst = _items.fold(0, (sum, item) => sum + item.igst);
@@ -222,7 +237,9 @@ class _PurchaseCreatePageState extends ConsumerState<PurchaseCreatePage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(_isDebitNote ? 'Record Debit Note' : 'Record Purchase Bill'),
+        title: Text(
+          _isDebitNote ? 'Record Debit Note' : 'Record Purchase Bill',
+        ),
         elevation: 0.5,
       ),
       body: SingleChildScrollView(
@@ -241,7 +258,7 @@ class _PurchaseCreatePageState extends ConsumerState<PurchaseCreatePage> {
                 breadcrumbs: [
                   'Dashboard',
                   'Purchase',
-                  _isDebitNote ? 'Debit Note' : 'New Bill'
+                  _isDebitNote ? 'Debit Note' : 'New Bill',
                 ],
               ),
               const SizedBox(height: 12),
@@ -250,7 +267,9 @@ class _PurchaseCreatePageState extends ConsumerState<PurchaseCreatePage> {
               Container(
                 padding: const EdgeInsets.all(4),
                 decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF1E1E1E) : Colors.grey.shade100,
+                  color: isDark
+                      ? const Color(0xFF1E1E1E)
+                      : Colors.grey.shade100,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Row(
@@ -268,7 +287,9 @@ class _PurchaseCreatePageState extends ConsumerState<PurchaseCreatePage> {
                           padding: const EdgeInsets.symmetric(vertical: 10),
                           decoration: BoxDecoration(
                             color: !_isDebitNote
-                                ? (isDark ? const Color(0xFF2E2E2E) : Colors.white)
+                                ? (isDark
+                                      ? const Color(0xFF2E2E2E)
+                                      : Colors.white)
                                 : Colors.transparent,
                             borderRadius: BorderRadius.circular(10),
                             boxShadow: !_isDebitNote
@@ -277,7 +298,7 @@ class _PurchaseCreatePageState extends ConsumerState<PurchaseCreatePage> {
                                       color: Colors.black.withOpacity(0.04),
                                       blurRadius: 4,
                                       offset: const Offset(0, 2),
-                                    )
+                                    ),
                                   ]
                                 : null,
                           ),
@@ -307,7 +328,9 @@ class _PurchaseCreatePageState extends ConsumerState<PurchaseCreatePage> {
                           padding: const EdgeInsets.symmetric(vertical: 10),
                           decoration: BoxDecoration(
                             color: _isDebitNote
-                                ? (isDark ? const Color(0xFF2E2E2E) : Colors.white)
+                                ? (isDark
+                                      ? const Color(0xFF2E2E2E)
+                                      : Colors.white)
                                 : Colors.transparent,
                             borderRadius: BorderRadius.circular(10),
                             boxShadow: _isDebitNote
@@ -316,7 +339,7 @@ class _PurchaseCreatePageState extends ConsumerState<PurchaseCreatePage> {
                                       color: Colors.black.withOpacity(0.04),
                                       blurRadius: 4,
                                       offset: const Offset(0, 2),
-                                    )
+                                    ),
                                   ]
                                 : null,
                           ),
@@ -353,20 +376,26 @@ class _PurchaseCreatePageState extends ConsumerState<PurchaseCreatePage> {
                         Container(
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: isDark ? AppColors.surfaceDark : Colors.white,
+                            color: isDark
+                                ? AppColors.surfaceDark
+                                : Colors.white,
                             borderRadius: BorderRadius.circular(16),
                             border: Border.all(
-                                color: isDark
-                                    ? AppColors.borderDark
-                                    : Colors.grey.shade100),
+                              color: isDark
+                                  ? AppColors.borderDark
+                                  : Colors.grey.shade100,
+                            ),
                           ),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Row(
                                 children: const [
-                                  Icon(Icons.local_shipping_outlined,
-                                      color: Color(0xFF2E7D32), size: 20),
+                                  Icon(
+                                    Icons.local_shipping_outlined,
+                                    color: Color(0xFF2E7D32),
+                                    size: 20,
+                                  ),
                                   SizedBox(width: 8),
                                   Text(
                                     'Supplier Parameters',
@@ -386,7 +415,9 @@ class _PurchaseCreatePageState extends ConsumerState<PurchaseCreatePage> {
                                       value: _selectedSupplier,
                                       items: billingState.suppliers.map((s) {
                                         return DropdownMenuItem(
-                                            value: s, child: Text(s.name));
+                                          value: s,
+                                          child: Text(s.name),
+                                        );
                                       }).toList(),
                                       onChanged: _onSupplierSelected,
                                     ),
@@ -394,8 +425,10 @@ class _PurchaseCreatePageState extends ConsumerState<PurchaseCreatePage> {
                                   Expanded(
                                     child: AppTextField(
                                       label: 'Supplier Invoice Number *',
-                                      controller: _supplierInvoiceNumberController,
-                                      validator: (val) => val == null || val.isEmpty
+                                      controller:
+                                          _supplierInvoiceNumberController,
+                                      validator: (val) =>
+                                          val == null || val.isEmpty
                                           ? 'Supplier invoice reference is required'
                                           : null,
                                     ),
@@ -410,16 +443,23 @@ class _PurchaseCreatePageState extends ConsumerState<PurchaseCreatePage> {
                                       ? null
                                       : _originalPurchaseId,
                                   items: billingState.purchases
-                                      .where((p) =>
-                                          p.supplierId == _selectedSupplier?.id &&
-                                          p.status != PurchaseStatus.cancelled &&
-                                          !p.isDebitNote)
+                                      .where(
+                                        (p) =>
+                                            p.supplierId ==
+                                                _selectedSupplier?.id &&
+                                            p.status !=
+                                                PurchaseStatus.cancelled &&
+                                            !p.isDebitNote,
+                                      )
                                       .map((p) {
-                                    return DropdownMenuItem(
-                                        value: p.id,
-                                        child: Text(
-                                            '${p.purchaseNumber} (₹${p.grandTotal})'));
-                                  }).toList(),
+                                        return DropdownMenuItem(
+                                          value: p.id,
+                                          child: Text(
+                                            '${p.purchaseNumber} (₹${p.grandTotal})',
+                                          ),
+                                        );
+                                      })
+                                      .toList(),
                                   onChanged: (val) {
                                     setState(() {
                                       _originalPurchaseId = val ?? '';
@@ -437,20 +477,26 @@ class _PurchaseCreatePageState extends ConsumerState<PurchaseCreatePage> {
                         Container(
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: isDark ? AppColors.surfaceDark : Colors.white,
+                            color: isDark
+                                ? AppColors.surfaceDark
+                                : Colors.white,
                             borderRadius: BorderRadius.circular(16),
                             border: Border.all(
-                                color: isDark
-                                    ? AppColors.borderDark
-                                    : Colors.grey.shade100),
+                              color: isDark
+                                  ? AppColors.borderDark
+                                  : Colors.grey.shade100,
+                            ),
                           ),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Row(
                                 children: const [
-                                  Icon(Icons.add_shopping_cart,
-                                      color: Color(0xFF2E7D32), size: 20),
+                                  Icon(
+                                    Icons.add_shopping_cart,
+                                    color: Color(0xFF2E7D32),
+                                    size: 20,
+                                  ),
                                   SizedBox(width: 8),
                                   Text(
                                     'Add Product Item',
@@ -467,15 +513,16 @@ class _PurchaseCreatePageState extends ConsumerState<PurchaseCreatePage> {
                                 value: _selectedProduct,
                                 items: billingState.products.map((p) {
                                   return DropdownMenuItem(
-                                      value: p,
-                                      child: Text('${p.name} (Code: ${p.code})'));
+                                    value: p,
+                                    child: Text('${p.name} (Code: ${p.code})'),
+                                  );
                                 }).toList(),
                                 onChanged: (prod) {
                                   setState(() {
                                     _selectedProduct = prod;
                                     if (prod != null) {
-                                      _rateController.text =
-                                          prod.purchasePrice.toString();
+                                      _rateController.text = prod.purchasePrice
+                                          .toString();
                                       _quantityController.text = '1';
                                     }
                                   });
@@ -511,13 +558,18 @@ class _PurchaseCreatePageState extends ConsumerState<PurchaseCreatePage> {
                                       icon: const Icon(Icons.add, size: 16),
                                       label: const Text('Add Item'),
                                       style: ElevatedButton.styleFrom(
-                                        backgroundColor: const Color(0xFF2E7D32),
+                                        backgroundColor: const Color(
+                                          0xFF2E7D32,
+                                        ),
                                         foregroundColor: Colors.white,
                                         padding: const EdgeInsets.symmetric(
-                                            horizontal: 16, vertical: 12),
+                                          horizontal: 16,
+                                          vertical: 12,
+                                        ),
                                         shape: RoundedRectangleBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(10),
+                                          borderRadius: BorderRadius.circular(
+                                            10,
+                                          ),
                                         ),
                                       ),
                                       onPressed: _addItem,
@@ -535,12 +587,15 @@ class _PurchaseCreatePageState extends ConsumerState<PurchaseCreatePage> {
                         Container(
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: isDark ? AppColors.surfaceDark : Colors.white,
+                            color: isDark
+                                ? AppColors.surfaceDark
+                                : Colors.white,
                             borderRadius: BorderRadius.circular(16),
                             border: Border.all(
-                                color: isDark
-                                    ? AppColors.borderDark
-                                    : Colors.grey.shade100),
+                              color: isDark
+                                  ? AppColors.borderDark
+                                  : Colors.grey.shade100,
+                            ),
                           ),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -548,7 +603,9 @@ class _PurchaseCreatePageState extends ConsumerState<PurchaseCreatePage> {
                               const Text(
                                 'Added Products List',
                                 style: TextStyle(
-                                    fontWeight: FontWeight.bold, fontSize: 15),
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 15,
+                                ),
                               ),
                               const SizedBox(height: 12),
                               AppTable<PurchaseItem>(
@@ -569,22 +626,25 @@ class _PurchaseCreatePageState extends ConsumerState<PurchaseCreatePage> {
                                               child: Text(
                                                 item.name,
                                                 style: const TextStyle(
-                                                    fontWeight: FontWeight.bold,
-                                                    fontSize: 14),
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 14,
+                                                ),
                                               ),
                                             ),
                                             IconButton(
                                               icon: const Icon(
-                                                  Icons.delete_outline,
-                                                  color: Colors.red,
-                                                  size: 18),
+                                                Icons.delete_outline,
+                                                color: Colors.red,
+                                                size: 18,
+                                              ),
                                               padding: EdgeInsets.zero,
                                               constraints:
                                                   const BoxConstraints(),
                                               onPressed: () {
                                                 setState(() {
                                                   _items.removeWhere(
-                                                      (it) => it.id == item.id);
+                                                    (it) => it.id == item.id,
+                                                  );
                                                 });
                                               },
                                             ),
@@ -596,10 +656,12 @@ class _PurchaseCreatePageState extends ConsumerState<PurchaseCreatePage> {
                                               MainAxisAlignment.spaceBetween,
                                           children: [
                                             Text(
-                                                '${item.quantity} ${item.unit} @ ₹${item.rate.toStringAsFixed(2)}'),
+                                              '${item.quantity} ${item.unit} @ ₹${item.rate.toStringAsFixed(2)}',
+                                            ),
                                             if (item.discountPercentage > 0)
                                               Text(
-                                                  'Disc: ${item.discountPercentage.toStringAsFixed(0)}%'),
+                                                'Disc: ${item.discountPercentage.toStringAsFixed(0)}%',
+                                              ),
                                           ],
                                         ),
                                         const SizedBox(height: AppSpacing.xs),
@@ -608,15 +670,19 @@ class _PurchaseCreatePageState extends ConsumerState<PurchaseCreatePage> {
                                               MainAxisAlignment.spaceBetween,
                                           children: [
                                             Text(
-                                                'Taxable: ₹${item.taxableValue.toStringAsFixed(2)}',
-                                                style: const TextStyle(
-                                                    color: Colors.grey,
-                                                    fontSize: 11)),
+                                              'Taxable: ₹${item.taxableValue.toStringAsFixed(2)}',
+                                              style: const TextStyle(
+                                                color: Colors.grey,
+                                                fontSize: 11,
+                                              ),
+                                            ),
                                             Text(
-                                                'GST: ${item.gstRate.toStringAsFixed(0)}% (₹${(item.cgst + item.sgst + item.igst).toStringAsFixed(2)})',
-                                                style: const TextStyle(
-                                                    color: Colors.grey,
-                                                    fontSize: 11)),
+                                              'GST: ${item.gstRate.toStringAsFixed(0)}% (₹${(item.cgst + item.sgst + item.igst).toStringAsFixed(2)})',
+                                              style: const TextStyle(
+                                                color: Colors.grey,
+                                                fontSize: 11,
+                                              ),
+                                            ),
                                           ],
                                         ),
                                         const Divider(),
@@ -624,17 +690,20 @@ class _PurchaseCreatePageState extends ConsumerState<PurchaseCreatePage> {
                                           mainAxisAlignment:
                                               MainAxisAlignment.spaceBetween,
                                           children: [
-                                            const Text('Total Item Amount:',
-                                                style: TextStyle(
-                                                    fontWeight:
-                                                        FontWeight.w600,
-                                                    fontSize: 13)),
+                                            const Text(
+                                              'Total Item Amount:',
+                                              style: TextStyle(
+                                                fontWeight: FontWeight.w600,
+                                                fontSize: 13,
+                                              ),
+                                            ),
                                             Text(
-                                                '₹${(item.taxableValue + item.cgst + item.sgst + item.igst).toStringAsFixed(2)}',
-                                                style: const TextStyle(
-                                                    fontWeight: FontWeight.bold,
-                                                    color:
-                                                        Color(0xFF2E7D32))),
+                                              '₹${(item.taxableValue + item.cgst + item.sgst + item.igst).toStringAsFixed(2)}',
+                                              style: const TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                color: Color(0xFF2E7D32),
+                                              ),
+                                            ),
                                           ],
                                         ),
                                       ],
@@ -645,9 +714,12 @@ class _PurchaseCreatePageState extends ConsumerState<PurchaseCreatePage> {
                                   TableColumnSpec<PurchaseItem>(
                                     label: 'Product Name',
                                     flex: 2,
-                                    cellBuilder: (item) => Text(item.name,
-                                        style: const TextStyle(
-                                            fontWeight: FontWeight.bold)),
+                                    cellBuilder: (item) => Text(
+                                      item.name,
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
                                   ),
                                   TableColumnSpec<PurchaseItem>(
                                     label: 'Qty',
@@ -665,35 +737,43 @@ class _PurchaseCreatePageState extends ConsumerState<PurchaseCreatePage> {
                                     label: 'Disc%',
                                     isNumeric: true,
                                     cellBuilder: (item) => Text(
-                                        '${item.discountPercentage.toStringAsFixed(0)}%'),
+                                      '${item.discountPercentage.toStringAsFixed(0)}%',
+                                    ),
                                   ),
                                   TableColumnSpec<PurchaseItem>(
                                     label: 'Taxable (₹)',
                                     isNumeric: true,
                                     cellBuilder: (item) => Text(
-                                        item.taxableValue.toStringAsFixed(2)),
+                                      item.taxableValue.toStringAsFixed(2),
+                                    ),
                                   ),
                                   TableColumnSpec<PurchaseItem>(
                                     label: 'GST',
                                     cellBuilder: (item) => Text(
-                                        '${item.gstRate.toStringAsFixed(0)}%'),
+                                      '${item.gstRate.toStringAsFixed(0)}%',
+                                    ),
                                   ),
                                   TableColumnSpec<PurchaseItem>(
                                     label: 'Total GST (₹)',
                                     isNumeric: true,
                                     cellBuilder: (item) => Text(
-                                        (item.cgst + item.sgst + item.igst)
-                                            .toStringAsFixed(2)),
+                                      (item.cgst + item.sgst + item.igst)
+                                          .toStringAsFixed(2),
+                                    ),
                                   ),
                                   TableColumnSpec<PurchaseItem>(
                                     label: 'Actions',
                                     cellBuilder: (item) => IconButton(
-                                      icon: const Icon(Icons.delete_outline,
-                                          color: Colors.red, size: 18),
+                                      icon: const Icon(
+                                        Icons.delete_outline,
+                                        color: Colors.red,
+                                        size: 18,
+                                      ),
                                       onPressed: () {
                                         setState(() {
                                           _items.removeWhere(
-                                              (it) => it.id == item.id);
+                                            (it) => it.id == item.id,
+                                          );
                                         });
                                       },
                                     ),
@@ -718,20 +798,26 @@ class _PurchaseCreatePageState extends ConsumerState<PurchaseCreatePage> {
                         Container(
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: isDark ? AppColors.surfaceDark : Colors.white,
+                            color: isDark
+                                ? AppColors.surfaceDark
+                                : Colors.white,
                             borderRadius: BorderRadius.circular(16),
                             border: Border.all(
-                                color: isDark
-                                    ? AppColors.borderDark
-                                    : Colors.grey.shade100),
+                              color: isDark
+                                  ? AppColors.borderDark
+                                  : Colors.grey.shade100,
+                            ),
                           ),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
                               Row(
                                 children: const [
-                                  Icon(Icons.feed_outlined,
-                                      color: Color(0xFF2E7D32), size: 20),
+                                  Icon(
+                                    Icons.feed_outlined,
+                                    color: Color(0xFF2E7D32),
+                                    size: 20,
+                                  ),
                                   SizedBox(width: 8),
                                   Text(
                                     'Document Parameters',
@@ -744,25 +830,31 @@ class _PurchaseCreatePageState extends ConsumerState<PurchaseCreatePage> {
                               ),
                               const Divider(height: 24),
                               AppTextField(
-                                  label: 'Purchase Ref Code *',
-                                  controller: _purchaseNumberController,
-                                  validator: (val) => val == null || val.isEmpty
-                                      ? 'Bill reference number is required'
-                                      : null),
+                                label: 'Purchase Ref Code *',
+                                controller: _purchaseNumberController,
+                                validator: (val) => val == null || val.isEmpty
+                                    ? 'Bill reference number is required'
+                                    : null,
+                              ),
                               const SizedBox(height: AppSpacing.md),
                               Row(
                                 mainAxisAlignment:
                                     MainAxisAlignment.spaceBetween,
                                 children: [
-                                  const Text('Purchase Date: ',
-                                      style: TextStyle(
-                                          fontWeight: FontWeight.bold)),
+                                  const Text(
+                                    'Purchase Date: ',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
                                   TextButton.icon(
                                     icon: const Icon(
-                                        Icons.calendar_month_outlined,
-                                        size: 18),
+                                      Icons.calendar_month_outlined,
+                                      size: 18,
+                                    ),
                                     label: Text(
-                                        '${_purchaseDate.day}/${_purchaseDate.month}/${_purchaseDate.year}'),
+                                      '${_purchaseDate.day}/${_purchaseDate.month}/${_purchaseDate.year}',
+                                    ),
                                     onPressed: () async {
                                       final selected = await showDatePicker(
                                         context: context,
@@ -789,20 +881,26 @@ class _PurchaseCreatePageState extends ConsumerState<PurchaseCreatePage> {
                         Container(
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: isDark ? AppColors.surfaceDark : Colors.white,
+                            color: isDark
+                                ? AppColors.surfaceDark
+                                : Colors.white,
                             borderRadius: BorderRadius.circular(16),
                             border: Border.all(
-                                color: isDark
-                                    ? AppColors.borderDark
-                                    : Colors.grey.shade100),
+                              color: isDark
+                                  ? AppColors.borderDark
+                                  : Colors.grey.shade100,
+                            ),
                           ),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
                               Row(
                                 children: const [
-                                  Icon(Icons.analytics_outlined,
-                                      color: Color(0xFF2E7D32), size: 20),
+                                  Icon(
+                                    Icons.analytics_outlined,
+                                    color: Color(0xFF2E7D32),
+                                    size: 20,
+                                  ),
                                   SizedBox(width: 8),
                                   Text(
                                     'Bill Breakdown',
@@ -814,24 +912,37 @@ class _PurchaseCreatePageState extends ConsumerState<PurchaseCreatePage> {
                                 ],
                               ),
                               const Divider(height: 24),
-                              _buildSummaryRow('Total Taxable Value:',
-                                  '₹${subTotal.toStringAsFixed(2)}'),
-                              if (cgst > 0)
-                                _buildSummaryRow('CGST Amount:',
-                                    '₹${cgst.toStringAsFixed(2)}'),
-                              if (sgst > 0)
-                                _buildSummaryRow('SGST Amount:',
-                                    '₹${sgst.toStringAsFixed(2)}'),
-                              if (igst > 0)
-                                _buildSummaryRow('IGST Amount:',
-                                    '₹${igst.toStringAsFixed(2)}'),
-                              if (cess > 0)
-                                _buildSummaryRow('Cess Amount:',
-                                    '₹${cess.toStringAsFixed(2)}'),
                               _buildSummaryRow(
-                                  'Total GST Tax:', '₹${totalTax.toStringAsFixed(2)}',
-                                  style: const TextStyle(
-                                      fontWeight: FontWeight.bold)),
+                                'Total Taxable Value:',
+                                '₹${subTotal.toStringAsFixed(2)}',
+                              ),
+                              if (cgst > 0)
+                                _buildSummaryRow(
+                                  'CGST Amount:',
+                                  '₹${cgst.toStringAsFixed(2)}',
+                                ),
+                              if (sgst > 0)
+                                _buildSummaryRow(
+                                  'SGST Amount:',
+                                  '₹${sgst.toStringAsFixed(2)}',
+                                ),
+                              if (igst > 0)
+                                _buildSummaryRow(
+                                  'IGST Amount:',
+                                  '₹${igst.toStringAsFixed(2)}',
+                                ),
+                              if (cess > 0)
+                                _buildSummaryRow(
+                                  'Cess Amount:',
+                                  '₹${cess.toStringAsFixed(2)}',
+                                ),
+                              _buildSummaryRow(
+                                'Total GST Tax:',
+                                '₹${totalTax.toStringAsFixed(2)}',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
                               const Divider(),
                               AppTextField(
                                 label: 'Freight Charges (₹)',
@@ -854,7 +965,7 @@ class _PurchaseCreatePageState extends ConsumerState<PurchaseCreatePage> {
                                   gradient: const LinearGradient(
                                     colors: [
                                       Color(0xFFE8F5E9),
-                                      Color(0xFFC8E6C9)
+                                      Color(0xFFC8E6C9),
                                     ],
                                     begin: Alignment.topLeft,
                                     end: Alignment.bottomRight,
@@ -894,12 +1005,15 @@ class _PurchaseCreatePageState extends ConsumerState<PurchaseCreatePage> {
                         Container(
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: isDark ? AppColors.surfaceDark : Colors.white,
+                            color: isDark
+                                ? AppColors.surfaceDark
+                                : Colors.white,
                             borderRadius: BorderRadius.circular(16),
                             border: Border.all(
-                                color: isDark
-                                    ? AppColors.borderDark
-                                    : Colors.grey.shade100),
+                              color: isDark
+                                  ? AppColors.borderDark
+                                  : Colors.grey.shade100,
+                            ),
                           ),
                           child: AppTextField(
                             label: 'Internal Notes / Audit Details',
@@ -915,20 +1029,23 @@ class _PurchaseCreatePageState extends ConsumerState<PurchaseCreatePage> {
                             Expanded(
                               child: OutlinedButton(
                                 style: OutlinedButton.styleFrom(
-                                  padding:
-                                      const EdgeInsets.symmetric(vertical: 14),
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 14,
+                                  ),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(10),
                                   ),
-                                  side:
-                                      const BorderSide(color: Colors.grey),
+                                  side: const BorderSide(color: Colors.grey),
                                 ),
                                 onPressed: () =>
                                     _savePurchase(PurchaseStatus.draft),
-                                child: const Text('Save Draft',
-                                    style: TextStyle(
-                                        color: Colors.grey,
-                                        fontWeight: FontWeight.bold)),
+                                child: const Text(
+                                  'Save Draft',
+                                  style: TextStyle(
+                                    color: Colors.grey,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
                               ),
                             ),
                             const SizedBox(width: 12),
@@ -940,8 +1057,9 @@ class _PurchaseCreatePageState extends ConsumerState<PurchaseCreatePage> {
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: const Color(0xFF2E7D32),
                                   foregroundColor: Colors.white,
-                                  padding:
-                                      const EdgeInsets.symmetric(vertical: 14),
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 14,
+                                  ),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(10),
                                   ),
@@ -972,8 +1090,10 @@ class _PurchaseCreatePageState extends ConsumerState<PurchaseCreatePage> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(label, style: style ?? const TextStyle(color: Colors.grey)),
-          Text(value,
-              style: style ?? const TextStyle(fontWeight: FontWeight.w600)),
+          Text(
+            value,
+            style: style ?? const TextStyle(fontWeight: FontWeight.w600),
+          ),
         ],
       ),
     );

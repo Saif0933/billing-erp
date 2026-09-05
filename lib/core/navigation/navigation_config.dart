@@ -208,6 +208,7 @@ class NavigationConfig {
         ),
       ],
     ),
+    /*
     NavigationItem(
       id: 'manufacturing_group',
       title: 'Manufacturing & BOM',
@@ -244,6 +245,7 @@ class NavigationConfig {
         ),
       ],
     ),
+    */
     NavigationItem(
       id: 'gst',
       title: 'GST Portal GSTIN',
