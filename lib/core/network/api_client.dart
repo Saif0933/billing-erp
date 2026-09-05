@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -12,7 +13,7 @@ class ApiClient {
   final Dio _dio;
   final SecureStorageService _secureStorage;
   final StorageService _storage;
-  bool _isDetectingUrl = false;
+  Future<String>? _activeDetectFuture;
 
   ApiClient(this._secureStorage, this._storage, {Dio? dio})
     : _dio = dio ?? Dio() {
@@ -43,21 +44,22 @@ class ApiClient {
 
   /// Ordered list of candidate backend URLs to test
   static List<String> get candidateBaseUrls {
+    final envUrl = dotenv.isInitialized ? dotenv.maybeGet('API_BASE_URL') : null;
     if (kIsWeb) {
-      final envUrl = dotenv.isInitialized ? dotenv.maybeGet('API_BASE_URL') : null;
       return [
         if (envUrl != null && envUrl.isNotEmpty) envUrl,
         'http://localhost:5000',
+        'http://127.0.0.1:5000',
       ];
     }
 
-    final envUrl = dotenv.isInitialized ? dotenv.maybeGet('API_BASE_URL') : null;
     return {
       if (envUrl != null && envUrl.isNotEmpty && !envUrl.contains('taxbunny.com')) envUrl,
-      'http://127.0.0.1:5000',      // USB with adb reverse
+      'http://127.0.0.1:5000',      // Physical phone over USB (adb reverse)
+      'http://10.0.2.2:5000',        // Android Emulator loopback to host
+      'http://localhost:5000',      // Localhost
       'http://192.168.31.106:5000',  // Wi-Fi LAN
-      'http://10.0.2.2:5000',        // Android Emulator
-      'http://localhost:5000',
+      'http://192.168.1.4:5000',     // Device subnet
     }.toList();
   }
 
@@ -87,48 +89,67 @@ class ApiClient {
     return 'http://127.0.0.1:5000';
   }
 
-  /// Automatically tests candidate server URLs and locks onto the first active one
-  Future<String> detectWorkingBaseUrl() async {
-    if (_isDetectingUrl) return _dio.options.baseUrl;
-    _isDetectingUrl = true;
-
-    try {
-      final candidates = candidateBaseUrls;
-      if (candidates.length <= 1) return _dio.options.baseUrl;
-
-      // Ping candidates in parallel with 1500ms timeout
-      final pingFutures = candidates.map((url) async {
-        try {
-          final pingDio = Dio(
-            BaseOptions(
-              baseUrl: url,
-              connectTimeout: const Duration(milliseconds: 1500),
-              receiveTimeout: const Duration(milliseconds: 1500),
-            ),
-          );
-          final res = await pingDio.get('/');
-          if (res.statusCode == 200) {
-            return url;
-          }
-        } catch (_) {}
-        return null;
-      }).toList();
-
-      for (final future in pingFutures) {
-        final working = await future;
-        if (working != null) {
-          if (_dio.options.baseUrl != working) {
-            debugPrint('🌐 [ApiClient] Detected active backend: $working (was ${_dio.options.baseUrl})');
-            _dio.options.baseUrl = working;
-          }
-          return working;
-        }
-      }
-    } finally {
-      _isDetectingUrl = false;
+  /// Automatically tests candidate server URLs in parallel and locks onto the first active one
+  Future<String> detectWorkingBaseUrl({bool force = false}) {
+    if (!force && _activeDetectFuture != null) {
+      return _activeDetectFuture!;
     }
+    _activeDetectFuture = _probeCandidates(candidateBaseUrls);
+    return _activeDetectFuture!;
+  }
 
-    return _dio.options.baseUrl;
+  Future<String> _probeCandidates(List<String> candidates) async {
+    try {
+      if (candidates.isEmpty) return _dio.options.baseUrl;
+
+      final completer = Completer<String>();
+      int pending = candidates.length;
+
+      for (final url in candidates) {
+        _pingUrl(url).then((working) {
+          if (working && !completer.isCompleted) {
+            completer.complete(url);
+          }
+        }).catchError((_) {
+          // Ignore individual ping failures
+        }).whenComplete(() {
+          pending--;
+          if (pending == 0 && !completer.isCompleted) {
+            completer.complete(_dio.options.baseUrl);
+          }
+        });
+      }
+
+      final workingUrl = await completer.future.timeout(
+        const Duration(milliseconds: 2500),
+        onTimeout: () => _dio.options.baseUrl,
+      );
+
+      if (_dio.options.baseUrl != workingUrl) {
+        debugPrint('🌐 [ApiClient] Locked onto active backend: $workingUrl (was ${_dio.options.baseUrl})');
+        _dio.options.baseUrl = workingUrl;
+      }
+
+      return workingUrl;
+    } finally {
+      _activeDetectFuture = null;
+    }
+  }
+
+  Future<bool> _pingUrl(String url) async {
+    try {
+      final pingDio = Dio(
+        BaseOptions(
+          baseUrl: url,
+          connectTimeout: const Duration(milliseconds: 1200),
+          receiveTimeout: const Duration(milliseconds: 1200),
+        ),
+      );
+      final res = await pingDio.get('/');
+      return res.statusCode == 200;
+    } catch (_) {
+      return false;
+    }
   }
 
   bool _isConnectionError(DioException e) {
@@ -155,19 +176,16 @@ class ApiClient {
       );
     } on DioException catch (e) {
       if (!kIsWeb && _isConnectionError(e)) {
-        final oldUrl = _dio.options.baseUrl;
-        final newUrl = await detectWorkingBaseUrl();
-        if (newUrl != oldUrl) {
-          try {
-            return await _dio.get<T>(
-              path,
-              queryParameters: queryParameters,
-              options: options,
-              cancelToken: cancelToken,
-            );
-          } catch (retryErr) {
-            throw ErrorHandler.handle(retryErr);
-          }
+        await detectWorkingBaseUrl(force: true);
+        try {
+          return await _dio.get<T>(
+            path,
+            queryParameters: queryParameters,
+            options: options,
+            cancelToken: cancelToken,
+          );
+        } catch (retryErr) {
+          throw ErrorHandler.handle(retryErr);
         }
       }
       throw ErrorHandler.handle(e);
@@ -193,20 +211,17 @@ class ApiClient {
       );
     } on DioException catch (e) {
       if (!kIsWeb && _isConnectionError(e)) {
-        final oldUrl = _dio.options.baseUrl;
-        final newUrl = await detectWorkingBaseUrl();
-        if (newUrl != oldUrl) {
-          try {
-            return await _dio.post<T>(
-              path,
-              data: data,
-              queryParameters: queryParameters,
-              options: options,
-              cancelToken: cancelToken,
-            );
-          } catch (retryErr) {
-            throw ErrorHandler.handle(retryErr);
-          }
+        await detectWorkingBaseUrl(force: true);
+        try {
+          return await _dio.post<T>(
+            path,
+            data: data,
+            queryParameters: queryParameters,
+            options: options,
+            cancelToken: cancelToken,
+          );
+        } catch (retryErr) {
+          throw ErrorHandler.handle(retryErr);
         }
       }
       throw ErrorHandler.handle(e);
@@ -232,20 +247,17 @@ class ApiClient {
       );
     } on DioException catch (e) {
       if (!kIsWeb && _isConnectionError(e)) {
-        final oldUrl = _dio.options.baseUrl;
-        final newUrl = await detectWorkingBaseUrl();
-        if (newUrl != oldUrl) {
-          try {
-            return await _dio.put<T>(
-              path,
-              data: data,
-              queryParameters: queryParameters,
-              options: options,
-              cancelToken: cancelToken,
-            );
-          } catch (retryErr) {
-            throw ErrorHandler.handle(retryErr);
-          }
+        await detectWorkingBaseUrl(force: true);
+        try {
+          return await _dio.put<T>(
+            path,
+            data: data,
+            queryParameters: queryParameters,
+            options: options,
+            cancelToken: cancelToken,
+          );
+        } catch (retryErr) {
+          throw ErrorHandler.handle(retryErr);
         }
       }
       throw ErrorHandler.handle(e);
@@ -271,20 +283,17 @@ class ApiClient {
       );
     } on DioException catch (e) {
       if (!kIsWeb && _isConnectionError(e)) {
-        final oldUrl = _dio.options.baseUrl;
-        final newUrl = await detectWorkingBaseUrl();
-        if (newUrl != oldUrl) {
-          try {
-            return await _dio.patch<T>(
-              path,
-              data: data,
-              queryParameters: queryParameters,
-              options: options,
-              cancelToken: cancelToken,
-            );
-          } catch (retryErr) {
-            throw ErrorHandler.handle(retryErr);
-          }
+        await detectWorkingBaseUrl(force: true);
+        try {
+          return await _dio.patch<T>(
+            path,
+            data: data,
+            queryParameters: queryParameters,
+            options: options,
+            cancelToken: cancelToken,
+          );
+        } catch (retryErr) {
+          throw ErrorHandler.handle(retryErr);
         }
       }
       throw ErrorHandler.handle(e);
@@ -310,20 +319,17 @@ class ApiClient {
       );
     } on DioException catch (e) {
       if (!kIsWeb && _isConnectionError(e)) {
-        final oldUrl = _dio.options.baseUrl;
-        final newUrl = await detectWorkingBaseUrl();
-        if (newUrl != oldUrl) {
-          try {
-            return await _dio.delete<T>(
-              path,
-              data: data,
-              queryParameters: queryParameters,
-              options: options,
-              cancelToken: cancelToken,
-            );
-          } catch (retryErr) {
-            throw ErrorHandler.handle(retryErr);
-          }
+        await detectWorkingBaseUrl(force: true);
+        try {
+          return await _dio.delete<T>(
+            path,
+            data: data,
+            queryParameters: queryParameters,
+            options: options,
+            cancelToken: cancelToken,
+          );
+        } catch (retryErr) {
+          throw ErrorHandler.handle(retryErr);
         }
       }
       throw ErrorHandler.handle(e);
