@@ -12,6 +12,8 @@ import '../../../../shared/widgets/app_input_fields.dart';
 import '../../../../shared/widgets/feedback.dart';
 import '../../../dashboard/presentation/providers/billing_repository.dart';
 import '../../../subscription/domain/services/feature_access_service.dart';
+import '../providers/pos_provider.dart';
+import '../../data/models/pos_dto.dart';
 
 class POSPage extends ConsumerStatefulWidget {
   const POSPage({super.key});
@@ -31,6 +33,39 @@ class _POSPageState extends ConsumerState<POSPage> {
   List<InvoiceItem> _cartItems = [];
   double _cartDiscountPercent = 0.0;
   bool _showCartOnMobile = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(posNotifierProvider.notifier).refreshCatalog();
+      ref.read(posNotifierProvider.notifier).checkActiveSession();
+    });
+  }
+
+  Future<void> _onBarcodeScanned(String barcode) async {
+    final trimmed = barcode.trim();
+    if (trimmed.isEmpty) return;
+    final added =
+        await ref.read(posNotifierProvider.notifier).scanBarcodeAndAdd(trimmed);
+    if (added) {
+      _searchController.clear();
+      if (mounted) {
+        AppFeedback.showSnackbar(
+          context,
+          message: 'Product added to cart via Barcode Scanner!',
+        );
+      }
+    } else {
+      if (mounted) {
+        AppFeedback.showSnackbar(
+          context,
+          message: 'Barcode not found: $trimmed',
+          isError: true,
+        );
+      }
+    }
+  }
 
   @override
   void dispose() {
@@ -235,7 +270,7 @@ class _POSPageState extends ConsumerState<POSPage> {
     }
 
     final now = DateTime.now();
-    final invoice = Invoice(
+    Invoice invoice = Invoice(
       id: 'inv_pos_${now.millisecondsSinceEpoch}',
       invoiceNumber:
           'INV-POS-${now.year}-${now.month}-${now.day}-${DateTime.now().second}',
@@ -261,7 +296,54 @@ class _POSPageState extends ConsumerState<POSPage> {
       warehouseId: _selectedWarehouseId,
     );
 
-    // Save actual invoice to repository
+    PosThermalReceiptDto? receiptDto;
+
+    // Backend POS Checkout API with automatic stock deduction & ledger entry
+    try {
+      final payload = {
+        'customerId': _selectedCustomer!.id,
+        'customerName': _selectedCustomer!.name,
+        'warehouseId': _selectedWarehouseId,
+        'cartDiscountPercent': _cartDiscountPercent,
+        'cartDiscountAmount': _discountValue,
+        'subtotal': _subtotal,
+        'tax': _tax,
+        'roundOff': 0.0,
+        'grandTotal': _grandTotal,
+        'paymentMode': mode,
+        'tenderedCash': _grandTotal,
+        'changeDue': 0.0,
+        'notes': 'POS Fast Billing Sale',
+        'termsConditions': 'Goods once sold are not returnable.',
+        'items': _cartItems.map((item) {
+          return {
+            'productId': item.productId,
+            'name': item.name,
+            'hsnSac': item.hsnSac,
+            'quantity': item.quantity,
+            'unit': item.unit,
+            'rate': item.rate,
+            'discountPercentage': item.discountPercentage,
+            'discountAmount': item.discountAmount,
+            'taxableValue': item.taxableValue,
+            'gstRate': item.gstRate,
+            'cgst': item.cgst,
+            'sgst': item.sgst,
+            'igst': item.igst,
+            'cess': item.cess,
+            'warehouseId': _selectedWarehouseId,
+          };
+        }).toList(),
+      };
+
+      final res = await ref.read(posApiServiceProvider).checkout(payload);
+      invoice = res.invoice;
+      receiptDto = res.thermalReceipt;
+    } catch (_) {
+      // Graceful fallback to local repository state if offline
+    }
+
+    // Save invoice to repository so reports & dashboards update
     await ref.read(billingRepositoryProvider.notifier).addInvoice(invoice);
 
     if (mounted) {
@@ -270,11 +352,11 @@ class _POSPageState extends ConsumerState<POSPage> {
         _selectedCustomer = null;
         _cartDiscountPercent = 0.0;
       });
-      _showReceiptDialog(invoice);
+      _showReceiptDialog(invoice, thermalReceipt: receiptDto);
     }
   }
 
-  void _showReceiptDialog(Invoice invoice) {
+  void _showReceiptDialog(Invoice invoice, {PosThermalReceiptDto? thermalReceipt}) {
     showDialog(
       context: context,
       builder: (ctx) {
@@ -545,6 +627,11 @@ class _POSPageState extends ConsumerState<POSPage> {
                   label: 'Search Product / SKU / Barcode',
                   controller: _searchController,
                   prefixIcon: const Icon(Icons.search),
+                  suffixIcon: IconButton(
+                    icon: const Icon(Icons.qr_code_scanner, color: AppColors.primary),
+                    tooltip: 'Scan Barcode',
+                    onPressed: () => _onBarcodeScanned(_searchController.text),
+                  ),
                   onChanged: (_) => setState(() {}),
                 ),
                 const SizedBox(height: AppSpacing.sm),
@@ -568,6 +655,11 @@ class _POSPageState extends ConsumerState<POSPage> {
                     label: 'Search Product / SKU / Barcode',
                     controller: _searchController,
                     prefixIcon: const Icon(Icons.search),
+                    suffixIcon: IconButton(
+                      icon: const Icon(Icons.qr_code_scanner, color: AppColors.primary),
+                      tooltip: 'Scan Barcode',
+                      onPressed: () => _onBarcodeScanned(_searchController.text),
+                    ),
                     onChanged: (_) => setState(() {}),
                   ),
                 ),
@@ -584,8 +676,9 @@ class _POSPageState extends ConsumerState<POSPage> {
                       );
                     }).toList(),
                     onChanged: (val) {
-                      if (val != null)
+                      if (val != null) {
                         setState(() => _selectedWarehouseId = val);
+                      }
                     },
                   ),
                 ),

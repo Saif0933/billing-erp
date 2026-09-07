@@ -242,8 +242,8 @@ class _PlatformAdminSubscriptionPageState
             builder: (context, constraints) {
               final w = constraints.maxWidth;
               int cols;
-              if (w < 600) {
-                cols = 2;
+              if (w < 360) {
+                cols = 1;
               } else if (w < 1000) {
                 cols = 2;
               } else {
@@ -298,6 +298,17 @@ class _PlatformAdminSubscriptionPageState
                 );
               }
 
+              if (cols == 1) {
+                return Column(
+                  children: kpiCards
+                      .map((card) => Padding(
+                            padding: const EdgeInsets.only(bottom: 12),
+                            child: card,
+                          ))
+                      .toList(),
+                );
+              }
+
               return Wrap(
                 spacing: 12,
                 runSpacing: 12,
@@ -330,37 +341,90 @@ class _PlatformAdminSubscriptionPageState
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
+                LayoutBuilder(
+                  builder: (context, headerConstraints) {
+                    final isHeaderNarrow = headerConstraints.maxWidth < 420;
+                    if (isHeaderNarrow) {
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.pie_chart_outline_rounded,
+                                size: 18,
+                                color: isDark
+                                    ? Colors.white70
+                                    : const Color(0xFF475569),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  'RECURRING REVENUE BY TIER',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w800,
+                                    letterSpacing: 0.5,
+                                    color: isDark
+                                        ? Colors.white70
+                                        : const Color(0xFF475569),
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            'Total: ₹ ${_formatCurrency(totalMrr)} / mo',
+                            style: const TextStyle(
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF4F46E5),
+                            ),
+                          ),
+                        ],
+                      );
+                    }
+
+                    return Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Icon(
-                          Icons.pie_chart_outline_rounded,
-                          size: 18,
-                          color: isDark ? Colors.white70 : const Color(0xFF475569),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.pie_chart_outline_rounded,
+                              size: 18,
+                              color: isDark
+                                  ? Colors.white70
+                                  : const Color(0xFF475569),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'RECURRING REVENUE BY TIER',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: 0.6,
+                                color: isDark
+                                    ? Colors.white70
+                                    : const Color(0xFF475569),
+                              ),
+                            ),
+                          ],
                         ),
-                        const SizedBox(width: 8),
                         Text(
-                          'RECURRING REVENUE BY TIER',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: 0.6,
-                            color: isDark ? Colors.white70 : const Color(0xFF475569),
+                          'Total: ₹ ${_formatCurrency(totalMrr)} / mo',
+                          style: const TextStyle(
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF4F46E5),
                           ),
                         ),
                       ],
-                    ),
-                    Text(
-                      'Total: ₹ ${_formatCurrency(totalMrr)} / mo',
-                      style: const TextStyle(
-                        fontSize: 12.5,
-                        fontWeight: FontWeight.w700,
-                        color: Color(0xFF4F46E5),
-                      ),
-                    ),
-                  ],
+                    );
+                  },
                 ),
                 const SizedBox(height: 14),
 
@@ -734,7 +798,7 @@ class _PlatformAdminSubscriptionPageState
     required bool isDark,
   }) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF1E293B) : Colors.white,
         borderRadius: BorderRadius.circular(14),
@@ -754,43 +818,55 @@ class _PlatformAdminSubscriptionPageState
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                title,
-                style: TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 0.5,
-                  color: isDark ? Colors.white54 : const Color(0xFF94A3B8),
+              Expanded(
+                child: Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0.4,
+                    color: isDark ? Colors.white54 : const Color(0xFF94A3B8),
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
+              const SizedBox(width: 6),
               Container(
-                padding: const EdgeInsets.all(6),
+                padding: const EdgeInsets.all(5),
                 decoration: BoxDecoration(
                   color: iconColor.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Icon(icon, size: 16, color: iconColor),
+                child: Icon(icon, size: 15, color: iconColor),
               ),
             ],
           ),
           const SizedBox(height: 10),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.w900,
-              color: isDark ? Colors.white : const Color(0xFF0F172A),
-              letterSpacing: -0.5,
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              value,
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w900,
+                color: isDark ? Colors.white : const Color(0xFF0F172A),
+                letterSpacing: -0.5,
+              ),
             ),
           ),
           const SizedBox(height: 4),
           Text(
             subtitle,
             style: TextStyle(
-              fontSize: 11,
+              fontSize: 10.5,
               color: isDark ? Colors.white38 : const Color(0xFF64748B),
             ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),
@@ -830,14 +906,18 @@ class _PlatformAdminSubscriptionPageState
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      '${plan.name} Tier',
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w800,
-                        color: plan.themeColor,
+                    Expanded(
+                      child: Text(
+                        '${plan.name} Tier',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w800,
+                          color: plan.themeColor,
+                        ),
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
+                    const SizedBox(width: 8),
                     Text(
                       '${plan.activeTenantsCount} Tenants',
                       style: TextStyle(
@@ -854,13 +934,17 @@ class _PlatformAdminSubscriptionPageState
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      mrr,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w800,
+                    Expanded(
+                      child: Text(
+                        mrr,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w800,
+                        ),
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
+                    const SizedBox(width: 8),
                     Text(
                       share,
                       style: TextStyle(

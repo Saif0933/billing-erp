@@ -54,4 +54,21 @@ class ApiEndpoints {
   static const String platformAdminOrganizations = '/api/v1/platform-admin/organizations';
   static const String platformAdminKPIs = '/api/v1/platform-admin/organizations/kpis';
   static const String platformAdminPlans = '/api/v1/platform-admin/plans';
+
+  // POS (Point of Sale) & Fast Billing endpoints
+  static const String posProducts = '/api/v1/pos/products';
+  static const String posScan = '/api/v1/pos/products/scan';
+  static const String posCustomers = '/api/v1/pos/customers';
+  static const String posQuickCustomer = '/api/v1/pos/customers/quick';
+  static const String posSessionOpen = '/api/v1/pos/session/open';
+  static const String posSessionActive = '/api/v1/pos/session/active';
+  static const String posSessionClose = '/api/v1/pos/session/close';
+  static const String posSessionHistory = '/api/v1/pos/session/history';
+  static const String posCheckout = '/api/v1/pos/checkout';
+  static const String posSales = '/api/v1/pos/sales';
+  static const String posHoldCart = '/api/v1/pos/cart/hold';
+  static const String posHeldCarts = '/api/v1/pos/cart/held';
+  static const String posResumeCart = '/api/v1/pos/cart/resume';
+  static const String posReceipt = '/api/v1/pos/receipt';
+  static const String posDashboardSummary = '/api/v1/pos/dashboard/summary';
 }

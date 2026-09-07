@@ -7,6 +7,7 @@ import '../../../business/presentation/providers/business_provider.dart';
 import '../../../../core/models/accounting_models.dart';
 import '../../../../core/models/manufacturing_models.dart';
 import '../../../notifications/data/models/notification_model.dart';
+import '../../../sales/presentation/providers/pos_provider.dart';
 
 class BillingState {
   final List<Customer> customers;
@@ -2605,13 +2606,18 @@ class BillingNotifier extends StateNotifier<BillingState> {
   }
 
   Future<void> openPOSSession(double openingCash) async {
-    final session = POSSession(
-      id: 'pos_session_${DateTime.now().millisecondsSinceEpoch}',
-      openingCash: openingCash,
-      closingCash: 0.0,
-      openingTime: DateTime.now(),
-      status: POSSessionStatus.open,
-    );
+    POSSession session;
+    try {
+      session = await _ref.read(posApiServiceProvider).openSession(openingCash: openingCash);
+    } catch (_) {
+      session = POSSession(
+        id: 'pos_session_${DateTime.now().millisecondsSinceEpoch}',
+        openingCash: openingCash,
+        closingCash: 0.0,
+        openingTime: DateTime.now(),
+        status: POSSessionStatus.open,
+      );
+    }
     state = state.copyWith(activePOSSession: () => session);
     _writeAuditLog('Open POS Register', 'POSSession', session.id, '', 'Opening Cash: ₹$openingCash');
   }
@@ -2623,16 +2629,53 @@ class BillingNotifier extends StateNotifier<BillingState> {
       closingTime: DateTime.now(),
       status: POSSessionStatus.closed,
     );
+    try {
+      await _ref.read(posApiServiceProvider).closeSession(closingCash: closingCash);
+    } catch (_) {}
     state = state.copyWith(activePOSSession: () => null);
     _writeAuditLog('Close POS Register', 'POSSession', closed.id, 'Status: OPEN', 'Status: CLOSED, Closing Cash: ₹$closingCash');
   }
 
   Future<void> holdPOSCart(Invoice invoice) async {
+    try {
+      final payload = {
+        'customerId': invoice.customerId,
+        'customerName': invoice.customerName,
+        'warehouseId': invoice.warehouseId,
+        'taxableAmount': invoice.taxableAmount,
+        'cgst': invoice.cgst,
+        'sgst': invoice.sgst,
+        'igst': invoice.igst,
+        'cess': invoice.cess,
+        'roundOff': invoice.roundOff,
+        'grandTotal': invoice.grandTotal,
+        'balanceAmount': invoice.balanceAmount,
+        'paymentMode': invoice.paymentMode,
+        'items': invoice.items.map((i) => {
+          'productId': i.productId,
+          'name': i.name,
+          'hsnSac': i.hsnSac,
+          'quantity': i.quantity,
+          'unit': i.unit,
+          'rate': i.rate,
+          'taxableValue': i.taxableValue,
+          'gstRate': i.gstRate,
+          'cgst': i.cgst,
+          'sgst': i.sgst,
+          'igst': i.igst,
+          'cess': i.cess,
+        }).toList(),
+      };
+      await _ref.read(posApiServiceProvider).holdCart(payload);
+    } catch (_) {}
     state = state.copyWith(heldPOSCarts: [...state.heldPOSCarts, invoice]);
     _writeAuditLog('Hold POS Cart', 'POSCart', invoice.id, '', 'Hold Invoice: ${invoice.invoiceNumber}');
   }
 
   Future<void> resumePOSCart(String cartId) async {
+    try {
+      await _ref.read(posApiServiceProvider).resumeCart(cartId);
+    } catch (_) {}
     state = state.copyWith(
       heldPOSCarts: state.heldPOSCarts.where((inv) => inv.id != cartId).toList(),
     );
@@ -2640,6 +2683,9 @@ class BillingNotifier extends StateNotifier<BillingState> {
   }
 
   Future<void> deleteHeldPOSCart(String cartId) async {
+    try {
+      await _ref.read(posApiServiceProvider).deleteHeldCart(cartId);
+    } catch (_) {}
     state = state.copyWith(
       heldPOSCarts: state.heldPOSCarts.where((inv) => inv.id != cartId).toList(),
     );
