@@ -343,14 +343,24 @@ class _PlatformAdminLoginPageState extends ConsumerState<PlatformAdminLoginPage>
           const SizedBox(height: 16),
 
           // Register SuperAdmin link
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+          Wrap(
+            alignment: WrapAlignment.center,
+            crossAxisAlignment: WrapCrossAlignment.center,
             children: [
               const Text(
                 "Don't have a SuperAdmin account?",
                 style: TextStyle(fontSize: 12.5, color: Color(0xFFA1A1AA)),
+                textAlign: TextAlign.center,
               ),
               TextButton(
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 4,
+                  ),
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
                 onPressed: () => context.push('/register'),
                 child: const Text(
                   'Register here',

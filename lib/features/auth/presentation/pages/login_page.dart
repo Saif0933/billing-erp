@@ -336,8 +336,9 @@ class _LoginPageState extends ConsumerState<LoginPage> {
               const SizedBox(height: AppSpacing.lg),
 
               if (isSuperAdmin)
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                Wrap(
+                  alignment: WrapAlignment.center,
+                  crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
                     Text(
                       "Don't have a SuperAdmin account?",
@@ -346,8 +347,17 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                             ? AppColors.textDarkSecondary
                             : AppColors.textLightSecondary,
                       ),
+                      textAlign: TextAlign.center,
                     ),
                     TextButton(
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 4,
+                        ),
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
                       onPressed: () => context.push('/register'),
                       child: Text(
                         'Register here',
