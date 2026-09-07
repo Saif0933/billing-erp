@@ -11,6 +11,7 @@ import '../../../../shared/widgets/app_input_fields.dart';
 import '../../../../shared/widgets/app_table.dart';
 import '../../../../shared/widgets/feedback.dart';
 import '../../../business/presentation/providers/business_provider.dart';
+import '../../../supplier/presentation/providers/supplier_provider.dart';
 import '../../../dashboard/presentation/providers/billing_repository.dart';
 
 class PurchaseCreatePage extends ConsumerStatefulWidget {
@@ -44,7 +45,10 @@ class _PurchaseCreatePageState extends ConsumerState<PurchaseCreatePage> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _initPurchaseNo());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initPurchaseNo();
+      ref.read(supplierProvider.notifier).loadSuppliers();
+    });
   }
 
   void _initPurchaseNo() {
@@ -215,6 +219,8 @@ class _PurchaseCreatePageState extends ConsumerState<PurchaseCreatePage> {
   @override
   Widget build(BuildContext context) {
     final billingState = ref.watch(billingRepositoryProvider);
+    final supplierState = ref.watch(supplierProvider);
+    final availableSuppliers = supplierState.suppliers;
 
     final double subTotal = _items.fold(
       0,
@@ -410,17 +416,46 @@ class _PurchaseCreatePageState extends ConsumerState<PurchaseCreatePage> {
                               ResponsiveRow(
                                 children: [
                                   Expanded(
-                                    child: AppDropdownField<Supplier>(
-                                      label: 'Select Supplier *',
-                                      value: _selectedSupplier,
-                                      items: billingState.suppliers.map((s) {
-                                        return DropdownMenuItem(
-                                          value: s,
-                                          child: Text(s.name),
-                                        );
-                                      }).toList(),
-                                      onChanged: _onSupplierSelected,
-                                    ),
+                                    child: availableSuppliers.isEmpty
+                                        ? Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                                            decoration: BoxDecoration(
+                                              color: const Color(0xFFF1F5F9),
+                                              borderRadius: BorderRadius.circular(8),
+                                              border: Border.all(color: const Color(0xFFCBD5E1)),
+                                            ),
+                                            child: Row(
+                                              children: [
+                                                const Icon(Icons.local_shipping_outlined, size: 18, color: Color(0xFF64748B)),
+                                                const SizedBox(width: 8),
+                                                const Expanded(
+                                                  child: Text(
+                                                    'No suppliers in database.',
+                                                    style: TextStyle(fontSize: 12, color: Color(0xFF475569)),
+                                                  ),
+                                                ),
+                                                TextButton.icon(
+                                                  style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
+                                                  icon: const Icon(Icons.add_business_outlined, size: 14),
+                                                  label: const Text('Add Supplier', style: TextStyle(fontSize: 12)),
+                                                  onPressed: () => context.push('/suppliers/new'),
+                                                ),
+                                              ],
+                                            ),
+                                          )
+                                        : AppDropdownField<Supplier>(
+                                            label: 'Select Supplier *',
+                                            value: availableSuppliers.contains(_selectedSupplier)
+                                                ? _selectedSupplier
+                                                : null,
+                                            items: availableSuppliers.map((s) {
+                                              return DropdownMenuItem(
+                                                value: s,
+                                                child: Text(s.name),
+                                              );
+                                            }).toList(),
+                                            onChanged: _onSupplierSelected,
+                                          ),
                                   ),
                                   Expanded(
                                     child: AppTextField(

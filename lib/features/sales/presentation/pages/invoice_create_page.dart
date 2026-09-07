@@ -11,6 +11,7 @@ import '../../../../shared/widgets/app_input_fields.dart';
 import '../../../../shared/widgets/app_table.dart';
 import '../../../../shared/widgets/feedback.dart';
 import '../../../business/presentation/providers/business_provider.dart';
+import '../../../customer/presentation/providers/customer_provider.dart';
 import '../../../dashboard/presentation/providers/billing_repository.dart';
 
 class InvoiceCreatePage extends ConsumerStatefulWidget {
@@ -49,7 +50,10 @@ class _InvoiceCreatePageState extends ConsumerState<InvoiceCreatePage> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _initInvoiceNo());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initInvoiceNo();
+      ref.read(customerProvider.notifier).loadCustomers();
+    });
   }
 
   void _initInvoiceNo() {
@@ -226,6 +230,8 @@ class _InvoiceCreatePageState extends ConsumerState<InvoiceCreatePage> {
   @override
   Widget build(BuildContext context) {
     final billingState = ref.watch(billingRepositoryProvider);
+    final customerState = ref.watch(customerProvider);
+    final availableCustomers = customerState.customers;
 
     final double subTotal = _items.fold(
       0,
@@ -416,17 +422,46 @@ class _InvoiceCreatePageState extends ConsumerState<InvoiceCreatePage> {
                               ResponsiveRow(
                                 children: [
                                   Expanded(
-                                    child: AppDropdownField<Customer>(
-                                      label: 'Select Customer *',
-                                      value: _selectedCustomer,
-                                      items: billingState.customers.map((c) {
-                                        return DropdownMenuItem(
-                                          value: c,
-                                          child: Text('${c.name} (${c.type})'),
-                                        );
-                                      }).toList(),
-                                      onChanged: _onCustomerSelected,
-                                    ),
+                                    child: availableCustomers.isEmpty
+                                        ? Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                                            decoration: BoxDecoration(
+                                              color: const Color(0xFFF1F5F9),
+                                              borderRadius: BorderRadius.circular(8),
+                                              border: Border.all(color: const Color(0xFFCBD5E1)),
+                                            ),
+                                            child: Row(
+                                              children: [
+                                                const Icon(Icons.people_outline, size: 18, color: Color(0xFF64748B)),
+                                                const SizedBox(width: 8),
+                                                const Expanded(
+                                                  child: Text(
+                                                    'No customers in database.',
+                                                    style: TextStyle(fontSize: 12, color: Color(0xFF475569)),
+                                                  ),
+                                                ),
+                                                TextButton.icon(
+                                                  style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
+                                                  icon: const Icon(Icons.person_add_alt_1_outlined, size: 14),
+                                                  label: const Text('Add Customer', style: TextStyle(fontSize: 12)),
+                                                  onPressed: () => context.push('/customers/new'),
+                                                ),
+                                              ],
+                                            ),
+                                          )
+                                        : AppDropdownField<Customer>(
+                                            label: 'Select Customer *',
+                                            value: availableCustomers.contains(_selectedCustomer)
+                                                ? _selectedCustomer
+                                                : null,
+                                            items: availableCustomers.map((c) {
+                                              return DropdownMenuItem(
+                                                value: c,
+                                                child: Text('${c.name} (${c.type})'),
+                                              );
+                                            }).toList(),
+                                            onChanged: _onCustomerSelected,
+                                          ),
                                   ),
                                   Expanded(
                                     child: AppTextField(

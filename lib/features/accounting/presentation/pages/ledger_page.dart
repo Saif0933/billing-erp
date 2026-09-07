@@ -10,6 +10,8 @@ import '../../../../shared/widgets/app_cards.dart';
 import '../../../../shared/widgets/app_input_fields.dart';
 import '../../../../shared/widgets/app_table.dart';
 import '../../../../shared/widgets/feedback.dart';
+import '../../../customer/presentation/providers/customer_provider.dart';
+import '../../../supplier/presentation/providers/supplier_provider.dart';
 import '../../../dashboard/presentation/providers/billing_repository.dart';
 
 class LedgerPage extends ConsumerStatefulWidget {
@@ -24,9 +26,23 @@ class _LedgerPageState extends ConsumerState<LedgerPage> {
   Customer? _selectedCustomer;
   Supplier? _selectedSupplier;
   DateTimeRange? _dateRange;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(customerProvider.notifier).loadCustomers();
+      ref.read(supplierProvider.notifier).loadSuppliers();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final billingState = ref.watch(billingRepositoryProvider);
+    final customerState = ref.watch(customerProvider);
+    final supplierState = ref.watch(supplierProvider);
+    final availableCustomers = customerState.customers;
+    final availableSuppliers = supplierState.suppliers;
 
     // Filtered ledger entries
     List<LedgerEntry> filteredLedger = [];
@@ -191,33 +207,63 @@ class _LedgerPageState extends ConsumerState<LedgerPage> {
                       ),
                       if (_selectedPartyType == 'Customer')
                         Expanded(
-                          child: AppDropdownField<Customer>(
-                            label: 'Select Customer *',
-                            value: _selectedCustomer,
-                            items: billingState.customers.map((c) {
-                              return DropdownMenuItem(
-                                value: c,
-                                child: Text(c.name),
-                              );
-                            }).toList(),
-                            onChanged: (c) =>
-                                setState(() => _selectedCustomer = c),
-                          ),
+                          child: availableCustomers.isEmpty
+                              ? Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFF1F5F9),
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(color: const Color(0xFFCBD5E1)),
+                                  ),
+                                  child: const Text(
+                                    'No customers found in database.',
+                                    style: TextStyle(fontSize: 12, color: Color(0xFF475569)),
+                                  ),
+                                )
+                              : AppDropdownField<Customer>(
+                                  label: 'Select Customer *',
+                                  value: availableCustomers.contains(_selectedCustomer)
+                                      ? _selectedCustomer
+                                      : null,
+                                  items: availableCustomers.map((c) {
+                                    return DropdownMenuItem(
+                                      value: c,
+                                      child: Text(c.name),
+                                    );
+                                  }).toList(),
+                                  onChanged: (c) =>
+                                      setState(() => _selectedCustomer = c),
+                                ),
                         )
                       else
                         Expanded(
-                          child: AppDropdownField<Supplier>(
-                            label: 'Select Supplier *',
-                            value: _selectedSupplier,
-                            items: billingState.suppliers.map((s) {
-                              return DropdownMenuItem(
-                                value: s,
-                                child: Text(s.name),
-                              );
-                            }).toList(),
-                            onChanged: (s) =>
-                                setState(() => _selectedSupplier = s),
-                          ),
+                          child: availableSuppliers.isEmpty
+                              ? Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFF1F5F9),
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(color: const Color(0xFFCBD5E1)),
+                                  ),
+                                  child: const Text(
+                                    'No suppliers found in database.',
+                                    style: TextStyle(fontSize: 12, color: Color(0xFF475569)),
+                                  ),
+                                )
+                              : AppDropdownField<Supplier>(
+                                  label: 'Select Supplier *',
+                                  value: availableSuppliers.contains(_selectedSupplier)
+                                      ? _selectedSupplier
+                                      : null,
+                                  items: availableSuppliers.map((s) {
+                                    return DropdownMenuItem(
+                                      value: s,
+                                      child: Text(s.name),
+                                    );
+                                  }).toList(),
+                                  onChanged: (s) =>
+                                      setState(() => _selectedSupplier = s),
+                                ),
                         ),
                       Expanded(
                         child: Column(

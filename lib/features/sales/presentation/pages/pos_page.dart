@@ -10,6 +10,7 @@ import '../../../../shared/widgets/app_button.dart';
 import '../../../../shared/widgets/app_cards.dart';
 import '../../../../shared/widgets/app_input_fields.dart';
 import '../../../../shared/widgets/feedback.dart';
+import '../../../customer/presentation/providers/customer_provider.dart';
 import '../../../dashboard/presentation/providers/billing_repository.dart';
 import '../../../subscription/domain/services/feature_access_service.dart';
 import '../providers/pos_provider.dart';
@@ -40,6 +41,7 @@ class _POSPageState extends ConsumerState<POSPage> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(posNotifierProvider.notifier).refreshCatalog();
       ref.read(posNotifierProvider.notifier).checkActiveSession();
+      ref.read(customerProvider.notifier).loadCustomers();
     });
   }
 
@@ -563,6 +565,11 @@ class _POSPageState extends ConsumerState<POSPage> {
   @override
   Widget build(BuildContext context) {
     final billingState = ref.watch(billingRepositoryProvider);
+    final posState = ref.watch(posNotifierProvider);
+    final customerState = ref.watch(customerProvider);
+    final availableCustomers = posState.customers.isNotEmpty
+        ? posState.customers
+        : customerState.customers;
     final featureAccess = ref.watch(featureAccessServiceProvider);
 
     // Gating check
@@ -804,14 +811,44 @@ class _POSPageState extends ConsumerState<POSPage> {
             const SizedBox(height: AppSpacing.md),
           ],
           // Customer Selector
-          AppDropdownField<Customer>(
-            label: 'Select Customer *',
-            value: _selectedCustomer,
-            items: billingState.customers.map((c) {
-              return DropdownMenuItem(value: c, child: Text(c.name));
-            }).toList(),
-            onChanged: (c) => setState(() => _selectedCustomer = c),
-          ),
+          if (availableCustomers.isEmpty) ...[
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF1F5F9),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: const Color(0xFFCBD5E1)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.people_outline, size: 16, color: Color(0xFF64748B)),
+                  const SizedBox(width: 8),
+                  const Expanded(
+                    child: Text(
+                      'No customers in database',
+                      style: TextStyle(fontSize: 12, color: Color(0xFF475569)),
+                    ),
+                  ),
+                  TextButton(
+                    style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
+                    onPressed: () => context.push('/customers/new'),
+                    child: const Text('+ Add', style: TextStyle(fontSize: 12)),
+                  ),
+                ],
+              ),
+            ),
+          ] else ...[
+            AppDropdownField<Customer>(
+              label: 'Select Customer *',
+              value: availableCustomers.contains(_selectedCustomer)
+                  ? _selectedCustomer
+                  : null,
+              items: availableCustomers.map((c) {
+                return DropdownMenuItem(value: c, child: Text(c.name));
+              }).toList(),
+              onChanged: (c) => setState(() => _selectedCustomer = c),
+            ),
+          ],
           const SizedBox(height: AppSpacing.md),
           // Cart Item list
           Expanded(

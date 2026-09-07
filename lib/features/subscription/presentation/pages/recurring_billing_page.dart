@@ -12,6 +12,7 @@ import '../../../../shared/widgets/app_cards.dart';
 import '../../../../shared/widgets/app_input_fields.dart';
 import '../../../../shared/widgets/app_table.dart';
 import '../../../../shared/widgets/feedback.dart';
+import '../../../customer/presentation/providers/customer_provider.dart';
 import '../../../dashboard/presentation/providers/billing_repository.dart';
 import '../../domain/entities/subscription_models.dart';
 import '../../domain/services/feature_access_service.dart';
@@ -27,6 +28,14 @@ class RecurringBillingPage extends ConsumerStatefulWidget {
 class _RecurringBillingPageState extends ConsumerState<RecurringBillingPage> {
   final _qtyController = TextEditingController(text: '1.0');
   final _notesController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(customerProvider.notifier).loadCustomers();
+    });
+  }
 
   Customer? _selectedCustomer;
   Product? _selectedProduct;
@@ -125,6 +134,8 @@ class _RecurringBillingPageState extends ConsumerState<RecurringBillingPage> {
   @override
   Widget build(BuildContext context) {
     final billingState = ref.watch(billingRepositoryProvider);
+    final customerState = ref.watch(customerProvider);
+    final availableCustomers = customerState.customers;
     final featureAccess = ref.watch(featureAccessServiceProvider);
 
     if (!featureAccess.canAccess(SubscriptionFeature.reports)) {
@@ -182,14 +193,45 @@ class _RecurringBillingPageState extends ConsumerState<RecurringBillingPage> {
             ],
           ),
           const Divider(height: 24),
-          AppDropdownField<Customer>(
-            label: 'Client / Customer *',
-            value: _selectedCustomer,
-            items: billingState.customers.map((c) {
-              return DropdownMenuItem(value: c, child: Text(c.name));
-            }).toList(),
-            onChanged: (c) => setState(() => _selectedCustomer = c),
-          ),
+          if (availableCustomers.isEmpty) ...[
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF1F5F9),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: const Color(0xFFCBD5E1)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.people_outline, size: 18, color: Color(0xFF64748B)),
+                  const SizedBox(width: 8),
+                  const Expanded(
+                    child: Text(
+                      'No customers found in database.',
+                      style: TextStyle(fontSize: 12, color: Color(0xFF475569)),
+                    ),
+                  ),
+                  TextButton.icon(
+                    style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
+                    icon: const Icon(Icons.person_add_alt_1_outlined, size: 14),
+                    label: const Text('Add Customer', style: TextStyle(fontSize: 12)),
+                    onPressed: () => context.push('/customers/new'),
+                  ),
+                ],
+              ),
+            ),
+          ] else ...[
+            AppDropdownField<Customer>(
+              label: 'Client / Customer *',
+              value: availableCustomers.contains(_selectedCustomer)
+                  ? _selectedCustomer
+                  : null,
+              items: availableCustomers.map((c) {
+                return DropdownMenuItem(value: c, child: Text(c.name));
+              }).toList(),
+              onChanged: (c) => setState(() => _selectedCustomer = c),
+            ),
+          ],
           const SizedBox(height: AppSpacing.md),
           AppDropdownField<RecurringFrequency>(
             label: 'Cycle Frequency *',

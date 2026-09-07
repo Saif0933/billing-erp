@@ -71,4 +71,9 @@ class ApiEndpoints {
   static const String posResumeCart = '/api/v1/pos/cart/resume';
   static const String posReceipt = '/api/v1/pos/receipt';
   static const String posDashboardSummary = '/api/v1/pos/dashboard/summary';
+
+  // Payments, Receipts & Outstanding Analysis
+  static const String receipts = '/api/v1/receipts';
+  static const String payments = '/api/v1/payments';
+  static const String outstanding = '/api/v1/outstanding';
 }

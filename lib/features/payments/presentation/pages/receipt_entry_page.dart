@@ -11,6 +11,8 @@ import '../../../../shared/widgets/app_input_fields.dart';
 import '../../../../shared/widgets/app_table.dart';
 import '../../../../shared/widgets/feedback.dart';
 import '../../../dashboard/presentation/providers/billing_repository.dart';
+import '../../../customer/presentation/providers/customer_provider.dart';
+import '../providers/payments_provider.dart';
 
 class ReceiptEntryPage extends ConsumerStatefulWidget {
   const ReceiptEntryPage({super.key});
@@ -32,6 +34,36 @@ class _ReceiptEntryPageState extends ConsumerState<ReceiptEntryPage> {
   // Outstanding invoices for the selected customer, and the manually allocated amounts for each
   List<Invoice> _unpaidInvoices = [];
   final Map<String, double> _allocations = {}; // invoiceId -> amountAllocated
+  bool _isSaving = false;
+  bool _isLoadingInvoices = false;
+  bool _isLoadingRef = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(customerProvider.notifier).loadCustomers();
+      _fetchNextRefNumber();
+    });
+  }
+
+  Future<void> _fetchNextRefNumber() async {
+    setState(() => _isLoadingRef = true);
+    try {
+      final apiService = ref.read(paymentsApiServiceProvider);
+      final refNum = await apiService.getNextReceiptRef();
+      if (mounted) {
+        setState(() {
+          _refController.text = refNum;
+        });
+      }
+    } catch (_) {
+    } finally {
+      if (mounted) {
+        setState(() => _isLoadingRef = false);
+      }
+    }
+  }
 
   @override
   void dispose() {
@@ -41,7 +73,7 @@ class _ReceiptEntryPageState extends ConsumerState<ReceiptEntryPage> {
     super.dispose();
   }
 
-  void _onCustomerSelected(Customer? customer) {
+  void _onCustomerSelected(Customer? customer) async {
     if (customer == null) return;
     final billingState = ref.read(billingRepositoryProvider);
     final customerInvoices = billingState.invoices
@@ -53,7 +85,64 @@ class _ReceiptEntryPageState extends ConsumerState<ReceiptEntryPage> {
       _unpaidInvoices = customerInvoices;
       _allocations.clear();
       _amountController.clear();
+      _isLoadingInvoices = true;
     });
+
+    try {
+      final liveInvoices = await ref.read(receiptEntryProvider.notifier).loadUnpaidInvoices(customer.id);
+      if (liveInvoices.isNotEmpty && mounted) {
+        final updatedInvoices = liveInvoices.map((dto) {
+          final existing = billingState.invoices.cast<Invoice?>().firstWhere(
+            (i) => i?.id == dto.id,
+            orElse: () => null,
+          );
+          if (existing != null) {
+            return existing.copyWith(
+              balanceAmount: dto.balanceAmount,
+            );
+          }
+          return Invoice(
+            id: dto.id,
+            invoiceNumber: dto.invoiceNumber,
+            invoiceDate: dto.invoiceDate,
+            customerId: customer.id,
+            customerName: customer.name,
+            billingAddress: customer.billingAddress,
+            shippingAddress: customer.shippingAddress,
+            placeOfSupply: customer.state,
+            items: const [],
+            taxableAmount: dto.grandTotal,
+            cgst: 0,
+            sgst: 0,
+            igst: 0,
+            cess: 0,
+            roundOff: 0,
+            grandTotal: dto.grandTotal,
+            balanceAmount: dto.balanceAmount,
+            paymentMode: 'Bank',
+            status: dto.paymentStatus == 'PAID'
+                ? InvoiceStatus.paid
+                : (dto.paymentStatus == 'PARTIALLY_PAID'
+                    ? InvoiceStatus.partiallyPaid
+                    : InvoiceStatus.draft),
+            notes: '',
+            termsConditions: '',
+          );
+        }).toList();
+
+        setState(() {
+          _unpaidInvoices = updatedInvoices;
+        });
+      }
+    } catch (_) {
+      // Graceful fallback to local invoices
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoadingInvoices = false;
+        });
+      }
+    }
   }
 
   void _autoAllocate() {
@@ -90,19 +179,21 @@ class _ReceiptEntryPageState extends ConsumerState<ReceiptEntryPage> {
     }
 
     final double allocatedSum = _allocations.values.fold(0.0, (sum, val) => sum + val);
-    if (double.parse(allocatedSum.toStringAsFixed(2)) != double.parse(totalAmount.toStringAsFixed(2))) {
+
+    // If invoices are allocated, ensure allocated sum does not exceed total receipt amount
+    if (_allocations.isNotEmpty && allocatedSum > totalAmount + 0.01) {
       AppFeedback.showSnackbar(
         context,
-        message: 'The total allocated amount (₹${allocatedSum.toStringAsFixed(2)}) must equal the receipt amount (₹${totalAmount.toStringAsFixed(2)})!',
+        message: 'The total allocated amount (₹${allocatedSum.toStringAsFixed(2)}) cannot exceed the receipt amount (₹${totalAmount.toStringAsFixed(2)})!',
         isError: true,
       );
       return;
     }
 
-    // Over-allocation check
+    // Over-allocation check per individual invoice
     for (var entry in _allocations.entries) {
       final inv = _unpaidInvoices.firstWhere((i) => i.id == entry.key);
-      if (entry.value > inv.balanceAmount) {
+      if (entry.value > inv.balanceAmount + 0.01) {
         AppFeedback.showSnackbar(
           context,
           message: 'Allocated amount for ${inv.invoiceNumber} exceeds outstanding balance!',
@@ -113,34 +204,44 @@ class _ReceiptEntryPageState extends ConsumerState<ReceiptEntryPage> {
     }
 
     if (_formKey.currentState!.validate()) {
-      final receipt = Receipt(
-        id: 'rec_${DateTime.now().millisecondsSinceEpoch}',
-        customerId: _selectedCustomer!.id,
-        customerName: _selectedCustomer!.name,
-        amount: totalAmount,
-        date: _receiptDate,
-        paymentMode: _paymentMode,
-        referenceNumber: _refController.text.isNotEmpty
-            ? _refController.text
-            : 'REC-${DateTime.now().millisecondsSinceEpoch.toString().substring(8)}',
-        notes: _notesController.text,
-        allocations: _allocations.entries.map((e) {
-          return ReceiptAllocation(invoiceId: e.key, amountAllocated: e.value);
-        }).toList(),
-      );
+      setState(() {
+        _isSaving = true;
+      });
 
-      await ref.read(billingRepositoryProvider.notifier).addReceipt(receipt);
+      try {
+        await ref.read(receiptEntryProvider.notifier).submitReceipt(
+          customerId: _selectedCustomer!.id,
+          customerName: _selectedCustomer!.name,
+          amount: totalAmount,
+          date: _receiptDate,
+          paymentMode: _paymentMode,
+          referenceNumber: _refController.text.isNotEmpty ? _refController.text : null,
+          notes: _notesController.text.isNotEmpty ? _notesController.text : null,
+          allocations: _allocations,
+        );
 
-      if (mounted) {
-        AppFeedback.showSnackbar(context, message: 'Receipt Entry saved successfully!');
-        context.pop();
+        if (mounted) {
+          AppFeedback.showSnackbar(context, message: 'Receipt Entry saved successfully!');
+          context.pop();
+        }
+      } catch (e) {
+        if (mounted) {
+          AppFeedback.showSnackbar(context, message: 'Failed to record receipt: $e', isError: true);
+        }
+      } finally {
+        if (mounted) {
+          setState(() {
+            _isSaving = false;
+          });
+        }
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final billingState = ref.watch(billingRepositoryProvider);
+    final customerState = ref.watch(customerProvider);
+    final availableCustomers = customerState.customers;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Record Customer Receipt')),
@@ -165,14 +266,45 @@ class _ReceiptEntryPageState extends ConsumerState<ReceiptEntryPage> {
                       children: [
                         Text('Receipt Parameters', style: AppTypography.titleLarge.copyWith(fontWeight: FontWeight.bold)),
                         const SizedBox(height: AppSpacing.lg),
-                        AppDropdownField<Customer>(
-                          label: 'Customer *',
-                          value: _selectedCustomer,
-                          items: billingState.customers.map((c) {
-                            return DropdownMenuItem(value: c, child: Text('${c.name} (Outstanding: ₹${c.currentBalance})'));
-                          }).toList(),
-                          onChanged: _onCustomerSelected,
-                        ),
+                        if (availableCustomers.isEmpty) ...[
+                          Container(
+                            padding: const EdgeInsets.all(14),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF1F5F9),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: const Color(0xFFCBD5E1)),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.people_outline, size: 20, color: Color(0xFF64748B)),
+                                const SizedBox(width: 10),
+                                const Expanded(
+                                  child: Text(
+                                    'No customers found in database.',
+                                    style: TextStyle(fontSize: 13, color: Color(0xFF475569)),
+                                  ),
+                                ),
+                                TextButton.icon(
+                                  icon: const Icon(Icons.person_add_alt_1_outlined, size: 16),
+                                  label: const Text('Add Customer'),
+                                  onPressed: () => context.push('/customers/new'),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ] else ...[
+                          AppDropdownField<Customer>(
+                            label: 'Customer *',
+                            value: availableCustomers.contains(_selectedCustomer) ? _selectedCustomer : null,
+                            items: availableCustomers.map((c) {
+                              return DropdownMenuItem(
+                                value: c,
+                                child: Text('${c.name} (Outstanding: ₹${c.currentBalance.toStringAsFixed(2)})'),
+                              );
+                            }).toList(),
+                            onChanged: _onCustomerSelected,
+                          ),
+                        ],
                         const SizedBox(height: AppSpacing.md),
                         ResponsiveRow(
                           children: [
@@ -188,6 +320,14 @@ class _ReceiptEntryPageState extends ConsumerState<ReceiptEntryPage> {
                               child: AppTextField(
                                 label: 'Receipt Ref No / Txn ID',
                                 controller: _refController,
+                                hintText: _isLoadingRef ? 'Generating...' : 'e.g. REC-20260907-0001',
+                                suffixIcon: IconButton(
+                                  icon: _isLoadingRef
+                                      ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2))
+                                      : const Icon(Icons.refresh, size: 18),
+                                  tooltip: 'Regenerate Reference ID',
+                                  onPressed: _isLoadingRef ? null : _fetchNextRefNumber,
+                                ),
                               ),
                             ),
                           ],
@@ -246,7 +386,15 @@ class _ReceiptEntryPageState extends ConsumerState<ReceiptEntryPage> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text('Invoice Allocation Engine', style: AppTypography.titleMedium.copyWith(fontWeight: FontWeight.bold)),
+                              Row(
+                                children: [
+                                  Text('Invoice Allocation Engine', style: AppTypography.titleMedium.copyWith(fontWeight: FontWeight.bold)),
+                                  if (_isLoadingInvoices) ...[
+                                    const SizedBox(width: 8),
+                                    const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2)),
+                                  ],
+                                ],
+                              ),
                               AppButton(
                                 label: 'Auto-Allocate Outstanding',
                                 type: AppButtonType.secondary,
@@ -257,7 +405,7 @@ class _ReceiptEntryPageState extends ConsumerState<ReceiptEntryPage> {
                           const SizedBox(height: AppSpacing.md),
                           AppTable<Invoice>(
                             items: _unpaidInvoices,
-                            emptyMessage: 'This customer has no unpaid invoices to allocate.',
+                            emptyMessage: 'This customer has no unpaid invoices. Receipt will be recorded on-account / advance.',
                             columns: [
                               TableColumnSpec<Invoice>(
                                 label: 'Invoice No.',
@@ -328,7 +476,11 @@ class _ReceiptEntryPageState extends ConsumerState<ReceiptEntryPage> {
                     children: [
                       AppButton(label: 'Cancel', type: AppButtonType.text, onPressed: () => context.pop()),
                       const SizedBox(width: AppSpacing.md),
-                      AppButton(label: 'Save Entry', onPressed: _saveReceipt),
+                      AppButton(
+                        label: 'Save Entry',
+                        isLoading: _isSaving,
+                        onPressed: _saveReceipt,
+                      ),
                     ],
                   ),
                 ],

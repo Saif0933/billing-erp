@@ -11,6 +11,8 @@ import '../../../../shared/widgets/app_input_fields.dart';
 import '../../../../shared/widgets/app_table.dart';
 import '../../../../shared/widgets/feedback.dart';
 import '../../../dashboard/presentation/providers/billing_repository.dart';
+import '../../../supplier/presentation/providers/supplier_provider.dart';
+import '../providers/payments_provider.dart';
 
 class PaymentEntryPage extends ConsumerStatefulWidget {
   const PaymentEntryPage({super.key});
@@ -31,6 +33,36 @@ class _PaymentEntryPageState extends ConsumerState<PaymentEntryPage> {
 
   List<Purchase> _unpaidPurchases = [];
   final Map<String, double> _allocations = {};
+  bool _isSaving = false;
+  bool _isLoadingPurchases = false;
+  bool _isLoadingRef = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(supplierProvider.notifier).loadSuppliers();
+      _fetchNextRefCode();
+    });
+  }
+
+  Future<void> _fetchNextRefCode() async {
+    setState(() => _isLoadingRef = true);
+    try {
+      final apiService = ref.read(paymentsApiServiceProvider);
+      final refNum = await apiService.getNextPaymentRef();
+      if (mounted) {
+        setState(() {
+          _refController.text = refNum;
+        });
+      }
+    } catch (_) {
+    } finally {
+      if (mounted) {
+        setState(() => _isLoadingRef = false);
+      }
+    }
+  }
 
   @override
   void dispose() {
@@ -40,7 +72,7 @@ class _PaymentEntryPageState extends ConsumerState<PaymentEntryPage> {
     super.dispose();
   }
 
-  void _onSupplierSelected(Supplier? s) {
+  void _onSupplierSelected(Supplier? s) async {
     if (s == null) return;
     final billingState = ref.read(billingRepositoryProvider);
     final supplierPurchases = billingState.purchases
@@ -52,7 +84,63 @@ class _PaymentEntryPageState extends ConsumerState<PaymentEntryPage> {
       _unpaidPurchases = supplierPurchases;
       _allocations.clear();
       _amountController.clear();
+      _isLoadingPurchases = true;
     });
+
+    try {
+      final livePurchases = await ref.read(paymentEntryProvider.notifier).loadUnpaidPurchases(s.id);
+      if (livePurchases.isNotEmpty && mounted) {
+        final updatedPurchases = livePurchases.map((dto) {
+          final existing = billingState.purchases.cast<Purchase?>().firstWhere(
+            (p) => p?.id == dto.id,
+            orElse: () => null,
+          );
+          if (existing != null) {
+            return existing.copyWith(
+              balanceAmount: dto.balanceAmount,
+            );
+          }
+          return Purchase(
+            id: dto.id,
+            purchaseNumber: dto.purchaseNumber,
+            supplierInvoiceNumber: dto.supplierInvoiceNumber ?? dto.purchaseNumber,
+            purchaseDate: dto.purchaseDate,
+            supplierId: s.id,
+            supplierName: s.name,
+            items: const [],
+            taxableAmount: dto.totalAmount,
+            cgst: 0,
+            sgst: 0,
+            igst: 0,
+            cess: 0,
+            freightCharges: 0,
+            otherCharges: 0,
+            roundOff: 0,
+            grandTotal: dto.totalAmount,
+            balanceAmount: dto.balanceAmount,
+            paymentMode: 'Bank',
+            status: dto.paymentStatus == 'PAID'
+                ? PurchaseStatus.paid
+                : (dto.paymentStatus == 'PARTIALLY_PAID'
+                    ? PurchaseStatus.partiallyPaid
+                    : PurchaseStatus.confirmed),
+            notes: '',
+          );
+        }).toList();
+
+        setState(() {
+          _unpaidPurchases = updatedPurchases;
+        });
+      }
+    } catch (_) {
+      // Graceful fallback to local purchases
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoadingPurchases = false;
+        });
+      }
+    }
   }
 
   void _autoAllocate() {
@@ -88,18 +176,21 @@ class _PaymentEntryPageState extends ConsumerState<PaymentEntryPage> {
     }
 
     final double allocatedSum = _allocations.values.fold(0.0, (sum, val) => sum + val);
-    if (double.parse(allocatedSum.toStringAsFixed(2)) != double.parse(totalAmount.toStringAsFixed(2))) {
+
+    // If purchase bills are allocated, ensure allocated sum does not exceed total payment amount
+    if (_allocations.isNotEmpty && allocatedSum > totalAmount + 0.01) {
       AppFeedback.showSnackbar(
         context,
-        message: 'Allocated sum (₹${allocatedSum.toStringAsFixed(2)}) does not equal total payment (₹${totalAmount.toStringAsFixed(2)})!',
+        message: 'The total allocated amount (₹${allocatedSum.toStringAsFixed(2)}) cannot exceed the payment amount (₹${totalAmount.toStringAsFixed(2)})!',
         isError: true,
       );
       return;
     }
 
+    // Over-allocation check per individual purchase bill
     for (var entry in _allocations.entries) {
       final pur = _unpaidPurchases.firstWhere((p) => p.id == entry.key);
-      if (entry.value > pur.balanceAmount) {
+      if (entry.value > pur.balanceAmount + 0.01) {
         AppFeedback.showSnackbar(
           context,
           message: 'Allocated amount for bill ${pur.purchaseNumber} exceeds outstanding balance!',
@@ -110,34 +201,44 @@ class _PaymentEntryPageState extends ConsumerState<PaymentEntryPage> {
     }
 
     if (_formKey.currentState!.validate()) {
-      final payment = Payment(
-        id: 'pay_${DateTime.now().millisecondsSinceEpoch}',
-        supplierId: _selectedSupplier!.id,
-        supplierName: _selectedSupplier!.name,
-        amount: totalAmount,
-        date: _paymentDate,
-        paymentMode: _paymentMode,
-        referenceNumber: _refController.text.isNotEmpty
-            ? _refController.text
-            : 'PAY-${DateTime.now().millisecondsSinceEpoch.toString().substring(8)}',
-        notes: _notesController.text,
-        allocations: _allocations.entries.map((e) {
-          return PaymentAllocation(purchaseId: e.key, amountAllocated: e.value);
-        }).toList(),
-      );
+      setState(() {
+        _isSaving = true;
+      });
 
-      await ref.read(billingRepositoryProvider.notifier).addPayment(payment);
+      try {
+        await ref.read(paymentEntryProvider.notifier).submitPayment(
+          supplierId: _selectedSupplier!.id,
+          supplierName: _selectedSupplier!.name,
+          amount: totalAmount,
+          date: _paymentDate,
+          paymentMode: _paymentMode,
+          referenceNumber: _refController.text.isNotEmpty ? _refController.text : null,
+          notes: _notesController.text.isNotEmpty ? _notesController.text : null,
+          allocations: _allocations,
+        );
 
-      if (mounted) {
-        AppFeedback.showSnackbar(context, message: 'Payment Entry recorded successfully!');
-        context.pop();
+        if (mounted) {
+          AppFeedback.showSnackbar(context, message: 'Payment Entry recorded successfully!');
+          context.pop();
+        }
+      } catch (e) {
+        if (mounted) {
+          AppFeedback.showSnackbar(context, message: 'Failed to record payment: $e', isError: true);
+        }
+      } finally {
+        if (mounted) {
+          setState(() {
+            _isSaving = false;
+          });
+        }
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final billingState = ref.watch(billingRepositoryProvider);
+    final supplierState = ref.watch(supplierProvider);
+    final availableSuppliers = supplierState.suppliers;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Record Supplier Payment')),
@@ -162,14 +263,42 @@ class _PaymentEntryPageState extends ConsumerState<PaymentEntryPage> {
                       children: [
                         Text('Payment Parameters', style: AppTypography.titleLarge.copyWith(fontWeight: FontWeight.bold)),
                         const SizedBox(height: AppSpacing.lg),
-                        AppDropdownField<Supplier>(
-                          label: 'Supplier *',
-                          value: _selectedSupplier,
-                          items: billingState.suppliers.map((s) {
-                            return DropdownMenuItem(value: s, child: Text('${s.name} (Payable: ₹${s.currentBalance})'));
-                          }).toList(),
-                          onChanged: _onSupplierSelected,
-                        ),
+                        if (availableSuppliers.isEmpty) ...[
+                          Container(
+                            padding: const EdgeInsets.all(14),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF1F5F9),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: const Color(0xFFCBD5E1)),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.local_shipping_outlined, size: 20, color: Color(0xFF64748B)),
+                                const SizedBox(width: 10),
+                                const Expanded(
+                                  child: Text(
+                                    'No suppliers found in database.',
+                                    style: TextStyle(fontSize: 13, color: Color(0xFF475569)),
+                                  ),
+                                ),
+                                TextButton.icon(
+                                  icon: const Icon(Icons.add_business_outlined, size: 16),
+                                  label: const Text('Add Supplier'),
+                                  onPressed: () => context.push('/suppliers/new'),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ] else ...[
+                          AppDropdownField<Supplier>(
+                            label: 'Supplier *',
+                            value: availableSuppliers.contains(_selectedSupplier) ? _selectedSupplier : null,
+                            items: availableSuppliers.map((s) {
+                              return DropdownMenuItem(value: s, child: Text('${s.name} (Payable: ₹${s.currentBalance})'));
+                            }).toList(),
+                            onChanged: _onSupplierSelected,
+                          ),
+                        ],
                         const SizedBox(height: AppSpacing.md),
                         ResponsiveRow(
                           children: [
@@ -185,6 +314,14 @@ class _PaymentEntryPageState extends ConsumerState<PaymentEntryPage> {
                               child: AppTextField(
                                 label: 'Reference Code / Txn ID',
                                 controller: _refController,
+                                hintText: _isLoadingRef ? 'Generating...' : 'e.g. PAY-20260907-0001',
+                                suffixIcon: IconButton(
+                                  icon: _isLoadingRef
+                                      ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2))
+                                      : const Icon(Icons.refresh, size: 18),
+                                  tooltip: 'Regenerate Reference ID',
+                                  onPressed: _isLoadingRef ? null : _fetchNextRefCode,
+                                ),
                               ),
                             ),
                           ],
@@ -244,7 +381,15 @@ class _PaymentEntryPageState extends ConsumerState<PaymentEntryPage> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text('Bill Allocation Engine', style: AppTypography.titleMedium.copyWith(fontWeight: FontWeight.bold)),
+                              Row(
+                                children: [
+                                  Text('Bill Allocation Engine', style: AppTypography.titleMedium.copyWith(fontWeight: FontWeight.bold)),
+                                  if (_isLoadingPurchases) ...[
+                                    const SizedBox(width: 8),
+                                    const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2)),
+                                  ],
+                                ],
+                              ),
                               AppButton(
                                 label: 'Auto-Allocate Bills',
                                 type: AppButtonType.secondary,
@@ -255,7 +400,7 @@ class _PaymentEntryPageState extends ConsumerState<PaymentEntryPage> {
                           const SizedBox(height: AppSpacing.md),
                           AppTable<Purchase>(
                             items: _unpaidPurchases,
-                            emptyMessage: 'This supplier has no outstanding purchase bills to allocate.',
+                            emptyMessage: 'This supplier has no outstanding purchase bills. Payment will be recorded on-account / advance.',
                             columns: [
                               TableColumnSpec<Purchase>(
                                 label: 'Bill No.',
@@ -326,7 +471,11 @@ class _PaymentEntryPageState extends ConsumerState<PaymentEntryPage> {
                     children: [
                       AppButton(label: 'Cancel', type: AppButtonType.text, onPressed: () => context.pop()),
                       const SizedBox(width: AppSpacing.md),
-                      AppButton(label: 'Save Entry', onPressed: _savePayment),
+                      AppButton(
+                        label: 'Save Entry',
+                        isLoading: _isSaving,
+                        onPressed: _savePayment,
+                      ),
                     ],
                   ),
                 ],
