@@ -341,39 +341,14 @@ class _PlatformAdminLoginPageState extends ConsumerState<PlatformAdminLoginPage>
                   ),
           ),
           const SizedBox(height: 16),
-
-          // Register SuperAdmin link
-          Wrap(
-            alignment: WrapAlignment.center,
-            crossAxisAlignment: WrapCrossAlignment.center,
-            children: [
-              const Text(
-                "Don't have a SuperAdmin account?",
-                style: TextStyle(fontSize: 12.5, color: Color(0xFFA1A1AA)),
-                textAlign: TextAlign.center,
-              ),
-              TextButton(
-                style: TextButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 6,
-                    vertical: 4,
-                  ),
-                  minimumSize: Size.zero,
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                ),
-                onPressed: () => context.push('/register'),
-                child: const Text(
-                  'Register here',
-                  style: TextStyle(
-                    fontSize: 12.5,
-                    color: Color(0xFF818CF8),
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ],
+          const Center(
+            child: Text(
+              'SuperAdmin access is provisioned securely by system administration.',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 12.5, color: Color(0xFFA1A1AA)),
+            ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 16),
 
           // Back to Tenant App Link
           Center(
