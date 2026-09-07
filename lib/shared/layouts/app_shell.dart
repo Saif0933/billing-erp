@@ -320,7 +320,7 @@ class _AppShellState extends ConsumerState<AppShell> {
           elevation: 0,
           shape: RoundedRectangleBorder(
             borderRadius: AppRadius.smBorder,
-            side: BorderSide(color: Colors.grey.withOpacity(0.2)),
+            side: BorderSide(color: Colors.grey.withValues(alpha: 0.2)),
           ),
           child: Column(children: items),
         ),
@@ -363,6 +363,8 @@ class _AppShellState extends ConsumerState<AppShell> {
     final isMobile = ResponsiveBreakpoints.isMobile(context);
     final isTabScreen = _isTabRoute(currentLoc);
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
       key: _scaffoldKey,
       appBar: isTabScreen
@@ -384,34 +386,56 @@ class _AppShellState extends ConsumerState<AppShell> {
         ],
       ),
       bottomNavigationBar: (isMobile && isTabScreen)
-          ? BottomNavigationBar(
-              currentIndex: _calculateSelectedIndex(currentLoc),
-              selectedItemColor: AppColors.accentDark,
-              unselectedItemColor: Colors.grey,
-              type: BottomNavigationBarType.fixed,
-              onTap: _onBottomNavTapped,
-              items: const [
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.dashboard_outlined),
-                  label: 'Home',
+          ? Container(
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF0B132B) : Colors.white,
+                border: Border(
+                  top: BorderSide(
+                    color: isDark
+                        ? const Color(0xFF1E2E4A)
+                        : AppColors.borderLight,
+                  ),
                 ),
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.receipt_long_outlined),
-                  label: 'Sales',
-                ),
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.point_of_sale_outlined),
-                  label: 'POS',
-                ),
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.warehouse_outlined),
-                  label: 'Stock',
-                ),
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.more_horiz),
-                  label: 'More',
-                ),
-              ],
+              ),
+              child: BottomNavigationBar(
+                backgroundColor: isDark
+                    ? const Color(0xFF0B132B)
+                    : Colors.white,
+                elevation: 0,
+                currentIndex: _calculateSelectedIndex(currentLoc),
+                selectedItemColor: const Color(0xFF10B981),
+                unselectedItemColor: isDark
+                    ? const Color(0xFF94A3B8)
+                    : const Color(0xFF64748B),
+                type: BottomNavigationBarType.fixed,
+                onTap: _onBottomNavTapped,
+                items: const [
+                  BottomNavigationBarItem(
+                    icon: Icon(Icons.dashboard_outlined),
+                    activeIcon: Icon(Icons.dashboard),
+                    label: 'Home',
+                  ),
+                  BottomNavigationBarItem(
+                    icon: Icon(Icons.receipt_long_outlined),
+                    activeIcon: Icon(Icons.receipt_long),
+                    label: 'Sales',
+                  ),
+                  BottomNavigationBarItem(
+                    icon: Icon(Icons.point_of_sale_outlined),
+                    activeIcon: Icon(Icons.point_of_sale),
+                    label: 'POS',
+                  ),
+                  BottomNavigationBarItem(
+                    icon: Icon(Icons.warehouse_outlined),
+                    activeIcon: Icon(Icons.warehouse),
+                    label: 'Stock',
+                  ),
+                  BottomNavigationBarItem(
+                    icon: Icon(Icons.more_horiz),
+                    label: 'More',
+                  ),
+                ],
+              ),
             )
           : null,
     );

@@ -188,6 +188,10 @@ final routerProvider = Provider<GoRouter>((ref) {
             builder: (context, state) => const CustomerFormPage(),
           ),
           GoRoute(
+            path: '/customers/create',
+            builder: (context, state) => const CustomerFormPage(),
+          ),
+          GoRoute(
             path: '/customers/:id',
             builder: (context, state) {
               final id = state.pathParameters['id']!;
@@ -240,6 +244,10 @@ final routerProvider = Provider<GoRouter>((ref) {
             builder: (context, state) => const ProductFormPage(),
           ),
           GoRoute(
+            path: '/products/create',
+            builder: (context, state) => const ProductFormPage(),
+          ),
+          GoRoute(
             path: '/products/edit/:id',
             builder: (context, state) {
               final id = state.pathParameters['id']!;
@@ -271,6 +279,10 @@ final routerProvider = Provider<GoRouter>((ref) {
           ),
           GoRoute(
             path: '/sales/new',
+            builder: (context, state) => const InvoiceCreatePage(),
+          ),
+          GoRoute(
+            path: '/sales/create',
             builder: (context, state) => const InvoiceCreatePage(),
           ),
           GoRoute(
@@ -315,6 +327,10 @@ final routerProvider = Provider<GoRouter>((ref) {
           ),
           GoRoute(
             path: '/purchase/new',
+            builder: (context, state) => const PurchaseCreatePage(),
+          ),
+          GoRoute(
+            path: '/purchase/create',
             builder: (context, state) => const PurchaseCreatePage(),
           ),
           GoRoute(
@@ -410,6 +426,10 @@ final routerProvider = Provider<GoRouter>((ref) {
             path: '/accounting/bank-management',
             builder: (context, state) => const BankManagementPage(),
           ),
+          GoRoute(
+            path: '/bank-management',
+            builder: (context, state) => const BankManagementPage(),
+          ),
 
           /*
           // Phase 3: Manufacturing Routes
@@ -503,9 +523,9 @@ final routerProvider = Provider<GoRouter>((ref) {
 
 class RefListenable extends ChangeNotifier {
   RefListenable(Ref ref) {
-    ref.listen(authProvider, (_, __) => notifyListeners());
-    ref.listen(onboardingProvider, (_, __) => notifyListeners());
-    ref.listen(businessProvider, (_, __) => notifyListeners());
+    ref.listen(authProvider, (_, _) => notifyListeners());
+    ref.listen(onboardingProvider, (_, _) => notifyListeners());
+    ref.listen(businessProvider, (_, _) => notifyListeners());
   }
 }
 
