@@ -7,6 +7,7 @@ import '../../../../core/constants/app_spacing.dart';
 import '../../../../core/navigation/navigation_service.dart';
 import '../../../../core/responsive/responsive_breakpoints.dart';
 import '../../../../core/utils/global_search.dart';
+import '../../../../app/theme/theme_provider.dart';
 import '../../../../features/auth/presentation/providers/auth_provider.dart';
 import '../../../../features/business/presentation/providers/business_provider.dart';
 import '../../../../features/dashboard/presentation/providers/billing_repository.dart';
@@ -184,6 +185,7 @@ class _ResponsiveTopHeaderState extends ConsumerState<ResponsiveTopHeader> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final themeMode = ref.watch(themeModeProvider);
     final businessState = ref.watch(businessProvider);
     final authState = ref.watch(authProvider);
     final activeBiz = businessState.activeBusiness;
@@ -525,6 +527,115 @@ class _ResponsiveTopHeaderState extends ConsumerState<ResponsiveTopHeader> {
                           ),
                           textAlign: TextAlign.center,
                         ),
+                      ),
+                    ),
+                  ],
+                ),
+
+                SizedBox(width: isVeryCompact ? 4 : 6),
+
+                // Theme Mode Selector Button (System / Light / Dark)
+                PopupMenuButton<ThemeMode>(
+                  tooltip: 'Theme: ${themeMode == ThemeMode.system ? "System" : (themeMode == ThemeMode.light ? "Light" : "Dark")}',
+                  color: isDark ? const Color(0xFF0F1B3B) : Colors.white,
+                  surfaceTintColor: Colors.transparent,
+                  elevation: 8,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    side: BorderSide(
+                      color: isDark ? const Color(0xFF1E2E4A) : AppColors.borderLight,
+                    ),
+                  ),
+                  onSelected: (mode) {
+                    ref.read(themeModeProvider.notifier).setThemeMode(mode);
+                  },
+                  child: Container(
+                    width: buttonSize,
+                    height: buttonSize,
+                    decoration: BoxDecoration(
+                      color: isDark ? const Color(0xFF131D35) : const Color(0xFFF1F5F9),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: isDark ? const Color(0xFF1E2E4A) : AppColors.borderLight,
+                      ),
+                    ),
+                    alignment: Alignment.center,
+                    child: Icon(
+                      themeMode == ThemeMode.light
+                          ? Icons.light_mode_rounded
+                          : (themeMode == ThemeMode.dark
+                              ? Icons.dark_mode_rounded
+                              : Icons.brightness_auto_rounded),
+                      size: isVeryCompact ? 17 : 19,
+                      color: themeMode == ThemeMode.light
+                          ? const Color(0xFFF59E0B)
+                          : (themeMode == ThemeMode.dark
+                              ? const Color(0xFF818CF8)
+                              : const Color(0xFF10B981)),
+                    ),
+                  ),
+                  itemBuilder: (context) => [
+                    PopupMenuItem(
+                      value: ThemeMode.system,
+                      child: Row(
+                        children: [
+                          const Icon(Icons.brightness_auto_rounded, size: 18, color: Color(0xFF10B981)),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              'System Default',
+                              style: TextStyle(
+                                color: isDark ? Colors.white : Colors.black87,
+                                fontWeight: themeMode == ThemeMode.system ? FontWeight.bold : FontWeight.normal,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ),
+                          if (themeMode == ThemeMode.system)
+                            const Icon(Icons.check_rounded, size: 16, color: Color(0xFF10B981)),
+                        ],
+                      ),
+                    ),
+                    PopupMenuItem(
+                      value: ThemeMode.light,
+                      child: Row(
+                        children: [
+                          const Icon(Icons.light_mode_rounded, size: 18, color: Color(0xFFF59E0B)),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              'Light Mode',
+                              style: TextStyle(
+                                color: isDark ? Colors.white : Colors.black87,
+                                fontWeight: themeMode == ThemeMode.light ? FontWeight.bold : FontWeight.normal,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ),
+                          if (themeMode == ThemeMode.light)
+                            const Icon(Icons.check_rounded, size: 16, color: Color(0xFF10B981)),
+                        ],
+                      ),
+                    ),
+                    PopupMenuItem(
+                      value: ThemeMode.dark,
+                      child: Row(
+                        children: [
+                          const Icon(Icons.dark_mode_rounded, size: 18, color: Color(0xFF818CF8)),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              'Dark Mode',
+                              style: TextStyle(
+                                color: isDark ? Colors.white : Colors.black87,
+                                fontWeight: themeMode == ThemeMode.dark ? FontWeight.bold : FontWeight.normal,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ),
+                          if (themeMode == ThemeMode.dark)
+                            const Icon(Icons.check_rounded, size: 16, color: Color(0xFF10B981)),
+                        ],
                       ),
                     ),
                   ],

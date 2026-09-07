@@ -89,7 +89,19 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/login',
-        builder: (context, state) => const LoginPage(),
+        builder: (context, state) {
+          final portalParam = state.uri.queryParameters['portal'];
+          final emailParam = state.uri.queryParameters['email'];
+          final initialPortal = portalParam == 'platformAdmin'
+              ? LoginPortalType.platformAdmin
+              : (portalParam == 'organization'
+                  ? LoginPortalType.organization
+                  : null);
+          return LoginPage(
+            initialEmail: emailParam,
+            initialPortal: initialPortal,
+          );
+        },
       ),
       GoRoute(
         path: '/register',

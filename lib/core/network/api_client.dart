@@ -42,11 +42,14 @@ class ApiClient {
     ]);
   }
 
+  static const String hostingerBaseUrl = 'https://antiquewhite-squirrel-660917.hostingersite.com';
+
   /// Ordered list of candidate backend URLs to test
   static List<String> get candidateBaseUrls {
     final envUrl = dotenv.isInitialized ? dotenv.maybeGet('API_BASE_URL') : null;
     if (kIsWeb) {
       return [
+        hostingerBaseUrl,
         if (envUrl != null && envUrl.isNotEmpty) envUrl,
         'http://localhost:5000',
         'http://127.0.0.1:5000',
@@ -54,6 +57,7 @@ class ApiClient {
     }
 
     return {
+      hostingerBaseUrl,
       if (envUrl != null && envUrl.isNotEmpty && !envUrl.contains('taxbunny.com')) envUrl,
       'http://127.0.0.1:5000',      // Physical phone over USB (adb reverse)
       'http://10.0.2.2:5000',        // Android Emulator loopback to host
@@ -68,10 +72,12 @@ class ApiClient {
       try {
         if (dotenv.isInitialized) {
           final url = dotenv.maybeGet('API_BASE_URL');
-          if (url != null && url.isNotEmpty) return url;
+          if (url != null && url.isNotEmpty && !url.contains('localhost') && !url.contains('127.0.0.1')) {
+            return url.endsWith('/') ? url.substring(0, url.length - 1) : url;
+          }
         }
       } catch (_) {}
-      return 'http://localhost:5000';
+      return hostingerBaseUrl;
     }
 
     try {
@@ -79,14 +85,14 @@ class ApiClient {
         final url = dotenv.maybeGet('API_BASE_URL');
         if (url != null && url.isNotEmpty && !url.contains('taxbunny.com')) {
           if (!url.contains('localhost') && !url.contains('127.0.0.1')) {
-            return url;
+            return url.endsWith('/') ? url.substring(0, url.length - 1) : url;
           }
         }
       }
     } catch (_) {}
 
-    // Default to USB adb reverse for mobile devices
-    return 'http://127.0.0.1:5000';
+    // Default to Hostinger production server
+    return hostingerBaseUrl;
   }
 
   /// Automatically tests candidate server URLs in parallel and locks onto the first active one

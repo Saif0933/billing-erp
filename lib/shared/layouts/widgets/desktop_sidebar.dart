@@ -50,8 +50,9 @@ class _DesktopSidebarState extends ConsumerState<DesktopSidebar> {
     if (route == '/dashboard' && currentLoc == '/dashboard') return true;
     if (route != '/dashboard' &&
         route.isNotEmpty &&
-        currentLoc.startsWith(route))
+        currentLoc.startsWith(route)) {
       return true;
+    }
     return false;
   }
 
@@ -125,8 +126,9 @@ class _DesktopSidebarState extends ConsumerState<DesktopSidebar> {
                         return true;
                       }).toList();
 
-                      if (allowedChildren.isEmpty)
+                      if (allowedChildren.isEmpty) {
                         return const SizedBox.shrink();
+                      }
 
                       final isExpanded = expandedGroups.contains(item.id);
                       final hasActiveChild = allowedChildren.any(

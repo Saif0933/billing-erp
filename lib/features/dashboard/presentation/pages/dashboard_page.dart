@@ -1,10 +1,12 @@
 import 'dart:async';
+
+import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
 
+import '../../../../core/constants/app_colors.dart';
 import '../../../business/presentation/providers/business_provider.dart';
 import '../providers/billing_repository.dart';
 
@@ -19,6 +21,26 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
   late Timer _clockTimer;
   DateTime _currentTime = DateTime.now();
   String _selectedTrendPeriod = 'This Year';
+
+  bool get _isDark => Theme.of(context).brightness == Brightness.dark;
+  Color get _cardBg => _isDark ? const Color(0xFF131D35) : Colors.white;
+  Color get _cardBorder =>
+      _isDark ? const Color(0xFF1E2E4A) : AppColors.borderLight;
+  Color get _textPrimary =>
+      _isDark ? Colors.white : AppColors.textLightPrimary;
+  Color get _textSecondary =>
+      _isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569);
+  Color get _textMuted =>
+      _isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8);
+  Color get _dividerColor =>
+      _isDark ? const Color(0xFF1E2E4A) : const Color(0xFFF1F5F9);
+  List<BoxShadow> get _cardShadow => [
+    BoxShadow(
+      color: Colors.black.withValues(alpha: _isDark ? 0.25 : 0.04),
+      blurRadius: _isDark ? 12 : 8,
+      offset: const Offset(0, 2),
+    ),
+  ];
 
   @override
   void initState() {
@@ -47,7 +69,8 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
     final bizName = activeBiz?.name ?? 'Tax Bunny Retail Store';
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0B132B),
+      backgroundColor:
+          _isDark ? const Color(0xFF0B132B) : AppColors.backgroundLight,
       body: LayoutBuilder(
         builder: (context, constraints) {
           final width = constraints.maxWidth;
@@ -65,15 +88,9 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(
-                        flex: 7,
-                        child: _buildGreetingBanner(bizName),
-                      ),
+                      Expanded(flex: 7, child: _buildGreetingBanner(bizName)),
                       const SizedBox(width: 16),
-                      Expanded(
-                        flex: 3,
-                        child: _buildLiveClockCard(),
-                      ),
+                      Expanded(flex: 3, child: _buildLiveClockCard()),
                     ],
                   )
                 else
@@ -123,18 +140,22 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
     return Container(
       constraints: const BoxConstraints(minHeight: 180),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [
-            Color(0xFFE8FAF3),
-            Color(0xFFC7F4E5),
-          ],
+        gradient: LinearGradient(
+          colors: _isDark
+              ? const [Color(0xFF0F382B), Color(0xFF0A261D)]
+              : const [Color(0xFFE8FAF3), Color(0xFFC7F4E5)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(20),
+        border: _isDark
+            ? Border.all(
+                color: const Color(0xFF10B981).withValues(alpha: 0.3),
+              )
+            : null,
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF10B981).withValues(alpha: 0.12),
+            color: const Color(0xFF10B981).withValues(alpha: _isDark ? 0.15 : 0.12),
             blurRadius: 16,
             offset: const Offset(0, 6),
           ),
@@ -153,7 +174,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                 height: 180,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: Colors.white.withValues(alpha: 0.35),
+                  color: Colors.white.withValues(alpha: _isDark ? 0.08 : 0.35),
                 ),
               ),
             ),
@@ -172,12 +193,14 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            const Text(
+                            Text(
                               'Good Morning,',
                               style: TextStyle(
                                 fontSize: 14.5,
                                 fontWeight: FontWeight.w600,
-                                color: Color(0xFF064E3B),
+                                color: _isDark
+                                    ? const Color(0xFF6EE7B7)
+                                    : const Color(0xFF064E3B),
                               ),
                             ),
                             const SizedBox(height: 4),
@@ -189,7 +212,9 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                                     style: TextStyle(
                                       fontSize: isCompact ? 19 : 24,
                                       fontWeight: FontWeight.w900,
-                                      color: const Color(0xFF064E3B),
+                                      color: _isDark
+                                          ? Colors.white
+                                          : const Color(0xFF064E3B),
                                       letterSpacing: -0.5,
                                     ),
                                     maxLines: 1,
@@ -197,15 +222,20 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                                   ),
                                 ),
                                 const SizedBox(width: 6),
-                                const Text('👋', style: TextStyle(fontSize: 22)),
+                                const Text(
+                                  '👋',
+                                  style: TextStyle(fontSize: 22),
+                                ),
                               ],
                             ),
                             const SizedBox(height: 6),
-                            const Text(
+                            Text(
                               'Manage your business smarter, faster and easier.',
                               style: TextStyle(
                                 fontSize: 12.5,
-                                color: Color(0xFF047857),
+                                color: _isDark
+                                    ? const Color(0xFFA7F3D0)
+                                    : const Color(0xFF047857),
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
@@ -216,11 +246,31 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                               spacing: 8,
                               runSpacing: 6,
                               children: [
-                                _buildFeaturePill(Icons.description_outlined, 'Billing', '/sales'),
-                                _buildFeaturePill(Icons.inventory_2_outlined, 'Inventory', '/inventory'),
-                                _buildFeaturePill(Icons.people_outline, 'Customers', '/customers'),
-                                _buildFeaturePill(Icons.bar_chart_outlined, 'Reports', '/reports'),
-                                _buildFeaturePill(Icons.verified_user_outlined, 'GST Compliant', '/gst'),
+                                _buildFeaturePill(
+                                  Icons.description_outlined,
+                                  'Billing',
+                                  '/sales',
+                                ),
+                                _buildFeaturePill(
+                                  Icons.inventory_2_outlined,
+                                  'Inventory',
+                                  '/inventory',
+                                ),
+                                _buildFeaturePill(
+                                  Icons.people_outline,
+                                  'Customers',
+                                  '/customers',
+                                ),
+                                _buildFeaturePill(
+                                  Icons.bar_chart_outlined,
+                                  'Reports',
+                                  '/reports',
+                                ),
+                                _buildFeaturePill(
+                                  Icons.verified_user_outlined,
+                                  'GST Compliant',
+                                  '/gst',
+                                ),
                               ],
                             ),
                           ],
@@ -244,30 +294,41 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
   }
 
   Widget _buildFeaturePill(IconData icon, String label, String route) {
+    final pillTextColor =
+        _isDark ? Colors.white : const Color(0xFF064E3B);
+    final pillIconColor =
+        _isDark ? const Color(0xFF6EE7B7) : const Color(0xFF064E3B);
+    final pillBg = _isDark
+        ? Colors.white.withValues(alpha: 0.12)
+        : const Color(0xFF064E3B).withValues(alpha: 0.08);
+    final pillBorder = _isDark
+        ? Colors.white.withValues(alpha: 0.2)
+        : const Color(0xFF064E3B).withValues(alpha: 0.15);
+
     return InkWell(
       onTap: () => context.push(route),
       borderRadius: BorderRadius.circular(20),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
         decoration: BoxDecoration(
-          color: const Color(0xFF064E3B).withValues(alpha: 0.08),
+          color: pillBg,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: const Color(0xFF064E3B).withValues(alpha: 0.15),
+            color: pillBorder,
             width: 0.8,
           ),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 12, color: const Color(0xFF064E3B)),
+            Icon(icon, size: 12, color: pillIconColor),
             const SizedBox(width: 4),
             Text(
               label,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w700,
-                color: Color(0xFF064E3B),
+                color: pillTextColor,
               ),
             ),
           ],
@@ -324,8 +385,13 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                       height: 50,
                       decoration: BoxDecoration(
                         color: const Color(0xFF6EE7B7).withValues(alpha: 0.3),
-                        borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
-                        border: Border.all(color: const Color(0xFF10B981), width: 1.5),
+                        borderRadius: const BorderRadius.vertical(
+                          top: Radius.circular(4),
+                        ),
+                        border: Border.all(
+                          color: const Color(0xFF10B981),
+                          width: 1.5,
+                        ),
                       ),
                       child: Align(
                         alignment: Alignment.centerRight,
@@ -349,7 +415,10 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                       decoration: BoxDecoration(
                         color: const Color(0xFF93C5FD).withValues(alpha: 0.35),
                         borderRadius: BorderRadius.circular(4),
-                        border: Border.all(color: const Color(0xFF3B82F6).withValues(alpha: 0.5), width: 1.5),
+                        border: Border.all(
+                          color: const Color(0xFF3B82F6).withValues(alpha: 0.5),
+                          width: 1.5,
+                        ),
                       ),
                       child: Center(
                         child: Container(
@@ -388,7 +457,9 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                     7,
                     (i) => Expanded(
                       child: Container(
-                        color: i.isEven ? const Color(0xFF00C853) : const Color(0xFF69F0AE),
+                        color: i.isEven
+                            ? const Color(0xFF00C853)
+                            : const Color(0xFF69F0AE),
                       ),
                     ),
                   ),
@@ -417,9 +488,33 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
               child: const Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text('GROW', style: TextStyle(fontSize: 8.5, fontWeight: FontWeight.w900, color: Colors.white, letterSpacing: 0.8)),
-                  Text('BILL', style: TextStyle(fontSize: 8.5, fontWeight: FontWeight.w900, color: Color(0xFF6EE7B7), letterSpacing: 0.8)),
-                  Text('REPEAT', style: TextStyle(fontSize: 8.5, fontWeight: FontWeight.w900, color: Colors.white, letterSpacing: 0.8)),
+                  Text(
+                    'GROW',
+                    style: TextStyle(
+                      fontSize: 8.5,
+                      fontWeight: FontWeight.w900,
+                      color: Colors.white,
+                      letterSpacing: 0.8,
+                    ),
+                  ),
+                  Text(
+                    'BILL',
+                    style: TextStyle(
+                      fontSize: 8.5,
+                      fontWeight: FontWeight.w900,
+                      color: Color(0xFF6EE7B7),
+                      letterSpacing: 0.8,
+                    ),
+                  ),
+                  Text(
+                    'REPEAT',
+                    style: TextStyle(
+                      fontSize: 8.5,
+                      fontWeight: FontWeight.w900,
+                      color: Colors.white,
+                      letterSpacing: 0.8,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -467,16 +562,10 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: const Color(0xFF131D35),
+        color: _cardBg,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFF1E2E4A)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.25),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        border: Border.all(color: _cardBorder),
+        boxShadow: _cardShadow,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -485,15 +574,19 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
           // Date Row
           Row(
             children: [
-              const Icon(Icons.calendar_today_outlined, size: 14, color: Color(0xFF94A3B8)),
+              Icon(
+                Icons.calendar_today_outlined,
+                size: 14,
+                color: _textMuted,
+              ),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   dateStr,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12.5,
                     fontWeight: FontWeight.w600,
-                    color: Color(0xFF94A3B8),
+                    color: _textMuted,
                   ),
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -505,10 +598,10 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
           // Big Bold Live Digital Clock
           Text(
             timeStr,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 32,
               fontWeight: FontWeight.w900,
-              color: Colors.white,
+              color: _textPrimary,
               letterSpacing: -0.5,
             ),
           ),
@@ -518,16 +611,20 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Row(
+              Row(
                 children: [
-                  Icon(Icons.wb_sunny_outlined, size: 15, color: Color(0xFFF59E0B)),
-                  SizedBox(width: 6),
+                  const Icon(
+                    Icons.wb_sunny_outlined,
+                    size: 15,
+                    color: Color(0xFFF59E0B),
+                  ),
+                  const SizedBox(width: 6),
                   Text(
                     'Have a productive day!',
                     style: TextStyle(
                       fontSize: 11.5,
                       fontWeight: FontWeight.w500,
-                      color: Color(0xFF94A3B8),
+                      color: _textMuted,
                     ),
                   ),
                 ],
@@ -571,14 +668,20 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
   Widget _buildKpiSection(double screenWidth, BillingState billingState) {
     // Dynamic values with graceful fallbacks matching the exact design
     final salesTotal = billingState.invoices.isNotEmpty
-        ? billingState.invoices.fold<double>(0.0, (sum, inv) => sum + inv.grandTotal)
+        ? billingState.invoices.fold<double>(
+            0.0,
+            (sum, inv) => sum + inv.grandTotal,
+          )
         : 12450.00;
     final salesCount = billingState.invoices.isNotEmpty
         ? billingState.invoices.length
         : 24;
 
     final purchaseTotal = billingState.purchases.isNotEmpty
-        ? billingState.purchases.fold<double>(0.0, (sum, p) => sum + p.grandTotal)
+        ? billingState.purchases.fold<double>(
+            0.0,
+            (sum, p) => sum + p.grandTotal,
+          )
         : 8320.00;
     final purchaseCount = billingState.purchases.isNotEmpty
         ? billingState.purchases.length
@@ -629,12 +732,14 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
     if (screenWidth >= 1100) {
       return Row(
         children: cards
-            .map((c) => Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 6),
-                    child: c,
-                  ),
-                ))
+            .map(
+              (c) => Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 6),
+                  child: c,
+                ),
+              ),
+            )
             .toList(),
       );
     }
@@ -650,10 +755,10 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
 
     return Column(
       children: cards
-          .map((c) => Padding(
-                padding: const EdgeInsets.only(bottom: 10),
-                child: c,
-              ))
+          .map(
+            (c) =>
+                Padding(padding: const EdgeInsets.only(bottom: 10), child: c),
+          )
           .toList(),
     );
   }
@@ -670,16 +775,10 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: const Color(0xFF131D35),
+        color: _cardBg,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFF1E2E4A)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.2),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        border: Border.all(color: _cardBorder),
+        boxShadow: _cardShadow,
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -688,7 +787,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: iconColor.withValues(alpha: 0.14),
+              color: iconColor.withValues(alpha: _isDark ? 0.14 : 0.1),
               shape: BoxShape.circle,
             ),
             child: Icon(icon, color: iconColor, size: 22),
@@ -702,28 +801,28 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
               children: [
                 Text(
                   title,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
-                    color: Color(0xFF94A3B8),
+                    color: _textSecondary,
                   ),
                 ),
                 const SizedBox(height: 6),
                 Text(
                   value,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.w900,
-                    color: Colors.white,
+                    color: _textPrimary,
                     letterSpacing: -0.4,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   subtitle,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 11,
-                    color: Color(0xFF64748B),
+                    color: _textMuted,
                   ),
                 ),
               ],
@@ -734,16 +833,24 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
             decoration: BoxDecoration(
-              color: (isPositive ? const Color(0xFF10B981) : const Color(0xFFEF4444)).withValues(alpha: 0.15),
+              color:
+                  (isPositive
+                          ? const Color(0xFF10B981)
+                          : const Color(0xFFEF4444))
+                      .withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(
-                  isPositive ? Icons.arrow_upward_rounded : Icons.arrow_downward_rounded,
+                  isPositive
+                      ? Icons.arrow_upward_rounded
+                      : Icons.arrow_downward_rounded,
                   size: 11,
-                  color: isPositive ? const Color(0xFF10B981) : const Color(0xFFEF4444),
+                  color: isPositive
+                      ? const Color(0xFF10B981)
+                      : const Color(0xFFEF4444),
                 ),
                 const SizedBox(width: 2),
                 Text(
@@ -751,7 +858,9 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w800,
-                    color: isPositive ? const Color(0xFF10B981) : const Color(0xFFEF4444),
+                    color: isPositive
+                        ? const Color(0xFF10B981)
+                        : const Color(0xFFEF4444),
                   ),
                 ),
               ],
@@ -820,91 +929,159 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
           height: isNarrow ? 365 : 330,
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: const Color(0xFF131D35),
+            color: _cardBg,
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: const Color(0xFF1E2E4A)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.25),
-                blurRadius: 12,
-                offset: const Offset(0, 4),
-              ),
-            ],
+            border: Border.all(color: _cardBorder),
+            boxShadow: _cardShadow,
           ),
           child: Column(
             children: [
               // Header with responsive layout
               Builder(
                 builder: (context) {
-                  final headerTitle = const Row(
+                  final headerTitle = Row(
                     children: [
-                      Icon(Icons.bar_chart_rounded, size: 20, color: Color(0xFF10B981)),
-                      SizedBox(width: 8),
+                      const Icon(
+                        Icons.bar_chart_rounded,
+                        size: 20,
+                        color: Color(0xFF10B981),
+                      ),
+                      const SizedBox(width: 8),
                       Text(
                         'Sales & Purchase Trend',
                         style: TextStyle(
                           fontSize: 14.5,
                           fontWeight: FontWeight.w800,
-                          color: Colors.white,
+                          color: _textPrimary,
                         ),
                       ),
                     ],
                   );
 
                   final legendAndFilter = Row(
-                    mainAxisSize: isNarrow ? MainAxisSize.max : MainAxisSize.min,
-                    mainAxisAlignment: isNarrow ? MainAxisAlignment.spaceBetween : MainAxisAlignment.start,
+                    mainAxisSize: isNarrow
+                        ? MainAxisSize.max
+                        : MainAxisSize.min,
+                    mainAxisAlignment: isNarrow
+                        ? MainAxisAlignment.spaceBetween
+                        : MainAxisAlignment.start,
                     children: [
                       // Legend: Sales
-                      const Row(
+                      Row(
                         children: [
-                          CircleAvatar(radius: 4, backgroundColor: Color(0xFF10B981)),
-                          SizedBox(width: 4),
-                          Text('Sales (₹)', style: TextStyle(fontSize: 11, color: Color(0xFF94A3B8))),
+                          const CircleAvatar(
+                            radius: 4,
+                            backgroundColor: Color(0xFF10B981),
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            'Sales (₹)',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: _textMuted,
+                            ),
+                          ),
                         ],
                       ),
                       const SizedBox(width: 12),
 
                       // Legend: Purchases
-                      const Row(
+                      Row(
                         children: [
-                          CircleAvatar(radius: 4, backgroundColor: Color(0xFFF59E0B)),
-                          SizedBox(width: 4),
-                          Text('Purchases (₹)', style: TextStyle(fontSize: 11, color: Color(0xFF94A3B8))),
+                          const CircleAvatar(
+                            radius: 4,
+                            backgroundColor: Color(0xFFF59E0B),
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            'Purchases (₹)',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: _textMuted,
+                            ),
+                          ),
                         ],
                       ),
                       const SizedBox(width: 14),
 
                       // Dropdown pill
                       PopupMenuButton<String>(
-                        onSelected: (val) => setState(() => _selectedTrendPeriod = val),
-                        color: const Color(0xFF1E293B),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        onSelected: (val) =>
+                            setState(() => _selectedTrendPeriod = val),
+                        color: _isDark ? const Color(0xFF1E293B) : Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          side: BorderSide(color: _cardBorder),
+                        ),
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 5,
+                          ),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF0F172A),
+                            color: _isDark
+                                ? const Color(0xFF0F172A)
+                                : const Color(0xFFF1F5F9),
                             borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: const Color(0xFF1E2E4A)),
+                            border: Border.all(color: _cardBorder),
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              const Icon(Icons.calendar_today_outlined, size: 12, color: Color(0xFF94A3B8)),
+                              Icon(
+                                Icons.calendar_today_outlined,
+                                size: 12,
+                                color: _textMuted,
+                              ),
                               const SizedBox(width: 6),
                               Text(
                                 _selectedTrendPeriod,
-                                style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: Colors.white),
+                                style: TextStyle(
+                                  fontSize: 11.5,
+                                  fontWeight: FontWeight.w600,
+                                  color: _textPrimary,
+                                ),
                               ),
                               const SizedBox(width: 4),
-                              const Icon(Icons.arrow_drop_down, size: 16, color: Color(0xFF94A3B8)),
+                              Icon(
+                                Icons.arrow_drop_down,
+                                size: 16,
+                                color: _textMuted,
+                              ),
                             ],
                           ),
                         ),
                         itemBuilder: (ctx) => [
-                          const PopupMenuItem(value: 'This Year', child: Text('This Year', style: TextStyle(color: Colors.white, fontSize: 12))),
-                          const PopupMenuItem(value: 'This Quarter', child: Text('This Quarter', style: TextStyle(color: Colors.white, fontSize: 12))),
-                          const PopupMenuItem(value: 'This Month', child: Text('This Month', style: TextStyle(color: Colors.white, fontSize: 12))),
+                          PopupMenuItem(
+                            value: 'This Year',
+                            child: Text(
+                              'This Year',
+                              style: TextStyle(
+                                color: _textPrimary,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ),
+                          PopupMenuItem(
+                            value: 'This Quarter',
+                            child: Text(
+                              'This Quarter',
+                              style: TextStyle(
+                                color: _textPrimary,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ),
+                          PopupMenuItem(
+                            value: 'This Month',
+                            child: Text(
+                              'This Month',
+                              style: TextStyle(
+                                color: _textPrimary,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ),
                         ],
                       ),
                     ],
@@ -923,200 +1100,213 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
 
                   return Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      headerTitle,
-                      legendAndFilter,
-                    ],
+                    children: [headerTitle, legendAndFilter],
                   );
                 },
               ),
 
               const SizedBox(height: 16),
 
-          // Dual Line Spline Chart
-          Expanded(
-            child: LineChart(
-              LineChartData(
-                gridData: FlGridData(
-                  show: true,
-                  drawVerticalLine: false,
-                  horizontalInterval: 15,
-                  getDrawingHorizontalLine: (value) {
-                    return FlLine(
-                      color: const Color(0xFF1E2E4A).withValues(alpha: 0.6),
-                      strokeWidth: 1,
-                      dashArray: [4, 4],
-                    );
-                  },
-                ),
-                titlesData: FlTitlesData(
-                  topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                  rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                  leftTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      interval: 15,
-                      reservedSize: 34,
-                      getTitlesWidget: (value, meta) {
-                        const yLabels = {
-                          0: '0',
-                          15: '15K',
-                          30: '30K',
-                          45: '45K',
-                          60: '60K',
-                          75: '75K',
-                        };
-                        final text = yLabels[value.toInt()] ?? '';
-                        return Text(
-                          text,
-                          style: const TextStyle(fontSize: 10, color: Color(0xFF64748B)),
+              // Dual Line Spline Chart
+              Expanded(
+                child: LineChart(
+                  LineChartData(
+                    gridData: FlGridData(
+                      show: true,
+                      drawVerticalLine: false,
+                      horizontalInterval: 15,
+                      getDrawingHorizontalLine: (value) {
+                        return FlLine(
+                          color: _isDark
+                              ? const Color(0xFF1E2E4A).withValues(alpha: 0.6)
+                              : AppColors.borderLight,
+                          strokeWidth: 1,
+                          dashArray: [4, 4],
                         );
                       },
                     ),
-                  ),
-                  bottomTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      reservedSize: 22,
-                      interval: 1,
-                      getTitlesWidget: (value, meta) {
-                        const months = [
-                          'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-                          'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
-                        ];
-                        final index = value.toInt();
-                        if (index >= 0 && index < months.length) {
-                          return Text(
-                            months[index],
-                            style: const TextStyle(fontSize: 10, color: Color(0xFF64748B)),
-                          );
-                        }
-                        return const SizedBox();
-                      },
-                    ),
-                  ),
-                ),
-                borderData: FlBorderData(show: false),
-                minX: 0,
-                maxX: 11,
-                minY: 0,
-                maxY: 75,
-                lineBarsData: [
-                  // Sales Line (Green)
-                  LineChartBarData(
-                    spots: const [
-                      FlSpot(0, 12),
-                      FlSpot(1, 26),
-                      FlSpot(2, 34),
-                      FlSpot(3, 31),
-                      FlSpot(4, 42),
-                      FlSpot(5, 54),
-                      FlSpot(6, 46),
-                      FlSpot(7, 43),
-                      FlSpot(8, 52),
-                      FlSpot(9, 61),
-                      FlSpot(10, 68),
-                      FlSpot(11, 75),
-                    ],
-                    isCurved: true,
-                    curveSmoothness: 0.35,
-                    color: const Color(0xFF10B981),
-                    barWidth: 2.8,
-                    isStrokeCapRound: true,
-                    dotData: FlDotData(
-                      show: true,
-                      getDotPainter: (spot, percent, barData, index) {
-                        return FlDotCirclePainter(
-                          radius: 3,
-                          color: const Color(0xFF10B981),
-                          strokeWidth: 1.5,
-                          strokeColor: Colors.white,
-                        );
-                      },
-                    ),
-                    belowBarData: BarAreaData(
-                      show: true,
-                      gradient: LinearGradient(
-                        colors: [
-                          const Color(0xFF10B981).withValues(alpha: 0.22),
-                          const Color(0xFF10B981).withValues(alpha: 0.0),
-                        ],
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
+                    titlesData: FlTitlesData(
+                      topTitles: const AxisTitles(
+                        sideTitles: SideTitles(showTitles: false),
+                      ),
+                      rightTitles: const AxisTitles(
+                        sideTitles: SideTitles(showTitles: false),
+                      ),
+                      leftTitles: AxisTitles(
+                        sideTitles: SideTitles(
+                          showTitles: true,
+                          interval: 15,
+                          reservedSize: 34,
+                          getTitlesWidget: (value, meta) {
+                            const yLabels = {
+                              0: '0',
+                              15: '15K',
+                              30: '30K',
+                              45: '45K',
+                              60: '60K',
+                              75: '75K',
+                            };
+                            final text = yLabels[value.toInt()] ?? '';
+                            return Text(
+                              text,
+                              style: const TextStyle(
+                                fontSize: 10,
+                                color: Color(0xFF64748B),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                      bottomTitles: AxisTitles(
+                        sideTitles: SideTitles(
+                          showTitles: true,
+                          reservedSize: 22,
+                          interval: 1,
+                          getTitlesWidget: (value, meta) {
+                            const months = [
+                              'Jan',
+                              'Feb',
+                              'Mar',
+                              'Apr',
+                              'May',
+                              'Jun',
+                              'Jul',
+                              'Aug',
+                              'Sep',
+                              'Oct',
+                              'Nov',
+                              'Dec',
+                            ];
+                            final index = value.toInt();
+                            if (index >= 0 && index < months.length) {
+                              return Text(
+                                months[index],
+                                style: const TextStyle(
+                                  fontSize: 10,
+                                  color: Color(0xFF64748B),
+                                ),
+                              );
+                            }
+                            return const SizedBox();
+                          },
+                        ),
                       ),
                     ),
-                  ),
+                    borderData: FlBorderData(show: false),
+                    minX: 0,
+                    maxX: 11,
+                    minY: 0,
+                    maxY: 75,
+                    lineBarsData: [
+                      // Sales Line (Green)
+                      LineChartBarData(
+                        spots: const [
+                          FlSpot(0, 12),
+                          FlSpot(1, 26),
+                          FlSpot(2, 34),
+                          FlSpot(3, 31),
+                          FlSpot(4, 42),
+                          FlSpot(5, 54),
+                          FlSpot(6, 46),
+                          FlSpot(7, 43),
+                          FlSpot(8, 52),
+                          FlSpot(9, 61),
+                          FlSpot(10, 68),
+                          FlSpot(11, 75),
+                        ],
+                        isCurved: true,
+                        curveSmoothness: 0.35,
+                        color: const Color(0xFF10B981),
+                        barWidth: 2.8,
+                        isStrokeCapRound: true,
+                        dotData: FlDotData(
+                          show: true,
+                          getDotPainter: (spot, percent, barData, index) {
+                            return FlDotCirclePainter(
+                              radius: 3,
+                              color: const Color(0xFF10B981),
+                              strokeWidth: 1.5,
+                              strokeColor: Colors.white,
+                            );
+                          },
+                        ),
+                        belowBarData: BarAreaData(
+                          show: true,
+                          gradient: LinearGradient(
+                            colors: [
+                              const Color(0xFF10B981).withValues(alpha: 0.22),
+                              const Color(0xFF10B981).withValues(alpha: 0.0),
+                            ],
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                          ),
+                        ),
+                      ),
 
-                  // Purchases Line (Orange/Yellow)
-                  LineChartBarData(
-                    spots: const [
-                      FlSpot(0, 5),
-                      FlSpot(1, 14),
-                      FlSpot(2, 17),
-                      FlSpot(3, 13),
-                      FlSpot(4, 21),
-                      FlSpot(5, 29),
-                      FlSpot(6, 19),
-                      FlSpot(7, 16),
-                      FlSpot(8, 23),
-                      FlSpot(9, 32),
-                      FlSpot(10, 34),
-                      FlSpot(11, 38),
-                    ],
-                    isCurved: true,
-                    curveSmoothness: 0.35,
-                    color: const Color(0xFFF59E0B),
-                    barWidth: 2.6,
-                    isStrokeCapRound: true,
-                    dotData: FlDotData(
-                      show: true,
-                      getDotPainter: (spot, percent, barData, index) {
-                        return FlDotCirclePainter(
-                          radius: 3,
-                          color: const Color(0xFFF59E0B),
-                          strokeWidth: 1.5,
-                          strokeColor: Colors.white,
-                        );
-                      },
-                    ),
-                    belowBarData: BarAreaData(
-                      show: true,
-                      gradient: LinearGradient(
-                        colors: [
-                          const Color(0xFFF59E0B).withValues(alpha: 0.16),
-                          const Color(0xFFF59E0B).withValues(alpha: 0.0),
+                      // Purchases Line (Orange/Yellow)
+                      LineChartBarData(
+                        spots: const [
+                          FlSpot(0, 5),
+                          FlSpot(1, 14),
+                          FlSpot(2, 17),
+                          FlSpot(3, 13),
+                          FlSpot(4, 21),
+                          FlSpot(5, 29),
+                          FlSpot(6, 19),
+                          FlSpot(7, 16),
+                          FlSpot(8, 23),
+                          FlSpot(9, 32),
+                          FlSpot(10, 34),
+                          FlSpot(11, 38),
                         ],
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
+                        isCurved: true,
+                        curveSmoothness: 0.35,
+                        color: const Color(0xFFF59E0B),
+                        barWidth: 2.6,
+                        isStrokeCapRound: true,
+                        dotData: FlDotData(
+                          show: true,
+                          getDotPainter: (spot, percent, barData, index) {
+                            return FlDotCirclePainter(
+                              radius: 3,
+                              color: const Color(0xFFF59E0B),
+                              strokeWidth: 1.5,
+                              strokeColor: Colors.white,
+                            );
+                          },
+                        ),
+                        belowBarData: BarAreaData(
+                          show: true,
+                          gradient: LinearGradient(
+                            colors: [
+                              const Color(0xFFF59E0B).withValues(alpha: 0.16),
+                              const Color(0xFFF59E0B).withValues(alpha: 0.0),
+                            ],
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                          ),
+                        ),
                       ),
-                    ),
+                    ],
                   ),
-                ],
+                ),
               ),
-            ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
-  },
-);
-}
+  }
 
   Widget _buildCashAndBankCard(BillingState billingState) {
     return Container(
       height: 330,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: const Color(0xFF131D35),
+        color: _cardBg,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFF1E2E4A)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.25),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        border: Border.all(color: _cardBorder),
+        boxShadow: _cardShadow,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1133,15 +1323,19 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                       color: const Color(0xFF10B981).withValues(alpha: 0.15),
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(Icons.account_balance_outlined, size: 16, color: Color(0xFF10B981)),
+                    child: const Icon(
+                      Icons.account_balance_outlined,
+                      size: 16,
+                      color: Color(0xFF10B981),
+                    ),
                   ),
                   const SizedBox(width: 8),
-                  const Text(
+                  Text(
                     'Cash & Bank Balance',
                     style: TextStyle(
                       fontSize: 13.5,
                       fontWeight: FontWeight.w800,
-                      color: Colors.white,
+                      color: _textPrimary,
                     ),
                   ),
                 ],
@@ -1181,7 +1375,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
             icon: Icons.account_balance,
             isSquare: true,
           ),
-          const Divider(color: Color(0xFF1E2E4A), height: 16),
+          Divider(color: _dividerColor, height: 16),
           _buildBankItem(
             name: 'SBI - 5678',
             amount: '₹ 45,300.00',
@@ -1189,7 +1383,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
             icon: Icons.account_balance,
             isSquare: false,
           ),
-          const Divider(color: Color(0xFF1E2E4A), height: 16),
+          Divider(color: _dividerColor, height: 16),
           _buildBankItem(
             name: 'Cash in Hand',
             amount: '₹ 8,200.00',
@@ -1217,54 +1411,48 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
         child: Row(
           children: [
             Container(
-          width: 30,
-          height: 30,
-          decoration: BoxDecoration(
-            color: iconColor,
-            borderRadius: BorderRadius.circular(isSquare ? 6 : 15),
-          ),
-          child: Icon(icon, size: 16, color: Colors.white),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Text(
-            name,
-            style: const TextStyle(
-              fontSize: 12.5,
-              fontWeight: FontWeight.w600,
-              color: Colors.white,
+              width: 30,
+              height: 30,
+              decoration: BoxDecoration(
+                color: iconColor,
+                borderRadius: BorderRadius.circular(isSquare ? 6 : 15),
+              ),
+              child: Icon(icon, size: 16, color: Colors.white),
             ),
-          ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                name,
+                style: TextStyle(
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w600,
+                  color: _textPrimary,
+                ),
+              ),
+            ),
+            Text(
+              amount,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w800,
+                color: _textPrimary,
+              ),
+            ),
+          ],
         ),
-        Text(
-          amount,
-          style: const TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w800,
-            color: Colors.white,
-          ),
-        ),
-      ],
-    ),
-  ),
-);
-}
+      ),
+    );
+  }
 
   Widget _buildInventorySummaryCard() {
     return Container(
       height: 330,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: const Color(0xFF131D35),
+        color: _cardBg,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFF1E2E4A)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.25),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        border: Border.all(color: _cardBorder),
+        boxShadow: _cardShadow,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1281,15 +1469,19 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                       color: const Color(0xFF8B5CF6).withValues(alpha: 0.15),
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(Icons.inventory_2_outlined, size: 16, color: Color(0xFF8B5CF6)),
+                    child: const Icon(
+                      Icons.inventory_2_outlined,
+                      size: 16,
+                      color: Color(0xFF8B5CF6),
+                    ),
                   ),
                   const SizedBox(width: 8),
-                  const Text(
+                  Text(
                     'Inventory Summary',
                     style: TextStyle(
                       fontSize: 13.5,
                       fontWeight: FontWeight.w800,
-                      color: Colors.white,
+                      color: _textPrimary,
                     ),
                   ),
                 ],
@@ -1346,7 +1538,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                           ],
                         ),
                       ),
-                      const Column(
+                      Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Text(
@@ -1354,14 +1546,14 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                             style: TextStyle(
                               fontSize: 22,
                               fontWeight: FontWeight.w900,
-                              color: Colors.white,
+                              color: _textPrimary,
                             ),
                           ),
                           Text(
                             'Total Items',
                             style: TextStyle(
                               fontSize: 10,
-                              color: Color(0xFF94A3B8),
+                              color: _textMuted,
                             ),
                           ),
                         ],
@@ -1420,16 +1612,16 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
             const SizedBox(width: 6),
             Text(
               label,
-              style: const TextStyle(fontSize: 11.5, color: Color(0xFF94A3B8)),
+              style: TextStyle(fontSize: 11.5, color: _textSecondary),
             ),
           ],
         ),
         Text(
           count,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 12.5,
             fontWeight: FontWeight.w800,
-            color: Colors.white,
+            color: _textPrimary,
           ),
         ),
       ],
@@ -1490,16 +1682,16 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Title with lightning icon
-        const Row(
+        Row(
           children: [
-            Icon(Icons.bolt_rounded, size: 20, color: Color(0xFF10B981)),
-            SizedBox(width: 6),
+            const Icon(Icons.bolt_rounded, size: 20, color: Color(0xFF10B981)),
+            const SizedBox(width: 6),
             Text(
               'Quick Actions',
               style: TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w800,
-                color: Colors.white,
+                color: _textPrimary,
               ),
             ),
           ],
@@ -1513,12 +1705,14 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
             if (w >= 1050) {
               return Row(
                 children: actions
-                    .map((item) => Expanded(
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 5),
-                            child: _buildActionButton(item),
-                          ),
-                        ))
+                    .map(
+                      (item) => Expanded(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 5),
+                          child: _buildActionButton(item),
+                        ),
+                      ),
+                    )
                     .toList(),
               );
             }
@@ -1528,10 +1722,12 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
               spacing: 10,
               runSpacing: 10,
               children: actions
-                  .map((item) => SizedBox(
-                        width: itemWidth,
-                        child: _buildActionButton(item),
-                      ))
+                  .map(
+                    (item) => SizedBox(
+                      width: itemWidth,
+                      child: _buildActionButton(item),
+                    ),
+                  )
                   .toList(),
             );
           },
@@ -1547,10 +1743,10 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 14),
         decoration: BoxDecoration(
-          color: item.color.withValues(alpha: 0.08),
+          color: item.color.withValues(alpha: _isDark ? 0.08 : 0.08),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: item.color.withValues(alpha: 0.22),
+            color: item.color.withValues(alpha: _isDark ? 0.22 : 0.25),
             width: 1,
           ),
         ),
@@ -1565,7 +1761,9 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w700,
-                color: Colors.white.withValues(alpha: 0.9),
+                color: _isDark
+                    ? Colors.white.withValues(alpha: 0.9)
+                    : const Color(0xFF1E293B),
               ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
@@ -1641,25 +1839,47 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
 
   Widget _buildRecentSalesCard(BillingState billingState) {
     final rows = [
-      _TableRowData('INV-000123', '05 Sep 2026', 'Walk-in Customer', '₹ 1,250.00', 'Paid', true),
-      _TableRowData('INV-000122', '05 Sep 2026', 'Rahul Sharma', '₹ 2,480.00', 'Paid', true),
-      _TableRowData('INV-000121', '04 Sep 2026', 'Acme Corporates', '₹ 6,320.00', 'Pending', false),
-      _TableRowData('INV-000120', '04 Sep 2026', 'Walk-in Customer', '₹ 890.00', 'Paid', true),
+      _TableRowData(
+        'INV-000123',
+        '05 Sep 2026',
+        'Walk-in Customer',
+        '₹ 1,250.00',
+        'Paid',
+        true,
+      ),
+      _TableRowData(
+        'INV-000122',
+        '05 Sep 2026',
+        'Rahul Sharma',
+        '₹ 2,480.00',
+        'Paid',
+        true,
+      ),
+      _TableRowData(
+        'INV-000121',
+        '04 Sep 2026',
+        'Acme Corporates',
+        '₹ 6,320.00',
+        'Pending',
+        false,
+      ),
+      _TableRowData(
+        'INV-000120',
+        '04 Sep 2026',
+        'Walk-in Customer',
+        '₹ 890.00',
+        'Paid',
+        true,
+      ),
     ];
 
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: const Color(0xFF131D35),
+        color: _cardBg,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFF1E2E4A)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.25),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        border: Border.all(color: _cardBorder),
+        boxShadow: _cardShadow,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1668,16 +1888,20 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Row(
+              Row(
                 children: [
-                  Icon(Icons.receipt_long_outlined, size: 18, color: Color(0xFF10B981)),
-                  SizedBox(width: 8),
+                  const Icon(
+                    Icons.receipt_long_outlined,
+                    size: 18,
+                    color: Color(0xFF10B981),
+                  ),
+                  const SizedBox(width: 8),
                   Text(
                     'Recent Sales',
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w800,
-                      color: Colors.white,
+                      color: _textPrimary,
                     ),
                   ),
                 ],
@@ -1703,22 +1927,27 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
               const minWidth = 440.0;
               final content = Column(
                 children: [
-                  _buildTableHeader(['#', 'Date', 'Customer', 'Amount', 'Status']),
-                  const Divider(color: Color(0xFF1E2E4A), height: 16),
-                  ...rows.map((row) => Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 7),
-                        child: _buildTableRow(row),
-                      )),
+                  _buildTableHeader([
+                    '#',
+                    'Date',
+                    'Customer',
+                    'Amount',
+                    'Status',
+                  ]),
+                  Divider(color: _dividerColor, height: 16),
+                  ...rows.map(
+                    (row) => Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 7),
+                      child: _buildTableRow(row),
+                    ),
+                  ),
                 ],
               );
 
               if (constraints.maxWidth < minWidth) {
                 return SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
-                  child: SizedBox(
-                    width: minWidth,
-                    child: content,
-                  ),
+                  child: SizedBox(width: minWidth, child: content),
                 );
               }
               return content;
@@ -1731,25 +1960,47 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
 
   Widget _buildRecentPurchasesCard(BillingState billingState) {
     final rows = [
-      _TableRowData('PUR-000045', '05 Sep 2026', 'Metro Distributors', '₹ 4,500.00', 'Received', true),
-      _TableRowData('PUR-000044', '04 Sep 2026', 'Shree Traders', '₹ 2,850.00', 'Received', true),
-      _TableRowData('PUR-000043', '03 Sep 2026', 'Global Supplies', '₹ 1,980.00', 'Pending', false),
-      _TableRowData('PUR-000042', '01 Sep 2026', 'RK Enterprises', '₹ 3,200.00', 'Received', true),
+      _TableRowData(
+        'PUR-000045',
+        '05 Sep 2026',
+        'Metro Distributors',
+        '₹ 4,500.00',
+        'Received',
+        true,
+      ),
+      _TableRowData(
+        'PUR-000044',
+        '04 Sep 2026',
+        'Shree Traders',
+        '₹ 2,850.00',
+        'Received',
+        true,
+      ),
+      _TableRowData(
+        'PUR-000043',
+        '03 Sep 2026',
+        'Global Supplies',
+        '₹ 1,980.00',
+        'Pending',
+        false,
+      ),
+      _TableRowData(
+        'PUR-000042',
+        '01 Sep 2026',
+        'RK Enterprises',
+        '₹ 3,200.00',
+        'Received',
+        true,
+      ),
     ];
 
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: const Color(0xFF131D35),
+        color: _cardBg,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFF1E2E4A)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.25),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        border: Border.all(color: _cardBorder),
+        boxShadow: _cardShadow,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1758,16 +2009,20 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Row(
+              Row(
                 children: [
-                  Icon(Icons.shopping_cart_outlined, size: 18, color: Color(0xFF0EA5E9)),
-                  SizedBox(width: 8),
+                  const Icon(
+                    Icons.shopping_cart_outlined,
+                    size: 18,
+                    color: Color(0xFF0EA5E9),
+                  ),
+                  const SizedBox(width: 8),
                   Text(
                     'Recent Purchases',
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w800,
-                      color: Colors.white,
+                      color: _textPrimary,
                     ),
                   ),
                 ],
@@ -1793,22 +2048,27 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
               const minWidth = 440.0;
               final content = Column(
                 children: [
-                  _buildTableHeader(['#', 'Date', 'Supplier', 'Amount', 'Status']),
-                  const Divider(color: Color(0xFF1E2E4A), height: 16),
-                  ...rows.map((row) => Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 7),
-                        child: _buildTableRow(row),
-                      )),
+                  _buildTableHeader([
+                    '#',
+                    'Date',
+                    'Supplier',
+                    'Amount',
+                    'Status',
+                  ]),
+                  Divider(color: _dividerColor, height: 16),
+                  ...rows.map(
+                    (row) => Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 7),
+                      child: _buildTableRow(row),
+                    ),
+                  ),
                 ],
               );
 
               if (constraints.maxWidth < minWidth) {
                 return SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
-                  child: SizedBox(
-                    width: minWidth,
-                    child: content,
-                  ),
+                  child: SizedBox(width: minWidth, child: content),
                 );
               }
               return content;
@@ -1822,11 +2082,64 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
   Widget _buildTableHeader(List<String> titles) {
     return Row(
       children: [
-        Expanded(flex: 3, child: Text(titles[0], style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF64748B)))),
-        Expanded(flex: 3, child: Text(titles[1], style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF64748B)))),
-        Expanded(flex: 4, child: Text(titles[2], style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF64748B)))),
-        Expanded(flex: 3, child: Text(titles[3], style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF64748B)))),
-        Expanded(flex: 2, child: Align(alignment: Alignment.centerRight, child: Text(titles[4], style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF64748B))))),
+        Expanded(
+          flex: 3,
+          child: Text(
+            titles[0],
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              color: _textMuted,
+            ),
+          ),
+        ),
+        Expanded(
+          flex: 3,
+          child: Text(
+            titles[1],
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              color: _textMuted,
+            ),
+          ),
+        ),
+        Expanded(
+          flex: 4,
+          child: Text(
+            titles[2],
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              color: _textMuted,
+            ),
+          ),
+        ),
+        Expanded(
+          flex: 3,
+          child: Text(
+            titles[3],
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              color: _textMuted,
+            ),
+          ),
+        ),
+        Expanded(
+          flex: 2,
+          child: Align(
+            alignment: Alignment.centerRight,
+            child: Text(
+              titles[4],
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                color: _textMuted,
+              ),
+            ),
+          ),
+        ),
       ],
     );
   }
@@ -1834,10 +2147,47 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
   Widget _buildTableRow(_TableRowData row) {
     return Row(
       children: [
-        Expanded(flex: 3, child: Text(row.id, style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: Colors.white70))),
-        Expanded(flex: 3, child: Text(row.date, style: const TextStyle(fontSize: 11.5, color: Color(0xFF94A3B8)))),
-        Expanded(flex: 4, child: Text(row.name, style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: Colors.white), overflow: TextOverflow.ellipsis)),
-        Expanded(flex: 3, child: Text(row.amount, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Colors.white))),
+        Expanded(
+          flex: 3,
+          child: Text(
+            row.id,
+            style: TextStyle(
+              fontSize: 11.5,
+              fontWeight: FontWeight.w600,
+              color: _isDark ? Colors.white70 : const Color(0xFF475569),
+            ),
+          ),
+        ),
+        Expanded(
+          flex: 3,
+          child: Text(
+            row.date,
+            style: TextStyle(fontSize: 11.5, color: _textMuted),
+          ),
+        ),
+        Expanded(
+          flex: 4,
+          child: Text(
+            row.name,
+            style: TextStyle(
+              fontSize: 11.5,
+              fontWeight: FontWeight.w600,
+              color: _textPrimary,
+            ),
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+        Expanded(
+          flex: 3,
+          child: Text(
+            row.amount,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              color: _textPrimary,
+            ),
+          ),
+        ),
         Expanded(
           flex: 2,
           child: Align(
@@ -1845,7 +2195,11 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
               decoration: BoxDecoration(
-                color: (row.isPaid ? const Color(0xFF10B981) : const Color(0xFFF59E0B)).withValues(alpha: 0.15),
+                color:
+                    (row.isPaid
+                            ? const Color(0xFF10B981)
+                            : const Color(0xFFF59E0B))
+                        .withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(
@@ -1853,7 +2207,9 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                 style: TextStyle(
                   fontSize: 10.5,
                   fontWeight: FontWeight.w800,
-                  color: row.isPaid ? const Color(0xFF10B981) : const Color(0xFFF59E0B),
+                  color: row.isPaid
+                      ? const Color(0xFF10B981)
+                      : const Color(0xFFF59E0B),
                 ),
               ),
             ),
@@ -1867,16 +2223,10 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: const Color(0xFF131D35),
+        color: _cardBg,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFF1E2E4A)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.25),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        border: Border.all(color: _cardBorder),
+        boxShadow: _cardShadow,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1893,15 +2243,19 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                       color: const Color(0xFFF59E0B).withValues(alpha: 0.15),
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(Icons.notifications_active_outlined, size: 16, color: Color(0xFFF59E0B)),
+                    child: const Icon(
+                      Icons.notifications_active_outlined,
+                      size: 16,
+                      color: Color(0xFFF59E0B),
+                    ),
                   ),
                   const SizedBox(width: 8),
-                  const Text(
+                  Text(
                     'Upcoming Reminders',
                     style: TextStyle(
                       fontSize: 13.5,
                       fontWeight: FontWeight.w800,
-                      color: Colors.white,
+                      color: _textPrimary,
                     ),
                   ),
                 ],
@@ -1929,7 +2283,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
             subtitle: 'Due within 7 days',
             route: '/purchase',
           ),
-          const Divider(color: Color(0xFF1E2E4A), height: 16),
+          Divider(color: _dividerColor, height: 16),
           _buildReminderItem(
             icon: Icons.credit_card_outlined,
             iconColor: const Color(0xFF8B5CF6),
@@ -1937,7 +2291,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
             subtitle: 'Awaiting payment',
             route: '/outstanding',
           ),
-          const Divider(color: Color(0xFF1E2E4A), height: 16),
+          Divider(color: _dividerColor, height: 16),
           _buildReminderItem(
             icon: Icons.assignment_turned_in_outlined,
             iconColor: const Color(0xFF10B981),
@@ -1979,21 +2333,24 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                 children: [
                   Text(
                     title,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 12.5,
                       fontWeight: FontWeight.w700,
-                      color: Colors.white,
+                      color: _textPrimary,
                     ),
                   ),
                   const SizedBox(height: 2),
                   Text(
                     subtitle,
-                    style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: _textMuted,
+                    ),
                   ),
                 ],
               ),
             ),
-            const Icon(Icons.chevron_right, size: 16, color: Color(0xFF64748B)),
+            Icon(Icons.chevron_right, size: 16, color: _textMuted),
           ],
         ),
       ),
@@ -2004,19 +2361,20 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [
-            Color(0xFF0F382B),
-            Color(0xFF09251C),
-          ],
+        gradient: LinearGradient(
+          colors: _isDark
+              ? const [Color(0xFF0F382B), Color(0xFF09251C)]
+              : const [Color(0xFFECFDF5), Color(0xFFD1FAE5)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.35)),
+        border: Border.all(
+          color: const Color(0xFF10B981).withValues(alpha: _isDark ? 0.35 : 0.3),
+        ),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF10B981).withValues(alpha: 0.15),
+            color: const Color(0xFF10B981).withValues(alpha: _isDark ? 0.15 : 0.08),
             blurRadius: 14,
             offset: const Offset(0, 4),
           ),
@@ -2034,30 +2392,39 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                     Container(
                       padding: const EdgeInsets.all(6),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF10B981).withValues(alpha: 0.2),
+                        color: const Color(0xFF10B981)
+                            .withValues(alpha: _isDark ? 0.2 : 0.15),
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: const Icon(Icons.trending_up, size: 16, color: Color(0xFF10B981)),
+                      child: const Icon(
+                        Icons.trending_up,
+                        size: 16,
+                        color: Color(0xFF10B981),
+                      ),
                     ),
                     const SizedBox(width: 8),
-                    const Expanded(
+                    Expanded(
                       child: Text(
                         'Grow Your Business with Insights',
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w800,
-                          color: Colors.white,
+                          color: _isDark
+                              ? Colors.white
+                              : const Color(0xFF064E3B),
                         ),
                       ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 8),
-                const Text(
+                Text(
                   'Use detailed reports to make smarter decisions.',
                   style: TextStyle(
                     fontSize: 11,
-                    color: Color(0xFFA7F3D0),
+                    color: _isDark
+                        ? const Color(0xFFA7F3D0)
+                        : const Color(0xFF047857),
                     height: 1.3,
                   ),
                 ),
@@ -2065,13 +2432,17 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                 InkWell(
                   onTap: () => context.push('/reports'),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF10B981).withValues(alpha: 0.15),
+                      color: const Color(0xFF10B981)
+                          .withValues(alpha: _isDark ? 0.15 : 0.15),
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(color: const Color(0xFF10B981)),
                     ),
-                    child: const Row(
+                    child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
@@ -2079,11 +2450,19 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                           style: TextStyle(
                             fontSize: 11.5,
                             fontWeight: FontWeight.w800,
-                            color: Colors.white,
+                            color: _isDark
+                                ? Colors.white
+                                : const Color(0xFF064E3B),
                           ),
                         ),
-                        SizedBox(width: 4),
-                        Icon(Icons.arrow_forward, size: 12, color: Colors.white),
+                        const SizedBox(width: 4),
+                        Icon(
+                          Icons.arrow_forward,
+                          size: 12,
+                          color: _isDark
+                              ? Colors.white
+                              : const Color(0xFF064E3B),
+                        ),
                       ],
                     ),
                   ),
@@ -2173,5 +2552,12 @@ class _TableRowData {
   final String status;
   final bool isPaid;
 
-  _TableRowData(this.id, this.date, this.name, this.amount, this.status, this.isPaid);
+  _TableRowData(
+    this.id,
+    this.date,
+    this.name,
+    this.amount,
+    this.status,
+    this.isPaid,
+  );
 }

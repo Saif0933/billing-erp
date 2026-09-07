@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../app/theme/theme_provider.dart';
+import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_spacing.dart';
 import '../../../../core/navigation/navigation_config.dart';
 import '../../../../core/navigation/navigation_service.dart';
@@ -24,10 +26,10 @@ class MobileDrawer extends ConsumerWidget {
   }
 
   Color _getItemIconColor(String id, bool isActive) {
-    if (isActive) return const Color(0xFF00E676);
+    if (isActive) return const Color(0xFF10B981);
     switch (id) {
       case 'dashboard':
-        return const Color(0xFF00E676);
+        return const Color(0xFF10B981);
       case 'pos':
         return const Color(0xFF9C27B0);
       case 'masters':
@@ -87,37 +89,163 @@ class MobileDrawer extends ConsumerWidget {
       case 'import_export':
         return const Color(0xFF9E9E9E);
       default:
-        return Colors.white70;
+        return const Color(0xFF64748B);
     }
   }
 
-  Widget _buildNeedHelpCard(BuildContext context) {
+  Widget _buildThemeSwitcher(
+    BuildContext context,
+    WidgetRef ref,
+    ThemeMode currentMode,
+    bool isDark,
+  ) {
     return Container(
-      margin: const EdgeInsets.fromLTRB(12, 8, 12, 16),
+      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: const Color(0xFF0A221C),
+        color: isDark ? const Color(0xFF131D35) : const Color(0xFFF1F5F9),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(
+          color: isDark ? const Color(0xFF1E2E4A) : AppColors.borderLight,
+        ),
+      ),
+      child: Row(
+        children: [
+          _buildThemeSegment(
+            label: 'Auto',
+            icon: Icons.brightness_auto_rounded,
+            isSelected: currentMode == ThemeMode.system,
+            isDark: isDark,
+            onTap: () => ref
+                .read(themeModeProvider.notifier)
+                .setThemeMode(ThemeMode.system),
+          ),
+          _buildThemeSegment(
+            label: 'Light',
+            icon: Icons.light_mode_rounded,
+            isSelected: currentMode == ThemeMode.light,
+            isDark: isDark,
+            onTap: () => ref
+                .read(themeModeProvider.notifier)
+                .setThemeMode(ThemeMode.light),
+          ),
+          _buildThemeSegment(
+            label: 'Dark',
+            icon: Icons.dark_mode_rounded,
+            isSelected: currentMode == ThemeMode.dark,
+            isDark: isDark,
+            onTap: () => ref
+                .read(themeModeProvider.notifier)
+                .setThemeMode(ThemeMode.dark),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildThemeSegment({
+    required String label,
+    required IconData icon,
+    required bool isSelected,
+    required bool isDark,
+    required VoidCallback onTap,
+  }) {
+    return Expanded(
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 7),
+          decoration: BoxDecoration(
+            color: isSelected
+                ? (isDark ? const Color(0xFF1E293B) : Colors.white)
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(8),
+            boxShadow: isSelected
+                ? [
+                    BoxShadow(
+                      color:
+                          Colors.black.withValues(alpha: isDark ? 0.2 : 0.06),
+                      blurRadius: 4,
+                      offset: const Offset(0, 1),
+                    ),
+                  ]
+                : null,
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                icon,
+                size: 14,
+                color: isSelected
+                    ? const Color(0xFF10B981)
+                    : (isDark ? Colors.white60 : Colors.black54),
+              ),
+              const SizedBox(width: 4),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                  color: isSelected
+                      ? (isDark ? Colors.white : AppColors.textLightPrimary)
+                      : (isDark ? Colors.white60 : Colors.black54),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNeedHelpCard(BuildContext context, bool isDark) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(12, 4, 12, 16),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF131D35) : const Color(0xFFF8FAFC),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFF0E382A), width: 1),
+        border: Border.all(
+          color: isDark ? const Color(0xFF1E2E4A) : AppColors.borderLight,
+          width: 1,
+        ),
       ),
       child: ListTile(
         dense: true,
         leading: Container(
           padding: const EdgeInsets.all(8),
-          decoration: const BoxDecoration(
-            color: Color(0xFF0D3227),
+          decoration: BoxDecoration(
+            color: const Color(0xFF10B981)
+                .withValues(alpha: isDark ? 0.15 : 0.1),
             shape: BoxShape.circle,
           ),
-          child: const Icon(Icons.headset_mic_outlined, color: Color(0xFF00E676), size: 18),
+          child: const Icon(
+            Icons.headset_mic_outlined,
+            color: Color(0xFF10B981),
+            size: 18,
+          ),
         ),
-        title: const Text(
+        title: Text(
           'Need Help?',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
+          style: TextStyle(
+            color: isDark ? Colors.white : AppColors.textLightPrimary,
+            fontWeight: FontWeight.bold,
+            fontSize: 13,
+          ),
         ),
         subtitle: Text(
           "We're here to assist you",
-          style: TextStyle(color: Colors.grey.shade400, fontSize: 10),
+          style: TextStyle(
+            color: isDark ? Colors.grey.shade400 : const Color(0xFF64748B),
+            fontSize: 10,
+          ),
         ),
-        trailing: const Icon(Icons.chevron_right, color: Colors.white30, size: 16),
+        trailing: Icon(
+          Icons.chevron_right,
+          color: isDark ? Colors.white30 : Colors.black26,
+          size: 16,
+        ),
         onTap: () {
           Navigator.pop(context);
           context.push('/settings');
@@ -128,6 +256,8 @@ class MobileDrawer extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final themeMode = ref.watch(themeModeProvider);
     final expandedGroups = ref.watch(expandedGroupsProvider);
     final userRole = ref.watch(userRoleProvider);
     final subscription = ref.watch(subscriptionProvider);
@@ -139,12 +269,21 @@ class MobileDrawer extends ConsumerWidget {
 
     return Drawer(
       child: Container(
-        color: const Color(0xFF04120E), // Deep dark green theme
+        color: isDark ? const Color(0xFF0F172A) : Colors.white,
         child: Column(
           children: [
             // Drawer Header
             Container(
               padding: EdgeInsets.fromLTRB(16, topPadding + 16, 16, 20),
+              decoration: BoxDecoration(
+                border: Border(
+                  bottom: BorderSide(
+                    color: isDark
+                        ? const Color(0xFF1E2E4A)
+                        : AppColors.borderLight,
+                  ),
+                ),
+              ),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
@@ -154,23 +293,29 @@ class MobileDrawer extends ConsumerWidget {
                       children: [
                         Row(
                           children: [
-                            const Icon(Icons.bolt, color: Color(0xFF00E676), size: 28),
+                            const Icon(
+                              Icons.bolt,
+                              color: Color(0xFF10B981),
+                              size: 28,
+                            ),
                             const SizedBox(width: 8),
                             RichText(
-                              text: const TextSpan(
+                              text: TextSpan(
                                 children: [
                                   TextSpan(
                                     text: 'TAX ',
                                     style: TextStyle(
-                                      color: Colors.white,
+                                      color: isDark
+                                          ? Colors.white
+                                          : AppColors.textLightPrimary,
                                       fontWeight: FontWeight.w900,
                                       fontSize: 20,
                                     ),
                                   ),
-                                  TextSpan(
+                                  const TextSpan(
                                     text: 'BUNNY',
                                     style: TextStyle(
-                                      color: Color(0xFF00E676),
+                                      color: Color(0xFF10B981),
                                       fontWeight: FontWeight.w900,
                                       fontSize: 20,
                                     ),
@@ -183,8 +328,10 @@ class MobileDrawer extends ConsumerWidget {
                         const SizedBox(height: 8),
                         Text(
                           activeBiz?.name ?? 'Tax Bunny Retail Store',
-                          style: const TextStyle(
-                            color: Colors.white70,
+                          style: TextStyle(
+                            color: isDark
+                                ? Colors.white70
+                                : const Color(0xFF64748B),
                             fontSize: 12,
                           ),
                           maxLines: 1,
@@ -198,10 +345,19 @@ class MobileDrawer extends ConsumerWidget {
                     height: 38,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white24, width: 1.5),
+                      border: Border.all(
+                        color: isDark
+                            ? Colors.white24
+                            : AppColors.borderLight,
+                        width: 1.5,
+                      ),
                     ),
                     child: IconButton(
-                      icon: const Icon(Icons.person_outline, color: Colors.white70, size: 18),
+                      icon: Icon(
+                        Icons.person_outline,
+                        color: isDark ? Colors.white70 : Colors.black87,
+                        size: 18,
+                      ),
                       padding: EdgeInsets.zero,
                       onPressed: () {
                         Navigator.pop(context);
@@ -219,14 +375,20 @@ class MobileDrawer extends ConsumerWidget {
                 padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
                 children: NavigationConfig.menuItems.where((item) {
                   if (item.requiredPermission != null) {
-                    return PermissionService.hasPermission(userRole, item.requiredPermission!);
+                    return PermissionService.hasPermission(
+                      userRole,
+                      item.requiredPermission!,
+                    );
                   }
                   return true;
                 }).map((item) {
                   if (item.isExpandable) {
                     final allowedChildren = item.children!.where((child) {
                       if (child.requiredPermission != null) {
-                        return PermissionService.hasPermission(userRole, child.requiredPermission!);
+                        return PermissionService.hasPermission(
+                          userRole,
+                          child.requiredPermission!,
+                        );
                       }
                       return true;
                     }).toList();
@@ -234,18 +396,29 @@ class MobileDrawer extends ConsumerWidget {
                     if (allowedChildren.isEmpty) return const SizedBox.shrink();
 
                     final isExpanded = expandedGroups.contains(item.id);
-                    final hasActiveChild = allowedChildren.any((child) => _isRouteActive(child.route, currentLoc));
+                    final hasActiveChild = allowedChildren
+                        .any((child) => _isRouteActive(child.route, currentLoc));
 
                     return Column(
                       children: [
                         Container(
-                          margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+                          margin: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 2,
+                          ),
                           decoration: BoxDecoration(
-                            color: hasActiveChild ? const Color(0xFF09221C) : Colors.transparent,
+                            color: hasActiveChild
+                                ? (isDark
+                                    ? const Color(0xFF1E293B)
+                                    : const Color(0xFFF1F5F9))
+                                : Colors.transparent,
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: ListTile(
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 0,
+                            ),
                             dense: true,
                             leading: Icon(
                               item.icon,
@@ -255,24 +428,32 @@ class MobileDrawer extends ConsumerWidget {
                             title: Text(
                               item.title,
                               style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: hasActiveChild ? FontWeight.bold : FontWeight.normal,
+                                color: isDark
+                                    ? Colors.white
+                                    : AppColors.textLightPrimary,
+                                fontWeight: hasActiveChild
+                                    ? FontWeight.bold
+                                    : FontWeight.normal,
                                 fontSize: 13.5,
                               ),
                             ),
                             trailing: Icon(
-                              isExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
-                              color: Colors.white30,
+                              isExpanded
+                                  ? Icons.keyboard_arrow_up
+                                  : Icons.keyboard_arrow_down,
+                              color: isDark ? Colors.white30 : Colors.black38,
                               size: 16,
                             ),
                             onTap: () {
-                              final newExpanded = Set<String>.from(expandedGroups);
+                              final newExpanded =
+                                  Set<String>.from(expandedGroups);
                               if (isExpanded) {
                                 newExpanded.remove(item.id);
                               } else {
                                 newExpanded.add(item.id);
                               }
-                              ref.read(expandedGroupsProvider.notifier).state = newExpanded;
+                              ref.read(expandedGroupsProvider.notifier).state =
+                                  newExpanded;
                             },
                           ),
                         ),
@@ -281,39 +462,80 @@ class MobileDrawer extends ConsumerWidget {
                             padding: const EdgeInsets.only(left: 12),
                             child: Column(
                               children: allowedChildren.map((child) {
-                                final isAllowed = child.requiredFeature == null || subscription.canAccess(child.requiredFeature!);
-                                final isChildActive = _isRouteActive(child.route, currentLoc);
+                                final isAllowed = child.requiredFeature ==
+                                        null ||
+                                    subscription
+                                        .canAccess(child.requiredFeature!);
+                                final isChildActive = _isRouteActive(
+                                  child.route,
+                                  currentLoc,
+                                );
 
                                 return Container(
-                                  margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+                                  margin: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 2,
+                                  ),
                                   decoration: BoxDecoration(
-                                    color: isChildActive ? const Color(0xFF0F2D24) : Colors.transparent,
+                                    color: isChildActive
+                                        ? (isDark
+                                            ? const Color(0xFF0F2D24)
+                                            : const Color(0xFFECFDF5))
+                                        : Colors.transparent,
                                     borderRadius: BorderRadius.circular(10),
                                     border: isChildActive
-                                        ? const Border(left: BorderSide(color: Color(0xFF00E676), width: 3.5))
+                                        ? const Border(
+                                            left: BorderSide(
+                                              color: Color(0xFF10B981),
+                                              width: 3.5,
+                                            ),
+                                          )
                                         : null,
                                   ),
                                   child: ListTile(
-                                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+                                    contentPadding:
+                                        const EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                      vertical: 0,
+                                    ),
                                     dense: true,
                                     leading: Icon(
                                       child.icon,
                                       size: 18,
-                                      color: _getItemIconColor(child.id, isChildActive),
+                                      color: _getItemIconColor(
+                                        child.id,
+                                        isChildActive,
+                                      ),
                                     ),
                                     title: Text(
                                       child.title,
                                       style: TextStyle(
-                                        color: isChildActive ? Colors.white : Colors.white70,
-                                        fontWeight: isChildActive ? FontWeight.bold : FontWeight.normal,
+                                        color: isChildActive
+                                            ? (isDark
+                                                ? const Color(0xFF34D399)
+                                                : const Color(0xFF065F46))
+                                            : (isDark
+                                                ? Colors.white70
+                                                : const Color(0xFF475569)),
+                                        fontWeight: isChildActive
+                                            ? FontWeight.bold
+                                            : FontWeight.normal,
                                         fontSize: 13,
                                       ),
                                     ),
                                     trailing: !isAllowed
-                                        ? const Icon(Icons.lock, size: 14, color: Color(0xFFFF9800))
+                                        ? const Icon(
+                                            Icons.lock,
+                                            size: 14,
+                                            color: Color(0xFFFF9800),
+                                          )
                                         : Icon(
                                             Icons.chevron_right,
-                                            color: isChildActive ? const Color(0xFF00E676) : Colors.white30,
+                                            color: isChildActive
+                                                ? const Color(0xFF10B981)
+                                                : (isDark
+                                                    ? Colors.white30
+                                                    : Colors.black26),
                                             size: 16,
                                           ),
                                     onTap: () {
@@ -321,7 +543,10 @@ class MobileDrawer extends ConsumerWidget {
                                       if (isAllowed) {
                                         context.push(child.route);
                                       } else {
-                                        context.push('/locked-feature', extra: {'featureName': child.title});
+                                        context.push(
+                                          '/locked-feature',
+                                          extra: {'featureName': child.title},
+                                        );
                                       }
                                     },
                                   ),
@@ -332,21 +557,37 @@ class MobileDrawer extends ConsumerWidget {
                       ],
                     );
                   } else {
-                    final isAllowed = item.requiredFeature == null || subscription.canAccess(item.requiredFeature!);
+                    final isAllowed = item.requiredFeature == null ||
+                        subscription.canAccess(item.requiredFeature!);
                     final isActive = _isRouteActive(item.route, currentLoc);
                     final isNew = item.id == 'expenses';
 
                     return Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+                      margin: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 2,
+                      ),
                       decoration: BoxDecoration(
-                        color: isActive ? const Color(0xFF0F2D24) : Colors.transparent,
+                        color: isActive
+                            ? (isDark
+                                ? const Color(0xFF0F2D24)
+                                : const Color(0xFFECFDF5))
+                            : Colors.transparent,
                         borderRadius: BorderRadius.circular(10),
                         border: isActive
-                            ? const Border(left: BorderSide(color: Color(0xFF00E676), width: 3.5))
+                            ? const Border(
+                                left: BorderSide(
+                                  color: Color(0xFF10B981),
+                                  width: 3.5,
+                                ),
+                              )
                             : null,
                       ),
                       child: ListTile(
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 0,
+                        ),
                         dense: true,
                         leading: Icon(
                           item.icon,
@@ -354,21 +595,38 @@ class MobileDrawer extends ConsumerWidget {
                           size: 20,
                         ),
                         title: Text(
-                          item.id == 'expenses' ? 'Expeness Tracker' : item.title,
+                          item.id == 'expenses'
+                              ? 'Expeness Tracker'
+                              : item.title,
                           style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
+                            color: isActive
+                                ? (isDark
+                                    ? const Color(0xFF34D399)
+                                    : const Color(0xFF065F46))
+                                : (isDark
+                                    ? Colors.white
+                                    : AppColors.textLightPrimary),
+                            fontWeight: isActive
+                                ? FontWeight.bold
+                                : FontWeight.normal,
                             fontSize: 13.5,
                           ),
                         ),
                         trailing: !isAllowed
-                            ? const Icon(Icons.lock, size: 14, color: Color(0xFFFF9800))
+                            ? const Icon(
+                                Icons.lock,
+                                size: 14,
+                                color: Color(0xFFFF9800),
+                              )
                             : Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   if (isNew) ...[
                                     Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 6,
+                                        vertical: 2,
+                                      ),
                                       decoration: BoxDecoration(
                                         color: const Color(0xFFE65100),
                                         borderRadius: BorderRadius.circular(4),
@@ -386,7 +644,11 @@ class MobileDrawer extends ConsumerWidget {
                                   ],
                                   Icon(
                                     Icons.chevron_right,
-                                    color: isActive ? const Color(0xFF00E676) : Colors.white30,
+                                    color: isActive
+                                        ? const Color(0xFF10B981)
+                                        : (isDark
+                                            ? Colors.white30
+                                            : Colors.black26),
                                     size: 16,
                                   ),
                                 ],
@@ -396,7 +658,10 @@ class MobileDrawer extends ConsumerWidget {
                           if (isAllowed) {
                             context.push(item.route);
                           } else {
-                            context.push('/locked-feature', extra: {'featureName': item.title});
+                            context.push(
+                              '/locked-feature',
+                              extra: {'featureName': item.title},
+                            );
                           }
                         },
                       ),
@@ -406,8 +671,11 @@ class MobileDrawer extends ConsumerWidget {
               ),
             ),
 
+            // Theme Switcher Row (Auto / Light / Dark)
+            _buildThemeSwitcher(context, ref, themeMode, isDark),
+
             // Bottom Need Help Card
-            _buildNeedHelpCard(context),
+            _buildNeedHelpCard(context, isDark),
           ],
         ),
       ),

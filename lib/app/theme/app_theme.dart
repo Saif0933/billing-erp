@@ -17,8 +17,6 @@ class AppTheme {
         onSecondary: Colors.white,
         error: AppColors.error,
         onError: Colors.white,
-        background: AppColors.backgroundLight,
-        onBackground: AppColors.textLightPrimary,
         surface: AppColors.surfaceLight,
         onSurface: AppColors.textLightPrimary,
       ),
@@ -45,8 +43,8 @@ class AppTheme {
         shape: Border(bottom: BorderSide(color: AppColors.borderLight)),
       ),
       checkboxTheme: CheckboxThemeData(
-        fillColor: MaterialStateProperty.resolveWith((states) {
-          if (states.contains(MaterialState.selected)) {
+        fillColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
             return AppColors.primary;
           }
           return null;
@@ -91,8 +89,6 @@ class AppTheme {
         onSecondary: AppColors.primary,
         error: AppColors.error,
         onError: Colors.white,
-        background: AppColors.backgroundDark,
-        onBackground: AppColors.textDarkPrimary,
         surface: AppColors.surfaceDark,
         onSurface: AppColors.textDarkPrimary,
       ),
@@ -119,8 +115,8 @@ class AppTheme {
         shape: Border(bottom: BorderSide(color: AppColors.borderDark)),
       ),
       checkboxTheme: CheckboxThemeData(
-        fillColor: MaterialStateProperty.resolveWith((states) {
-          if (states.contains(MaterialState.selected)) {
+        fillColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
             return AppColors.accent;
           }
           return null;

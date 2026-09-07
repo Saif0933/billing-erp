@@ -9,7 +9,6 @@ import '../../../../core/responsive/responsive.dart';
 import '../../../../shared/widgets/app_button.dart';
 import '../../../../shared/widgets/app_input_fields.dart';
 import '../../../../shared/widgets/feedback.dart';
-import '../../../platform-admin/presentation/providers/platform_admin_provider.dart';
 import '../providers/auth_provider.dart';
 
 class RegisterPage extends ConsumerStatefulWidget {
@@ -58,12 +57,11 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
 
       if (mounted) {
         if (success) {
-          ref.read(platformAdminProvider.notifier).login(email, password);
           AppFeedback.showSnackbar(
             context,
-            message: 'Platform Administrator registered successfully!',
+            message: 'Platform Administrator registered successfully! Please log in to continue.',
           );
-          context.go('/platform-admin');
+          context.go('/login?portal=platformAdmin&email=${Uri.encodeComponent(email)}');
         } else {
           final error = ref.read(authProvider).error ??
               'Registration failed. Please try again.';

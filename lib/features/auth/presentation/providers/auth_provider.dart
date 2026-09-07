@@ -145,7 +145,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     bool isPlatformAdmin = false,
   }) async {
     try {
-      final response = await _apiService.register(
+      await _apiService.register(
         fullName: name.trim(),
         email: email.trim(),
         password: password,
@@ -153,11 +153,9 @@ class AuthNotifier extends StateNotifier<AuthState> {
         isPlatformAdmin: isPlatformAdmin,
       );
 
-      await _secureStorage.setAccessToken(response.accessToken);
-      await _secureStorage.setRefreshToken(response.refreshToken);
-      await _storage.setCachedUserEmail(response.user.email);
-
-      state = AuthState.authenticated(response.user);
+      // Do not automatically authenticate or store tokens on registration.
+      // User must explicitly log in with their credentials.
+      state = const AuthState.unauthenticated();
       return true;
     } on AppException catch (e) {
       state = AuthState.unauthenticated(error: e.message);

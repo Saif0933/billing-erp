@@ -16,7 +16,14 @@ import '../providers/auth_provider.dart';
 enum LoginPortalType { organization, platformAdmin }
 
 class LoginPage extends ConsumerStatefulWidget {
-  const LoginPage({super.key});
+  final String? initialEmail;
+  final LoginPortalType? initialPortal;
+
+  const LoginPage({
+    super.key,
+    this.initialEmail,
+    this.initialPortal,
+  });
 
   @override
   ConsumerState<LoginPage> createState() => _LoginPageState();
@@ -24,11 +31,18 @@ class LoginPage extends ConsumerStatefulWidget {
 
 class _LoginPageState extends ConsumerState<LoginPage> {
   final _formKey = GlobalKey<FormState>();
-  LoginPortalType _portalType = LoginPortalType.organization;
+  late LoginPortalType _portalType;
 
-  final _emailController = TextEditingController();
+  late final TextEditingController _emailController;
   final _passwordController = TextEditingController();
   bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _portalType = widget.initialPortal ?? LoginPortalType.organization;
+    _emailController = TextEditingController(text: widget.initialEmail ?? '');
+  }
 
   @override
   void dispose() {
