@@ -32,14 +32,21 @@ class _CreateBusinessPageState extends ConsumerState<CreateBusinessPage> {
   Future<void> _handleSave() async {
     if (_formKey.currentState!.validate()) {
       setState(() => _isLoading = true);
-      await ref.read(businessProvider.notifier).createBusiness(
+      await ref
+          .read(businessProvider.notifier)
+          .createBusiness(
             name: _nameController.text,
             type: _selectedType ?? 'Retail',
-            gstNumber: _gstinController.text.isNotEmpty ? _gstinController.text : 'N/A',
+            gstNumber: _gstinController.text.isNotEmpty
+                ? _gstinController.text
+                : 'N/A',
           );
       setState(() => _isLoading = false);
       if (mounted) {
-        AppFeedback.showSnackbar(context, message: 'New business created successfully!');
+        AppFeedback.showSnackbar(
+          context,
+          message: 'New business created successfully!',
+        );
         context.go('/dashboard');
       }
     }
@@ -47,12 +54,16 @@ class _CreateBusinessPageState extends ConsumerState<CreateBusinessPage> {
 
   @override
   Widget build(BuildContext context) {
-    final businessTypes = ['Service', 'Retail', 'Trading', 'Wholesale', 'Manufacturing'];
+    final businessTypes = [
+      'Service',
+      'Retail',
+      'Trading',
+      'Wholesale',
+      'Manufacturing',
+    ];
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Add Business'),
-      ),
+      appBar: AppBar(title: const Text('Add Business')),
       body: Center(
         child: Container(
           constraints: const BoxConstraints(maxWidth: 480),
@@ -65,7 +76,9 @@ class _CreateBusinessPageState extends ConsumerState<CreateBusinessPage> {
               children: [
                 Text(
                   'Add Business Profile',
-                  style: AppTypography.headlineMedium.copyWith(fontWeight: FontWeight.bold),
+                  style: AppTypography.headlineMedium.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 const SizedBox(height: AppSpacing.sm),
                 Text(
@@ -77,7 +90,9 @@ class _CreateBusinessPageState extends ConsumerState<CreateBusinessPage> {
                   label: 'Business Name *',
                   hintText: 'e.g. Acme Retailers',
                   controller: _nameController,
-                  validator: (val) => val == null || val.isEmpty ? 'Business name is required' : null,
+                  validator: (val) => val == null || val.isEmpty
+                      ? 'Business name is required'
+                      : null,
                 ),
                 const SizedBox(height: AppSpacing.md),
                 AppDropdownField<String>(

@@ -111,10 +111,14 @@ class _OrderSummaryCardState extends ConsumerState<OrderSummaryCard> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           // Header: Summary Title + Item Counts
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 8,
+            runSpacing: 6,
             children: [
               Row(
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(
                     Icons.receipt_long_outlined,

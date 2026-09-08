@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
 
+import '../../../../core/responsive/responsive.dart';
 import '../../../../shared/widgets/feedback.dart';
 import '../../../subscription/domain/entities/subscription_models.dart';
 import '../../../subscription/presentation/pages/locked_feature_page.dart';
@@ -106,7 +107,9 @@ class _OutstandingPageState extends ConsumerState<OutstandingPage> {
           color: const Color(0xFF15803D),
           child: SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            padding: Responsive.isMobile(context)
+                ? const EdgeInsets.symmetric(horizontal: 12, vertical: 12)
+                : const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -129,7 +132,7 @@ class _OutstandingPageState extends ConsumerState<OutstandingPage> {
                   ),
 
                 // 2. Receivables vs Payables Switcher & Net Working Capital Pill
-                _buildTabSelector(isDark, selectedTab, netWorkingCapital),
+                _buildTabSelector(context, isDark, selectedTab, netWorkingCapital),
                 const SizedBox(height: 16),
 
                 // 3. 3 Dynamic KPI Cards (Total, Due Today, Overdue)
@@ -156,6 +159,7 @@ class _OutstandingPageState extends ConsumerState<OutstandingPage> {
 
                 // 5. Search & Status Filter Toolbar
                 _buildSearchFilterBar(
+                  context: context,
                   isDark: isDark,
                   selectedTab: selectedTab,
                   statusFilter: outstandingState.statusFilter,
@@ -164,12 +168,50 @@ class _OutstandingPageState extends ConsumerState<OutstandingPage> {
                 const SizedBox(height: 12),
 
                 // 6. Dynamic Itemized Outstanding Statement Table
-                _buildOutstandingTable(items, isDark, selectedTab),
+                _buildOutstandingTable(context, items, isDark, selectedTab),
                 const SizedBox(height: 28),
               ],
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildSyncBadge(bool isServerData, bool isDark) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
+      decoration: BoxDecoration(
+        color: isServerData
+            ? (isDark ? const Color(0xFF064E3B) : const Color(0xFFDCFCE7))
+            : (isDark ? const Color(0xFF78350F) : const Color(0xFFFEF3C7)),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 6,
+            height: 6,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: isServerData
+                  ? const Color(0xFF16A34A)
+                  : const Color(0xFFD97706),
+            ),
+          ),
+          const SizedBox(width: 4),
+          Text(
+            isServerData ? 'Live Sync' : 'Local Offline',
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.bold,
+              color: isServerData
+                  ? const Color(0xFF15803D)
+                  : const Color(0xFFB45309),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -181,6 +223,93 @@ class _OutstandingPageState extends ConsumerState<OutstandingPage> {
     String selectedTab,
     bool isLoading,
   ) {
+    final isMobile = Responsive.isMobile(context);
+
+    if (isMobile) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        'Outstanding Analysis',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: isDark ? Colors.white : const Color(0xFF0F172A),
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    _buildSyncBadge(isServerData, isDark),
+                  ],
+                ),
+              ),
+              IconButton(
+                tooltip: 'Refresh from Server',
+                icon: isLoading
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : Icon(
+                        Icons.refresh,
+                        color: isDark ? Colors.white70 : const Color(0xFF475569),
+                        size: 20,
+                      ),
+                onPressed: () {
+                  ref.read(outstandingProvider.notifier).loadData();
+                },
+              ),
+            ],
+          ),
+          const SizedBox(height: 2),
+          Text(
+            'Track ageing receivables, payables and cashflow timelines',
+            style: TextStyle(
+              fontSize: 11.5,
+              color: isDark ? Colors.white60 : const Color(0xFF64748B),
+            ),
+          ),
+          const SizedBox(height: 10),
+          ElevatedButton.icon(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF15803D),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              elevation: 1,
+            ),
+            icon: Icon(
+              selectedTab == 'Receivables' ? Icons.receipt_long : Icons.payment,
+              size: 16,
+              color: Colors.white,
+            ),
+            label: Text(
+              selectedTab == 'Receivables' ? 'Record Receipt' : 'Record Payment',
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+            onPressed: () {
+              if (selectedTab == 'Receivables') {
+                context.push('/receipts/new');
+              } else {
+                context.push('/payments/new');
+              }
+            },
+          ),
+        ],
+      );
+    }
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -204,42 +333,7 @@ class _OutstandingPageState extends ConsumerState<OutstandingPage> {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  // Live Cloud vs Offline Pill
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
-                    decoration: BoxDecoration(
-                      color: isServerData
-                          ? (isDark ? const Color(0xFF064E3B) : const Color(0xFFDCFCE7))
-                          : (isDark ? const Color(0xFF78350F) : const Color(0xFFFEF3C7)),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          width: 6,
-                          height: 6,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: isServerData
-                                ? const Color(0xFF16A34A)
-                                : const Color(0xFFD97706),
-                          ),
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          isServerData ? 'Live Sync' : 'Local Offline',
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                            color: isServerData
-                                ? const Color(0xFF15803D)
-                                : const Color(0xFFB45309),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+                  _buildSyncBadge(isServerData, isDark),
                 ],
               ),
               const SizedBox(height: 2),
@@ -309,7 +403,134 @@ class _OutstandingPageState extends ConsumerState<OutstandingPage> {
     );
   }
 
-  Widget _buildTabSelector(bool isDark, String selectedTab, double netWorkingCapital) {
+  Widget _buildNetWorkingCapitalPill(bool isDark, double netWorkingCapital, {bool isFullWidth = false}) {
+    return Container(
+      width: isFullWidth ? double.infinity : null,
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1E293B) : Colors.white,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(
+          color: isDark ? Colors.white12 : const Color(0xFFE2E8F0),
+        ),
+      ),
+      child: Row(
+        mainAxisSize: isFullWidth ? MainAxisSize.max : MainAxisSize.min,
+        mainAxisAlignment: isFullWidth ? MainAxisAlignment.spaceBetween : MainAxisAlignment.start,
+        children: [
+          if (isFullWidth)
+            Expanded(
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.account_balance,
+                    size: 14,
+                    color: netWorkingCapital >= 0
+                        ? const Color(0xFF15803D)
+                        : const Color(0xFFDC2626),
+                  ),
+                  const SizedBox(width: 6),
+                  Flexible(
+                    child: Text(
+                      'Net Working Capital',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: isDark ? Colors.white54 : const Color(0xFF64748B),
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+            )
+          else
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.account_balance,
+                  size: 14,
+                  color: netWorkingCapital >= 0
+                      ? const Color(0xFF15803D)
+                      : const Color(0xFFDC2626),
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  'Net Working Capital',
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: isDark ? Colors.white54 : const Color(0xFF64748B),
+                  ),
+                ),
+              ],
+            ),
+          if (isFullWidth) const SizedBox(width: 8),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              '₹${_formatCurrency(netWorkingCapital)}',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+                color: netWorkingCapital >= 0
+                    ? const Color(0xFF15803D)
+                    : const Color(0xFFDC2626),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTabSelector(BuildContext context, bool isDark, String selectedTab, double netWorkingCapital) {
+    final isMobile = Responsive.isMobile(context);
+
+    if (isMobile) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(4),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: _buildTabOption(
+                    label: 'Receivables',
+                    icon: Icons.trending_up,
+                    isSelected: selectedTab == 'Receivables',
+                    onTap: () {
+                      ref.read(outstandingProvider.notifier).setTab('Receivables');
+                    },
+                    isDark: isDark,
+                  ),
+                ),
+                const SizedBox(width: 4),
+                Expanded(
+                  child: _buildTabOption(
+                    label: 'Payables',
+                    icon: Icons.trending_down,
+                    isSelected: selectedTab == 'Payables',
+                    onTap: () {
+                      ref.read(outstandingProvider.notifier).setTab('Payables');
+                    },
+                    isDark: isDark,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 8),
+          _buildNetWorkingCapitalPill(isDark, netWorkingCapital, isFullWidth: true),
+        ],
+      );
+    }
+
     return Row(
       children: [
         // Tab Pills
@@ -349,54 +570,7 @@ class _OutstandingPageState extends ConsumerState<OutstandingPage> {
           ),
         ),
         const SizedBox(width: 8),
-
-        // Net Working Capital Insight
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-          decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF1E293B) : Colors.white,
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(
-              color: isDark ? Colors.white12 : const Color(0xFFE2E8F0),
-            ),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                Icons.account_balance,
-                size: 14,
-                color: netWorkingCapital >= 0
-                    ? const Color(0xFF15803D)
-                    : const Color(0xFFDC2626),
-              ),
-              const SizedBox(width: 6),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    'Net Working Capital',
-                    style: TextStyle(
-                      fontSize: 9.5,
-                      color: isDark ? Colors.white54 : const Color(0xFF64748B),
-                    ),
-                  ),
-                  Text(
-                    '₹${_formatCurrency(netWorkingCapital)}',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      color: netWorkingCapital >= 0
-                          ? const Color(0xFF15803D)
-                          : const Color(0xFFDC2626),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
+        _buildNetWorkingCapitalPill(isDark, netWorkingCapital, isFullWidth: false),
       ],
     );
   }
@@ -412,7 +586,8 @@ class _OutstandingPageState extends ConsumerState<OutstandingPage> {
       onTap: onTap,
       borderRadius: BorderRadius.circular(8),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        alignment: Alignment.center,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
           color: isSelected
               ? (isDark ? const Color(0xFF0F172A) : Colors.white)
@@ -430,6 +605,7 @@ class _OutstandingPageState extends ConsumerState<OutstandingPage> {
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
               icon,
@@ -439,14 +615,17 @@ class _OutstandingPageState extends ConsumerState<OutstandingPage> {
                   : (isDark ? Colors.white60 : const Color(0xFF64748B)),
             ),
             const SizedBox(width: 6),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 12.5,
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                color: isSelected
-                    ? (isDark ? Colors.white : const Color(0xFF0F172A))
-                    : (isDark ? Colors.white60 : const Color(0xFF64748B)),
+            Flexible(
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontSize: 12.5,
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                  color: isSelected
+                      ? (isDark ? Colors.white : const Color(0xFF0F172A))
+                      : (isDark ? Colors.white60 : const Color(0xFF64748B)),
+                ),
+                overflow: TextOverflow.ellipsis,
               ),
             ),
           ],
@@ -466,7 +645,7 @@ class _OutstandingPageState extends ConsumerState<OutstandingPage> {
       builder: (context, constraints) {
         final isSmall = constraints.maxWidth < 650;
         final cardWidth =
-            isSmall ? constraints.maxWidth : (constraints.maxWidth - 16) / 3;
+            isSmall ? constraints.maxWidth : (constraints.maxWidth - 17) / 3;
 
         return Wrap(
           spacing: 8,
@@ -659,23 +838,27 @@ class _OutstandingPageState extends ConsumerState<OutstandingPage> {
               Expanded(
                 child: Row(
                   children: [
-                    Text(
-                      'Ageing Analysis Schedule',
-                      style: TextStyle(
-                        fontSize: 14.5,
-                        fontWeight: FontWeight.bold,
-                        color: isDark ? Colors.white : const Color(0xFF0F172A),
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      '(Click card to filter)',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: isDark ? Colors.white38 : const Color(0xFF94A3B8),
+                    Flexible(
+                      child: Text(
+                        'Ageing Analysis Schedule',
+                        style: TextStyle(
+                          fontSize: 14.5,
+                          fontWeight: FontWeight.bold,
+                          color: isDark ? Colors.white : const Color(0xFF0F172A),
+                        ),
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
+                    if (!Responsive.isMobile(context)) ...[
+                      const SizedBox(width: 8),
+                      Text(
+                        '(Click card to filter)',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: isDark ? Colors.white38 : const Color(0xFF94A3B8),
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -725,8 +908,8 @@ class _OutstandingPageState extends ConsumerState<OutstandingPage> {
             builder: (context, constraints) {
               final isSmall = constraints.maxWidth < 650;
               final bucketWidth = isSmall
-                  ? (constraints.maxWidth - 8) / 2
-                  : (constraints.maxWidth - 24) / 4;
+                  ? (constraints.maxWidth - 9) / 2
+                  : (constraints.maxWidth - 25) / 4;
 
               return Wrap(
                 spacing: 8,
@@ -907,11 +1090,14 @@ class _OutstandingPageState extends ConsumerState<OutstandingPage> {
   }
 
   Widget _buildSearchFilterBar({
+    required BuildContext context,
     required bool isDark,
     required String selectedTab,
     required String statusFilter,
     required String bucketFilter,
   }) {
+    final isMobile = Responsive.isMobile(context);
+
     return Row(
       children: [
         // Search Input (Real-time debounced)
@@ -930,8 +1116,8 @@ class _OutstandingPageState extends ConsumerState<OutstandingPage> {
               style: const TextStyle(fontSize: 13),
               decoration: InputDecoration(
                 hintText: selectedTab == 'Receivables'
-                    ? 'Search by Invoice #, Customer, Phone...'
-                    : 'Search by Purchase #, Supplier, Phone...',
+                    ? (isMobile ? 'Search invoice, customer...' : 'Search by Invoice #, Customer, Phone...')
+                    : (isMobile ? 'Search bill, supplier...' : 'Search by Purchase #, Supplier, Phone...'),
                 hintStyle: TextStyle(
                   fontSize: 12,
                   color: isDark ? Colors.white38 : const Color(0xFF94A3B8),
@@ -999,10 +1185,15 @@ class _OutstandingPageState extends ConsumerState<OutstandingPage> {
   }
 
   Widget _buildOutstandingTable(
+    BuildContext context,
     List<OutstandingItemDto> items,
     bool isDark,
     String selectedTab,
   ) {
+    if (Responsive.isMobile(context)) {
+      return _buildMobileOutstandingList(items, isDark, selectedTab);
+    }
+
     return Container(
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF1E293B) : Colors.white,
@@ -1011,13 +1202,13 @@ class _OutstandingPageState extends ConsumerState<OutstandingPage> {
           color: isDark ? Colors.white12 : const Color(0xFFE2E8F0),
         ),
       ),
-      child: Column(
-        children: [
-          // Horizontally Scrollable Table Canvas
-          SingleChildScrollView(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final tableWidth = constraints.maxWidth > 860 ? constraints.maxWidth : 860.0;
+          return SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: SizedBox(
-              width: 860,
+              width: tableWidth,
               child: Column(
                 children: [
                   // Table Header
@@ -1099,6 +1290,307 @@ class _OutstandingPageState extends ConsumerState<OutstandingPage> {
                 ],
               ),
             ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildMobileOutstandingList(
+    List<OutstandingItemDto> items,
+    bool isDark,
+    String selectedTab,
+  ) {
+    if (items.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.all(32),
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF1E293B) : Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isDark ? Colors.white12 : const Color(0xFFE2E8F0),
+          ),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.search_off,
+              size: 36,
+              color: isDark ? Colors.white24 : const Color(0xFF94A3B8),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'No outstanding items found matching your filters.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 13,
+                color: isDark ? Colors.white54 : const Color(0xFF64748B),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return ListView.separated(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: items.length,
+      separatorBuilder: (context, index) => const SizedBox(height: 8),
+      itemBuilder: (context, index) {
+        final item = items[index];
+        return _buildMobileOutstandingCard(item, isDark, selectedTab);
+      },
+    );
+  }
+
+  Widget _buildMobileOutstandingCard(
+    OutstandingItemDto item,
+    bool isDark,
+    String selectedTab,
+  ) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1E293B) : Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isDark ? Colors.white12 : const Color(0xFFE2E8F0),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Top: Ref + copy icon & Status badge
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    item.refNumber,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF15803D),
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  InkWell(
+                    onTap: () {
+                      Clipboard.setData(ClipboardData(text: item.refNumber));
+                      AppFeedback.showSnackbar(context, message: '${item.refNumber} copied!');
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.all(2),
+                      child: Icon(
+                        Icons.copy,
+                        size: 13,
+                        color: isDark ? Colors.white38 : const Color(0xFF94A3B8),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              _buildTimelineBadge(item.statusLabel, isDark),
+            ],
+          ),
+          const SizedBox(height: 6),
+
+          // Middle: Party Name & Phone
+          Text(
+            item.partyName,
+            style: TextStyle(
+              fontSize: 13.5,
+              fontWeight: FontWeight.bold,
+              color: isDark ? Colors.white : const Color(0xFF0F172A),
+            ),
+            overflow: TextOverflow.ellipsis,
+          ),
+          if (item.partyMobile != null && item.partyMobile!.trim().isNotEmpty) ...[
+            const SizedBox(height: 2),
+            Text(
+              item.partyMobile!,
+              style: TextStyle(
+                fontSize: 11,
+                color: isDark ? Colors.white38 : const Color(0xFF94A3B8),
+              ),
+            ),
+          ],
+          const SizedBox(height: 8),
+
+          // Dates & Age Tag
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'Date: ${item.date.day.toString().padLeft(2, '0')}/${item.date.month.toString().padLeft(2, '0')}/${item.date.year}',
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: isDark ? Colors.white60 : const Color(0xFF64748B),
+                  ),
+                ),
+              ),
+              Expanded(
+                child: Text(
+                  'Due: ${item.dueDate.day.toString().padLeft(2, '0')}/${item.dueDate.month.toString().padLeft(2, '0')}/${item.dueDate.year}',
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: isDark ? Colors.white70 : const Color(0xFF475569),
+                  ),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: isDark ? Colors.white10 : const Color(0xFFF1F5F9),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Text(
+                  '${item.ageDays} d',
+                  style: TextStyle(
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w600,
+                    color: isDark ? Colors.white70 : const Color(0xFF475569),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const Divider(height: 16, color: Color(0xFFE2E8F0)),
+
+          // Bottom: Amounts & Actions
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        'Bill: ₹${_formatCurrency(item.amount)}',
+                        style: TextStyle(
+                          fontSize: 11.5,
+                          color: isDark ? Colors.white60 : const Color(0xFF64748B),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'Due: ',
+                          style: TextStyle(
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w600,
+                            color: isDark ? Colors.white70 : const Color(0xFF475569),
+                          ),
+                        ),
+                        Flexible(
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              '₹${_formatCurrency(item.balance)}',
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w900,
+                                color: Color(0xFFDC2626),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              PopupMenuButton<String>(
+                icon: Icon(
+                  Icons.more_vert,
+                  size: 20,
+                  color: isDark ? Colors.white70 : const Color(0xFF64748B),
+                ),
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+                onSelected: (action) {
+                  if (action == 'view') {
+                    if (selectedTab == 'Receivables') {
+                      context.push('/sales/${item.id}');
+                    } else {
+                      context.push('/purchase/${item.id}');
+                    }
+                  } else if (action == 'share') {
+                    // ignore: deprecated_member_use
+                    Share.share(
+                      'Payment Reminder: ${item.refNumber}\nParty: ${item.partyName}\nBalance Due: ₹${_formatCurrency(item.balance)}\nDue Date: ${item.dueDate.day}/${item.dueDate.month}/${item.dueDate.year}',
+                    );
+                  } else if (action == 'pay') {
+                    if (selectedTab == 'Receivables') {
+                      context.push('/receipts/new');
+                    } else {
+                      context.push('/payments/new');
+                    }
+                  }
+                },
+                itemBuilder: (context) => [
+                  PopupMenuItem(
+                    value: 'view',
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.visibility_outlined,
+                          size: 15,
+                          color: isDark ? Colors.white70 : const Color(0xFF475569),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          selectedTab == 'Receivables' ? 'View Invoice' : 'View Bill',
+                          style: const TextStyle(fontSize: 12.5),
+                        ),
+                      ],
+                    ),
+                  ),
+                  PopupMenuItem(
+                    value: 'share',
+                    child: Row(
+                      children: const [
+                        Icon(Icons.send_outlined, size: 15, color: Color(0xFF15803D)),
+                        SizedBox(width: 8),
+                        Text('Share Reminder', style: TextStyle(fontSize: 12.5)),
+                      ],
+                    ),
+                  ),
+                  PopupMenuItem(
+                    value: 'pay',
+                    child: Row(
+                      children: [
+                        Icon(
+                          selectedTab == 'Receivables' ? Icons.receipt_long : Icons.payment,
+                          size: 15,
+                          color: const Color(0xFF0284C7),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          selectedTab == 'Receivables' ? 'Receive Payment' : 'Pay Supplier',
+                          style: const TextStyle(fontSize: 12.5),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
         ],
       ),
@@ -1281,6 +1773,7 @@ class _OutstandingPageState extends ConsumerState<OutstandingPage> {
                         context.push('/purchase/${item.id}');
                       }
                     } else if (val == 'reminder') {
+                      // ignore: deprecated_member_use
                       Share.share(
                         'Payment Reminder: ${item.refNumber}\nParty: ${item.partyName}\nBalance Due: ₹${_formatCurrency(item.balance)}\nDue Date: ${item.dueDate.day}/${item.dueDate.month}/${item.dueDate.year}',
                       );

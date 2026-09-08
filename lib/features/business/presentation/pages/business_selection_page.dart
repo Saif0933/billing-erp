@@ -24,7 +24,7 @@ class BusinessSelectionPage extends ConsumerWidget {
             icon: const Icon(Icons.add),
             onPressed: () => context.push('/create-business'),
             tooltip: 'Create New Business',
-          )
+          ),
         ],
       ),
       body: Center(
@@ -47,7 +47,9 @@ class BusinessSelectionPage extends ConsumerWidget {
               Text(
                 'Select the business entity you want to view and manage.',
                 style: AppTypography.bodyMedium.copyWith(
-                  color: isDark ? AppColors.textDarkSecondary : AppColors.textLightSecondary,
+                  color: isDark
+                      ? AppColors.textDarkSecondary
+                      : AppColors.textLightSecondary,
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -59,24 +61,31 @@ class BusinessSelectionPage extends ConsumerWidget {
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
                   itemCount: businessState.businesses.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.md),
+                  separatorBuilder: (_, __) =>
+                      const SizedBox(height: AppSpacing.md),
                   itemBuilder: (context, index) {
                     final biz = businessState.businesses[index];
                     final isActive = businessState.activeBusiness?.id == biz.id;
 
                     return AppCard(
                       backgroundColor: isActive
-                          ? (isDark ? AppColors.accent.withOpacity(0.1) : AppColors.primary.withOpacity(0.05))
+                          ? (isDark
+                                ? AppColors.accent.withOpacity(0.1)
+                                : AppColors.primary.withOpacity(0.05))
                           : null,
                       border: Border.all(
                         color: isActive
                             ? (isDark ? AppColors.accent : AppColors.primary)
-                            : (isDark ? AppColors.borderDark : AppColors.borderLight),
+                            : (isDark
+                                  ? AppColors.borderDark
+                                  : AppColors.borderLight),
                         width: isActive ? 2 : 1,
                       ),
                       child: InkWell(
                         onTap: () async {
-                          await ref.read(businessProvider.notifier).switchBusiness(biz.id);
+                          await ref
+                              .read(businessProvider.notifier)
+                              .switchBusiness(biz.id);
                           if (context.mounted) {
                             context.go('/dashboard');
                           }
@@ -84,12 +93,16 @@ class BusinessSelectionPage extends ConsumerWidget {
                         child: Row(
                           children: [
                             CircleAvatar(
-                              backgroundColor: isDark ? AppColors.primaryLight : const Color(0xFFF1F5F9),
+                              backgroundColor: isDark
+                                  ? AppColors.primaryLight
+                                  : const Color(0xFFF1F5F9),
                               child: Text(
                                 biz.name.substring(0, 1).toUpperCase(),
                                 style: TextStyle(
                                   fontWeight: FontWeight.bold,
-                                  color: isDark ? AppColors.accent : AppColors.primary,
+                                  color: isDark
+                                      ? AppColors.accent
+                                      : AppColors.primary,
                                 ),
                               ),
                             ),
@@ -100,13 +113,17 @@ class BusinessSelectionPage extends ConsumerWidget {
                                 children: [
                                   Text(
                                     biz.name,
-                                    style: AppTypography.titleMedium.copyWith(fontWeight: FontWeight.bold),
+                                    style: AppTypography.titleMedium.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                    ),
                                   ),
                                   const SizedBox(height: 2),
                                   Text(
                                     'Type: ${biz.type} • GSTIN: ${biz.gstNumber}',
                                     style: AppTypography.bodySmall.copyWith(
-                                      color: isDark ? AppColors.textDarkSecondary : AppColors.textLightSecondary,
+                                      color: isDark
+                                          ? AppColors.textDarkSecondary
+                                          : AppColors.textLightSecondary,
                                     ),
                                   ),
                                 ],
@@ -115,7 +132,9 @@ class BusinessSelectionPage extends ConsumerWidget {
                             if (isActive)
                               Icon(
                                 Icons.check_circle,
-                                color: isDark ? AppColors.accent : AppColors.primary,
+                                color: isDark
+                                    ? AppColors.accent
+                                    : AppColors.primary,
                               ),
                           ],
                         ),

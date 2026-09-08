@@ -89,7 +89,9 @@ class _CustomerPageState extends ConsumerState<CustomerPage> {
         ],
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(AppSpacing.lg),
+        padding: EdgeInsets.all(
+          Responsive.isMobile(context) ? AppSpacing.md : AppSpacing.lg,
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -113,9 +115,9 @@ class _CustomerPageState extends ConsumerState<CustomerPage> {
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 crossAxisCount: Responsive.isMobile(context) ? 2 : 4,
-                crossAxisSpacing: AppSpacing.md,
-                mainAxisSpacing: AppSpacing.md,
-                childAspectRatio: Responsive.isMobile(context) ? 1.6 : 1.85,
+                crossAxisSpacing: Responsive.isMobile(context) ? AppSpacing.sm : AppSpacing.md,
+                mainAxisSpacing: Responsive.isMobile(context) ? AppSpacing.sm : AppSpacing.md,
+                childAspectRatio: Responsive.isMobile(context) ? 1.35 : 1.85,
                 children: [
                   AppMetricCard(
                     title: 'Total Customers',
@@ -325,11 +327,14 @@ class _CustomerPageState extends ConsumerState<CustomerPage> {
                                 Expanded(
                                   child: Text(
                                     c.name,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
                                     style: AppTypography.titleMedium.copyWith(
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
                                 ),
+                                const SizedBox(width: AppSpacing.xs),
                                 Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                   decoration: BoxDecoration(
@@ -344,9 +349,15 @@ class _CustomerPageState extends ConsumerState<CustomerPage> {
                               ],
                             ),
                             const SizedBox(height: 4),
-                            Text('Mobile: ${c.mobile.isNotEmpty ? c.mobile : "—"}'),
+                            Text(
+                              'Mobile: ${c.mobile.isNotEmpty ? c.mobile : "—"}',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
                             Text(
                               'GSTIN: ${c.gstin.isNotEmpty ? c.gstin : "Unregistered"}',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                               style: TextStyle(
                                 fontFamily: c.gstin.isNotEmpty ? 'monospace' : null,
                               ),
@@ -355,10 +366,14 @@ class _CustomerPageState extends ConsumerState<CustomerPage> {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                const Text(
-                                  'Outstanding Balance:',
-                                  style: TextStyle(fontSize: 12, color: Colors.grey),
+                                const Flexible(
+                                  child: Text(
+                                    'Outstanding Balance:',
+                                    style: TextStyle(fontSize: 12, color: Colors.grey),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
                                 ),
+                                const SizedBox(width: AppSpacing.xs),
                                 Text(
                                   '₹${c.currentBalance.toStringAsFixed(2)}',
                                   style: TextStyle(
@@ -373,11 +388,20 @@ class _CustomerPageState extends ConsumerState<CustomerPage> {
                               mainAxisAlignment: MainAxisAlignment.end,
                               children: [
                                 TextButton.icon(
+                                  style: TextButton.styleFrom(
+                                    visualDensity: VisualDensity.compact,
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  ),
                                   icon: const Icon(Icons.edit, size: 16),
                                   label: const Text('Edit'),
                                   onPressed: () => context.push('/customers/edit/${c.id}'),
                                 ),
+                                const SizedBox(width: 4),
                                 TextButton.icon(
+                                  style: TextButton.styleFrom(
+                                    visualDensity: VisualDensity.compact,
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  ),
                                   icon: const Icon(Icons.delete, size: 16, color: Colors.red),
                                   label: const Text('Delete', style: TextStyle(color: Colors.red)),
                                   onPressed: () => _confirmDelete(c),

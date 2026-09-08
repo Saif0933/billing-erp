@@ -15,7 +15,7 @@ class EmptyScannerState extends StatelessWidget {
 
     return Center(
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 48, horizontal: 24),
+        padding: const EdgeInsets.symmetric(vertical: 36, horizontal: 16),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           mainAxisSize: MainAxisSize.min,
@@ -79,20 +79,23 @@ class EmptyScannerState extends StatelessWidget {
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(color: const Color(0xFF16A34A)),
                 ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: const [
-                    Icon(Icons.check_circle_outline, size: 16, color: Color(0xFF16A34A)),
-                    SizedBox(width: 6),
-                    Text(
-                      'Ready to Scan Products',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF16A34A),
+                child: const FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.check_circle_outline, size: 16, color: Color(0xFF16A34A)),
+                      SizedBox(width: 6),
+                      Text(
+                        'Ready to Scan Products',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF16A34A),
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),

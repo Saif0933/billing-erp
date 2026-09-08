@@ -198,7 +198,6 @@ class _BarcodeScannerBarState extends ConsumerState<BarcodeScannerBar> {
                   },
                 ),
 
-              // Submit / Add Button
               Container(
                 margin: const EdgeInsets.all(4),
                 child: ElevatedButton.icon(
@@ -206,7 +205,7 @@ class _BarcodeScannerBarState extends ConsumerState<BarcodeScannerBar> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF15803D), // Green
                     foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                     elevation: 0,
                   ),

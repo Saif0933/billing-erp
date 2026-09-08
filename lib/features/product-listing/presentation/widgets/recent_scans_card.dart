@@ -25,11 +25,15 @@ class RecentScansCard extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Header Row: 🕒 Recent Scans + View All
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          // Header: 🕒 Recent Scans + View All
+          Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 8,
+            runSpacing: 4,
             children: [
               Row(
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(
                     Icons.access_time_rounded,
@@ -153,13 +157,16 @@ class RecentScansCard extends ConsumerWidget {
                     ),
                   ),
                   const SizedBox(width: 4),
-                  Text(
-                    '• ${_getRelativeTime(item.lastScannedAt)}',
-                    style: TextStyle(
-                      fontSize: 9.5,
-                      color: isDark ? Colors.white38 : const Color(0xFF94A3B8),
+                  Flexible(
+                    child: Text(
+                      '• ${_getRelativeTime(item.lastScannedAt)}',
+                      style: TextStyle(
+                        fontSize: 9.5,
+                        color: isDark ? Colors.white38 : const Color(0xFF94A3B8),
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    maxLines: 1,
                   ),
                 ],
               ),

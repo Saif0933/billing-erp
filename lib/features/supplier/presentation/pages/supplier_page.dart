@@ -92,7 +92,9 @@ class _SupplierPageState extends ConsumerState<SupplierPage> {
         ],
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(AppSpacing.lg),
+        padding: EdgeInsets.all(
+          Responsive.isMobile(context) ? AppSpacing.md : AppSpacing.lg,
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -116,9 +118,9 @@ class _SupplierPageState extends ConsumerState<SupplierPage> {
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 crossAxisCount: Responsive.isMobile(context) ? 2 : 4,
-                crossAxisSpacing: AppSpacing.md,
-                mainAxisSpacing: AppSpacing.md,
-                childAspectRatio: Responsive.isMobile(context) ? 1.6 : 1.85,
+                crossAxisSpacing: Responsive.isMobile(context) ? AppSpacing.sm : AppSpacing.md,
+                mainAxisSpacing: Responsive.isMobile(context) ? AppSpacing.sm : AppSpacing.md,
+                childAspectRatio: Responsive.isMobile(context) ? 1.35 : 1.85,
                 children: [
                   AppMetricCard(
                     title: 'Total Suppliers',
@@ -352,11 +354,14 @@ class _SupplierPageState extends ConsumerState<SupplierPage> {
                                 Expanded(
                                   child: Text(
                                     s.name,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
                                     style: AppTypography.titleMedium.copyWith(
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
                                 ),
+                                const SizedBox(width: AppSpacing.xs),
                                 Container(
                                   padding: const EdgeInsets.symmetric(
                                       horizontal: 6, vertical: 2),
@@ -376,9 +381,15 @@ class _SupplierPageState extends ConsumerState<SupplierPage> {
                               ],
                             ),
                             const SizedBox(height: 6),
-                            Text('Mobile: ${s.mobile.isNotEmpty ? s.mobile : "N/A"} • State: ${s.state}'),
+                            Text(
+                              'Mobile: ${s.mobile.isNotEmpty ? s.mobile : "N/A"} • State: ${s.state}',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
                             Text(
                               'GSTIN: ${s.gstin.isNotEmpty ? s.gstin : "Unregistered"}',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                               style: TextStyle(
                                 fontFamily: s.gstin.isNotEmpty ? 'monospace' : null,
                                 color: s.gstin.isNotEmpty ? Colors.black87 : Colors.grey,
@@ -389,9 +400,14 @@ class _SupplierPageState extends ConsumerState<SupplierPage> {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                const Text('Payable Balance:',
-                                    style: TextStyle(
-                                        fontSize: 12, color: Colors.grey)),
+                                const Flexible(
+                                  child: Text(
+                                    'Payable Balance:',
+                                    style: TextStyle(fontSize: 12, color: Colors.grey),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                const SizedBox(width: AppSpacing.xs),
                                 Text(
                                   '₹${s.currentBalance.toStringAsFixed(2)}',
                                   style: TextStyle(
@@ -408,12 +424,21 @@ class _SupplierPageState extends ConsumerState<SupplierPage> {
                               mainAxisAlignment: MainAxisAlignment.end,
                               children: [
                                 TextButton.icon(
+                                  style: TextButton.styleFrom(
+                                    visualDensity: VisualDensity.compact,
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  ),
                                   icon: const Icon(Icons.edit_outlined, size: 16),
                                   label: const Text('Edit'),
                                   onPressed: () =>
                                       context.push('/suppliers/edit/${s.id}'),
                                 ),
+                                const SizedBox(width: 4),
                                 TextButton.icon(
+                                  style: TextButton.styleFrom(
+                                    visualDensity: VisualDensity.compact,
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  ),
                                   icon: const Icon(Icons.delete_outline,
                                       size: 16, color: Colors.red),
                                   label: const Text('Delete',

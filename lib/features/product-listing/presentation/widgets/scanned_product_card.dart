@@ -107,47 +107,54 @@ class ScannedProductCard extends ConsumerWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               // Price Details & Tax
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Text(
-                        '₹${p.sellingPrice.toStringAsFixed(2)}',
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.bold,
-                          color: isDark ? Colors.white : const Color(0xFF0F172A),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Wrap(
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      spacing: 4,
+                      runSpacing: 2,
+                      children: [
+                        Text(
+                          '₹${p.sellingPrice.toStringAsFixed(2)}',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                            color: isDark ? Colors.white : const Color(0xFF0F172A),
+                          ),
                         ),
-                      ),
-                      Text(
-                        ' × ${item.quantity}',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: isDark ? Colors.white60 : const Color(0xFF64748B),
+                        Text(
+                          '× ${item.quantity}',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: isDark ? Colors.white60 : const Color(0xFF64748B),
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        '= ₹${item.totalAmount.toStringAsFixed(2)}',
-                        style: const TextStyle(
-                          fontSize: 13.5,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF15803D),
+                        Text(
+                          '= ₹${item.totalAmount.toStringAsFixed(2)}',
+                          style: const TextStyle(
+                            fontSize: 13.5,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF15803D),
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    'GST ${p.gstRate.toInt()}% (₹${item.gstAmount.toStringAsFixed(2)})',
-                    style: TextStyle(
-                      fontSize: 10.5,
-                      color: isDark ? Colors.white38 : const Color(0xFF94A3B8),
+                      ],
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 2),
+                    Text(
+                      'GST ${p.gstRate.toInt()}% (₹${item.gstAmount.toStringAsFixed(2)})',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 10.5,
+                        color: isDark ? Colors.white38 : const Color(0xFF94A3B8),
+                      ),
+                    ),
+                  ],
+                ),
               ),
+              const SizedBox(width: 8),
 
               // Quantity Buttons (− Qty +)
               Row(

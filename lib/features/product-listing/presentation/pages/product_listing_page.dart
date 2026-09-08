@@ -88,7 +88,10 @@ class _ProductListingPageState extends ConsumerState<ProductListingPage> {
             }
           },
           child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            padding: EdgeInsets.symmetric(
+              horizontal: MediaQuery.sizeOf(context).width < 600 ? 12 : 16,
+              vertical: MediaQuery.sizeOf(context).width < 600 ? 12 : 14,
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -120,6 +123,7 @@ class _ProductListingPageState extends ConsumerState<ProductListingPage> {
     return LayoutBuilder(
       builder: (context, constraints) {
         final isNarrow = constraints.maxWidth < 720;
+        final isVeryNarrow = constraints.maxWidth < 450;
 
         final titleSection = Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -189,7 +193,7 @@ class _ProductListingPageState extends ConsumerState<ProductListingPage> {
               isNarrow
                   ? Expanded(
                       child: _buildTabButton(
-                        title: 'Barcode POS Billing',
+                        title: isVeryNarrow ? 'POS Billing' : 'Barcode POS Billing',
                         icon: Icons.barcode_reader,
                         isSelected: _viewMode == ProductListingViewMode.posBilling,
                         onTap: () {
@@ -213,7 +217,7 @@ class _ProductListingPageState extends ConsumerState<ProductListingPage> {
               isNarrow
                   ? Expanded(
                       child: _buildTabButton(
-                        title: 'Catalogue Directory',
+                        title: isVeryNarrow ? 'Catalogue' : 'Catalogue Directory',
                         icon: Icons.grid_view_outlined,
                         isSelected: _viewMode == ProductListingViewMode.catalogueDirectory,
                         onTap: () {

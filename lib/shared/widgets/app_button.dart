@@ -117,7 +117,12 @@ class AppButton extends StatelessWidget {
           onTap: (isLoading || onPressed == null) ? null : onPressed,
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-            child: Center(child: content),
+            child: Center(
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: content,
+              ),
+            ),
           ),
         ),
       ),

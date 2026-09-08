@@ -246,7 +246,9 @@ class _ReceiptEntryPageState extends ConsumerState<ReceiptEntryPage> {
     return Scaffold(
       appBar: AppBar(title: const Text('Record Customer Receipt')),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(AppSpacing.lg),
+        padding: Responsive.isMobile(context)
+            ? const EdgeInsets.all(AppSpacing.md)
+            : const EdgeInsets.all(AppSpacing.lg),
         child: Center(
           child: Container(
             constraints: const BoxConstraints(maxWidth: 800),
@@ -268,29 +270,53 @@ class _ReceiptEntryPageState extends ConsumerState<ReceiptEntryPage> {
                         const SizedBox(height: AppSpacing.lg),
                         if (availableCustomers.isEmpty) ...[
                           Container(
-                            padding: const EdgeInsets.all(14),
+                            padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
                               color: const Color(0xFFF1F5F9),
                               borderRadius: BorderRadius.circular(8),
                               border: Border.all(color: const Color(0xFFCBD5E1)),
                             ),
-                            child: Row(
-                              children: [
-                                const Icon(Icons.people_outline, size: 20, color: Color(0xFF64748B)),
-                                const SizedBox(width: 10),
-                                const Expanded(
-                                  child: Text(
-                                    'No customers found in database.',
-                                    style: TextStyle(fontSize: 13, color: Color(0xFF475569)),
+                            child: Responsive.isMobile(context)
+                                ? Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: const [
+                                          Icon(Icons.people_outline, size: 20, color: Color(0xFF64748B)),
+                                          SizedBox(width: 10),
+                                          Expanded(
+                                            child: Text(
+                                              'No customers found in database.',
+                                              style: TextStyle(fontSize: 13, color: Color(0xFF475569)),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 8),
+                                      TextButton.icon(
+                                        icon: const Icon(Icons.person_add_alt_1_outlined, size: 16),
+                                        label: const Text('Add Customer'),
+                                        onPressed: () => context.push('/customers/new'),
+                                      ),
+                                    ],
+                                  )
+                                : Row(
+                                    children: [
+                                      const Icon(Icons.people_outline, size: 20, color: Color(0xFF64748B)),
+                                      const SizedBox(width: 10),
+                                      const Expanded(
+                                        child: Text(
+                                          'No customers found in database.',
+                                          style: TextStyle(fontSize: 13, color: Color(0xFF475569)),
+                                        ),
+                                      ),
+                                      TextButton.icon(
+                                        icon: const Icon(Icons.person_add_alt_1_outlined, size: 16),
+                                        label: const Text('Add Customer'),
+                                        onPressed: () => context.push('/customers/new'),
+                                      ),
+                                    ],
                                   ),
-                                ),
-                                TextButton.icon(
-                                  icon: const Icon(Icons.person_add_alt_1_outlined, size: 16),
-                                  label: const Text('Add Customer'),
-                                  onPressed: () => context.push('/customers/new'),
-                                ),
-                              ],
-                            ),
                           ),
                         ] else ...[
                           AppDropdownField<Customer>(
@@ -383,29 +409,57 @@ class _ReceiptEntryPageState extends ConsumerState<ReceiptEntryPage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Row(
-                                children: [
-                                  Text('Invoice Allocation Engine', style: AppTypography.titleMedium.copyWith(fontWeight: FontWeight.bold)),
-                                  if (_isLoadingInvoices) ...[
-                                    const SizedBox(width: 8),
-                                    const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2)),
+                          if (Responsive.isMobile(context))
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        'Invoice Allocation Engine',
+                                        style: AppTypography.titleMedium.copyWith(fontWeight: FontWeight.bold),
+                                      ),
+                                    ),
+                                    if (_isLoadingInvoices) ...[
+                                      const SizedBox(width: 8),
+                                      const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2)),
+                                    ],
                                   ],
-                                ],
-                              ),
-                              AppButton(
-                                label: 'Auto-Allocate Outstanding',
-                                type: AppButtonType.secondary,
-                                onPressed: _autoAllocate,
-                              ),
-                            ],
-                          ),
+                                ),
+                                const SizedBox(height: AppSpacing.sm),
+                                AppButton(
+                                  label: 'Auto-Allocate Outstanding',
+                                  type: AppButtonType.secondary,
+                                  onPressed: _autoAllocate,
+                                ),
+                              ],
+                            )
+                          else
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Row(
+                                  children: [
+                                    Text('Invoice Allocation Engine', style: AppTypography.titleMedium.copyWith(fontWeight: FontWeight.bold)),
+                                    if (_isLoadingInvoices) ...[
+                                      const SizedBox(width: 8),
+                                      const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2)),
+                                    ],
+                                  ],
+                                ),
+                                AppButton(
+                                  label: 'Auto-Allocate Outstanding',
+                                  type: AppButtonType.secondary,
+                                  onPressed: _autoAllocate,
+                                ),
+                              ],
+                            ),
                           const SizedBox(height: AppSpacing.md),
                           AppTable<Invoice>(
                             items: _unpaidInvoices,
                             emptyMessage: 'This customer has no unpaid invoices. Receipt will be recorded on-account / advance.',
+                            mobileCardBuilder: (inv) => _buildInvoiceCard(inv),
                             columns: [
                               TableColumnSpec<Invoice>(
                                 label: 'Invoice No.',
@@ -471,23 +525,117 @@ class _ReceiptEntryPageState extends ConsumerState<ReceiptEntryPage> {
 
                   const SizedBox(height: AppSpacing.lg),
 
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      AppButton(label: 'Cancel', type: AppButtonType.text, onPressed: () => context.pop()),
-                      const SizedBox(width: AppSpacing.md),
-                      AppButton(
-                        label: 'Save Entry',
-                        isLoading: _isSaving,
-                        onPressed: _saveReceipt,
-                      ),
-                    ],
-                  ),
+                  Responsive.isMobile(context)
+                      ? Row(
+                          children: [
+                            Expanded(
+                              child: AppButton(
+                                label: 'Cancel',
+                                type: AppButtonType.secondary,
+                                onPressed: () => context.pop(),
+                              ),
+                            ),
+                            const SizedBox(width: AppSpacing.md),
+                            Expanded(
+                              child: AppButton(
+                                label: 'Save Entry',
+                                isLoading: _isSaving,
+                                onPressed: _saveReceipt,
+                              ),
+                            ),
+                          ],
+                        )
+                      : Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            AppButton(label: 'Cancel', type: AppButtonType.text, onPressed: () => context.pop()),
+                            const SizedBox(width: AppSpacing.md),
+                            AppButton(
+                              label: 'Save Entry',
+                              isLoading: _isSaving,
+                              onPressed: _saveReceipt,
+                            ),
+                          ],
+                        ),
                 ],
               ),
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildInvoiceCard(Invoice inv) {
+    final controller = TextEditingController(
+      text: _allocations[inv.id]?.toString() ?? '0.0',
+    );
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: isDark ? Colors.white12 : const Color(0xFFE2E8F0),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Text(
+                  inv.invoiceNumber,
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                '${inv.invoiceDate.day}/${inv.invoiceDate.month}/${inv.invoiceDate.year}',
+                style: TextStyle(fontSize: 12, color: isDark ? Colors.white60 : Colors.grey[600]),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Total: ₹${inv.grandTotal.toStringAsFixed(2)}',
+                style: TextStyle(fontSize: 12, color: isDark ? Colors.white70 : const Color(0xFF475569)),
+              ),
+              Text(
+                'Outstanding: ₹${inv.balanceAmount.toStringAsFixed(2)}',
+                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.red),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          TextFormField(
+            controller: controller,
+            keyboardType: TextInputType.number,
+            decoration: const InputDecoration(
+              labelText: 'Allocation Amount (₹)',
+              isDense: true,
+              contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            ),
+            onChanged: (val) {
+              final double allocAmt = double.tryParse(val) ?? 0.0;
+              setState(() {
+                if (allocAmt > 0) {
+                  _allocations[inv.id] = allocAmt;
+                } else {
+                  _allocations.remove(inv.id);
+                }
+              });
+            },
+          ),
+        ],
       ),
     );
   }
