@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../../../app/theme/theme_provider.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_spacing.dart';
 import '../../../../core/navigation/navigation_config.dart';
@@ -93,112 +92,6 @@ class MobileDrawer extends ConsumerWidget {
     }
   }
 
-  Widget _buildThemeSwitcher(
-    BuildContext context,
-    WidgetRef ref,
-    ThemeMode currentMode,
-    bool isDark,
-  ) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF131D35) : const Color(0xFFF1F5F9),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(
-          color: isDark ? const Color(0xFF1E2E4A) : AppColors.borderLight,
-        ),
-      ),
-      child: Row(
-        children: [
-          _buildThemeSegment(
-            label: 'Auto',
-            icon: Icons.brightness_auto_rounded,
-            isSelected: currentMode == ThemeMode.system,
-            isDark: isDark,
-            onTap: () => ref
-                .read(themeModeProvider.notifier)
-                .setThemeMode(ThemeMode.system),
-          ),
-          _buildThemeSegment(
-            label: 'Light',
-            icon: Icons.light_mode_rounded,
-            isSelected: currentMode == ThemeMode.light,
-            isDark: isDark,
-            onTap: () => ref
-                .read(themeModeProvider.notifier)
-                .setThemeMode(ThemeMode.light),
-          ),
-          _buildThemeSegment(
-            label: 'Dark',
-            icon: Icons.dark_mode_rounded,
-            isSelected: currentMode == ThemeMode.dark,
-            isDark: isDark,
-            onTap: () => ref
-                .read(themeModeProvider.notifier)
-                .setThemeMode(ThemeMode.dark),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildThemeSegment({
-    required String label,
-    required IconData icon,
-    required bool isSelected,
-    required bool isDark,
-    required VoidCallback onTap,
-  }) {
-    return Expanded(
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(8),
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 7),
-          decoration: BoxDecoration(
-            color: isSelected
-                ? (isDark ? const Color(0xFF1E293B) : Colors.white)
-                : Colors.transparent,
-            borderRadius: BorderRadius.circular(8),
-            boxShadow: isSelected
-                ? [
-                    BoxShadow(
-                      color:
-                          Colors.black.withValues(alpha: isDark ? 0.2 : 0.06),
-                      blurRadius: 4,
-                      offset: const Offset(0, 1),
-                    ),
-                  ]
-                : null,
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                icon,
-                size: 14,
-                color: isSelected
-                    ? const Color(0xFF10B981)
-                    : (isDark ? Colors.white60 : Colors.black54),
-              ),
-              const SizedBox(width: 4),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                  color: isSelected
-                      ? (isDark ? Colors.white : AppColors.textLightPrimary)
-                      : (isDark ? Colors.white60 : Colors.black54),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
 
   Widget _buildNeedHelpCard(BuildContext context, bool isDark) {
     return Container(
@@ -257,7 +150,6 @@ class MobileDrawer extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final themeMode = ref.watch(themeModeProvider);
     final expandedGroups = ref.watch(expandedGroupsProvider);
     final userRole = ref.watch(userRoleProvider);
     final subscription = ref.watch(subscriptionProvider);
@@ -671,8 +563,6 @@ class MobileDrawer extends ConsumerWidget {
               ),
             ),
 
-            // Theme Switcher Row (Auto / Light / Dark)
-            _buildThemeSwitcher(context, ref, themeMode, isDark),
 
             // Bottom Need Help Card
             _buildNeedHelpCard(context, isDark),

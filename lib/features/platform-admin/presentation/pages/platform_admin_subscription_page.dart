@@ -19,6 +19,23 @@ class _PlatformAdminSubscriptionPageState
   bool _isAnnualBilling = false;
   String _searchQuery = '';
   String _filterTag = 'All'; // 'All', 'Popular', 'With Tenants'
+  late final TextEditingController _searchController;
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController = TextEditingController();
+    // Load subscription tiers from backend database on screen open
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(platformAdminProvider.notifier).loadPlans();
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -177,14 +194,16 @@ class _PlatformAdminSubscriptionPageState
                         borderRadius: BorderRadius.circular(10),
                       ),
                     ),
-                    icon: const Icon(Icons.refresh_rounded, size: 20),
-                    onPressed: () {
-                      notifier.loadPlans();
-                      AppFeedback.showSnackbar(
-                        context,
-                        message: 'Refreshing subscription plans from server...',
-                      );
-                    },
+                    icon: state.isPlansLoading
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.refresh_rounded, size: 20),
+                    onPressed: state.isPlansLoading
+                        ? null
+                        : () => notifier.loadPlans(),
                   ),
 
                   // Add Plan Tier CTA
@@ -237,8 +256,169 @@ class _PlatformAdminSubscriptionPageState
           ),
           const SizedBox(height: 22),
 
-          // 2. SaaS Financial Intelligence KPIs
-          LayoutBuilder(
+          // Main Plans Content
+          if ((state.isPlansLoading || !state.hasPlansLoaded) && state.plans.isEmpty) ...[
+            Container(
+              padding: const EdgeInsets.symmetric(vertical: 64, horizontal: 24),
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: isDark ? Colors.white12 : const Color(0xFFE2E8F0),
+                ),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const SizedBox(
+                    width: 36,
+                    height: 36,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 3,
+                      valueColor:
+                          AlwaysStoppedAnimation<Color>(Color(0xFF4F46E5)),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Loading Subscription Plans...',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: isDark ? Colors.white : const Color(0xFF0F172A),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Fetching pricing tiers from database',
+                    style: TextStyle(
+                      fontSize: 12.5,
+                      color: isDark ? Colors.white60 : const Color(0xFF64748B),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ] else if (state.plansErrorMessage != null && state.plans.isEmpty) ...[
+            Container(
+              padding: const EdgeInsets.symmetric(vertical: 48, horizontal: 24),
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: Colors.redAccent.withValues(alpha: 0.3),
+                ),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.cloud_off_rounded,
+                      size: 48, color: Colors.redAccent),
+                  const SizedBox(height: 14),
+                  Text(
+                    'Unable to Load Plans',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: isDark ? Colors.white : const Color(0xFF0F172A),
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    'Could not connect to the database. Please check your connection.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 12.5,
+                      color: isDark ? Colors.white60 : const Color(0xFF64748B),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF4F46E5),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 18, vertical: 10),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8)),
+                    ),
+                    icon: const Icon(Icons.refresh, size: 16, color: Colors.white),
+                    label: const Text('Retry',
+                        style: TextStyle(fontSize: 12.5, color: Colors.white)),
+                    onPressed: () => notifier.loadPlans(),
+                  ),
+                ],
+              ),
+            ),
+          ] else if (state.plans.isEmpty) ...[
+            Container(
+              padding: const EdgeInsets.symmetric(vertical: 60, horizontal: 24),
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(
+                  color: isDark ? Colors.white12 : const Color(0xFFE2E8F0),
+                ),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(18),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF4F46E5).withValues(alpha: 0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.inventory_2_outlined,
+                      size: 42,
+                      color: Color(0xFF4F46E5),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'No Subscription Plans in Database',
+                    style: TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w800,
+                      color: isDark ? Colors.white : const Color(0xFF0F172A),
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    'There are currently no subscription plans configured in the database.\nClick below to create your first pricing tier.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: isDark ? Colors.white60 : const Color(0xFF64748B),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF4F46E5),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    icon: const Icon(Icons.add, size: 16),
+                    label: const Text(
+                      'Create Plan Tier',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    onPressed: () => PlatformPlanModal.show(context),
+                  ),
+                ],
+              ),
+            ),
+          ] else ...[
+            // 2. SaaS Financial Intelligence KPIs
+            LayoutBuilder(
             builder: (context, constraints) {
               final w = constraints.maxWidth;
               int cols;
@@ -530,6 +710,7 @@ class _PlatformAdminSubscriptionPageState
                   ),
                 ),
                 child: TextField(
+                  controller: _searchController,
                   onChanged: (val) => setState(() => _searchQuery = val),
                   style: const TextStyle(fontSize: 13),
                   decoration: InputDecoration(
@@ -539,6 +720,15 @@ class _PlatformAdminSubscriptionPageState
                       color: isDark ? Colors.white38 : const Color(0xFF94A3B8),
                     ),
                     prefixIcon: const Icon(Icons.search, size: 18),
+                    suffixIcon: _searchQuery.isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(Icons.clear, size: 14),
+                            onPressed: () {
+                              _searchController.clear();
+                              setState(() => _searchQuery = '');
+                            },
+                          )
+                        : null,
                     border: InputBorder.none,
                     contentPadding: const EdgeInsets.symmetric(vertical: 10),
                   ),
@@ -671,6 +861,7 @@ class _PlatformAdminSubscriptionPageState
                       icon: const Icon(Icons.clear, size: 14),
                       label: const Text('Reset Filters'),
                       onPressed: () => setState(() {
+                        _searchController.clear();
                         _searchQuery = '';
                         _filterTag = 'All';
                       }),
@@ -679,45 +870,47 @@ class _PlatformAdminSubscriptionPageState
               ),
             )
           else
-            LayoutBuilder(
-              builder: (context, constraints) {
-                final w = constraints.maxWidth;
-                int cols;
-                if (w < 680) {
-                  cols = 1;
-                } else if (w < 1150) {
-                  cols = 2;
-                } else if (w < 1600) {
-                  cols = 3;
-                } else {
-                  cols = 4;
-                }
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final w = constraints.maxWidth;
+                  int cols;
+                  if (w < 680) {
+                    cols = 1;
+                  } else if (w < 1150) {
+                    cols = 2;
+                  } else if (w < 1600) {
+                    cols = 3;
+                  } else {
+                    cols = 4;
+                  }
 
-                final double spacing = 16.0;
-                final double cardWidth = (w - (cols - 1) * spacing) / cols;
+                  final double spacing = 16.0;
+                  final double cardWidth = (w - (cols - 1) * spacing) / cols;
 
-                return Wrap(
-                  spacing: spacing,
-                  runSpacing: spacing,
-                  children: filteredPlans.map((plan) {
-                    return SizedBox(
-                      width: cardWidth,
-                      child: PlatformPlanCard(
-                        plan: plan,
-                        isAnnualView: _isAnnualBilling,
-                        onEdit: () =>
-                            PlatformPlanModal.show(context, plan: plan),
-                        onDelete: () => _confirmDeletePlan(context, ref, plan),
-                        onViewSubscribers: () {
-                          notifier.setPlanFilter(plan.name);
-                          notifier.setNavTab('organizations');
-                        },
-                      ),
-                    );
-                  }).toList(),
-                );
-              },
-            ),
+                  return Wrap(
+                    spacing: spacing,
+                    runSpacing: spacing,
+                    children: filteredPlans.map((plan) {
+                      return SizedBox(
+                        width: cardWidth,
+                        child: PlatformPlanCard(
+                          plan: plan,
+                          isAnnualView: _isAnnualBilling,
+                          onEdit: () =>
+                              PlatformPlanModal.show(context, plan: plan),
+                          onDelete: () =>
+                              _confirmDeletePlan(context, ref, plan),
+                          onViewSubscribers: () {
+                            notifier.setPlanFilter(plan.name);
+                            notifier.setNavTab('organizations');
+                          },
+                        ),
+                      );
+                    }).toList(),
+                  );
+                },
+              ),
+          ],
         ],
       ),
     );

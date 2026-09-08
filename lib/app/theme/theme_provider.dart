@@ -9,9 +9,8 @@ class ThemeModeNotifier extends StateNotifier<ThemeMode> {
   ThemeModeNotifier(this._storageService) : super(_loadInitialTheme(_storageService));
 
   static ThemeMode _loadInitialTheme(StorageService storage) {
-    final savedMode = storage.getThemeMode();
-    if (savedMode == 'light') return ThemeMode.light;
-    if (savedMode == 'dark') return ThemeMode.dark;
+    // Always default to ThemeMode.system so mobile & desktop OS brightness
+    // automatically controls Light Mode / Dark Mode switching.
     return ThemeMode.system;
   }
 

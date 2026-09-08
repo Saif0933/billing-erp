@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../data/services/platform_admin_api_service.dart';
@@ -16,6 +15,11 @@ class PlatformAdminState {
   final String selectedPlanFilter;
   final String selectedNavTab; // 'dashboard', 'organizations', 'subscriptions', 'onboarding'
   final bool isLoading;
+  final bool hasLoaded;
+  final String? errorMessage;
+  final bool isPlansLoading;
+  final bool hasPlansLoaded;
+  final String? plansErrorMessage;
 
   const PlatformAdminState({
     this.currentUser,
@@ -29,6 +33,11 @@ class PlatformAdminState {
     this.selectedPlanFilter = 'All',
     this.selectedNavTab = 'dashboard',
     this.isLoading = false,
+    this.hasLoaded = false,
+    this.errorMessage,
+    this.isPlansLoading = false,
+    this.hasPlansLoaded = false,
+    this.plansErrorMessage,
   });
 
   List<OrganizationTenant> get filteredTenants {
@@ -66,6 +75,11 @@ class PlatformAdminState {
     String? selectedPlanFilter,
     String? selectedNavTab,
     bool? isLoading,
+    bool? hasLoaded,
+    String? errorMessage,
+    bool? isPlansLoading,
+    bool? hasPlansLoaded,
+    String? plansErrorMessage,
   }) {
     return PlatformAdminState(
       currentUser: currentUser ?? this.currentUser,
@@ -79,6 +93,11 @@ class PlatformAdminState {
       selectedPlanFilter: selectedPlanFilter ?? this.selectedPlanFilter,
       selectedNavTab: selectedNavTab ?? this.selectedNavTab,
       isLoading: isLoading ?? this.isLoading,
+      hasLoaded: hasLoaded ?? this.hasLoaded,
+      errorMessage: errorMessage,
+      isPlansLoading: isPlansLoading ?? this.isPlansLoading,
+      hasPlansLoaded: hasPlansLoaded ?? this.hasPlansLoaded,
+      plansErrorMessage: plansErrorMessage,
     );
   }
 }
@@ -98,20 +117,22 @@ class PlatformAdminNotifier extends StateNotifier<PlatformAdminState> {
               lastLogin: DateTime.now().subtract(const Duration(minutes: 12)),
             ),
             isAuthenticated: true,
-            tenants: _initialTenants,
-            plans: _initialPlans,
+            tenants: const [],
+            plans: const [],
             onboardingRequests: _initialOnboardingRequests,
+            isLoading: true,
+            isPlansLoading: true,
             kpis: const PlatformKPIs(
-              totalMrr: 485450.00,
-              totalArr: 5825400.00,
-              mrrGrowthPercentage: 18.4,
-              totalTenants: 148,
-              activeTenants: 132,
-              trialTenants: 12,
-              totalUsers: 1420,
+              totalMrr: 0.0,
+              totalArr: 0.0,
+              mrrGrowthPercentage: 0.0,
+              totalTenants: 0,
+              activeTenants: 0,
+              trialTenants: 0,
+              totalUsers: 0,
               systemUptimePercentage: 99.98,
               serverLatencyMs: 38,
-              pendingOnboardings: 4,
+              pendingOnboardings: 0,
             ),
           ),
         ) {
@@ -123,12 +144,19 @@ class PlatformAdminNotifier extends StateNotifier<PlatformAdminState> {
   Future<void> loadPlans() async {
     if (_apiService == null) return;
     try {
+      state = state.copyWith(isPlansLoading: true, plansErrorMessage: null);
       final plans = await _apiService.getPlans();
-      if (plans.isNotEmpty) {
-        state = state.copyWith(plans: plans);
-      }
-    } catch (_) {
-      // Retain existing plans
+      state = state.copyWith(
+        plans: plans,
+        isPlansLoading: false,
+        hasPlansLoaded: true,
+      );
+    } catch (e) {
+      state = state.copyWith(
+        isPlansLoading: false,
+        hasPlansLoaded: true,
+        plansErrorMessage: e.toString(),
+      );
     }
   }
 
@@ -188,21 +216,24 @@ class PlatformAdminNotifier extends StateNotifier<PlatformAdminState> {
   Future<void> loadOrganizations() async {
     if (_apiService == null) return;
     try {
-      state = state.copyWith(isLoading: true);
-      final res = await _apiService.getOrganizations(
-        search: state.searchQuery,
-        status: state.selectedStatusFilter,
-        plan: state.selectedPlanFilter,
-      );
+      state = state.copyWith(isLoading: true, errorMessage: null);
+      final res = await _apiService.getOrganizations();
 
       state = state.copyWith(
-        tenants: res.tenants.isNotEmpty ? res.tenants : state.tenants,
+        tenants: res.tenants,
         kpis: res.kpis ?? state.kpis,
         isLoading: false,
+        hasLoaded: true,
       );
-    } catch (_) {
-      // Gracefully retain cached state on connection error
-      state = state.copyWith(isLoading: false);
+      if (res.kpis == null) {
+        _recalculateKpis();
+      }
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        hasLoaded: true,
+        errorMessage: e.toString(),
+      );
     }
   }
 
@@ -421,223 +452,7 @@ class PlatformAdminNotifier extends StateNotifier<PlatformAdminState> {
     );
   }
 
-  // --- Initial Mock Data ---
-  static final List<OrganizationTenant> _initialTenants = [
-    OrganizationTenant(
-      id: 'org_001',
-      name: 'Acme Global Enterprises',
-      code: 'ACME',
-      domain: 'acme.billing-erp.in',
-      gstin: '27AABCU9603R1ZM',
-      contactPerson: 'Rahul Sharma',
-      contactEmail: 'rahul@acmeglobal.in',
-      contactPhone: '+91 98201 44552',
-      planId: 'plan_ent',
-      planName: 'Enterprise',
-      status: TenantStatus.active,
-      monthlySpend: 6999.00,
-      totalInvoices: 4820,
-      activeUsersCount: 28,
-      maxUsersLimit: 100,
-      storageUsedGb: 14.5,
-      storageLimitGb: 100.0,
-      createdAt: DateTime.now().subtract(const Duration(days: 280)),
-      renewalDate: DateTime.now().add(const Duration(days: 14)),
-    ),
-    OrganizationTenant(
-      id: 'org_002',
-      name: 'Vortex Retail Chain',
-      code: 'VRTX',
-      domain: 'vortex.billing-erp.in',
-      gstin: '29AABCV4421P1Z9',
-      contactPerson: 'Priya Sundaram',
-      contactEmail: 'priya@vortexretail.com',
-      contactPhone: '+91 94481 99231',
-      planId: 'plan_growth',
-      planName: 'Growth',
-      status: TenantStatus.active,
-      monthlySpend: 2499.00,
-      totalInvoices: 1840,
-      activeUsersCount: 8,
-      maxUsersLimit: 15,
-      storageUsedGb: 6.2,
-      storageLimitGb: 25.0,
-      createdAt: DateTime.now().subtract(const Duration(days: 120)),
-      renewalDate: DateTime.now().add(const Duration(days: 22)),
-    ),
-    OrganizationTenant(
-      id: 'org_003',
-      name: 'Zenith Logistics Hub',
-      code: 'ZNTH',
-      domain: 'zenith.billing-erp.in',
-      gstin: '24AAACZ1189Q1ZA',
-      contactPerson: 'Vikram Mehta',
-      contactEmail: 'vikram@zenithlog.com',
-      contactPhone: '+91 98980 12345',
-      planId: 'plan_ent',
-      planName: 'Enterprise',
-      status: TenantStatus.active,
-      monthlySpend: 6999.00,
-      totalInvoices: 8910,
-      activeUsersCount: 45,
-      maxUsersLimit: 100,
-      storageUsedGb: 32.8,
-      storageLimitGb: 100.0,
-      createdAt: DateTime.now().subtract(const Duration(days: 410)),
-      renewalDate: DateTime.now().add(const Duration(days: 6)),
-    ),
-    OrganizationTenant(
-      id: 'org_004',
-      name: 'BlueSky Cloud Services',
-      code: 'BSKY',
-      domain: 'bluesky.billing-erp.in',
-      gstin: '33AABCB7720K1ZX',
-      contactPerson: 'Kavita Menon',
-      contactEmail: 'kavita@blueskycloud.in',
-      contactPhone: '+91 97451 88220',
-      planId: 'plan_growth',
-      planName: 'Growth',
-      status: TenantStatus.trial,
-      monthlySpend: 0.00,
-      totalInvoices: 120,
-      activeUsersCount: 3,
-      maxUsersLimit: 15,
-      storageUsedGb: 0.8,
-      storageLimitGb: 25.0,
-      createdAt: DateTime.now().subtract(const Duration(days: 7)),
-      renewalDate: DateTime.now().add(const Duration(days: 7)),
-    ),
-    OrganizationTenant(
-      id: 'org_005',
-      name: 'Apex FMCG Distributors',
-      code: 'APEX',
-      domain: 'apexfmcg.billing-erp.in',
-      gstin: '07AAACA9921E1Z3',
-      contactPerson: 'Anil Kapoor',
-      contactEmail: 'anil@apexfmcg.com',
-      contactPhone: '+91 99110 44331',
-      planId: 'plan_starter',
-      planName: 'Starter',
-      status: TenantStatus.active,
-      monthlySpend: 999.00,
-      totalInvoices: 640,
-      activeUsersCount: 2,
-      maxUsersLimit: 3,
-      storageUsedGb: 1.4,
-      storageLimitGb: 5.0,
-      createdAt: DateTime.now().subtract(const Duration(days: 90)),
-      renewalDate: DateTime.now().add(const Duration(days: 18)),
-    ),
-    OrganizationTenant(
-      id: 'org_006',
-      name: 'Nova Pharma Solutions',
-      code: 'NOVA',
-      domain: 'novapharma.billing-erp.in',
-      gstin: '36AAACN5512L1ZP',
-      contactPerson: 'Dr. Sanjay Rao',
-      contactEmail: 'sanjay@novapharma.in',
-      contactPhone: '+91 98490 66778',
-      planId: 'plan_starter',
-      planName: 'Starter',
-      status: TenantStatus.suspended,
-      monthlySpend: 0.00,
-      totalInvoices: 310,
-      activeUsersCount: 1,
-      maxUsersLimit: 3,
-      storageUsedGb: 2.1,
-      storageLimitGb: 5.0,
-      createdAt: DateTime.now().subtract(const Duration(days: 190)),
-      renewalDate: DateTime.now().subtract(const Duration(days: 15)),
-    ),
-    OrganizationTenant(
-      id: 'org_007',
-      name: 'Evergreen Organic Foods',
-      code: 'EVRG',
-      domain: 'evergreen.billing-erp.in',
-      gstin: '19AABCE8841M1ZK',
-      contactPerson: 'Ritu Sen',
-      contactEmail: 'ritu@evergreenfoods.in',
-      contactPhone: '+91 98300 22114',
-      planId: 'plan_growth',
-      planName: 'Growth',
-      status: TenantStatus.active,
-      monthlySpend: 2499.00,
-      totalInvoices: 2150,
-      activeUsersCount: 7,
-      maxUsersLimit: 15,
-      storageUsedGb: 5.8,
-      storageLimitGb: 25.0,
-      createdAt: DateTime.now().subtract(const Duration(days: 150)),
-      renewalDate: DateTime.now().add(const Duration(days: 28)),
-    ),
-  ];
-
-  static final List<PlatformPlan> _initialPlans = [
-    const PlatformPlan(
-      id: 'plan_starter',
-      name: 'Starter',
-      tagline: 'Ideal for small retail businesses, startups and standalone stores.',
-      priceMonthly: 999.00,
-      priceYearly: 9990.00,
-      maxUsers: 3,
-      maxInvoicesPerMonth: 500,
-      storageLimitGb: 5.0,
-      features: [
-        'Up to 3 Team Members',
-        '500 GST Invoices / Month',
-        'Basic Inventory & Barcode Scan',
-        'Standard Email Invoices',
-        '5 GB Cloud Storage',
-        'Standard Support (24h SLA)',
-      ],
-      activeTenantsCount: 42,
-      themeColor: Color(0xFF2563EB),
-    ),
-    const PlatformPlan(
-      id: 'plan_growth',
-      name: 'Growth',
-      tagline: 'Best for scaling wholesalers, multi-location shops, and expanding businesses.',
-      priceMonthly: 2499.00,
-      priceYearly: 24990.00,
-      maxUsers: 15,
-      maxInvoicesPerMonth: 5000,
-      storageLimitGb: 25.0,
-      isPopular: true,
-      features: [
-        'Up to 15 Team Members',
-        '5,000 Invoices / Month',
-        'Multi-Warehouse Inventory',
-        'Double-Entry Accounting & Ledger',
-        'Automated GSTR-1 & 3B Filing Portal',
-        '25 GB Cloud Storage',
-        'Priority Phone & Chat Support (4h SLA)',
-      ],
-      activeTenantsCount: 68,
-      themeColor: Color(0xFF15803D),
-    ),
-    const PlatformPlan(
-      id: 'plan_ent',
-      name: 'Enterprise',
-      tagline: 'Complete ERP suite with custom domain, unlimited scale & manufacturing.',
-      priceMonthly: 6999.00,
-      priceYearly: 69990.00,
-      maxUsers: 100,
-      maxInvoicesPerMonth: 50000,
-      storageLimitGb: 100.0,
-      features: [
-        'Up to 100 Team Members',
-        'Unlimited Invoices & Transactions',
-        'Manufacturing, BOM & Job Work',
-        'Custom Subdomain / White-labeling',
-        'Advanced RBAC & Audit Trails',
-        '100 GB High-Speed Storage',
-        'Dedicated Account Manager (1h SLA)',
-        'Automated Daily Offsite Backups',
-      ],
-      activeTenantsCount: 38,
-      themeColor: Color(0xFF6D28D9),
-    ),
-  ];
+  // --- Initial Mock Requests ---
 
   static final List<OnboardingRequest> _initialOnboardingRequests = [
     OnboardingRequest(

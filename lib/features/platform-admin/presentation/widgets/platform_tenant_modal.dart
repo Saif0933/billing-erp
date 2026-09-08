@@ -81,10 +81,10 @@ class _PlatformTenantModalState extends ConsumerState<PlatformTenantModal> {
       contactPerson: _contactPersonController.text.trim(),
       contactEmail: _emailController.text.trim(),
       contactPhone: _phoneController.text.trim(),
-      planId: _selectedPlan == 'Enterprise' ? 'plan_ent' : (_selectedPlan == 'Growth' ? 'plan_growth' : 'plan_starter'),
+      planId: ref.read(platformAdminProvider).plans.where((p) => p.name == _selectedPlan).firstOrNull?.id ?? widget.tenant?.planId ?? 'plan_default',
       planName: _selectedPlan,
       status: _selectedStatus,
-      monthlySpend: _selectedPlan == 'Enterprise' ? 6999.0 : (_selectedPlan == 'Growth' ? 2499.0 : 999.0),
+      monthlySpend: ref.read(platformAdminProvider).plans.where((p) => p.name == _selectedPlan).firstOrNull?.priceMonthly ?? widget.tenant?.monthlySpend ?? 0.0,
       totalInvoices: widget.tenant?.totalInvoices ?? 0,
       activeUsersCount: widget.tenant?.activeUsersCount ?? 1,
       maxUsersLimit: int.tryParse(_maxUsersController.text) ?? 15,
@@ -109,6 +109,7 @@ class _PlatformTenantModalState extends ConsumerState<PlatformTenantModal> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isNew = widget.tenant == null;
+    final plans = ref.watch(platformAdminProvider).plans;
 
     return Dialog(
       insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
@@ -271,30 +272,28 @@ class _PlatformTenantModalState extends ConsumerState<PlatformTenantModal> {
                   children: [
                     Expanded(
                       child: DropdownButtonFormField<String>(
-                        initialValue: _selectedPlan,
+                        initialValue: plans.any((p) => p.name == _selectedPlan)
+                            ? _selectedPlan
+                            : (plans.isNotEmpty ? plans.first.name : _selectedPlan),
                         decoration: const InputDecoration(
                           labelText: 'SaaS Plan *',
                           border: OutlineInputBorder(),
                           isDense: true,
                         ),
-                        items: const [
-                          DropdownMenuItem(value: 'Starter', child: Text('Starter (₹999/mo)')),
-                          DropdownMenuItem(value: 'Growth', child: Text('Growth (₹2,499/mo)')),
-                          DropdownMenuItem(value: 'Enterprise', child: Text('Enterprise (₹6,999/mo)')),
-                        ],
+                        items: plans.map((p) {
+                          return DropdownMenuItem(
+                            value: p.name,
+                            child: Text('${p.name} (₹${p.priceMonthly.toInt()}/mo)'),
+                          );
+                        }).toList(),
                         onChanged: (val) {
                           if (val != null) {
                             setState(() {
                               _selectedPlan = val;
-                              if (val == 'Enterprise') {
-                                _maxUsersController.text = '100';
-                                _storageLimitController.text = '100.0';
-                              } else if (val == 'Growth') {
-                                _maxUsersController.text = '15';
-                                _storageLimitController.text = '25.0';
-                              } else {
-                                _maxUsersController.text = '3';
-                                _storageLimitController.text = '5.0';
+                              final plan = plans.where((p) => p.name == val).firstOrNull;
+                              if (plan != null) {
+                                _maxUsersController.text = plan.maxUsers.toString();
+                                _storageLimitController.text = plan.storageLimitGb.toString();
                               }
                             });
                           }
