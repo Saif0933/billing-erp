@@ -182,6 +182,7 @@ class AppPageHeader extends StatelessWidget {
   final String? description;
   final List<Widget> actions;
   final List<String> breadcrumbs;
+  final Widget? leading;
 
   const AppPageHeader({
     super.key,
@@ -189,6 +190,7 @@ class AppPageHeader extends StatelessWidget {
     this.description,
     this.actions = const [],
     this.breadcrumbs = const [],
+    this.leading,
   });
 
   @override
@@ -242,25 +244,7 @@ class AppPageHeader extends StatelessWidget {
               ? Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          title,
-                          style: AppTypography.headlineMedium.copyWith(
-                            color: primaryTextColor,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        if (description != null) ...[
-                          const SizedBox(height: AppSpacing.xs),
-                          Text(
-                            description!,
-                            style: AppTypography.bodyMedium.copyWith(color: secondaryTextColor),
-                          ),
-                        ],
-                      ],
-                    ),
+                    _titleBlock(primaryTextColor, secondaryTextColor),
                     if (actions.isNotEmpty) ...[
                       const SizedBox(height: AppSpacing.md),
                       Wrap(
@@ -275,25 +259,7 @@ class AppPageHeader extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            title,
-                            style: AppTypography.headlineMedium.copyWith(
-                              color: primaryTextColor,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          if (description != null) ...[
-                            const SizedBox(height: AppSpacing.xs),
-                            Text(
-                              description!,
-                              style: AppTypography.bodyMedium.copyWith(color: secondaryTextColor),
-                            ),
-                          ],
-                        ],
-                      ),
+                      child: _titleBlock(primaryTextColor, secondaryTextColor),
                     ),
                     if (actions.isNotEmpty) ...[
                       const SizedBox(width: AppSpacing.md),
@@ -306,6 +272,39 @@ class AppPageHeader extends StatelessWidget {
                 ),
         ],
       ),
+    );
+  }
+
+  Widget _titleBlock(Color primaryTextColor, Color secondaryTextColor) {
+    final titles = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: AppTypography.headlineMedium.copyWith(
+            color: primaryTextColor,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        if (description != null) ...[
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            description!,
+            style: AppTypography.bodyMedium.copyWith(color: secondaryTextColor),
+          ),
+        ],
+      ],
+    );
+
+    if (leading == null) return titles;
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        leading!,
+        const SizedBox(width: 4),
+        Expanded(child: titles),
+      ],
     );
   }
 }

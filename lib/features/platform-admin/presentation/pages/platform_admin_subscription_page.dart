@@ -122,10 +122,9 @@ class _PlatformAdminSubscriptionPageState
                   Text(
                     'Subscription & Pricing Tiers',
                     style: TextStyle(
-                      fontSize: isSmall ? 20 : 25,
-                      fontWeight: FontWeight.w900,
+                      fontSize: isSmall ? 20 : 22,
+                      fontWeight: FontWeight.w700,
                       color: isDark ? Colors.white : const Color(0xFF0F172A),
-                      letterSpacing: -0.5,
                     ),
                   ),
                   const SizedBox(height: 4),

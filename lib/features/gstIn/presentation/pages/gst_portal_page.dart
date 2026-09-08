@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../../shared/widgets/feedback.dart';
 import '../../../subscription/domain/entities/subscription_models.dart';
@@ -101,27 +102,48 @@ class GstPortalPage extends ConsumerWidget {
       builder: (context, constraints) {
         final isSmall = constraints.maxWidth < 650;
 
-        final titleWidget = Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
+        final titleWidget = Row(
           children: [
-            Text(
-              'GST Portal - GSTIN',
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
+            IconButton(
+              icon: Icon(
+                Icons.arrow_back,
                 color: isDark ? Colors.white : const Color(0xFF0F172A),
               ),
-              overflow: TextOverflow.ellipsis,
+              tooltip: 'Back',
+              onPressed: () {
+                if (context.canPop()) {
+                  context.pop();
+                } else {
+                  context.go('/dashboard');
+                }
+              },
             ),
-            const SizedBox(height: 2),
-            Text(
-              'Manage your GSTIN details, filings, returns and compliance',
-              style: TextStyle(
-                fontSize: 12,
-                color: isDark ? Colors.white60 : const Color(0xFF64748B),
+            const SizedBox(width: 4),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'GST Portal - GSTIN',
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: isDark ? Colors.white : const Color(0xFF0F172A),
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'Manage your GSTIN details, filings, returns and compliance',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: isDark ? Colors.white60 : const Color(0xFF64748B),
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
               ),
-              overflow: TextOverflow.ellipsis,
             ),
           ],
         );

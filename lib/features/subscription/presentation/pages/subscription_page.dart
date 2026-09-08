@@ -63,6 +63,30 @@ class SubscriptionPage extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     AppPageHeader(
+                      leading: IconButton(
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(
+                          minWidth: 36,
+                          minHeight: 36,
+                        ),
+                        visualDensity: VisualDensity.compact,
+                        alignment: Alignment.centerLeft,
+                        icon: Icon(
+                          Icons.arrow_back,
+                          size: 22,
+                          color: isDark
+                              ? Colors.white
+                              : const Color(0xFF0F172A),
+                        ),
+                        tooltip: 'Back',
+                        onPressed: () {
+                          if (context.canPop()) {
+                            context.pop();
+                          } else {
+                            context.go('/dashboard');
+                          }
+                        },
+                      ),
                       title: 'Billing & Subscription',
                       description:
                           'Review your current license, renewal dates, and included modules.',
@@ -77,7 +101,8 @@ class SubscriptionPage extends ConsumerWidget {
                               AppButton(
                                 label: 'Change Plan',
                                 icon: Icons.upgrade_outlined,
-                                onPressed: () => context.push('/upgrade'),
+                                onPressed: () =>
+                                    context.push('/upgrade'),
                                 type: AppButtonType.primary,
                               ),
                             ],

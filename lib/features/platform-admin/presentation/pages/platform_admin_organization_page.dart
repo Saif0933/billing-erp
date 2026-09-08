@@ -60,19 +60,36 @@ class _PlatformAdminOrganizationPageState
               final titleSection = Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'Tenant Organization Directory',
-                    style: TextStyle(
-                      fontSize: isSmall ? 18 : 22,
-                      fontWeight: FontWeight.w900,
-                      color: isDark ? Colors.white : const Color(0xFF0F172A),
-                    ),
+                  Row(
+                    children: [
+                      Container(
+                        width: 3,
+                        height: 18,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF10B981),
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Flexible(
+                        child: Text(
+                          'Tenant Organization Directory',
+                          style: TextStyle(
+                            fontSize: isSmall ? 20 : 22,
+                            fontWeight: FontWeight.w700,
+                            color: isDark ? Colors.white : const Color(0xFF0F172A),
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 6),
                   Text(
                     'Manage all provisioned enterprises, adjust seat limits, and supervise subscription statuses.',
                     style: TextStyle(
-                      fontSize: 12.5,
+                      fontSize: 13,
                       color: isDark ? Colors.white60 : const Color(0xFF64748B),
                     ),
                   ),

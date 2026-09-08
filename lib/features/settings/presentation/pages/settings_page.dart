@@ -1,23 +1,28 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../../../app/theme/theme_provider.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_spacing.dart';
 import '../../../../core/constants/app_typography.dart';
-import '../../../../shared/widgets/app_cards.dart';
 
-class SettingsPage extends ConsumerWidget {
+class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final currentThemeMode = ref.watch(themeModeProvider);
+    final primaryText =
+        isDark ? AppColors.textDarkPrimary : AppColors.textLightPrimary;
+    final secondaryText =
+        isDark ? AppColors.textDarkSecondary : AppColors.textLightSecondary;
+    final mutedText =
+        isDark ? AppColors.textDarkMuted : AppColors.textLightMuted;
+    final dividerColor =
+        isDark ? AppColors.borderDark : AppColors.borderLight;
+    final iconColor = isDark ? AppColors.accentLight : AppColors.accentDark;
 
     final settingsGroups = [
       _SettingsGroup(
-        title: 'Account Settings',
+        title: 'Account',
         items: [
           _SettingsItem(
             title: 'User Profile',
@@ -46,12 +51,12 @@ class SettingsPage extends ConsumerWidget {
           _SettingsItem(
             title: 'Invoice Customization Templates',
             subtitle:
-                'Configure primary branding colors, bank Details, signature and footer templates',
+                'Configure primary branding colors, bank details, signature and footer templates',
             icon: Icons.palette_outlined,
             route: '/settings/invoice-customization',
           ),
           _SettingsItem(
-            title: 'Multi-Warehouse godowns',
+            title: 'Multi-Warehouse Godowns',
             subtitle: 'Manage branches, warehouses and stock locations',
             icon: Icons.warehouse_outlined,
             route: '/settings/warehouses',
@@ -59,8 +64,8 @@ class SettingsPage extends ConsumerWidget {
           _SettingsItem(
             title: 'Customer Recurring Billing',
             subtitle:
-                'Automate recurring subscriptions invoices and schedulers',
-            icon: Icons.auto_delete_outlined,
+                'Automate recurring subscription invoices and schedulers',
+            icon: Icons.autorenew_outlined,
             route: '/settings/recurring-billing',
           ),
         ],
@@ -78,7 +83,7 @@ class SettingsPage extends ConsumerWidget {
           _SettingsItem(
             title: 'Security Audit Logs',
             subtitle: 'Examine ledger, adjustments, invoices updates trail',
-            icon: Icons.security,
+            icon: Icons.security_outlined,
             route: '/settings/audit-logs',
           ),
           _SettingsItem(
@@ -93,170 +98,43 @@ class SettingsPage extends ConsumerWidget {
     ];
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Settings')),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(AppSpacing.lg),
-        child: Center(
-          child: Container(
-            constraints: const BoxConstraints(maxWidth: 800),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const AppPageHeader(
-                  title: 'Settings Preferences',
-                  description:
-                      'Manage details for your business entities, invoicing configurations, tax setups, and user privileges.',
-                  breadcrumbs: ['Dashboard', 'Settings'],
-                ),
-
-                // Appearance & Theme Section
-                Padding(
-                  padding:
-                      const EdgeInsets.symmetric(vertical: AppSpacing.sm),
-                  child: Text(
-                    'Appearance & Theme',
-                    style: AppTypography.titleMedium.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: isDark ? AppColors.accent : AppColors.primary,
+      backgroundColor:
+          isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.lg,
+            AppSpacing.md,
+            AppSpacing.lg,
+            AppSpacing.xl,
+          ),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 860),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _buildHeader(
+                    context: context,
+                    isDark: isDark,
+                    primaryText: primaryText,
+                    secondaryText: secondaryText,
+                    mutedText: mutedText,
+                  ),
+                  const SizedBox(height: AppSpacing.xl),
+                  ...settingsGroups.map(
+                    (group) => _buildGroup(
+                      context: context,
+                      group: group,
+                      isDark: isDark,
+                      primaryText: primaryText,
+                      mutedText: mutedText,
+                      dividerColor: dividerColor,
+                      iconColor: iconColor,
                     ),
                   ),
-                ),
-                AppCard(
-                  padding: const EdgeInsets.all(AppSpacing.md),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.palette_outlined,
-                            color: isDark ? AppColors.accent : AppColors.primary,
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text(
-                                  'App Theme Mode',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 14,
-                                  ),
-                                ),
-                                Text(
-                                  'Choose how Tax Bunny displays on this device',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: isDark
-                                        ? const Color(0xFF94A3B8)
-                                        : const Color(0xFF64748B),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: AppSpacing.md),
-                      Row(
-                        children: [
-                          _buildThemeOption(
-                            context: context,
-                            ref: ref,
-                            label: 'System Auto',
-                            subtitle: 'Follows device',
-                            icon: Icons.brightness_auto_rounded,
-                            mode: ThemeMode.system,
-                            currentMode: currentThemeMode,
-                            isDark: isDark,
-                          ),
-                          const SizedBox(width: 10),
-                          _buildThemeOption(
-                            context: context,
-                            ref: ref,
-                            label: 'Light Mode',
-                            subtitle: 'Bright & clean',
-                            icon: Icons.light_mode_rounded,
-                            mode: ThemeMode.light,
-                            currentMode: currentThemeMode,
-                            isDark: isDark,
-                          ),
-                          const SizedBox(width: 10),
-                          _buildThemeOption(
-                            context: context,
-                            ref: ref,
-                            label: 'Dark Mode',
-                            subtitle: 'Easy on eyes',
-                            icon: Icons.dark_mode_rounded,
-                            mode: ThemeMode.dark,
-                            currentMode: currentThemeMode,
-                            isDark: isDark,
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.lg),
-
-                ...settingsGroups.map((group) {
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Padding(
-                        padding:
-                            const EdgeInsets.symmetric(vertical: AppSpacing.sm),
-                        child: Text(
-                          group.title,
-                          style: AppTypography.titleMedium.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color:
-                                isDark ? AppColors.accent : AppColors.primary,
-                          ),
-                        ),
-                      ),
-                      AppCard(
-                        padding: EdgeInsets.zero,
-                        child: ListView.separated(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          itemCount: group.items.length,
-                          separatorBuilder: (context, index) =>
-                              const Divider(height: 1),
-                          itemBuilder: (context, index) {
-                            final item = group.items[index];
-                            return ListTile(
-                              leading: Icon(
-                                item.icon,
-                                color: isDark
-                                    ? AppColors.accent
-                                    : AppColors.primary,
-                              ),
-                              title: Text(
-                                item.title,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              subtitle: Text(
-                                item.subtitle,
-                                style: const TextStyle(fontSize: 12),
-                              ),
-                              trailing: const Icon(
-                                Icons.chevron_right,
-                                size: 18,
-                              ),
-                              onTap: () => context.push(item.route),
-                            );
-                          },
-                        ),
-                      ),
-                      const SizedBox(height: AppSpacing.lg),
-                    ],
-                  );
-                }),
-              ],
+                ],
+              ),
             ),
           ),
         ),
@@ -264,77 +142,242 @@ class SettingsPage extends ConsumerWidget {
     );
   }
 
-  Widget _buildThemeOption({
+  Widget _buildHeader({
     required BuildContext context,
-    required WidgetRef ref,
-    required String label,
-    required String subtitle,
-    required IconData icon,
-    required ThemeMode mode,
-    required ThemeMode currentMode,
     required bool isDark,
+    required Color primaryText,
+    required Color secondaryText,
+    required Color mutedText,
   }) {
-    final isSelected = mode == currentMode;
-    return Expanded(
-      child: InkWell(
-        onTap: () {
-          ref.read(themeModeProvider.notifier).setThemeMode(mode);
-        },
-        borderRadius: BorderRadius.circular(12),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-          decoration: BoxDecoration(
-            color: isSelected
-                ? const Color(0xFF10B981).withValues(alpha: isDark ? 0.2 : 0.1)
-                : (isDark
-                    ? const Color(0xFF1E293B)
-                    : const Color(0xFFF8FAFC)),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: isSelected
-                  ? const Color(0xFF10B981)
-                  : (isDark
-                      ? const Color(0xFF334155)
-                      : AppColors.borderLight),
-              width: isSelected ? 2 : 1,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Dashboard  /  Settings',
+          style: AppTypography.bodySmall.copyWith(
+            color: mutedText,
+            letterSpacing: 0.2,
+          ),
+        ),
+        const SizedBox(height: 6),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            IconButton(
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+              alignment: Alignment.centerLeft,
+              icon: Icon(
+                Icons.arrow_back,
+                color: isDark ? Colors.white : const Color(0xFF0F172A),
+              ),
+              tooltip: 'Back',
+              onPressed: () {
+                if (context.canPop()) {
+                  context.pop();
+                } else {
+                  context.go('/dashboard');
+                }
+              },
+            ),
+            const SizedBox(width: 4),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF064E3B) : const Color(0xFFDCFCE7),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(
+                Icons.settings_outlined,
+                size: 22,
+                color: isDark ? const Color(0xFF34D399) : const Color(0xFF15803D),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      'Settings & Administration',
+                      maxLines: 1,
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                        color: isDark ? Colors.white : const Color(0xFF0F172A),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'Manage business entities, invoicing, tax setup, and user privileges.',
+                    style: TextStyle(fontSize: 12.5, color: secondaryText),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildGroup({
+    required BuildContext context,
+    required _SettingsGroup group,
+    required bool isDark,
+    required Color primaryText,
+    required Color mutedText,
+    required Color dividerColor,
+    required Color iconColor,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.xl),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+            child: Row(
+              children: [
+                Container(
+                  width: 3,
+                  height: 16,
+                  decoration: BoxDecoration(
+                    color: AppColors.accent,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Text(
+                  group.title.toUpperCase(),
+                  style: AppTypography.labelLarge.copyWith(
+                    color: mutedText,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 1.1,
+                  ),
+                ),
+              ],
             ),
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
+          ...List.generate(group.items.length, (index) {
+            final item = group.items[index];
+            final isLast = index == group.items.length - 1;
+            return Column(
+              children: [
+                _SettingsRow(
+                  item: item,
+                  isDark: isDark,
+                  primaryText: primaryText,
+                  mutedText: mutedText,
+                  iconColor: iconColor,
+                  onTap: () => context.push(item.route),
+                ),
+                if (!isLast)
+                  Divider(
+                    height: 1,
+                    thickness: 1,
+                    color: dividerColor,
+                    indent: 56,
+                  ),
+              ],
+            );
+          }),
+        ],
+      ),
+    );
+  }
+}
+
+class _SettingsRow extends StatefulWidget {
+  final _SettingsItem item;
+  final bool isDark;
+  final Color primaryText;
+  final Color mutedText;
+  final Color iconColor;
+  final VoidCallback onTap;
+
+  const _SettingsRow({
+    required this.item,
+    required this.isDark,
+    required this.primaryText,
+    required this.mutedText,
+    required this.iconColor,
+    required this.onTap,
+  });
+
+  @override
+  State<_SettingsRow> createState() => _SettingsRowState();
+}
+
+class _SettingsRowState extends State<_SettingsRow> {
+  bool _hovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      child: InkWell(
+        onTap: widget.onTap,
+        overlayColor: WidgetStateProperty.all(Colors.transparent),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 120),
+          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 4),
+          color: _hovered
+              ? (widget.isDark
+                  ? Colors.white.withValues(alpha: 0.04)
+                  : const Color(0xFF0F172A).withValues(alpha: 0.03))
+              : Colors.transparent,
+          child: Row(
             children: [
+              Container(
+                padding: const EdgeInsets.all(9),
+                decoration: BoxDecoration(
+                  color: widget.isDark
+                      ? const Color(0xFF064E3B)
+                      : const Color(0xFFDCFCE7),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(
+                  widget.item.icon,
+                  size: 18,
+                  color: widget.isDark
+                      ? const Color(0xFF34D399)
+                      : const Color(0xFF15803D),
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      widget.item.title,
+                      style: AppTypography.titleMedium.copyWith(
+                        color: widget.primaryText,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      widget.item.subtitle,
+                      style: AppTypography.bodySmall.copyWith(
+                        color: widget.mutedText,
+                        height: 1.35,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
               Icon(
-                icon,
-                size: 24,
-                color: isSelected
-                    ? const Color(0xFF10B981)
-                    : (isDark ? Colors.white70 : Colors.black54),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                label,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontWeight:
-                      isSelected ? FontWeight.bold : FontWeight.w600,
-                  fontSize: 12,
-                  color: isSelected
-                      ? (isDark
-                          ? const Color(0xFF34D399)
-                          : const Color(0xFF047857))
-                      : (isDark ? Colors.white : AppColors.textLightPrimary),
-                ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                subtitle,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 9.5,
-                  color: isDark
-                      ? const Color(0xFF94A3B8)
-                      : const Color(0xFF64748B),
-                ),
+                Icons.chevron_right,
+                size: 20,
+                color: widget.mutedText,
               ),
             ],
           ),

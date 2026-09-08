@@ -83,6 +83,24 @@ class PlatformAdminShellPage extends ConsumerWidget {
               padding: const EdgeInsets.symmetric(horizontal: 12),
               child: Row(
                 children: [
+                  IconButton(
+                    tooltip: 'Back',
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+                    icon: Icon(
+                      Icons.arrow_back,
+                      color: isDark ? Colors.white : const Color(0xFF0F172A),
+                    ),
+                    onPressed: () {
+                      if (context.canPop()) {
+                        context.pop();
+                      } else {
+                        context.go('/settings');
+                      }
+                    },
+                  ),
+                  const SizedBox(width: 4),
+
                   // Mobile Drawer Button
                   if (!isDesktop) ...[
                     Builder(

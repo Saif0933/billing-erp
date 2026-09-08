@@ -95,6 +95,30 @@ class UpgradePage extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     AppPageHeader(
+                      leading: IconButton(
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(
+                          minWidth: 36,
+                          minHeight: 36,
+                        ),
+                        visualDensity: VisualDensity.compact,
+                        alignment: Alignment.centerLeft,
+                        icon: Icon(
+                          Icons.arrow_back,
+                          size: 22,
+                          color: isDark
+                              ? Colors.white
+                              : const Color(0xFF0F172A),
+                        ),
+                        tooltip: 'Back',
+                        onPressed: () {
+                          if (context.canPop()) {
+                            context.pop();
+                          } else {
+                            context.go('/dashboard');
+                          }
+                        },
+                      ),
                       title: 'Choose a plan',
                       description:
                           'Select the business tier that matches your transaction volume and inventory depth.',

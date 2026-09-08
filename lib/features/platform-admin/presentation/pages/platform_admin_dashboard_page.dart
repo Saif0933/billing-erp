@@ -28,19 +28,30 @@ class PlatformAdminDashboardPage extends ConsumerWidget {
               final headerInfo = Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Wrap(
-                    crossAxisAlignment: WrapCrossAlignment.center,
-                    spacing: 8,
-                    runSpacing: 6,
+                  Row(
                     children: [
-                      Text(
-                        'Platform Executive Dashboard',
-                        style: TextStyle(
-                          fontSize: isSmall ? 18 : 22,
-                          fontWeight: FontWeight.w900,
-                          color: isDark ? Colors.white : const Color(0xFF0F172A),
+                      Container(
+                        width: 3,
+                        height: 18,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF10B981),
+                          borderRadius: BorderRadius.circular(2),
                         ),
                       ),
+                      const SizedBox(width: 10),
+                      Flexible(
+                        child: Text(
+                          'Platform SuperAdmin',
+                          style: TextStyle(
+                            fontSize: isSmall ? 20 : 22,
+                            fontWeight: FontWeight.w700,
+                            color: isDark ? Colors.white : const Color(0xFF0F172A),
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                         decoration: BoxDecoration(
@@ -62,11 +73,11 @@ class PlatformAdminDashboardPage extends ConsumerWidget {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 6),
                   Text(
-                    'Multi-tenant infrastructure overview, revenue metrics & organization health.',
+                    'Multi-tenant infrastructure overview, revenue metrics and organization health.',
                     style: TextStyle(
-                      fontSize: 12.5,
+                      fontSize: 13,
                       color: isDark ? Colors.white60 : const Color(0xFF64748B),
                     ),
                   ),

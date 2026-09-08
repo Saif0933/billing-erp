@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_spacing.dart';
+import '../../../../core/constants/app_typography.dart';
 import '../../../../core/models/billing_models.dart';
 import '../../../../core/responsive/responsive.dart';
 import '../../../../shared/widgets/app_button.dart';
 import '../../../../shared/widgets/app_input_fields.dart';
-import '../../../../shared/widgets/app_table.dart';
 import '../../../../shared/widgets/feedback.dart';
 import '../../../dashboard/presentation/providers/billing_repository.dart';
 
@@ -24,7 +25,6 @@ class _ImportExportPageState extends ConsumerState<ImportExportPage> {
   bool _isValidating = false;
   bool _validationComplete = false;
 
-  // Validation stats
   int _totalRows = 0;
   int _validRows = 0;
   int _errorRows = 0;
@@ -114,7 +114,6 @@ class _ImportExportPageState extends ConsumerState<ImportExportPage> {
     final notifier = ref.read(billingRepositoryProvider.notifier);
 
     if (_selectedImportEntity == 'Customer') {
-      // Add valid mock rows
       await notifier.addCustomer(
         const Customer(
           id: 'imp_cust_1',
@@ -160,7 +159,6 @@ class _ImportExportPageState extends ConsumerState<ImportExportPage> {
         ),
       );
     } else {
-      // Add valid products
       await notifier.addProduct(
         const Product(
           id: 'imp_prod_1',
@@ -203,36 +201,35 @@ class _ImportExportPageState extends ConsumerState<ImportExportPage> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primaryText =
+        isDark ? AppColors.textDarkPrimary : AppColors.textLightPrimary;
+    final secondaryText =
+        isDark ? AppColors.textDarkSecondary : AppColors.textLightSecondary;
+    final mutedText =
+        isDark ? AppColors.textDarkMuted : AppColors.textLightMuted;
+    final surface = isDark ? const Color(0xFF1E293B) : Colors.white;
+    final border = isDark ? Colors.white12 : const Color(0xFFE2E8F0);
 
-    final leftConfigCard = Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: isDark ? AppColors.surfaceDark : Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isDark ? AppColors.borderDark : Colors.grey.shade100,
+    Widget panel({required Widget child}) {
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: surface,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: border),
         ),
-      ),
+        child: child,
+      );
+    }
+
+    final importPanel = panel(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Row(
-            children: const [
-              Icon(
-                Icons.cloud_upload_outlined,
-                color: Color(0xFF2E7D32),
-                size: 20,
-              ),
-              SizedBox(width: 8),
-              Text(
-                'Excel/CSV Import Panel',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-              ),
-            ],
-          ),
-          const Divider(height: 24),
+          _sectionLabel('IMPORT', mutedText),
+          const SizedBox(height: AppSpacing.md),
           AppDropdownField<String>(
-            label: 'Import Entity Group *',
+            label: 'Entity group',
             value: _selectedImportEntity,
             items: const [
               DropdownMenuItem(
@@ -254,7 +251,7 @@ class _ImportExportPageState extends ConsumerState<ImportExportPage> {
               }
             },
           ),
-          const SizedBox(height: AppSpacing.lg),
+          const SizedBox(height: AppSpacing.md),
           AppButton(
             label: 'Download Sample Template',
             icon: Icons.download_outlined,
@@ -267,284 +264,560 @@ class _ImportExportPageState extends ConsumerState<ImportExportPage> {
             },
           ),
           const SizedBox(height: AppSpacing.md),
-          if (_uploadedFilename != null)
+          Material(
+            color: Colors.transparent,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(14),
+              onTap: _simulateUploadAndValidate,
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 22, horizontal: 16),
+                decoration: BoxDecoration(
+                  color: isDark
+                      ? const Color(0xFF064E3B).withValues(alpha: 0.35)
+                      : const Color(0xFFECFDF5),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color: isDark
+                        ? const Color(0xFF34D399).withValues(alpha: 0.35)
+                        : const Color(0xFFA7F3D0),
+                  ),
+                ),
+                child: Column(
+                  children: [
+                    Icon(
+                      Icons.cloud_upload_outlined,
+                      size: 32,
+                      color: isDark
+                          ? const Color(0xFF34D399)
+                          : const Color(0xFF059669),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      _uploadedFilename == null
+                          ? 'Tap to upload CSV and validate'
+                          : 'Tap to re-upload and validate',
+                      textAlign: TextAlign.center,
+                      style: AppTypography.titleSmall.copyWith(
+                        fontWeight: FontWeight.w700,
+                        color: primaryText,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      _uploadedFilename ?? 'Supports .csv and Excel templates',
+                      textAlign: TextAlign.center,
+                      style: AppTypography.bodySmall.copyWith(color: mutedText),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    final exportPanel = panel(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _sectionLabel('EXPORT', mutedText),
+          const SizedBox(height: 6),
+          Text(
+            'Download current master data as CSV for backup or migration.',
+            style: AppTypography.bodySmall.copyWith(color: mutedText),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          _ExportRow(
+            icon: Icons.people_outline,
+            title: 'Customers',
+            subtitle: 'Directory, GSTIN and contacts',
+            isDark: isDark,
+            onTap: () {
+              AppFeedback.showSnackbar(
+                context,
+                message: 'Customers CSV exported.',
+              );
+            },
+          ),
+          const SizedBox(height: 8),
+          _ExportRow(
+            icon: Icons.inventory_2_outlined,
+            title: 'Products',
+            subtitle: 'Catalogue, HSN and pricing',
+            isDark: isDark,
+            onTap: () {
+              AppFeedback.showSnackbar(
+                context,
+                message: 'Products CSV exported.',
+              );
+            },
+          ),
+        ],
+      ),
+    );
+
+    final validationPanel = panel(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _sectionLabel('VALIDATION', mutedText),
+          const SizedBox(height: AppSpacing.md),
+          if (_isValidating)
             Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8.0),
-              child: Row(
+              padding: const EdgeInsets.symmetric(vertical: 36),
+              child: Column(
                 children: [
-                  const Icon(Icons.insert_drive_file, color: Colors.green),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      _uploadedFilename!,
-                      style: const TextStyle(fontWeight: FontWeight.bold),
+                  const CircularProgressIndicator(color: AppColors.accent),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Parsing CSV and running schema checks…',
+                    textAlign: TextAlign.center,
+                    style: AppTypography.bodyMedium.copyWith(color: mutedText),
+                  ),
+                ],
+              ),
+            )
+          else if (_validationComplete)
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: _StatChip(
+                        label: 'Total',
+                        value: '$_totalRows',
+                        color: AppColors.info,
+                        isDark: isDark,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: _StatChip(
+                        label: 'Valid',
+                        value: '$_validRows',
+                        color: AppColors.success,
+                        isDark: isDark,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: _StatChip(
+                        label: 'Errors',
+                        value: '$_errorRows',
+                        color: AppColors.error,
+                        isDark: isDark,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.md),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  alignment: WrapAlignment.end,
+                  children: [
+                    if (_errorRows > 0)
+                      TextButton.icon(
+                        icon: const Icon(
+                          Icons.warning_amber_outlined,
+                          color: AppColors.warning,
+                          size: 18,
+                        ),
+                        label: const Text(
+                          'Download Log',
+                          style: TextStyle(fontSize: 12),
+                        ),
+                        onPressed: () {
+                          AppFeedback.showSnackbar(
+                            context,
+                            message: 'Downloaded validation error log.',
+                          );
+                        },
+                      ),
+                    AppButton(
+                      label: 'Commit Rows',
+                      icon: Icons.check,
+                      onPressed: _commitImport,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.lg),
+                _sectionLabel('PREVIEW', mutedText),
+                const SizedBox(height: AppSpacing.sm),
+                ...List.generate(_previewData.length, (index) {
+                  final row = _previewData[index];
+                  final isErr = (row['status'] ?? '').startsWith('Error');
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: isDark
+                            ? const Color(0xFF0F172A)
+                            : const Color(0xFFF8FAFC),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: isErr
+                              ? AppColors.error.withValues(alpha: 0.35)
+                              : border,
+                        ),
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          CircleAvatar(
+                            radius: 12,
+                            backgroundColor: (isErr
+                                    ? AppColors.error
+                                    : AppColors.success)
+                                .withValues(alpha: 0.15),
+                            child: Text(
+                              row['row'] ?? '',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w800,
+                                color: isErr
+                                    ? AppColors.error
+                                    : AppColors.success,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  row['name'] ?? '',
+                                  style: AppTypography.titleSmall.copyWith(
+                                    color: primaryText,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  row['code'] ?? row['mobile'] ?? '',
+                                  style: AppTypography.bodySmall
+                                      .copyWith(color: mutedText),
+                                ),
+                                const SizedBox(height: 6),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 3,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: (isErr
+                                            ? AppColors.error
+                                            : AppColors.success)
+                                        .withValues(alpha: 0.12),
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  child: Text(
+                                    isErr ? 'ERROR' : 'VALID',
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w800,
+                                      color: isErr
+                                          ? AppColors.error
+                                          : AppColors.success,
+                                    ),
+                                  ),
+                                ),
+                                if (isErr) ...[
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    row['status'] ?? '',
+                                    style: AppTypography.bodySmall.copyWith(
+                                      color: AppColors.error,
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }),
+              ],
+            )
+          else
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 28),
+              child: Column(
+                children: [
+                  Icon(Icons.fact_check_outlined, size: 36, color: mutedText),
+                  const SizedBox(height: 10),
+                  Text(
+                    'Download the sample template, populate data, and upload to start validation.',
+                    textAlign: TextAlign.center,
+                    style:
+                        AppTypography.bodyMedium.copyWith(color: mutedText),
+                  ),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+
+    final isMobile = Responsive.isMobile(context);
+
+    return Scaffold(
+      backgroundColor:
+          isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 980),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _buildHeader(
+                    context: context,
+                    isDark: isDark,
+                    secondaryText: secondaryText,
+                  ),
+                  const SizedBox(height: 18),
+                  if (isMobile)
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        importPanel,
+                        const SizedBox(height: 14),
+                        exportPanel,
+                        const SizedBox(height: 14),
+                        validationPanel,
+                      ],
+                    )
+                  else
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          flex: 4,
+                          child: Column(
+                            children: [
+                              importPanel,
+                              const SizedBox(height: 14),
+                              exportPanel,
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 14),
+                        Expanded(flex: 6, child: validationPanel),
+                      ],
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeader({
+    required BuildContext context,
+    required bool isDark,
+    required Color secondaryText,
+  }) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        IconButton(
+          padding: EdgeInsets.zero,
+          constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+          visualDensity: VisualDensity.compact,
+          icon: Icon(
+            Icons.arrow_back,
+            color: isDark ? Colors.white : const Color(0xFF0F172A),
+          ),
+          tooltip: 'Back',
+          onPressed: () {
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              context.go('/settings');
+            }
+          },
+        ),
+        const SizedBox(width: 4),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Import & Export',
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: isDark ? Colors.white : const Color(0xFF0F172A),
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 2),
+              Text(
+                'Migrate master data with CSV templates, dry-run validation, and commit',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: secondaryText,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _sectionLabel(String title, Color mutedText) {
+    return Row(
+      children: [
+        Container(
+          width: 3,
+          height: 16,
+          decoration: BoxDecoration(
+            color: AppColors.accent,
+            borderRadius: BorderRadius.circular(2),
+          ),
+        ),
+        const SizedBox(width: 10),
+        Text(
+          title,
+          style: AppTypography.labelLarge.copyWith(
+            color: mutedText,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 1.1,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _StatChip extends StatelessWidget {
+  final String label;
+  final String value;
+  final Color color;
+  final bool isDark;
+
+  const _StatChip({
+    required this.label,
+    required this.value,
+    required this.color,
+    required this.isDark,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: isDark ? 0.16 : 0.1),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        children: [
+          Text(
+            label.toUpperCase(),
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.6,
+              color: color,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w800,
+              color: color,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ExportRow extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final bool isDark;
+  final VoidCallback onTap;
+
+  const _ExportRow({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.isDark,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF064E3B) : const Color(0xFFDCFCE7),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(
+                icon,
+                size: 18,
+                color: isDark ? const Color(0xFF34D399) : const Color(0xFF15803D),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 14,
+                    ),
+                  ),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      fontSize: 11.5,
+                      color: isDark ? Colors.white54 : const Color(0xFF64748B),
                     ),
                   ),
                 ],
               ),
             ),
-          AppButton(
-            label: _uploadedFilename == null
-                ? 'Upload File & Validate'
-                : 'Re-upload & Validate',
-            icon: Icons.cloud_upload_outlined,
-            onPressed: _simulateUploadAndValidate,
-          ),
-        ],
-      ),
-    );
-
-    final rightValidationCard = Column(
-      children: [
-        if (_isValidating)
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: isDark ? AppColors.surfaceDark : Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: isDark ? AppColors.borderDark : Colors.grey.shade100,
-              ),
+            Icon(
+              Icons.download_outlined,
+              size: 18,
+              color: isDark ? Colors.white54 : const Color(0xFF64748B),
             ),
-            child: const SizedBox(
-              height: 200,
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    CircularProgressIndicator(color: Color(0xFF2E7D32)),
-                    SizedBox(height: 16),
-                    Text(
-                      'Parsing CSV contents and executing schema validation checks...',
-                      style: TextStyle(fontStyle: FontStyle.italic),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          )
-        else if (_validationComplete)
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: isDark ? AppColors.surfaceDark : Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: isDark ? AppColors.borderDark : Colors.grey.shade100,
-                  ),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Row(
-                      children: const [
-                        Icon(
-                          Icons.analytics_outlined,
-                          color: Color(0xFF2E7D32),
-                          size: 20,
-                        ),
-                        SizedBox(width: 8),
-                        Text(
-                          'Dry-Run Validation Summary',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 15,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const Divider(height: 24),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      children: [
-                        _buildValStat('Total Rows', _totalRows, Colors.blue),
-                        _buildValStat('Valid Rows', _validRows, Colors.green),
-                        _buildValStat('Error Rows', _errorRows, Colors.red),
-                      ],
-                    ),
-
-                    const SizedBox(height: AppSpacing.md),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        if (_errorRows > 0)
-                          TextButton.icon(
-                            icon: const Icon(
-                              Icons.warning,
-                              color: Colors.amber,
-                              size: 18,
-                            ),
-                            label: const Text(
-                              'Download Log',
-                              style: TextStyle(fontSize: 12),
-                            ),
-                            onPressed: () {
-                              AppFeedback.showSnackbar(
-                                context,
-                                message: 'Downloaded validation error log.',
-                              );
-                            },
-                          ),
-                        const SizedBox(width: 8),
-                        AppButton(
-                          label: 'Commit Rows',
-                          icon: Icons.check,
-                          onPressed: _commitImport,
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: isDark ? AppColors.surfaceDark : Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: isDark ? AppColors.borderDark : Colors.grey.shade100,
-                  ),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Row(
-                      children: const [
-                        Icon(
-                          Icons.preview_outlined,
-                          color: Color(0xFF2E7D32),
-                          size: 20,
-                        ),
-                        SizedBox(width: 8),
-                        Text(
-                          'Import Data Preview Grid',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 15,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const Divider(height: 24),
-                    AppTable<Map<String, String>>(
-                      items: _previewData,
-                      emptyMessage: 'No preview rows.',
-                      columns: [
-                        TableColumnSpec<Map<String, String>>(
-                          label: 'Row',
-                          cellBuilder: (row) => Text(row['row'] ?? ''),
-                        ),
-                        TableColumnSpec<Map<String, String>>(
-                          label: 'Name',
-                          flex: 2,
-                          cellBuilder: (row) => Text(
-                            row['name'] ?? '',
-                            style: const TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                        ),
-                        TableColumnSpec<Map<String, String>>(
-                          label: 'Identifier / SKU',
-                          cellBuilder: (row) =>
-                              Text(row['code'] ?? row['mobile'] ?? ''),
-                        ),
-                        TableColumnSpec<Map<String, String>>(
-                          label: 'Validation Status',
-                          flex: 2,
-                          cellBuilder: (row) {
-                            final isErr = (row['status'] ?? '').startsWith(
-                              'Error',
-                            );
-                            return Text(
-                              row['status'] ?? '',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: isErr ? Colors.red : Colors.green,
-                              ),
-                            );
-                          },
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          )
-        else
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: isDark ? AppColors.surfaceDark : Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: isDark ? AppColors.borderDark : Colors.grey.shade100,
-              ),
-            ),
-            child: const SizedBox(
-              height: 200,
-              child: Center(
-                child: Text(
-                  'Download the sample template, populate data, and upload the file to start validation.',
-                  style: TextStyle(color: Colors.grey, fontSize: 13),
-                  textAlign: TextAlign.center,
-                ),
-              ),
-            ),
-          ),
-      ],
-    );
-
-    final contentLayout = Responsive.isMobile(context)
-        ? Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              leftConfigCard,
-              const SizedBox(height: 16),
-              rightValidationCard,
-            ],
-          )
-        : Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(flex: 4, child: leftConfigCard),
-              const SizedBox(width: 16),
-              Expanded(flex: 6, child: rightValidationCard),
-            ],
-          );
-
-    return Scaffold(
-      appBar: AppBar(title: const Text('Data Import / Export Wizard')),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(AppSpacing.md),
-        child: contentLayout,
-      ),
-    );
-  }
-
-  Widget _buildValStat(String label, int value, Color color) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.08),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Column(
-        children: [
-          Text(label, style: const TextStyle(color: Colors.grey, fontSize: 11)),
-          const SizedBox(height: 4),
-          Text(
-            value.toString(),
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: color,
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
