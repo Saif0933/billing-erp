@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../providers/general_ledger_provider.dart';
@@ -62,6 +63,21 @@ class GeneralLedgerPage extends ConsumerWidget {
         Expanded(
           child: Row(
             children: [
+              IconButton(
+                icon: Icon(
+                  Icons.arrow_back,
+                  color: isDark ? Colors.white : const Color(0xFF0F172A),
+                ),
+                tooltip: 'Back',
+                onPressed: () {
+                  if (context.canPop()) {
+                    context.pop();
+                  } else {
+                    context.go('/dashboard');
+                  }
+                },
+              ),
+              const SizedBox(width: 4),
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
