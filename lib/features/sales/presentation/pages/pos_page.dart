@@ -34,6 +34,8 @@ class _POSPageState extends ConsumerState<POSPage> {
   List<InvoiceItem> _cartItems = [];
   double _cartDiscountPercent = 0.0;
   bool _showCartOnMobile = false;
+  bool _isOpenSessionDialogShown = false;
+  bool _isLeavingToDashboard = false;
 
   @override
   void initState() {
@@ -79,6 +81,8 @@ class _POSPageState extends ConsumerState<POSPage> {
   }
 
   void _showOpenSessionDialog() {
+    if (!mounted || _isOpenSessionDialogShown || _isLeavingToDashboard) return;
+    _isOpenSessionDialogShown = true;
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -102,6 +106,8 @@ class _POSPageState extends ConsumerState<POSPage> {
           actions: [
             TextButton(
               onPressed: () {
+                if (!ctx.mounted) return;
+                _isLeavingToDashboard = true;
                 Navigator.pop(ctx);
                 context.go('/dashboard');
               },
@@ -115,19 +121,22 @@ class _POSPageState extends ConsumerState<POSPage> {
                 await ref
                     .read(billingRepositoryProvider.notifier)
                     .openPOSSession(amt);
-                if (mounted) {
+                if (!mounted) return;
+                if (ctx.mounted) {
                   Navigator.pop(ctx);
-                  AppFeedback.showSnackbar(
-                    context,
-                    message: 'POS Register session opened successfully!',
-                  );
                 }
+                AppFeedback.showSnackbar(
+                  context,
+                  message: 'POS Register session opened successfully!',
+                );
               },
             ),
           ],
         );
       },
-    );
+    ).whenComplete(() {
+      _isOpenSessionDialogShown = false;
+    });
   }
 
   void _showCloseSessionDialog(POSSession session, double totalSales) {
@@ -605,9 +614,13 @@ class _POSPageState extends ConsumerState<POSPage> {
 
     // Trigger session open dialog if no active session
     if (activeSession == null) {
-      WidgetsBinding.instance.addPostFrameCallback(
-        (_) => _showOpenSessionDialog(),
-      );
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted || _isLeavingToDashboard) return;
+        if (ref.read(billingRepositoryProvider).activePOSSession != null) {
+          return;
+        }
+        _showOpenSessionDialog();
+      });
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
