@@ -280,96 +280,48 @@ class _InvoiceCreatePageState extends ConsumerState<InvoiceCreatePage> {
                 padding: const EdgeInsets.all(4),
                 decoration: BoxDecoration(
                   color: isDark
-                      ? const Color(0xFF1E1E1E)
-                      : Colors.grey.shade100,
+                      ? AppColors.surfaceDark
+                      : const Color(0xFFF1F5F9),
                   borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: isDark ? AppColors.borderDark : AppColors.borderLight,
+                  ),
                 ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: GestureDetector(
-                        onTap: () {
-                          setState(() {
-                            _isCreditNote = false;
-                            _originalInvoiceId = '';
-                            _initInvoiceNo();
-                          });
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(vertical: 10),
-                          decoration: BoxDecoration(
-                            color: !_isCreditNote
-                                ? (isDark
-                                      ? const Color(0xFF2E2E2E)
-                                      : Colors.white)
-                                : Colors.transparent,
-                            borderRadius: BorderRadius.circular(10),
-                            boxShadow: !_isCreditNote
-                                ? [
-                                    BoxShadow(
-                                      color: Colors.black.withOpacity(0.04),
-                                      blurRadius: 4,
-                                      offset: const Offset(0, 2),
-                                    ),
-                                  ]
-                                : null,
-                          ),
-                          alignment: Alignment.center,
-                          child: Text(
-                            'Sales Invoice',
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.bold,
-                              color: !_isCreditNote
-                                  ? const Color(0xFF2E7D32)
-                                  : Colors.grey.shade600,
-                            ),
-                          ),
+                child: IntrinsicHeight(
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Expanded(
+                        child: _buildDocTypeToggle(
+                          isDark: isDark,
+                          selected: !_isCreditNote,
+                          title: 'Sales Invoice',
+                          onTap: () {
+                            setState(() {
+                              _isCreditNote = false;
+                              _originalInvoiceId = '';
+                              _initInvoiceNo();
+                            });
+                          },
                         ),
                       ),
-                    ),
-                    Expanded(
-                      child: GestureDetector(
-                        onTap: () {
-                          setState(() {
-                            _isCreditNote = true;
-                            _initInvoiceNo();
-                          });
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(vertical: 10),
-                          decoration: BoxDecoration(
-                            color: _isCreditNote
-                                ? (isDark
-                                      ? const Color(0xFF2E2E2E)
-                                      : Colors.white)
-                                : Colors.transparent,
-                            borderRadius: BorderRadius.circular(10),
-                            boxShadow: _isCreditNote
-                                ? [
-                                    BoxShadow(
-                                      color: Colors.black.withOpacity(0.04),
-                                      blurRadius: 4,
-                                      offset: const Offset(0, 2),
-                                    ),
-                                  ]
-                                : null,
-                          ),
-                          alignment: Alignment.center,
-                          child: Text(
-                            'Credit Note (Sales Return)',
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.bold,
-                              color: _isCreditNote
-                                  ? const Color(0xFF2E7D32)
-                                  : Colors.grey.shade600,
-                            ),
-                          ),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: _buildDocTypeToggle(
+                          isDark: isDark,
+                          selected: _isCreditNote,
+                          title: 'Credit Note',
+                          subtitle: '(Sales Return)',
+                          onTap: () {
+                            setState(() {
+                              _isCreditNote = true;
+                              _initInvoiceNo();
+                            });
+                          },
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
 
@@ -1195,6 +1147,84 @@ class _InvoiceCreatePageState extends ConsumerState<InvoiceCreatePage> {
                     ),
                   ),
                 ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDocTypeToggle({
+    required bool isDark,
+    required bool selected,
+    required String title,
+    String? subtitle,
+    required VoidCallback onTap,
+  }) {
+    final selectedColor = AppColors.accent;
+    final unselectedColor = isDark
+        ? AppColors.textDarkSecondary
+        : AppColors.textLightSecondary;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(10),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          alignment: Alignment.center,
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+          decoration: BoxDecoration(
+            color: selected
+                ? (isDark ? AppColors.backgroundDark : Colors.white)
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(10),
+            boxShadow: selected
+                ? [
+                    BoxShadow(
+                      color: Colors.black.withValues(
+                        alpha: isDark ? 0.3 : 0.06,
+                      ),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    ),
+                  ]
+                : null,
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                title,
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: selected ? selectedColor : unselectedColor,
+                ),
+              ),
+              const SizedBox(height: 2),
+              SizedBox(
+                height: 14,
+                child: subtitle == null
+                    ? null
+                    : Text(
+                        subtitle,
+                        textAlign: TextAlign.center,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                          color: selected
+                              ? selectedColor.withValues(alpha: 0.9)
+                              : unselectedColor,
+                        ),
+                      ),
               ),
             ],
           ),

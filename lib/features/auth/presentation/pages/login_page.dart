@@ -110,14 +110,18 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isSuperAdmin = _portalType == LoginPortalType.platformAdmin;
 
-    Widget formContent = Center(
-      child: SingleChildScrollView(
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
+    Widget formContent = LayoutBuilder(
+      builder: (context, constraints) {
+        return SingleChildScrollView(
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: constraints.maxHeight),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
               // Portal Mode Segmented Selector
               Container(
                 padding: const EdgeInsets.all(4),
@@ -366,16 +370,20 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                 ),
               ),
             ],
+              ),
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
 
     return Scaffold(
       body: Responsive(
-        mobile: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-          child: formContent,
+        mobile: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+            child: formContent,
+          ),
         ),
         desktop: Row(
           children: [

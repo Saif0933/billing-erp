@@ -7,7 +7,6 @@ import '../../../../core/constants/app_spacing.dart';
 import '../../../../core/navigation/navigation_service.dart';
 import '../../../../core/responsive/responsive_breakpoints.dart';
 import '../../../../core/utils/global_search.dart';
-import '../../../../app/theme/theme_provider.dart';
 import '../../../../features/auth/presentation/providers/auth_provider.dart';
 import '../../../../features/business/presentation/providers/business_provider.dart';
 import '../../../../features/dashboard/presentation/providers/billing_repository.dart';
@@ -22,7 +21,7 @@ class ResponsiveTopHeader extends ConsumerStatefulWidget
       _ResponsiveTopHeaderState();
 
   @override
-  Size get preferredSize => const Size.fromHeight(60);
+  Size get preferredSize => const Size.fromHeight(68);
 }
 
 class _ResponsiveTopHeaderState extends ConsumerState<ResponsiveTopHeader> {
@@ -185,7 +184,6 @@ class _ResponsiveTopHeaderState extends ConsumerState<ResponsiveTopHeader> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final themeMode = ref.watch(themeModeProvider);
     final businessState = ref.watch(businessProvider);
     final authState = ref.watch(authProvider);
     final activeBiz = businessState.activeBusiness;
@@ -195,31 +193,19 @@ class _ResponsiveTopHeaderState extends ConsumerState<ResponsiveTopHeader> {
 
     return SafeArea(
       child: Container(
-        height: 60,
+        height: 68,
         decoration: BoxDecoration(
-          gradient: isDark
-              ? const LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [Color(0xFF0F1B3B), Color(0xFF0B132B)],
-                )
-              : null,
-          color: isDark ? null : Colors.white,
+          color: isDark ? const Color(0xFF0B132B) : AppColors.backgroundLight,
           border: Border(
             bottom: BorderSide(
-              color: isDark ? const Color(0xFF1E2E4A) : AppColors.borderLight,
-              width: 1,
+              color: isDark
+                  ? const Color(0xFF1E2E4A).withValues(alpha: 0.5)
+                  : AppColors.borderLight.withValues(alpha: 0.6),
+              width: 0.5,
             ),
           ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: isDark ? 0.25 : 0.05),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
         ),
-        padding: EdgeInsets.symmetric(horizontal: isMobile ? 8 : AppSpacing.md),
+        padding: EdgeInsets.symmetric(horizontal: isMobile ? 12 : AppSpacing.md),
         child: LayoutBuilder(
           builder: (context, constraints) {
             final availableWidth = constraints.maxWidth;
@@ -229,8 +215,10 @@ class _ResponsiveTopHeaderState extends ConsumerState<ResponsiveTopHeader> {
             final showHelpIcon = availableWidth >= 750;
 
             final buttonSize = isVeryCompact ? 32.0 : 36.0;
+            const actionGap = 8.0;
 
             return Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 // Sidebar menu / Drawer toggle
                 InkWell(
@@ -263,7 +251,7 @@ class _ResponsiveTopHeaderState extends ConsumerState<ResponsiveTopHeader> {
                   ),
                 ),
 
-                SizedBox(width: isVeryCompact ? 6 : 8),
+                const SizedBox(width: actionGap),
 
                 // Emerald Lightning Bolt Logo with Glowing Shadow
                 Container(
@@ -292,61 +280,28 @@ class _ResponsiveTopHeaderState extends ConsumerState<ResponsiveTopHeader> {
                   ),
                 ),
 
-                SizedBox(width: isVeryCompact ? 6 : 8),
+                const SizedBox(width: actionGap),
 
-                // Business Branding & Switcher (Strictly Constrained to prevent overflow)
-                ConstrainedBox(
-                  constraints: BoxConstraints(
-                    maxWidth: isVeryCompact ? 90 : (availableWidth < 700 ? 115 : 180),
+                // Business Branding
+                if (showFullSearch)
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 180),
+                    child: _BrandTitle(
+                      isVeryCompact: isVeryCompact,
+                      isDark: isDark,
+                      businessName: activeBiz?.name ?? 'Retail Store',
+                    ),
+                  )
+                else
+                  Expanded(
+                    child: _BrandTitle(
+                      isVeryCompact: isVeryCompact,
+                      isDark: isDark,
+                      businessName: activeBiz?.name ?? 'Retail Store',
+                    ),
                   ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        'TAX BUNNY',
-                        style: TextStyle(
-                          fontSize: isVeryCompact ? 12 : 13.5,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: 0.6,
-                          color: isDark ? Colors.white : Colors.black87,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 1),
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Container(
-                            width: 6,
-                            height: 6,
-                            decoration: const BoxDecoration(
-                              color: Color(0xFF10B981),
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                          const SizedBox(width: 4),
-                          Flexible(
-                            child: Text(
-                              activeBiz?.name ?? 'Retail Store',
-                              style: TextStyle(
-                                fontSize: isVeryCompact ? 9 : 10.5,
-                                color: isDark ? const Color(0xFF94A3B8) : Colors.black54,
-                                fontWeight: FontWeight.w600,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
 
-                // Center Search Field (Desktop) or Spacer + Search Icon (Mobile/Tablet)
+                // Center Search Field (Desktop) or Search Icon (Mobile/Tablet)
                 if (showFullSearch)
                   Expanded(
                     child: Center(
@@ -448,7 +403,7 @@ class _ResponsiveTopHeaderState extends ConsumerState<ResponsiveTopHeader> {
                     ),
                   )
                 else ...[
-                  const Spacer(),
+                  const SizedBox(width: actionGap),
                   InkWell(
                     borderRadius: BorderRadius.circular(10),
                     onTap: () => _showSearchModal(context),
@@ -472,7 +427,7 @@ class _ResponsiveTopHeaderState extends ConsumerState<ResponsiveTopHeader> {
                   ),
                 ],
 
-                SizedBox(width: isVeryCompact ? 4 : 6),
+                const SizedBox(width: actionGap),
 
                 // Notification Bell with Badge '3'
                 Stack(
@@ -532,118 +487,8 @@ class _ResponsiveTopHeaderState extends ConsumerState<ResponsiveTopHeader> {
                   ],
                 ),
 
-                SizedBox(width: isVeryCompact ? 4 : 6),
-
-                // Theme Mode Selector Button (System / Light / Dark)
-                PopupMenuButton<ThemeMode>(
-                  tooltip: 'Theme: ${themeMode == ThemeMode.system ? "System" : (themeMode == ThemeMode.light ? "Light" : "Dark")}',
-                  color: isDark ? const Color(0xFF0F1B3B) : Colors.white,
-                  surfaceTintColor: Colors.transparent,
-                  elevation: 8,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
-                    side: BorderSide(
-                      color: isDark ? const Color(0xFF1E2E4A) : AppColors.borderLight,
-                    ),
-                  ),
-                  onSelected: (mode) {
-                    ref.read(themeModeProvider.notifier).setThemeMode(mode);
-                  },
-                  child: Container(
-                    width: buttonSize,
-                    height: buttonSize,
-                    decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF131D35) : const Color(0xFFF1F5F9),
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(
-                        color: isDark ? const Color(0xFF1E2E4A) : AppColors.borderLight,
-                      ),
-                    ),
-                    alignment: Alignment.center,
-                    child: Icon(
-                      themeMode == ThemeMode.light
-                          ? Icons.light_mode_rounded
-                          : (themeMode == ThemeMode.dark
-                              ? Icons.dark_mode_rounded
-                              : Icons.brightness_auto_rounded),
-                      size: isVeryCompact ? 17 : 19,
-                      color: themeMode == ThemeMode.light
-                          ? const Color(0xFFF59E0B)
-                          : (themeMode == ThemeMode.dark
-                              ? const Color(0xFF818CF8)
-                              : const Color(0xFF10B981)),
-                    ),
-                  ),
-                  itemBuilder: (context) => [
-                    PopupMenuItem(
-                      value: ThemeMode.system,
-                      child: Row(
-                        children: [
-                          const Icon(Icons.brightness_auto_rounded, size: 18, color: Color(0xFF10B981)),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Text(
-                              'System Default',
-                              style: TextStyle(
-                                color: isDark ? Colors.white : Colors.black87,
-                                fontWeight: themeMode == ThemeMode.system ? FontWeight.bold : FontWeight.normal,
-                                fontSize: 13,
-                              ),
-                            ),
-                          ),
-                          if (themeMode == ThemeMode.system)
-                            const Icon(Icons.check_rounded, size: 16, color: Color(0xFF10B981)),
-                        ],
-                      ),
-                    ),
-                    PopupMenuItem(
-                      value: ThemeMode.light,
-                      child: Row(
-                        children: [
-                          const Icon(Icons.light_mode_rounded, size: 18, color: Color(0xFFF59E0B)),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Text(
-                              'Light Mode',
-                              style: TextStyle(
-                                color: isDark ? Colors.white : Colors.black87,
-                                fontWeight: themeMode == ThemeMode.light ? FontWeight.bold : FontWeight.normal,
-                                fontSize: 13,
-                              ),
-                            ),
-                          ),
-                          if (themeMode == ThemeMode.light)
-                            const Icon(Icons.check_rounded, size: 16, color: Color(0xFF10B981)),
-                        ],
-                      ),
-                    ),
-                    PopupMenuItem(
-                      value: ThemeMode.dark,
-                      child: Row(
-                        children: [
-                          const Icon(Icons.dark_mode_rounded, size: 18, color: Color(0xFF818CF8)),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Text(
-                              'Dark Mode',
-                              style: TextStyle(
-                                color: isDark ? Colors.white : Colors.black87,
-                                fontWeight: themeMode == ThemeMode.dark ? FontWeight.bold : FontWeight.normal,
-                                fontSize: 13,
-                              ),
-                            ),
-                          ),
-                          if (themeMode == ThemeMode.dark)
-                            const Icon(Icons.check_rounded, size: 16, color: Color(0xFF10B981)),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-
-                // Help Question Mark Icon (Desktop/Tablet only)
                 if (showHelpIcon) ...[
-                  const SizedBox(width: 6),
+                  const SizedBox(width: actionGap),
                   Tooltip(
                     message: 'Help & Documentation',
                     child: InkWell(
@@ -670,7 +515,7 @@ class _ResponsiveTopHeaderState extends ConsumerState<ResponsiveTopHeader> {
                   ),
                 ],
 
-                SizedBox(width: isVeryCompact ? 4 : 6),
+                const SizedBox(width: actionGap),
 
                 // Profile Button (Pill Card with Gradient Avatar TS + optional Name/Owner/Chevron)
                 PopupMenuButton<String>(
@@ -828,6 +673,67 @@ class _ResponsiveTopHeaderState extends ConsumerState<ResponsiveTopHeader> {
           },
         ),
       ),
+    );
+  }
+}
+
+class _BrandTitle extends StatelessWidget {
+  final bool isVeryCompact;
+  final bool isDark;
+  final String businessName;
+
+  const _BrandTitle({
+    required this.isVeryCompact,
+    required this.isDark,
+    required this.businessName,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          'TAX BUNNY',
+          style: TextStyle(
+            fontSize: isVeryCompact ? 13 : 14,
+            fontWeight: FontWeight.w900,
+            letterSpacing: 0.6,
+            color: isDark ? Colors.white : Colors.black87,
+            height: 1.1,
+          ),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+        const SizedBox(height: 2),
+        Row(
+          children: [
+            Container(
+              width: 6,
+              height: 6,
+              decoration: const BoxDecoration(
+                color: Color(0xFF10B981),
+                shape: BoxShape.circle,
+              ),
+            ),
+            const SizedBox(width: 4),
+            Flexible(
+              child: Text(
+                businessName,
+                style: TextStyle(
+                  fontSize: isVeryCompact ? 10 : 11,
+                  color: isDark ? const Color(0xFF94A3B8) : Colors.black54,
+                  fontWeight: FontWeight.w600,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 }

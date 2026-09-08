@@ -72,7 +72,7 @@ class PlatformAdminShellPage extends ConsumerWidget {
     return Scaffold(
       backgroundColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
       appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(60),
+        preferredSize: const Size.fromHeight(80),
         child: Container(
           decoration: BoxDecoration(
             color: isDark ? const Color(0xFF1E293B) : Colors.white,
@@ -83,37 +83,6 @@ class PlatformAdminShellPage extends ConsumerWidget {
               padding: const EdgeInsets.symmetric(horizontal: 12),
               child: Row(
                 children: [
-                  IconButton(
-                    tooltip: 'Back',
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
-                    icon: Icon(
-                      Icons.arrow_back,
-                      color: isDark ? Colors.white : const Color(0xFF0F172A),
-                    ),
-                    onPressed: () {
-                      if (context.canPop()) {
-                        context.pop();
-                      } else {
-                        context.go('/settings');
-                      }
-                    },
-                  ),
-                  const SizedBox(width: 4),
-
-                  // Mobile Drawer Button
-                  if (!isDesktop) ...[
-                    Builder(
-                      builder: (ctx) => IconButton(
-                        icon: const Icon(Icons.menu),
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
-                        onPressed: () => Scaffold.of(ctx).openDrawer(),
-                      ),
-                    ),
-                    const SizedBox(width: 4),
-                  ],
-
                   // Logo & Platform Badge
                   Container(
                     padding: const EdgeInsets.all(6),
