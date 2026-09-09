@@ -5,6 +5,7 @@ import '../../../../shared/widgets/feedback.dart';
 import '../../domain/models/product_listing_models.dart';
 import '../../domain/utils/barcode_validator.dart';
 import '../providers/product_listing_provider.dart';
+import 'product_not_found_dialog.dart';
 import 'product_quick_add_modal.dart';
 
 class LiveCameraScannerDialog extends ConsumerStatefulWidget {
@@ -124,12 +125,43 @@ class _LiveCameraScannerDialogState
         context,
         message: 'Product Listed: ${scannedItem.name}',
       );
+    } else {
+      // Unknown EAN — close camera and open listing dialog for manual price/GST
+      setState(() {
+        _scanErrorMessage = 'New EAN: enter unit price & GST to list this product.';
+        _currentScannedProduct = null;
+      });
+      if (mounted) {
+        Navigator.pop(context);
+        // Use billing cart flow via ProductNotFoundDialog
+        // ignore: use_build_context_synchronously
+        Future.microtask(() {
+          if (context.mounted) {
+            ProductNotFoundDialog.show(
+              context,
+              barcode: cleanCode,
+              onDismissed: () {},
+            );
+          }
+        });
+      }
     }
   }
 
   Future<void> _triggerManualSimulatedScan() async {
     final notifier = ref.read(productListingProvider.notifier);
     final scannedItem = await notifier.simulateScan();
+
+    if (scannedItem == null) {
+      if (mounted) {
+        AppFeedback.showSnackbar(
+          context,
+          message: 'No products in catalogue yet. Scan a new EAN to list one.',
+          isError: true,
+        );
+      }
+      return;
+    }
 
     setState(() {
       _scanErrorMessage = null;

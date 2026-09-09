@@ -8,6 +8,7 @@ class ProductListingItem {
   final String category;
   final double mrp;
   final double sellingPrice;
+  final double gstRate;
   final int stock;
   final String imagePath;
   final Color categoryBadgeBg;
@@ -25,6 +26,7 @@ class ProductListingItem {
     required this.category,
     required this.mrp,
     required this.sellingPrice,
+    this.gstRate = 0.0,
     required this.stock,
     this.imagePath = '',
     required this.categoryBadgeBg,
@@ -43,6 +45,7 @@ class ProductListingItem {
     String? category,
     double? mrp,
     double? sellingPrice,
+    double? gstRate,
     int? stock,
     String? imagePath,
     Color? categoryBadgeBg,
@@ -60,6 +63,7 @@ class ProductListingItem {
       category: category ?? this.category,
       mrp: mrp ?? this.mrp,
       sellingPrice: sellingPrice ?? this.sellingPrice,
+      gstRate: gstRate ?? this.gstRate,
       stock: stock ?? this.stock,
       imagePath: imagePath ?? this.imagePath,
       categoryBadgeBg: categoryBadgeBg ?? this.categoryBadgeBg,

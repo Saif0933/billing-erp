@@ -57,7 +57,7 @@ class EmptyScannerState extends StatelessWidget {
             ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 380),
               child: Text(
-                'Scan any product barcode using your USB or Bluetooth scanner, or type a barcode above to add items to the invoice.',
+                'Scan any product EAN/barcode using your USB or Bluetooth scanner. Enter unit price & GST, then save to list products in the database.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 13,

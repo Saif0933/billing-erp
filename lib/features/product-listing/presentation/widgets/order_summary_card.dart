@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/billing_cart_provider.dart';
 
-/// Production-grade Order Summary Card calculating real-time Subtotal,
-/// Item & Bill Discounts, Taxable Base, GST Breakdown, and Grand Total.
-class OrderSummaryCard extends ConsumerStatefulWidget {
+/// Summary panel for Product Listing — Save all scanned products (EAN + details) to DB.
+/// This is NOT a sale checkout.
+class OrderSummaryCard extends ConsumerWidget {
   final VoidCallback onFocusRequested;
 
   const OrderSummaryCard({
@@ -12,80 +12,64 @@ class OrderSummaryCard extends ConsumerStatefulWidget {
     required this.onFocusRequested,
   });
 
-  @override
-  ConsumerState<OrderSummaryCard> createState() => _OrderSummaryCardState();
-}
-
-class _OrderSummaryCardState extends ConsumerState<OrderSummaryCard> {
-  late TextEditingController _discountCtrl;
-  bool _isEditingDiscount = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _discountCtrl = TextEditingController(text: '0.00');
-  }
-
-  @override
-  void dispose() {
-    _discountCtrl.dispose();
-    super.dispose();
-  }
-
-  void _handleCheckout(BillingCartState state) {
+  Future<void> _handleSave(BuildContext context, WidgetRef ref, BillingCartState state) async {
     if (state.items.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Please scan at least one product before checkout.'),
+          content: Text('Scan at least one product before saving.'),
           backgroundColor: Colors.redAccent,
         ),
       );
       return;
     }
 
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Row(
-          children: const [
-            Icon(Icons.check_circle, color: Color(0xFF15803D), size: 28),
-            SizedBox(width: 10),
-            Text('Sale Completed!'),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Invoice ${state.invoiceNumber} recorded successfully.'),
-            const SizedBox(height: 12),
-            Text('Total Items: ${state.itemCount} (${state.totalQuantity} units)'),
-            Text('Grand Total: ₹${state.grandTotal.toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-            const SizedBox(height: 12),
-            const Text('Local mock bill has been processed without server dependency.', style: TextStyle(fontSize: 12, color: Colors.grey)),
-          ],
-        ),
-        actions: [
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF15803D),
-              foregroundColor: Colors.white,
-            ),
-            onPressed: () {
-              Navigator.of(ctx).pop();
-              ref.read(billingCartProvider.notifier).startNewInvoice();
-              widget.onFocusRequested();
-            },
-            child: const Text('Start Next Bill'),
+    final ok = await ref.read(billingCartProvider.notifier).saveAllToDatabase();
+    if (!context.mounted) return;
+
+    if (ok) {
+      showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: const Row(
+            children: [
+              Icon(Icons.check_circle, color: Color(0xFF15803D), size: 28),
+              SizedBox(width: 10),
+              Text('Products Saved'),
+            ],
           ),
-        ],
-      ),
-    );
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('${state.itemCount} product(s) saved to database.'),
+              const SizedBox(height: 8),
+              const Text(
+                'EAN, unit price, GST and all details are now in the catalogue. You can sell these products from Sales.',
+                style: TextStyle(fontSize: 13),
+              ),
+            ],
+          ),
+          actions: [
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF15803D),
+                foregroundColor: Colors.white,
+              ),
+              onPressed: () {
+                Navigator.of(ctx).pop();
+                onFocusRequested();
+              },
+              child: const Text('OK'),
+            ),
+          ],
+        ),
+      );
+    }
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(billingCartProvider);
     final notifier = ref.read(billingCartProvider.notifier);
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -110,7 +94,6 @@ class _OrderSummaryCardState extends ConsumerState<OrderSummaryCard> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Header: Summary Title + Item Counts
           Wrap(
             alignment: WrapAlignment.spaceBetween,
             crossAxisAlignment: WrapCrossAlignment.center,
@@ -121,13 +104,13 @@ class _OrderSummaryCardState extends ConsumerState<OrderSummaryCard> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(
-                    Icons.receipt_long_outlined,
+                    Icons.inventory_2_outlined,
                     size: 20,
                     color: isDark ? const Color(0xFF38BDF8) : const Color(0xFF0284C7),
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    'Order Summary',
+                    'Listing Summary',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
@@ -143,7 +126,7 @@ class _OrderSummaryCardState extends ConsumerState<OrderSummaryCard> {
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
-                  '${state.itemCount} Items (${state.totalQuantity} Qty)',
+                  '${state.itemCount} Products',
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.bold,
@@ -156,146 +139,76 @@ class _OrderSummaryCardState extends ConsumerState<OrderSummaryCard> {
           const SizedBox(height: 14),
           const Divider(height: 1),
           const SizedBox(height: 14),
-
-          // Subtotal
           _buildSummaryRow(
-            label: 'Subtotal (Gross)',
+            label: 'Products to list',
+            value: '${state.itemCount}',
+            isDark: isDark,
+          ),
+          const SizedBox(height: 8),
+          _buildSummaryRow(
+            label: 'Pending save',
+            value: '${state.unsavedCount}',
+            isDark: isDark,
+            valueColor: state.unsavedCount > 0 ? const Color(0xFFD97706) : const Color(0xFF16A34A),
+          ),
+          const SizedBox(height: 8),
+          _buildSummaryRow(
+            label: 'Catalogue value',
             value: '₹${state.subtotal.toStringAsFixed(2)}',
             isDark: isDark,
           ),
-          const SizedBox(height: 8),
-
-          // Discount Row (Editable)
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  Text(
-                    'Bill Discount',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: isDark ? Colors.white70 : const Color(0xFF475569),
-                    ),
-                  ),
-                  const SizedBox(width: 4),
-                  InkWell(
-                    onTap: () => setState(() => _isEditingDiscount = !_isEditingDiscount),
-                    child: Icon(
-                      _isEditingDiscount ? Icons.check_circle : Icons.edit_outlined,
-                      size: 14,
-                      color: const Color(0xFF15803D),
-                    ),
-                  ),
-                ],
-              ),
-              if (_isEditingDiscount)
-                SizedBox(
-                  width: 80,
-                  height: 28,
-                  child: TextField(
-                    controller: _discountCtrl,
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                    style: const TextStyle(fontSize: 12),
-                    decoration: const InputDecoration(
-                      prefixText: '₹',
-                      isDense: true,
-                      contentPadding: EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-                      border: OutlineInputBorder(),
-                    ),
-                    onSubmitted: (val) {
-                      final d = double.tryParse(val) ?? 0.0;
-                      notifier.setBillDiscount(d);
-                      setState(() => _isEditingDiscount = false);
-                      widget.onFocusRequested();
-                    },
-                  ),
-                )
-              else
-                Text(
-                  '- ₹${state.totalDiscount.toStringAsFixed(2)}',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: state.totalDiscount > 0 ? Colors.redAccent : (isDark ? Colors.white70 : const Color(0xFF475569)),
-                  ),
-                ),
-            ],
-          ),
-          const SizedBox(height: 8),
-
-          // Taxable Base Amount
-          _buildSummaryRow(
-            label: 'Taxable Amount',
-            value: '₹${state.taxableAmount.toStringAsFixed(2)}',
-            isDark: isDark,
-          ),
-          const SizedBox(height: 8),
-
-          // GST Tax Breakdown
-          _buildSummaryRow(
-            label: 'Total GST Tax',
-            value: '+ ₹${state.gstAmount.toStringAsFixed(2)}',
-            isDark: isDark,
-            valueColor: const Color(0xFF0284C7),
-          ),
           const SizedBox(height: 14),
-          const Divider(height: 1),
-          const SizedBox(height: 14),
-
-          // Grand Total (Large Highlight)
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: CrossAxisAlignment.baseline,
-            textBaseline: TextBaseline.alphabetic,
-            children: [
-              Text(
-                'Grand Total',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: isDark ? Colors.white : const Color(0xFF0F172A),
-                ),
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: isDark ? Colors.white12 : const Color(0xFFE2E8F0),
               ),
-              Text(
-                '₹${state.grandTotal.toStringAsFixed(2)}',
-                style: const TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.w900,
-                  color: Color(0xFF15803D),
-                  letterSpacing: -0.5,
-                ),
+            ),
+            child: Text(
+              'Enter unit price & GST for each product, then save. Listed products can be sold from Sales.',
+              style: TextStyle(
+                fontSize: 11.5,
+                color: isDark ? Colors.white60 : const Color(0xFF64748B),
               ),
-            ],
+            ),
           ),
           const SizedBox(height: 18),
-
-          // Checkout / Pay Button
           ElevatedButton.icon(
-            onPressed: state.items.isEmpty ? null : () => _handleCheckout(state),
+            onPressed: state.items.isEmpty || state.isSaving
+                ? null
+                : () => _handleSave(context, ref, state),
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF15803D), // Green
+              backgroundColor: const Color(0xFF15803D),
               foregroundColor: Colors.white,
               disabledBackgroundColor: isDark ? Colors.white12 : const Color(0xFFCBD5E1),
               padding: const EdgeInsets.symmetric(vertical: 14),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
               elevation: 0,
             ),
-            icon: const Icon(Icons.check_circle_outline, size: 20),
+            icon: state.isSaving
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                  )
+                : const Icon(Icons.save_outlined, size: 20),
             label: Text(
-              'Complete Sale (₹${state.grandTotal.toStringAsFixed(2)})',
-              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+              state.isSaving
+                  ? 'Saving...'
+                  : 'Save Products to Database (${state.itemCount})',
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
             ),
           ),
           const SizedBox(height: 8),
-
-          // Start New Sale / Clear Bill Button
           OutlinedButton.icon(
             onPressed: state.items.isEmpty
                 ? null
                 : () {
                     notifier.startNewInvoice();
-                    widget.onFocusRequested();
+                    onFocusRequested();
                   },
             style: OutlinedButton.styleFrom(
               foregroundColor: isDark ? Colors.white70 : const Color(0xFF475569),
@@ -303,7 +216,7 @@ class _OrderSummaryCardState extends ConsumerState<OrderSummaryCard> {
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             ),
             icon: const Icon(Icons.refresh, size: 16),
-            label: const Text('Clear / New Invoice', style: TextStyle(fontSize: 12)),
+            label: const Text('Clear Listing', style: TextStyle(fontSize: 12)),
           ),
         ],
       ),

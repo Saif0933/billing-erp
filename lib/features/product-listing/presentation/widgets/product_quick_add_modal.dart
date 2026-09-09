@@ -333,7 +333,7 @@ class _ProductQuickAddModalState extends ConsumerState<ProductQuickAddModal> {
               ),
               const SizedBox(height: 16),
 
-              // Action Buttons: [ Cancel ] + [ Save & Add to Invoice ]
+              // Action Buttons: [ Cancel ] + [ Add to Listing ]
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
@@ -348,32 +348,37 @@ class _ProductQuickAddModalState extends ConsumerState<ProductQuickAddModal> {
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                     ),
-                    icon: const Icon(Icons.shopping_cart_outlined, size: 16, color: Colors.white),
-                    label: const Text('Add to Invoice', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+                    icon: const Icon(Icons.add_box_outlined, size: 16, color: Colors.white),
+                    label: const Text('Add to Listing', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
                     onPressed: () {
                       _saveProductEdits();
                       final double? parsedPrice = double.tryParse(_priceController.text);
                       final double? parsedMrp = double.tryParse(_mrpController.text);
+                      if (parsedPrice == null || parsedPrice <= 0) {
+                        AppFeedback.showSnackbar(
+                          context,
+                          message: 'Enter a valid unit price before listing.',
+                        );
+                        return;
+                      }
                       final productEntity = Product(
                         id: widget.item.id,
                         name: _nameController.text.trim().isNotEmpty ? _nameController.text.trim() : widget.item.name,
                         barcode: widget.item.barcode,
                         sku: widget.item.sku,
                         category: _selectedCategory,
-                        sellingPrice: parsedPrice ?? widget.item.sellingPrice,
-                        purchasePrice: widget.item.sellingPrice * 0.8,
-                        mrp: parsedMrp ?? widget.item.mrp,
+                        sellingPrice: parsedPrice,
+                        purchasePrice: widget.item.sellingPrice > 0 ? widget.item.sellingPrice * 0.8 : parsedPrice,
+                        mrp: parsedMrp ?? parsedPrice,
+                        gstRate: widget.item.gstRate,
                         stock: widget.item.stock,
                         unit: widget.item.unit,
                       );
                       ref.read(billingCartProvider.notifier).addCustomProductAndAddToCart(productEntity);
-                      if (_quantity > 1) {
-                        ref.read(billingCartProvider.notifier).setQuantity(productEntity.id, _quantity);
-                      }
                       Navigator.pop(context);
                       AppFeedback.showSnackbar(
                         context,
-                        message: 'Added $_quantity × ${productEntity.name} to active invoice!',
+                        message: 'Added ${productEntity.name} to listing. Save to store in database.',
                       );
                     },
                   ),

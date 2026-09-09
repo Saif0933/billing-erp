@@ -19,7 +19,7 @@ import '../widgets/recent_scans_card.dart';
 import '../widgets/product_table_section.dart';
 
 enum ProductListingViewMode {
-  posBilling,
+  scanAndList,
   catalogueDirectory,
 }
 
@@ -38,7 +38,7 @@ class _ProductListingPageState extends ConsumerState<ProductListingPage> {
   DateTime? _lastHandledScanTime;
   String? _lastHandledBarcode;
 
-  ProductListingViewMode _viewMode = ProductListingViewMode.posBilling;
+  ProductListingViewMode _viewMode = ProductListingViewMode.scanAndList;
   Timer? _clockTimer;
   DateTime _currentDateTime = DateTime.now();
 
@@ -69,7 +69,7 @@ class _ProductListingPageState extends ConsumerState<ProductListingPage> {
   }
 
   void _requestScannerFocus() {
-    if (mounted && _viewMode == ProductListingViewMode.posBilling) {
+    if (mounted && _viewMode == ProductListingViewMode.scanAndList) {
       _barcodeFocusNode.requestFocus();
     }
   }
@@ -158,7 +158,7 @@ class _ProductListingPageState extends ConsumerState<ProductListingPage> {
     return false;
   }
 
-  /// Unified barcode scanner processor for hardware scanner, text submission, and test chips
+  /// Unified barcode scanner processor — lists products (does not sell).
   Future<void> _onBarcodeScanned(String barcode) async {
     final clean = barcode.replaceAll(RegExp(r'[\r\n\t]'), '').trim();
     if (clean.isEmpty) return;
@@ -175,27 +175,23 @@ class _ProductListingPageState extends ConsumerState<ProductListingPage> {
     _hardwareScanBuffer.clear();
     _barcodeController.clear();
 
-    // If on Catalogue Directory tab, auto-switch to POS Billing view
-    if (_viewMode != ProductListingViewMode.posBilling) {
+    if (_viewMode != ProductListingViewMode.scanAndList) {
       if (mounted) {
-        setState(() => _viewMode = ProductListingViewMode.posBilling);
+        setState(() => _viewMode = ProductListingViewMode.scanAndList);
       }
     }
 
-    // Add to active billing cart
     final result = await ref.read(billingCartProvider.notifier).processBarcode(clean);
 
-    // Sync with catalogue provider
     try {
       ref.read(productListingProvider.notifier).handleScannedBarcode(clean);
     } catch (_) {}
 
-    // Keep scanner focus active
     _requestScannerFocus();
 
     if (!mounted) return;
 
-    // Show dialog if unrecognized barcode could not be auto-added
+    // New EAN — ask for name, unit price & GST manually
     if (!result.isSuccess && result.notFoundBarcode != null) {
       await ProductNotFoundDialog.show(
         context,
@@ -228,17 +224,15 @@ class _ProductListingPageState extends ConsumerState<ProductListingPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Top Header: New Sale / Create Invoice + Metadata + View Switcher
+              // Top Header: Product Listing + View Switcher
               _buildHeader(context, cartState, isDark),
               const SizedBox(height: 14),
 
-              // Inline Toast / Success Feedback Banner
               if (cartState.lastMessage != null)
                 _buildStatusBanner(cartState, isDark),
 
-              // Mode-based View Rendering
-              if (_viewMode == ProductListingViewMode.posBilling)
-                _buildPosBillingLayout(context, cartState, isDark)
+              if (_viewMode == ProductListingViewMode.scanAndList)
+                _buildScanAndListLayout(context, cartState, isDark)
               else
                 _buildCatalogueDirectoryLayout(),
             ],
@@ -248,7 +242,7 @@ class _ProductListingPageState extends ConsumerState<ProductListingPage> {
     );
   }
 
-  /// Top Header Row: Invoice Title, Number, Live Clock, and View Mode Tabs
+  /// Top Header: Product Listing title + view mode tabs
   Widget _buildHeader(BuildContext context, BillingCartState cartState, bool isDark) {
     final dateStr = DateFormat('EEE, dd MMM yyyy • hh:mm a').format(_currentDateTime);
 
@@ -266,7 +260,7 @@ class _ProductListingPageState extends ConsumerState<ProductListingPage> {
               runSpacing: 4,
               children: [
                 Text(
-                  'New Sale / Create Invoice',
+                  'Product Listing',
                   style: TextStyle(
                     fontSize: isNarrow ? 18 : 20,
                     fontWeight: FontWeight.bold,
@@ -308,6 +302,14 @@ class _ProductListingPageState extends ConsumerState<ProductListingPage> {
                     color: isDark ? Colors.white54 : const Color(0xFF64748B),
                   ),
                 ),
+                const SizedBox(width: 8),
+                Text(
+                  '• Scan EAN → enter price & GST → save to database',
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: isDark ? Colors.white38 : const Color(0xFF94A3B8),
+                  ),
+                ),
               ],
             ),
           ],
@@ -325,22 +327,22 @@ class _ProductListingPageState extends ConsumerState<ProductListingPage> {
               isNarrow
                   ? Expanded(
                       child: _buildTabButton(
-                        title: isVeryNarrow ? 'POS Billing' : 'Barcode POS Billing',
+                        title: isVeryNarrow ? 'Scan & List' : 'Scan & List Products',
                         icon: Icons.barcode_reader,
-                        isSelected: _viewMode == ProductListingViewMode.posBilling,
+                        isSelected: _viewMode == ProductListingViewMode.scanAndList,
                         onTap: () {
-                          setState(() => _viewMode = ProductListingViewMode.posBilling);
+                          setState(() => _viewMode = ProductListingViewMode.scanAndList);
                           _requestScannerFocus();
                         },
                         isDark: isDark,
                       ),
                     )
                   : _buildTabButton(
-                      title: 'Barcode POS Billing',
+                      title: 'Scan & List Products',
                       icon: Icons.barcode_reader,
-                      isSelected: _viewMode == ProductListingViewMode.posBilling,
+                      isSelected: _viewMode == ProductListingViewMode.scanAndList,
                       onTap: () {
-                        setState(() => _viewMode = ProductListingViewMode.posBilling);
+                        setState(() => _viewMode = ProductListingViewMode.scanAndList);
                         _requestScannerFocus();
                       },
                       isDark: isDark,
@@ -505,8 +507,8 @@ class _ProductListingPageState extends ConsumerState<ProductListingPage> {
     );
   }
 
-  /// Main Barcode POS Billing View Layout (Responsive Desktop / Tablet / Mobile)
-  Widget _buildPosBillingLayout(
+  /// Scan & List layout — list products with manual unit price & GST (not a sale).
+  Widget _buildScanAndListLayout(
     BuildContext context,
     BillingCartState cartState,
     bool isDark,
@@ -516,14 +518,12 @@ class _ProductListingPageState extends ConsumerState<ProductListingPage> {
         final isMobile = constraints.maxWidth < 650;
         final isTablet = constraints.maxWidth >= 650 && constraints.maxWidth < 960;
 
-        // Scanner Bar Widget
         final scannerBar = BarcodeScannerBar(
           focusNode: _barcodeFocusNode,
           controller: _barcodeController,
           onBarcodeSubmitted: _onBarcodeScanned,
         );
 
-        // Scanned Products Section
         final productsContent = Container(
           decoration: BoxDecoration(
             color: isDark ? const Color(0xFF1E293B) : Colors.white,
@@ -535,14 +535,13 @@ class _ProductListingPageState extends ConsumerState<ProductListingPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Header
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      'Scanned Products (${cartState.itemCount})',
+                      'Products to List (${cartState.itemCount})',
                       style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.bold,
@@ -562,8 +561,6 @@ class _ProductListingPageState extends ConsumerState<ProductListingPage> {
                 ),
               ),
               const Divider(height: 1),
-
-              // Products Body or Empty State
               if (cartState.items.isEmpty)
                 EmptyScannerState(onFocusRequested: _requestScannerFocus)
               else if (isMobile)
@@ -589,7 +586,6 @@ class _ProductListingPageState extends ConsumerState<ProductListingPage> {
           ),
         );
 
-        // Order Summary Card Widget
         final summaryCard = OrderSummaryCard(
           onFocusRequested: _requestScannerFocus,
         );

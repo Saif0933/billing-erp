@@ -3,9 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/entities/product.dart';
 import '../providers/billing_cart_provider.dart';
 
-/// Modal dialog shown when an unrecognized barcode is scanned.
-/// Allows the cashier to immediately register the new product in the local catalogue
-/// and add it straight to the active bill without breaking workflow.
+/// Dialog shown when a scanned EAN/barcode is not yet in the product catalogue.
+/// User must enter name, unit price and GST manually — then product is added
+/// to the listing draft (saved to DB via "Save Products").
 class ProductNotFoundDialog extends ConsumerStatefulWidget {
   final String barcode;
   final VoidCallback onDismissed;
@@ -48,7 +48,7 @@ class _ProductNotFoundDialogState extends ConsumerState<ProductNotFoundDialog> {
   late TextEditingController _stockCtrl;
 
   String _selectedCategory = 'Groceries';
-  double _selectedGstRate = 18.0;
+  double _selectedGstRate = 0.0;
   bool _isSaving = false;
 
   final List<String> _categories = [
@@ -70,11 +70,15 @@ class _ProductNotFoundDialogState extends ConsumerState<ProductNotFoundDialog> {
     super.initState();
     _nameCtrl = TextEditingController();
     _barcodeCtrl = TextEditingController(text: widget.barcode);
-    _skuCtrl = TextEditingController(text: 'SKU-${widget.barcode.length > 5 ? widget.barcode.substring(widget.barcode.length - 5) : widget.barcode}');
-    _sellingPriceCtrl = TextEditingController(text: '50.00');
-    _purchasePriceCtrl = TextEditingController(text: '40.00');
-    _mrpCtrl = TextEditingController(text: '60.00');
-    _stockCtrl = TextEditingController(text: '50');
+    _skuCtrl = TextEditingController(
+      text:
+          'SKU-${widget.barcode.length > 5 ? widget.barcode.substring(widget.barcode.length - 5) : widget.barcode}',
+    );
+    // Unit price & GST left empty / zero — user enters manually
+    _sellingPriceCtrl = TextEditingController();
+    _purchasePriceCtrl = TextEditingController();
+    _mrpCtrl = TextEditingController();
+    _stockCtrl = TextEditingController(text: '0');
   }
 
   @override
@@ -94,22 +98,25 @@ class _ProductNotFoundDialogState extends ConsumerState<ProductNotFoundDialog> {
 
     setState(() => _isSaving = true);
 
+    final unitPrice = double.tryParse(_sellingPriceCtrl.text.trim()) ?? 0.0;
+    final mrp = double.tryParse(_mrpCtrl.text.trim()) ?? unitPrice;
+    final purchase = double.tryParse(_purchasePriceCtrl.text.trim()) ?? unitPrice;
+
     final newProduct = Product(
       id: 'prod_custom_${DateTime.now().millisecondsSinceEpoch}',
       name: _nameCtrl.text.trim(),
       barcode: _barcodeCtrl.text.trim(),
       sku: _skuCtrl.text.trim(),
       category: _selectedCategory,
-      sellingPrice: double.tryParse(_sellingPriceCtrl.text.trim()) ?? 50.0,
-      purchasePrice: double.tryParse(_purchasePriceCtrl.text.trim()) ?? 40.0,
-      mrp: double.tryParse(_mrpCtrl.text.trim()) ?? 60.0,
+      sellingPrice: unitPrice,
+      purchasePrice: purchase,
+      mrp: mrp,
       gstRate: _selectedGstRate,
-      stock: int.tryParse(_stockCtrl.text.trim()) ?? 50,
+      stock: int.tryParse(_stockCtrl.text.trim()) ?? 0,
       unit: 'pcs',
-      placeholderIcon: Icons.add_shopping_cart,
+      placeholderIcon: Icons.qr_code_2,
     );
 
-    // Save to repo and add to current cart
     await ref.read(billingCartProvider.notifier).addCustomProductAndAddToCart(newProduct);
 
     if (mounted) {
@@ -133,19 +140,18 @@ class _ProductNotFoundDialogState extends ConsumerState<ProductNotFoundDialog> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Header with Warning Icon + Close
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Container(
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF7C2D12) : const Color(0xFFFFEDD5),
+                      color: isDark ? const Color(0xFF064E3B) : const Color(0xFFDCFCE7),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: const Icon(
                       Icons.qr_code_scanner_outlined,
-                      color: Color(0xFFEA580C),
+                      color: Color(0xFF15803D),
                       size: 24,
                     ),
                   ),
@@ -155,7 +161,7 @@ class _ProductNotFoundDialogState extends ConsumerState<ProductNotFoundDialog> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Product Not Found',
+                          'List New Product',
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
@@ -164,7 +170,7 @@ class _ProductNotFoundDialogState extends ConsumerState<ProductNotFoundDialog> {
                         ),
                         const SizedBox(height: 3),
                         Text(
-                          'Barcode "${widget.barcode}" is not registered in your catalogue.',
+                          'EAN "${widget.barcode}" — enter name, unit price & GST to list this product.',
                           style: TextStyle(
                             fontSize: 12,
                             color: isDark ? Colors.white60 : const Color(0xFF64748B),
@@ -182,14 +188,11 @@ class _ProductNotFoundDialogState extends ConsumerState<ProductNotFoundDialog> {
               const SizedBox(height: 16),
               const Divider(height: 1),
               const SizedBox(height: 16),
-
-              // Quick Add Form
               Form(
                 key: _formKey,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Product Name Field
                     Text(
                       'Product Name *',
                       style: TextStyle(
@@ -209,15 +212,16 @@ class _ProductNotFoundDialogState extends ConsumerState<ProductNotFoundDialog> {
                         fillColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
-                          borderSide: BorderSide(color: isDark ? Colors.white12 : const Color(0xFFCBD5E1)),
+                          borderSide: BorderSide(
+                            color: isDark ? Colors.white12 : const Color(0xFFCBD5E1),
+                          ),
                         ),
                         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                       ),
-                      validator: (val) => val == null || val.trim().isEmpty ? 'Product name is required' : null,
+                      validator: (val) =>
+                          val == null || val.trim().isEmpty ? 'Product name is required' : null,
                     ),
                     const SizedBox(height: 12),
-
-                    // Barcode + SKU (2 Columns)
                     Row(
                       children: [
                         Expanded(
@@ -225,7 +229,7 @@ class _ProductNotFoundDialogState extends ConsumerState<ProductNotFoundDialog> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Barcode',
+                                'EAN / Barcode',
                                 style: TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.bold,
@@ -276,8 +280,6 @@ class _ProductNotFoundDialogState extends ConsumerState<ProductNotFoundDialog> {
                       ],
                     ),
                     const SizedBox(height: 12),
-
-                    // Category & GST Rate (2 Columns)
                     Row(
                       children: [
                         Expanded(
@@ -302,7 +304,12 @@ class _ProductNotFoundDialogState extends ConsumerState<ProductNotFoundDialog> {
                                   contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
                                 ),
                                 items: _categories
-                                    .map((c) => DropdownMenuItem(value: c, child: Text(c, style: const TextStyle(fontSize: 12))))
+                                    .map(
+                                      (c) => DropdownMenuItem(
+                                        value: c,
+                                        child: Text(c, style: const TextStyle(fontSize: 12)),
+                                      ),
+                                    )
                                     .toList(),
                                 onChanged: (val) {
                                   if (val != null) setState(() => _selectedCategory = val);
@@ -317,7 +324,7 @@ class _ProductNotFoundDialogState extends ConsumerState<ProductNotFoundDialog> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'GST Rate (%)',
+                                'GST Rate (%) *',
                                 style: TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.bold,
@@ -334,7 +341,12 @@ class _ProductNotFoundDialogState extends ConsumerState<ProductNotFoundDialog> {
                                   contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
                                 ),
                                 items: _gstRates
-                                    .map((r) => DropdownMenuItem(value: r, child: Text('${r.toInt()}% GST', style: const TextStyle(fontSize: 12))))
+                                    .map(
+                                      (r) => DropdownMenuItem(
+                                        value: r,
+                                        child: Text('${r.toInt()}% GST', style: const TextStyle(fontSize: 12)),
+                                      ),
+                                    )
                                     .toList(),
                                 onChanged: (val) {
                                   if (val != null) setState(() => _selectedGstRate = val);
@@ -346,8 +358,6 @@ class _ProductNotFoundDialogState extends ConsumerState<ProductNotFoundDialog> {
                       ],
                     ),
                     const SizedBox(height: 12),
-
-                    // Selling Price & MRP (2 Columns)
                     Row(
                       children: [
                         Expanded(
@@ -355,7 +365,7 @@ class _ProductNotFoundDialogState extends ConsumerState<ProductNotFoundDialog> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Selling Price (₹) *',
+                                'Unit Price (₹) *',
                                 style: TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.bold,
@@ -367,13 +377,20 @@ class _ProductNotFoundDialogState extends ConsumerState<ProductNotFoundDialog> {
                                 controller: _sellingPriceCtrl,
                                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
                                 decoration: InputDecoration(
+                                  hintText: 'Enter price',
                                   prefixText: '₹ ',
                                   filled: true,
                                   fillColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
                                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                                   contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
                                 ),
-                                validator: (val) => val == null || double.tryParse(val) == null ? 'Invalid price' : null,
+                                validator: (val) {
+                                  final parsed = double.tryParse(val?.trim() ?? '');
+                                  if (parsed == null || parsed <= 0) {
+                                    return 'Enter unit price';
+                                  }
+                                  return null;
+                                },
                               ),
                             ],
                           ),
@@ -384,7 +401,7 @@ class _ProductNotFoundDialogState extends ConsumerState<ProductNotFoundDialog> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'MRP (₹) *',
+                                'MRP (₹)',
                                 style: TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.bold,
@@ -396,7 +413,68 @@ class _ProductNotFoundDialogState extends ConsumerState<ProductNotFoundDialog> {
                                 controller: _mrpCtrl,
                                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
                                 decoration: InputDecoration(
+                                  hintText: 'Optional',
                                   prefixText: '₹ ',
+                                  filled: true,
+                                  fillColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                                  contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Purchase Price (₹)',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  color: isDark ? Colors.white70 : const Color(0xFF334155),
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              TextFormField(
+                                controller: _purchasePriceCtrl,
+                                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                decoration: InputDecoration(
+                                  hintText: 'Optional',
+                                  prefixText: '₹ ',
+                                  filled: true,
+                                  fillColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                                  contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Opening Stock',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  color: isDark ? Colors.white70 : const Color(0xFF334155),
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              TextFormField(
+                                controller: _stockCtrl,
+                                keyboardType: TextInputType.number,
+                                decoration: InputDecoration(
                                   filled: true,
                                   fillColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
                                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
@@ -412,8 +490,6 @@ class _ProductNotFoundDialogState extends ConsumerState<ProductNotFoundDialog> {
                 ),
               ),
               const SizedBox(height: 20),
-
-              // Action Buttons
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
@@ -429,7 +505,7 @@ class _ProductNotFoundDialogState extends ConsumerState<ProductNotFoundDialog> {
                   ElevatedButton.icon(
                     onPressed: _isSaving ? null : _handleSave,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF15803D), // Green
+                      backgroundColor: const Color(0xFF15803D),
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
@@ -440,9 +516,9 @@ class _ProductNotFoundDialogState extends ConsumerState<ProductNotFoundDialog> {
                             height: 16,
                             child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                           )
-                        : const Icon(Icons.add_shopping_cart, size: 18),
+                        : const Icon(Icons.add_box_outlined, size: 18),
                     label: Text(
-                      _isSaving ? 'Saving...' : 'Save & Add to Bill',
+                      _isSaving ? 'Adding...' : 'Add to Listing',
                       style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
                   ),

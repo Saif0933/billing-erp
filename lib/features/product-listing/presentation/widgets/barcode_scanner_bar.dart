@@ -223,78 +223,7 @@ class _BarcodeScannerBarState extends ConsumerState<BarcodeScannerBar> {
             ],
           ),
         ),
-        const SizedBox(height: 8),
-
-        // Quick-Simulate Barcode Chips for Easy Testing Without Physical Scanner
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          physics: const BouncingScrollPhysics(),
-          child: Row(
-            children: [
-              Text(
-                'Quick Test:',
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.bold,
-                  color: isDark ? Colors.white54 : const Color(0xFF64748B),
-                ),
-              ),
-              const SizedBox(width: 8),
-              _buildQuickChip('Coca Cola (5449000200427)', '5449000200427', isDark),
-              _buildQuickChip('Maggi (8901000100712)', '8901000100712', isDark),
-              _buildQuickChip('Parle-G (8901719570017)', '8901719570017', isDark),
-              _buildQuickChip('Amul Milk (8901262000012)', '8901262000012', isDark),
-              _buildQuickChip('Tata Salt (8901058852271)', '8901058852271', isDark),
-              _buildQuickChip('Unknown Barcode (9999999999999)', '9999999999999', isDark, isUnknown: true),
-            ],
-          ),
-        ),
       ],
-    );
-  }
-
-  Widget _buildQuickChip(String title, String barcode, bool isDark, {bool isUnknown = false}) {
-    return Padding(
-      padding: const EdgeInsets.only(right: 6),
-      child: InkWell(
-        onTap: () => _handleBarcodeSubmission(barcode),
-        borderRadius: BorderRadius.circular(6),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-          decoration: BoxDecoration(
-            color: isUnknown
-                ? (isDark ? const Color(0xFF451A03) : const Color(0xFFFEF3C7))
-                : (isDark ? const Color(0xFF0F172A) : const Color(0xFFF1F5F9)),
-            borderRadius: BorderRadius.circular(6),
-            border: Border.all(
-              color: isUnknown
-                  ? (isDark ? const Color(0xFFB45309) : const Color(0xFFFCD34D))
-                  : (isDark ? Colors.white12 : const Color(0xFFCBD5E1)),
-            ),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                isUnknown ? Icons.help_outline : Icons.bolt,
-                size: 13,
-                color: isUnknown ? const Color(0xFFD97706) : const Color(0xFF16A34A),
-              ),
-              const SizedBox(width: 4),
-              Text(
-                title,
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w500,
-                  color: isUnknown
-                      ? (isDark ? const Color(0xFFFBBF24) : const Color(0xFF92400E))
-                      : (isDark ? Colors.white70 : const Color(0xFF334155)),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 }

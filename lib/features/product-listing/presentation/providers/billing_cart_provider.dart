@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../data/models/product_dto.dart';
 import '../../data/repositories/api_product_repository.dart';
 import '../../data/services/product_api_service.dart';
 import '../../domain/entities/cart_item.dart';
@@ -41,7 +42,7 @@ class BarcodeScanResult {
       isSuccess: true,
       product: product,
       quantity: quantity,
-      message: '✓ ${product.name} added (Qty: $quantity)',
+      message: '✓ ${product.name} added to listing',
     );
   }
 
@@ -49,7 +50,7 @@ class BarcodeScanResult {
     return BarcodeScanResult._(
       isSuccess: false,
       notFoundBarcode: barcode,
-      message: 'Product not found for barcode: $barcode',
+      message: 'Product not listed for barcode: $barcode',
     );
   }
 
@@ -61,7 +62,8 @@ class BarcodeScanResult {
   }
 }
 
-/// State representation for the Active Billing POS & Scanned Cart
+/// State for the Product Listing draft (scan → edit price/GST → save to DB).
+/// This is NOT a sale cart — products are listed here so they can be sold later.
 class BillingCartState {
   final String invoiceNumber;
   final DateTime invoiceDate;
@@ -75,6 +77,9 @@ class BillingCartState {
   final bool isLastMessageError;
   final Product? lastScannedProduct;
   final bool isProcessing;
+  final bool isSaving;
+  /// Product IDs already persisted to the database in this session
+  final Set<String> savedProductIds;
 
   const BillingCartState({
     required this.invoiceNumber,
@@ -89,34 +94,31 @@ class BillingCartState {
     this.isLastMessageError = false,
     this.lastScannedProduct,
     this.isProcessing = false,
+    this.isSaving = false,
+    this.savedProductIds = const {},
   });
 
-  /// Total count of unique products in cart
   int get itemCount => items.length;
 
-  /// Total units / sum of quantities of all items
   int get totalQuantity => items.fold(0, (sum, item) => sum + item.quantity);
 
-  /// Gross subtotal before discount and tax
   double get subtotal => items.fold(0.0, (sum, item) => sum + item.grossTotal);
 
-  /// Total line-item discounts
   double get itemDiscounts => items.fold(0.0, (sum, item) => sum + item.discountAmount);
 
-  /// Total discount applied
   double get totalDiscount => itemDiscounts + discountAmount;
 
-  /// Total GST tax component
   double get gstAmount => items.fold(0.0, (sum, item) => sum + item.gstAmount);
 
-  /// Taxable base amount excluding GST
   double get taxableAmount => items.fold(0.0, (sum, item) => sum + item.taxableAmount);
 
-  /// Final Grand Total payable amount
   double get grandTotal {
     final net = items.fold(0.0, (sum, item) => sum + item.totalAmount) - discountAmount;
     return net < 0 ? 0.0 : net;
   }
+
+  int get unsavedCount =>
+      items.where((i) => !savedProductIds.contains(i.product.id)).length;
 
   BillingCartState copyWith({
     String? invoiceNumber,
@@ -131,6 +133,8 @@ class BillingCartState {
     bool? isLastMessageError,
     Product? lastScannedProduct,
     bool? isProcessing,
+    bool? isSaving,
+    Set<String>? savedProductIds,
   }) {
     return BillingCartState(
       invoiceNumber: invoiceNumber ?? this.invoiceNumber,
@@ -145,12 +149,13 @@ class BillingCartState {
       isLastMessageError: isLastMessageError ?? this.isLastMessageError,
       lastScannedProduct: lastScannedProduct ?? this.lastScannedProduct,
       isProcessing: isProcessing ?? this.isProcessing,
+      isSaving: isSaving ?? this.isSaving,
+      savedProductIds: savedProductIds ?? this.savedProductIds,
     );
   }
 }
 
-/// StateNotifier handling barcode scanner HID intake, duplicate incrementing,
-/// cart math, and catalogue interactions.
+/// Handles barcode scan → product listing draft (not sale).
 class BillingCartNotifier extends StateNotifier<BillingCartState> {
   final ProductRepository _repo;
   final Ref? _ref;
@@ -160,28 +165,25 @@ class BillingCartNotifier extends StateNotifier<BillingCartState> {
   BillingCartNotifier(this._repo, [this._ref])
       : super(
           BillingCartState(
-            invoiceNumber: '#INV-${DateTime.now().year}-${(1000 + DateTime.now().millisecond).toString()}',
+            invoiceNumber: '#LIST-${DateTime.now().year}-${(1000 + DateTime.now().millisecond).toString()}',
             invoiceDate: DateTime.now(),
             items: [],
             recentScans: [],
           ),
         );
 
-  /// Unified barcode processor for USB HID, Bluetooth HID, and manual keyboard input.
+  /// Resolve barcode against DB / catalogues. Does NOT auto-create with fake prices.
   Future<BarcodeScanResult> processBarcode(String rawBarcode) async {
-    // 1. Sanitize & clean raw input
     final cleanBarcode = rawBarcode.replaceAll(RegExp(r'[\r\n\t]'), '').trim();
 
     if (cleanBarcode.isEmpty) {
       return BarcodeScanResult.invalid('Please scan or enter a valid barcode');
     }
 
-    // 2. Prevent rapid duplicate hardware bounces (< 200ms identical scan)
     final now = DateTime.now();
     if (_lastScanBarcode == cleanBarcode &&
         _lastScanTime != null &&
         now.difference(_lastScanTime!).inMilliseconds < 250) {
-      // Debounced scanner jitter
       return BarcodeScanResult.invalid('Duplicate scanner jitter ignored');
     }
 
@@ -191,16 +193,11 @@ class BillingCartNotifier extends StateNotifier<BillingCartState> {
     state = state.copyWith(isProcessing: true);
 
     try {
-      // 3. Multi-tier product resolution:
-      // A) Backend REST API & Mock catalog via _repo
       Product? product;
       try {
         product = await _repo.findProductByBarcode(cleanBarcode);
-      } catch (_) {
-        // Network unavailable or endpoint error, gracefully proceed to local caches & auto-create
-      }
+      } catch (_) {}
 
-      // B) Business Masters catalogue products in billingRepositoryProvider
       if (product == null && _ref != null) {
         final cleanUpper = cleanBarcode.toUpperCase();
         try {
@@ -229,7 +226,6 @@ class BillingCartNotifier extends StateNotifier<BillingCartState> {
         } catch (_) {}
       }
 
-      // C) Product Listing directory in productListingProvider
       if (product == null && _ref != null) {
         final cleanUpper = cleanBarcode.toUpperCase();
         try {
@@ -247,9 +243,9 @@ class BillingCartNotifier extends StateNotifier<BillingCartState> {
                 sellingPrice: lp.sellingPrice,
                 purchasePrice: lp.sellingPrice * 0.8,
                 mrp: lp.mrp,
-                gstRate: 18.0,
+                gstRate: lp.gstRate,
                 stock: lp.stock,
-                unit: 'pcs',
+                unit: lp.unit,
               );
               break;
             }
@@ -257,67 +253,17 @@ class BillingCartNotifier extends StateNotifier<BillingCartState> {
         } catch (_) {}
       }
 
-      // D) Dynamic auto-creation for physical retail items scanned with TVS-E device!
-      // Guarantees that EVERY scanned barcode immediately adds a product to the bill!
+      // New EAN — require manual name, unit price & GST via dialog (no fake prices)
       if (product == null) {
-        product = Product(
-          id: 'prod_scan_${DateTime.now().millisecondsSinceEpoch}',
-          name: 'Item #$cleanBarcode',
-          barcode: cleanBarcode,
-          sku: 'SKU-${cleanBarcode.length > 6 ? cleanBarcode.substring(cleanBarcode.length - 6) : cleanBarcode}',
-          category: 'Scanned Items',
-          sellingPrice: 50.00,
-          purchasePrice: 40.00,
-          mrp: 60.00,
-          gstRate: 18.0,
-          stock: 100,
-          unit: 'pcs',
+        state = state.copyWith(
+          isProcessing: false,
+          lastMessage: 'New barcode scanned. Enter unit price & GST to list this product.',
+          isLastMessageError: false,
         );
-        // Persist to repository (safely, ignore if offline)
-        try {
-          await _repo.addProduct(product);
-        } catch (_) {}
+        return BarcodeScanResult.notFound(cleanBarcode);
       }
 
-      // 4. Check if product already exists in cart -> Increment quantity
-      final existingIndex = state.items.indexWhere(
-        (item) => item.product.id == product!.id || item.product.barcode == product.barcode,
-      );
-
-      List<CartItem> updatedItems;
-      int currentQty;
-
-      if (existingIndex >= 0) {
-        currentQty = state.items[existingIndex].quantity + 1;
-        updatedItems = List<CartItem>.from(state.items);
-        updatedItems[existingIndex] = updatedItems[existingIndex].copyWith(
-          quantity: currentQty,
-          addedAt: DateTime.now(),
-        );
-      } else {
-        currentQty = 1;
-        updatedItems = [
-          CartItem(product: product, quantity: 1),
-          ...state.items,
-        ];
-      }
-
-      // 5. Update Recent Scans history list
-      final updatedRecentScans = [
-        product,
-        ...state.recentScans.where((p) => p.id != product!.id && p.barcode != product.barcode),
-      ].take(10).toList();
-
-      state = state.copyWith(
-        items: updatedItems,
-        recentScans: updatedRecentScans,
-        lastScannedProduct: product,
-        isProcessing: false,
-        lastMessage: '✓ ${product.name} (Qty: $currentQty)',
-        isLastMessageError: false,
-      );
-
-      return BarcodeScanResult.success(product, currentQty);
+      return _addProductToListing(product);
     } catch (e) {
       state = state.copyWith(
         isProcessing: false,
@@ -328,18 +274,98 @@ class BillingCartNotifier extends StateNotifier<BillingCartState> {
     }
   }
 
-  /// Increment quantity of an item in cart
+  BarcodeScanResult _addProductToListing(Product product, {bool markSaved = true}) {
+    final existingIndex = state.items.indexWhere(
+      (item) => item.product.id == product.id || item.product.barcode == product.barcode,
+    );
+
+    List<CartItem> updatedItems;
+    if (existingIndex >= 0) {
+      updatedItems = List<CartItem>.from(state.items);
+      updatedItems[existingIndex] = updatedItems[existingIndex].copyWith(
+        product: product,
+        addedAt: DateTime.now(),
+      );
+    } else {
+      updatedItems = [
+        CartItem(product: product, quantity: 1),
+        ...state.items,
+      ];
+    }
+
+    final updatedRecentScans = [
+      product,
+      ...state.recentScans.where((p) => p.id != product.id && p.barcode != product.barcode),
+    ].take(10).toList();
+
+    final savedIds = Set<String>.from(state.savedProductIds);
+    if (markSaved && !product.id.startsWith('prod_scan_') && !product.id.startsWith('prod_custom_')) {
+      savedIds.add(product.id);
+    } else {
+      savedIds.remove(product.id);
+    }
+
+    state = state.copyWith(
+      items: updatedItems,
+      recentScans: updatedRecentScans,
+      lastScannedProduct: product,
+      isProcessing: false,
+      lastMessage: '✓ ${product.name} (${product.barcode})',
+      isLastMessageError: false,
+      savedProductIds: savedIds,
+    );
+
+    return BarcodeScanResult.success(product, 1);
+  }
+
+  /// Manually update unit price for a listed product
+  void updateUnitPrice(String productId, double price) {
+    final index = state.items.indexWhere((i) => i.product.id == productId);
+    if (index < 0) return;
+    final updated = List<CartItem>.from(state.items);
+    final item = updated[index];
+    updated[index] = item.copyWith(
+      product: item.product.copyWith(sellingPrice: price < 0 ? 0 : price),
+    );
+    final savedIds = Set<String>.from(state.savedProductIds)..remove(productId);
+    state = state.copyWith(items: updated, savedProductIds: savedIds);
+  }
+
+  /// Manually update GST rate for a listed product
+  void updateGstRate(String productId, double gstRate) {
+    final index = state.items.indexWhere((i) => i.product.id == productId);
+    if (index < 0) return;
+    final updated = List<CartItem>.from(state.items);
+    final item = updated[index];
+    updated[index] = item.copyWith(
+      product: item.product.copyWith(gstRate: gstRate < 0 ? 0 : gstRate),
+    );
+    final savedIds = Set<String>.from(state.savedProductIds)..remove(productId);
+    state = state.copyWith(items: updated, savedProductIds: savedIds);
+  }
+
+  /// Manually update product name
+  void updateProductName(String productId, String name) {
+    final trimmed = name.trim();
+    if (trimmed.isEmpty) return;
+    final index = state.items.indexWhere((i) => i.product.id == productId);
+    if (index < 0) return;
+    final updated = List<CartItem>.from(state.items);
+    final item = updated[index];
+    updated[index] = item.copyWith(product: item.product.copyWith(name: trimmed));
+    final savedIds = Set<String>.from(state.savedProductIds)..remove(productId);
+    state = state.copyWith(items: updated, savedProductIds: savedIds);
+  }
+
   void incrementQuantity(String productId) {
     final index = state.items.indexWhere((i) => i.product.id == productId);
     if (index >= 0) {
       final updated = List<CartItem>.from(state.items);
-      final newQty = updated[index].quantity + 1;
-      updated[index] = updated[index].copyWith(quantity: newQty);
+      updated[index] = updated[index].copyWith(quantity: updated[index].quantity + 1);
       state = state.copyWith(items: updated);
     }
   }
 
-  /// Decrement quantity or remove if quantity reaches 0
   void decrementQuantity(String productId) {
     final index = state.items.indexWhere((i) => i.product.id == productId);
     if (index >= 0) {
@@ -354,7 +380,6 @@ class BillingCartNotifier extends StateNotifier<BillingCartState> {
     }
   }
 
-  /// Set exact quantity
   void setQuantity(String productId, int quantity) {
     if (quantity <= 0) {
       removeItem(productId);
@@ -368,28 +393,167 @@ class BillingCartNotifier extends StateNotifier<BillingCartState> {
     }
   }
 
-  /// Remove item from cart
   void removeItem(String productId) {
     final updated = state.items.where((i) => i.product.id != productId).toList();
+    final savedIds = Set<String>.from(state.savedProductIds)..remove(productId);
     state = state.copyWith(
       items: updated,
-      lastMessage: 'Item removed from bill',
+      savedProductIds: savedIds,
+      lastMessage: 'Product removed from listing',
       isLastMessageError: false,
     );
   }
 
-  /// Add newly registered product from "Product Not Found" modal to catalog & cart
+  /// Add newly registered product from dialog into listing draft (local).
+  /// Call [saveAllToDatabase] to persist EAN + full details to DB.
   Future<void> addCustomProductAndAddToCart(Product product) async {
-    await _repo.addProduct(product);
-    await processBarcode(product.barcode);
+    _addProductToListing(product, markSaved: false);
   }
 
-  /// Apply overall bill discount
+  /// Persist all listed products (EAN + name + unit price + GST + full info) to database.
+  Future<bool> saveAllToDatabase() async {
+    if (state.items.isEmpty) {
+      state = state.copyWith(
+        lastMessage: 'Scan at least one product to save.',
+        isLastMessageError: true,
+      );
+      return false;
+    }
+
+    // Validate unit price entered for every product
+    for (final item in state.items) {
+      if (item.product.sellingPrice <= 0) {
+        state = state.copyWith(
+          lastMessage: 'Enter unit price for "${item.product.name}" before saving.',
+          isLastMessageError: true,
+        );
+        return false;
+      }
+      if (item.product.name.trim().isEmpty ||
+          item.product.name.startsWith('Item #') ||
+          item.product.name.startsWith('Product (')) {
+        state = state.copyWith(
+          lastMessage: 'Enter a proper name for barcode ${item.product.barcode}.',
+          isLastMessageError: true,
+        );
+        return false;
+      }
+    }
+
+    state = state.copyWith(isSaving: true, lastMessage: null);
+
+    final api = _ref?.read(productApiServiceProvider);
+    if (api == null) {
+      state = state.copyWith(
+        isSaving: false,
+        lastMessage: 'API service unavailable. Cannot save products.',
+        isLastMessageError: true,
+      );
+      return false;
+    }
+
+    final savedIds = Set<String>.from(state.savedProductIds);
+    final updatedItems = List<CartItem>.from(state.items);
+    int successCount = 0;
+    final errors = <String>[];
+
+    for (var i = 0; i < updatedItems.length; i++) {
+      final item = updatedItems[i];
+      final p = item.product;
+      final dto = ProductDto(
+        id: p.id,
+        name: p.name.trim(),
+        barcode: p.barcode.trim(),
+        sku: p.sku.trim().isNotEmpty
+            ? p.sku.trim()
+            : 'SKU-${p.barcode.length > 6 ? p.barcode.substring(p.barcode.length - 6) : p.barcode}',
+        code: p.sku,
+        itemCode: p.sku,
+        category: p.category.isNotEmpty ? p.category : 'General',
+        sellingPrice: p.sellingPrice,
+        purchasePrice: p.purchasePrice > 0 ? p.purchasePrice : p.sellingPrice,
+        mrp: p.mrp > 0 ? p.mrp : p.sellingPrice,
+        gstRate: p.gstRate,
+        gstRatePercent: p.gstRate,
+        openingStock: p.stock.toDouble(),
+        currentStock: p.stock.toDouble(),
+        stock: p.stock,
+        unit: p.unit,
+        primaryUnit: p.unit.toUpperCase(),
+        isActive: true,
+      );
+
+      try {
+        final isTempId =
+            p.id.startsWith('prod_scan_') || p.id.startsWith('prod_custom_') || p.id.isEmpty;
+        ProductDto saved;
+        if (isTempId || !savedIds.contains(p.id)) {
+          // Try create; if barcode already exists, update that record
+          try {
+            saved = await api.createProduct(dto);
+          } catch (_) {
+            try {
+              final existing = await api.findProductByBarcode(p.barcode);
+              saved = await api.updateProduct(ProductDto(
+                id: existing.id,
+                name: dto.name,
+                barcode: dto.barcode,
+                sku: dto.sku,
+                code: dto.code,
+                itemCode: dto.itemCode,
+                category: dto.category,
+                sellingPrice: dto.sellingPrice,
+                purchasePrice: dto.purchasePrice,
+                mrp: dto.mrp,
+                gstRate: dto.gstRate,
+                gstRatePercent: dto.gstRate,
+                openingStock: dto.openingStock,
+                currentStock: dto.currentStock,
+                stock: dto.stock,
+                unit: dto.unit,
+                primaryUnit: dto.primaryUnit,
+                isActive: true,
+              ));
+            } catch (e2) {
+              errors.add('${p.barcode}: $e2');
+              continue;
+            }
+          }
+        } else {
+          saved = await api.updateProduct(dto);
+        }
+
+        final domainSaved = saved.toDomainProduct();
+        updatedItems[i] = item.copyWith(product: domainSaved);
+        savedIds.add(domainSaved.id);
+        successCount++;
+      } catch (e) {
+        errors.add('${p.barcode}: $e');
+      }
+    }
+
+    state = state.copyWith(
+      items: updatedItems,
+      savedProductIds: savedIds,
+      isSaving: false,
+      lastMessage: errors.isEmpty
+          ? '✓ Saved $successCount product(s) to database with EAN, price & GST.'
+          : 'Saved $successCount. Failed: ${errors.take(2).join('; ')}',
+      isLastMessageError: errors.isNotEmpty && successCount == 0,
+    );
+
+    // Refresh catalogue directory
+    try {
+      await _ref?.read(productListingProvider.notifier).loadProducts(refresh: true);
+    } catch (_) {}
+
+    return successCount > 0;
+  }
+
   void setBillDiscount(double discount) {
     state = state.copyWith(discountAmount: discount < 0 ? 0.0 : discount);
   }
 
-  /// Update customer details
   void setCustomerDetails({String? name, String? phone}) {
     state = state.copyWith(
       customerName: name ?? state.customerName,
@@ -397,33 +561,27 @@ class BillingCartNotifier extends StateNotifier<BillingCartState> {
     );
   }
 
-  /// Clear entire cart / start new sale invoice
   void startNewInvoice() {
     state = BillingCartState(
-      invoiceNumber: '#INV-${DateTime.now().year}-${(1000 + DateTime.now().millisecond).toString()}',
+      invoiceNumber: '#LIST-${DateTime.now().year}-${(1000 + DateTime.now().millisecond).toString()}',
       invoiceDate: DateTime.now(),
       items: [],
       recentScans: state.recentScans,
       discountAmount: 0.0,
-      customerName: 'Walk-in Customer',
-      customerPhone: '',
-      lastMessage: 'Started new invoice session',
+      lastMessage: 'Cleared listing. Scan products to list again.',
       isLastMessageError: false,
     );
   }
 
-  /// Toggle scanner hardware status flag
   void setScannerReady(bool ready) {
     state = state.copyWith(isScannerReady: ready);
   }
 
-  /// Clear temporary status banner message
   void clearMessage() {
     state = state.copyWith(lastMessage: null);
   }
 }
 
-/// Main StateNotifierProvider for the active billing POS cart
 final billingCartProvider = StateNotifierProvider<BillingCartNotifier, BillingCartState>((ref) {
   final repo = ref.watch(productRepositoryProvider);
   return BillingCartNotifier(repo, ref);
