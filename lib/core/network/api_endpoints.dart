@@ -76,4 +76,7 @@ class ApiEndpoints {
   static const String receipts = '/api/v1/receipts';
   static const String payments = '/api/v1/payments';
   static const String outstanding = '/api/v1/outstanding';
+
+  // Purchase Bills (backend: module/purchase/purchase-bill)
+  static const String purchases = '/api/v1/purchases';
 }

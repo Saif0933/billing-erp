@@ -160,6 +160,14 @@ class Supplier {
       notes: notes ?? this.notes,
     );
   }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is Supplier && runtimeType == other.runtimeType && id == other.id;
+
+  @override
+  int get hashCode => id.hashCode;
 }
 
 class Product {
@@ -183,6 +191,7 @@ class Product {
   final String expiryDate;
   final String serialNumber;
   final String category;
+  final String subCategory;
   final String brand;
   final bool isActive;
   final Map<String, double> warehouseStocks; // Map of warehouseId -> stock
@@ -208,6 +217,7 @@ class Product {
     required this.expiryDate,
     required this.serialNumber,
     required this.category,
+    this.subCategory = '',
     required this.brand,
     this.isActive = true,
     this.warehouseStocks = const {},
@@ -233,6 +243,7 @@ class Product {
     String? expiryDate,
     String? serialNumber,
     String? category,
+    String? subCategory,
     String? brand,
     bool? isActive,
     Map<String, double>? warehouseStocks,
@@ -258,6 +269,7 @@ class Product {
       expiryDate: expiryDate ?? this.expiryDate,
       serialNumber: serialNumber ?? this.serialNumber,
       category: category ?? this.category,
+      subCategory: subCategory ?? this.subCategory,
       brand: brand ?? this.brand,
       isActive: isActive ?? this.isActive,
       warehouseStocks: warehouseStocks ?? this.warehouseStocks,

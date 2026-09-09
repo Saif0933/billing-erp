@@ -604,6 +604,10 @@ class BillingNotifier extends StateNotifier<BillingState> {
     state = state.copyWith(suppliers: list);
   }
 
+  void setPurchases(List<Purchase> list) {
+    state = state.copyWith(purchases: list);
+  }
+
 
   // --- Product CRUD ---
   Future<void> addProduct(Product p) async {

@@ -9,6 +9,7 @@ import '../../../../shared/widgets/app_input_fields.dart';
 import '../../../../shared/widgets/app_table.dart';
 import '../../../../shared/widgets/feedback.dart';
 import '../../../dashboard/presentation/providers/billing_repository.dart';
+import '../providers/purchase_provider.dart';
 
 class PurchaseDetailPage extends ConsumerStatefulWidget {
   final String purchaseId;
@@ -22,7 +23,7 @@ class _PurchaseDetailPageState extends ConsumerState<PurchaseDetailPage> {
   final _amountPaidController = TextEditingController();
   final _refNoController = TextEditingController();
   String _paymentMode = 'Bank';
-  DateTime _paymentDate = DateTime.now();
+  final DateTime _paymentDate = DateTime.now();
 
   @override
   void dispose() {
@@ -33,7 +34,8 @@ class _PurchaseDetailPageState extends ConsumerState<PurchaseDetailPage> {
 
   void _showRecordPaymentDialog(Purchase purchase) {
     _amountPaidController.text = purchase.balanceAmount.toString();
-    _refNoController.text = 'PAY-${DateTime.now().millisecondsSinceEpoch.toString().substring(8)}';
+    _refNoController.text =
+        'PAY-${DateTime.now().millisecondsSinceEpoch.toString().substring(8)}';
 
     showDialog(
       context: context,
@@ -45,7 +47,9 @@ class _PurchaseDetailPageState extends ConsumerState<PurchaseDetailPage> {
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text('Purchase Remaining Payable: ₹${purchase.balanceAmount}'),
+                  Text(
+                    'Purchase Remaining Payable: ₹${purchase.balanceAmount}',
+                  ),
                   const SizedBox(height: AppSpacing.md),
                   AppTextField(
                     label: 'Amount Paid (₹) *',
@@ -63,12 +67,16 @@ class _PurchaseDetailPageState extends ConsumerState<PurchaseDetailPage> {
                     value: _paymentMode,
                     items: const [
                       DropdownMenuItem(value: 'Cash', child: Text('Cash')),
-                      DropdownMenuItem(value: 'Bank', child: Text('Bank Transfer')),
+                      DropdownMenuItem(
+                        value: 'Bank',
+                        child: Text('Bank Transfer'),
+                      ),
                       DropdownMenuItem(value: 'UPI', child: Text('UPI')),
                       DropdownMenuItem(value: 'Card', child: Text('Card')),
                       DropdownMenuItem(value: 'Cheque', child: Text('Cheque')),
                     ],
-                    onChanged: (val) => setDialogState(() => _paymentMode = val ?? 'Bank'),
+                    onChanged: (val) =>
+                        setDialogState(() => _paymentMode = val ?? 'Bank'),
                   ),
                 ],
               ),
@@ -80,9 +88,14 @@ class _PurchaseDetailPageState extends ConsumerState<PurchaseDetailPage> {
                 AppButton(
                   label: 'Save Payment',
                   onPressed: () async {
-                    final double amount = double.tryParse(_amountPaidController.text) ?? 0.0;
+                    final double amount =
+                        double.tryParse(_amountPaidController.text) ?? 0.0;
                     if (amount <= 0 || amount > purchase.balanceAmount) {
-                      AppFeedback.showSnackbar(context, message: 'Invalid payment amount!', isError: true);
+                      AppFeedback.showSnackbar(
+                        context,
+                        message: 'Invalid payment amount!',
+                        isError: true,
+                      );
                       return;
                     }
 
@@ -103,11 +116,19 @@ class _PurchaseDetailPageState extends ConsumerState<PurchaseDetailPage> {
                       ],
                     );
 
-                    await ref.read(billingRepositoryProvider.notifier).addPayment(payment);
+                    await ref
+                        .read(billingRepositoryProvider.notifier)
+                        .addPayment(payment);
 
                     if (mounted) {
                       Navigator.pop(ctx);
-                      AppFeedback.showSnackbar(context, message: 'Supplier payment recorded successfully!');
+                      ref.invalidate(
+                        purchaseDetailProvider(widget.purchaseId),
+                      );
+                      AppFeedback.showSnackbar(
+                        context,
+                        message: 'Supplier payment recorded successfully!',
+                      );
                     }
                   },
                 ),
@@ -121,38 +142,49 @@ class _PurchaseDetailPageState extends ConsumerState<PurchaseDetailPage> {
 
   @override
   Widget build(BuildContext context) {
-    final billingState = ref.watch(billingRepositoryProvider);
+    final detailAsync = ref.watch(purchaseDetailProvider(widget.purchaseId));
+    final purchaseState = ref.watch(purchaseProvider);
 
-    final purchase = billingState.purchases.firstWhere(
-      (p) => p.id == widget.purchaseId,
-      orElse: () => Purchase(
-        id: '',
-        purchaseNumber: 'Not Found',
-        supplierInvoiceNumber: '',
-        purchaseDate: DateTime.now(),
-        supplierId: '',
-        supplierName: '',
-        items: [],
-        taxableAmount: 0,
-        cgst: 0,
-        sgst: 0,
-        igst: 0,
-        cess: 0,
-        freightCharges: 0,
-        otherCharges: 0,
-        roundOff: 0,
-        grandTotal: 0,
-        balanceAmount: 0,
-        paymentMode: '',
-        status: PurchaseStatus.draft,
-        notes: '',
+    return detailAsync.when(
+      loading: () => const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
       ),
+      error: (err, _) => Scaffold(
+        appBar: AppBar(title: const Text('Purchase Bill')),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Text(
+              err.toString().replaceAll('Exception:', '').trim(),
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: Colors.red),
+            ),
+          ),
+        ),
+      ),
+      data: (fetched) {
+        Purchase? purchase = fetched;
+        if (purchase == null) {
+          for (final p in purchaseState.purchases) {
+            if (p.id == widget.purchaseId) {
+              purchase = p;
+              break;
+            }
+          }
+        }
+
+        if (purchase == null || purchase.id.isEmpty) {
+          return const Scaffold(
+            body: Center(child: Text('Purchase record not found.')),
+          );
+        }
+
+        return _buildDetailScaffold(context, purchase);
+      },
     );
+  }
 
-    if (purchase.id.isEmpty) {
-      return const Scaffold(body: Center(child: Text('Purchase record not found.')));
-    }
-
+  Widget _buildDetailScaffold(BuildContext context, Purchase purchase) {
     return Scaffold(
       appBar: AppBar(
         title: Text(purchase.purchaseNumber),
@@ -166,17 +198,48 @@ class _PurchaseDetailPageState extends ConsumerState<PurchaseDetailPage> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 AppPageHeader(
-                  title: purchase.isDebitNote ? 'Debit Note: ${purchase.purchaseNumber}' : 'Purchase Bill: ${purchase.purchaseNumber}',
-                  description: 'Status: ${purchase.status.name.toUpperCase()} • Supplier: ${purchase.supplierName}',
-                  breadcrumbs: ['Dashboard', 'Purchase', purchase.purchaseNumber],
+                  title: purchase.isDebitNote
+                      ? 'Debit Note: ${purchase.purchaseNumber}'
+                      : 'Purchase Bill: ${purchase.purchaseNumber}',
+                  description:
+                      'Status: ${purchase.status.name.toUpperCase()} • Supplier: ${purchase.supplierName}',
+                  breadcrumbs: [
+                    'Dashboard',
+                    'Purchase',
+                    purchase.purchaseNumber,
+                  ],
                   actions: [
                     if (purchase.status == PurchaseStatus.draft)
                       AppButton(
                         label: 'Confirm Bill & Add Stock',
                         icon: Icons.check_circle_outline,
                         onPressed: () async {
-                          await ref.read(billingRepositoryProvider.notifier).confirmPurchase(purchase.id);
-                          if (mounted) AppFeedback.showSnackbar(context, message: 'Purchase bill confirmed and inventory updated!');
+                          try {
+                            await ref
+                                .read(purchaseProvider.notifier)
+                                .confirmPurchase(purchase.id);
+                            ref.invalidate(
+                              purchaseDetailProvider(widget.purchaseId),
+                            );
+                            if (mounted) {
+                              AppFeedback.showSnackbar(
+                                context,
+                                message:
+                                    'Purchase bill confirmed and inventory updated!',
+                              );
+                            }
+                          } catch (e) {
+                            if (mounted) {
+                              AppFeedback.showSnackbar(
+                                context,
+                                message: e
+                                    .toString()
+                                    .replaceAll('Exception:', '')
+                                    .trim(),
+                                isError: true,
+                              );
+                            }
+                          }
                         },
                       ),
                     if (purchase.status != PurchaseStatus.paid &&
@@ -189,8 +252,6 @@ class _PurchaseDetailPageState extends ConsumerState<PurchaseDetailPage> {
                       ),
                   ],
                 ),
-
-                // Bill Metadata Card
                 AppCard(
                   child: LayoutBuilder(
                     builder: (context, constraints) {
@@ -199,22 +260,47 @@ class _PurchaseDetailPageState extends ConsumerState<PurchaseDetailPage> {
                       final supplierWidget = Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text('Supplier Account:', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
+                          const Text(
+                            'Supplier Account:',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.grey,
+                            ),
+                          ),
                           const SizedBox(height: 4),
-                          Text(purchase.supplierName, style: AppTypography.titleMedium.copyWith(fontWeight: FontWeight.bold)),
-                          Text('Supplier Invoice Ref: ${purchase.supplierInvoiceNumber}'),
+                          Text(
+                            purchase.supplierName,
+                            style: AppTypography.titleMedium
+                                .copyWith(fontWeight: FontWeight.bold),
+                          ),
+                          Text(
+                            'Supplier Invoice Ref: ${purchase.supplierInvoiceNumber}',
+                          ),
                         ],
                       );
 
                       final detailsWidget = Column(
-                        crossAxisAlignment: isSmall ? CrossAxisAlignment.start : CrossAxisAlignment.end,
+                        crossAxisAlignment: isSmall
+                            ? CrossAxisAlignment.start
+                            : CrossAxisAlignment.end,
                         children: [
-                          const Text('Bill Details:', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
+                          const Text(
+                            'Bill Details:',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.grey,
+                            ),
+                          ),
                           const SizedBox(height: 4),
-                          Text('Date: ${purchase.purchaseDate.day}/${purchase.purchaseDate.month}/${purchase.purchaseDate.year}'),
+                          Text(
+                            'Date: ${purchase.purchaseDate.day}/${purchase.purchaseDate.month}/${purchase.purchaseDate.year}',
+                          ),
                           Text('Payment Mode: ${purchase.paymentMode}'),
                           if (purchase.isDebitNote)
-                            Text('Original Bill: ${purchase.originalPurchaseId}', style: const TextStyle(color: Colors.red)),
+                            Text(
+                              'Original Bill: ${purchase.originalPurchaseId}',
+                              style: const TextStyle(color: Colors.red),
+                            ),
                         ],
                       );
 
@@ -243,10 +329,7 @@ class _PurchaseDetailPageState extends ConsumerState<PurchaseDetailPage> {
                     },
                   ),
                 ),
-
                 const SizedBox(height: AppSpacing.md),
-
-                // Items list
                 AppCard(
                   padding: EdgeInsets.zero,
                   child: AppTable<PurchaseItem>(
@@ -256,7 +339,10 @@ class _PurchaseDetailPageState extends ConsumerState<PurchaseDetailPage> {
                       TableColumnSpec<PurchaseItem>(
                         label: 'Product Name',
                         flex: 2,
-                        cellBuilder: (it) => Text(it.name, style: const TextStyle(fontWeight: FontWeight.bold)),
+                        cellBuilder: (it) => Text(
+                          it.name,
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
                       ),
                       TableColumnSpec<PurchaseItem>(
                         label: 'HSN Code',
@@ -265,39 +351,45 @@ class _PurchaseDetailPageState extends ConsumerState<PurchaseDetailPage> {
                       TableColumnSpec<PurchaseItem>(
                         label: 'Quantity',
                         isNumeric: true,
-                        cellBuilder: (it) => Text('${it.quantity} ${it.unit}'),
+                        cellBuilder: (it) =>
+                            Text('${it.quantity} ${it.unit}'),
                       ),
                       TableColumnSpec<PurchaseItem>(
                         label: 'Rate',
                         isNumeric: true,
-                        cellBuilder: (it) => Text('₹${it.rate.toStringAsFixed(2)}'),
+                        cellBuilder: (it) =>
+                            Text('₹${it.rate.toStringAsFixed(2)}'),
                       ),
                       TableColumnSpec<PurchaseItem>(
                         label: 'Discount',
                         isNumeric: true,
-                        cellBuilder: (it) => Text('${it.discountPercentage.toStringAsFixed(0)}%'),
+                        cellBuilder: (it) => Text(
+                          '${it.discountPercentage.toStringAsFixed(0)}%',
+                        ),
                       ),
                       TableColumnSpec<PurchaseItem>(
                         label: 'Taxable Val',
                         isNumeric: true,
-                        cellBuilder: (it) => Text('₹${it.taxableValue.toStringAsFixed(2)}'),
+                        cellBuilder: (it) => Text(
+                          '₹${it.taxableValue.toStringAsFixed(2)}',
+                        ),
                       ),
                       TableColumnSpec<PurchaseItem>(
                         label: 'GST Rate',
-                        cellBuilder: (it) => Text('${it.gstRate.toStringAsFixed(0)}%'),
+                        cellBuilder: (it) =>
+                            Text('${it.gstRate.toStringAsFixed(0)}%'),
                       ),
                       TableColumnSpec<PurchaseItem>(
                         label: 'GST Amt',
                         isNumeric: true,
-                        cellBuilder: (it) => Text('₹${(it.cgst + it.sgst + it.igst).toStringAsFixed(2)}'),
+                        cellBuilder: (it) => Text(
+                          '₹${(it.cgst + it.sgst + it.igst).toStringAsFixed(2)}',
+                        ),
                       ),
                     ],
                   ),
                 ),
-
                 const SizedBox(height: AppSpacing.md),
-
-                // Totals
                 LayoutBuilder(
                   builder: (context, constraints) {
                     final isSmall = constraints.maxWidth < 700;
@@ -306,9 +398,16 @@ class _PurchaseDetailPageState extends ConsumerState<PurchaseDetailPage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text('Audit & Notes:', style: TextStyle(fontWeight: FontWeight.bold)),
+                          const Text(
+                            'Audit & Notes:',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
                           const SizedBox(height: 4),
-                          Text(purchase.notes.isNotEmpty ? purchase.notes : 'No audit details specified.'),
+                          Text(
+                            purchase.notes.isNotEmpty
+                                ? purchase.notes
+                                : 'No audit details specified.',
+                          ),
                         ],
                       ),
                     );
@@ -316,19 +415,51 @@ class _PurchaseDetailPageState extends ConsumerState<PurchaseDetailPage> {
                     final totalsWidget = AppCard(
                       child: Column(
                         children: [
-                          _buildSummaryRow('Taxable Amount:', '₹${purchase.taxableAmount.toStringAsFixed(2)}'),
-                          if (purchase.cgst > 0) _buildSummaryRow('CGST Amount:', '₹${purchase.cgst.toStringAsFixed(2)}'),
-                          if (purchase.sgst > 0) _buildSummaryRow('SGST Amount:', '₹${purchase.sgst.toStringAsFixed(2)}'),
-                          if (purchase.igst > 0) _buildSummaryRow('IGST Amount:', '₹${purchase.igst.toStringAsFixed(2)}'),
-                          if (purchase.cess > 0) _buildSummaryRow('Cess Amount:', '₹${purchase.cess.toStringAsFixed(2)}'),
-                          _buildSummaryRow('Freight Charges:', '₹${purchase.freightCharges.toStringAsFixed(2)}'),
-                          _buildSummaryRow('Other Charges:', '₹${purchase.otherCharges.toStringAsFixed(2)}'),
-                          _buildSummaryRow('Round Off:', '₹${purchase.roundOff.toStringAsFixed(2)}'),
+                          _buildSummaryRow(
+                            'Taxable Amount:',
+                            '₹${purchase.taxableAmount.toStringAsFixed(2)}',
+                          ),
+                          if (purchase.cgst > 0)
+                            _buildSummaryRow(
+                              'CGST Amount:',
+                              '₹${purchase.cgst.toStringAsFixed(2)}',
+                            ),
+                          if (purchase.sgst > 0)
+                            _buildSummaryRow(
+                              'SGST Amount:',
+                              '₹${purchase.sgst.toStringAsFixed(2)}',
+                            ),
+                          if (purchase.igst > 0)
+                            _buildSummaryRow(
+                              'IGST Amount:',
+                              '₹${purchase.igst.toStringAsFixed(2)}',
+                            ),
+                          if (purchase.cess > 0)
+                            _buildSummaryRow(
+                              'Cess Amount:',
+                              '₹${purchase.cess.toStringAsFixed(2)}',
+                            ),
+                          _buildSummaryRow(
+                            'Freight Charges:',
+                            '₹${purchase.freightCharges.toStringAsFixed(2)}',
+                          ),
+                          _buildSummaryRow(
+                            'Other Charges:',
+                            '₹${purchase.otherCharges.toStringAsFixed(2)}',
+                          ),
+                          _buildSummaryRow(
+                            'Round Off:',
+                            '₹${purchase.roundOff.toStringAsFixed(2)}',
+                          ),
                           const Divider(),
                           _buildSummaryRow(
                             'Grand Total:',
                             '₹${purchase.grandTotal.toStringAsFixed(2)}',
-                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.blue),
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.blue,
+                            ),
                           ),
                           _buildSummaryRow(
                             'Payable Remaining:',
@@ -336,7 +467,11 @@ class _PurchaseDetailPageState extends ConsumerState<PurchaseDetailPage> {
                             style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.bold,
-                              color: purchase.balanceAmount > 0 && purchase.status != PurchaseStatus.cancelled ? Colors.red : Colors.green,
+                              color: purchase.balanceAmount > 0 &&
+                                      purchase.status !=
+                                          PurchaseStatus.cancelled
+                                  ? Colors.red
+                                  : Colors.green,
                             ),
                           ),
                         ],
@@ -363,10 +498,7 @@ class _PurchaseDetailPageState extends ConsumerState<PurchaseDetailPage> {
                     );
                   },
                 ),
-
                 const SizedBox(height: AppSpacing.lg),
-
-                // Cancel Bill action
                 if (purchase.status != PurchaseStatus.cancelled) ...[
                   Row(
                     mainAxisAlignment: MainAxisAlignment.end,
@@ -380,7 +512,9 @@ class _PurchaseDetailPageState extends ConsumerState<PurchaseDetailPage> {
                             context: context,
                             builder: (ctx) => AlertDialog(
                               title: const Text('Cancel Purchase Bill'),
-                              content: Text('Are you sure you want to cancel bill ${purchase.purchaseNumber}? This will reverse all stock increases and ledger balances.'),
+                              content: Text(
+                                'Are you sure you want to cancel bill ${purchase.purchaseNumber}? This will reverse all stock increases and ledger balances.',
+                              ),
                               actions: [
                                 TextButton(
                                   child: const Text('Back'),
@@ -390,10 +524,35 @@ class _PurchaseDetailPageState extends ConsumerState<PurchaseDetailPage> {
                                   label: 'Confirm Cancellation',
                                   type: AppButtonType.danger,
                                   onPressed: () async {
-                                    await ref.read(billingRepositoryProvider.notifier).cancelPurchase(purchase.id);
-                                    if (mounted) {
-                                      Navigator.pop(ctx);
-                                      AppFeedback.showSnackbar(context, message: 'Purchase bill cancelled and balances reversed!');
+                                    try {
+                                      await ref
+                                          .read(purchaseProvider.notifier)
+                                          .cancelPurchase(purchase.id);
+                                      ref.invalidate(
+                                        purchaseDetailProvider(
+                                          widget.purchaseId,
+                                        ),
+                                      );
+                                      if (mounted) {
+                                        Navigator.pop(ctx);
+                                        AppFeedback.showSnackbar(
+                                          context,
+                                          message:
+                                              'Purchase bill cancelled and balances reversed!',
+                                        );
+                                      }
+                                    } catch (e) {
+                                      if (mounted) {
+                                        Navigator.pop(ctx);
+                                        AppFeedback.showSnackbar(
+                                          context,
+                                          message: e
+                                              .toString()
+                                              .replaceAll('Exception:', '')
+                                              .trim(),
+                                          isError: true,
+                                        );
+                                      }
                                     }
                                   },
                                 ),
@@ -420,7 +579,10 @@ class _PurchaseDetailPageState extends ConsumerState<PurchaseDetailPage> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(label, style: style ?? const TextStyle(color: Colors.grey)),
-          Text(value, style: style ?? const TextStyle(fontWeight: FontWeight.w600)),
+          Text(
+            value,
+            style: style ?? const TextStyle(fontWeight: FontWeight.w600),
+          ),
         ],
       ),
     );
