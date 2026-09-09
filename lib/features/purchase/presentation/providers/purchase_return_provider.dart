@@ -1,5 +1,13 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../data/models/purchase_return_dto.dart';
+import '../../data/services/purchase_return_api_service.dart';
 import '../../domain/models/purchase_return_model.dart';
+
+final purchaseReturnApiServiceProvider = Provider<PurchaseReturnApiService>((ref) {
+  final apiClient = ref.watch(apiClientProvider);
+  return PurchaseReturnApiService(apiClient);
+});
 
 class PurchaseReturnFilterState {
   final String searchQuery;
@@ -33,225 +41,205 @@ class PurchaseReturnFilterState {
   }
 }
 
-class PurchaseReturnNotifier extends StateNotifier<List<PurchaseReturn>> {
-  PurchaseReturnNotifier() : super(_initialMockReturns);
+class PurchaseReturnListState {
+  final List<PurchaseReturn> returns;
+  final bool isLoading;
+  final bool isSaving;
+  final String? error;
+  final PurchaseReturnMetricsDto? metrics;
+  final int total;
+  final int page;
+  final int limit;
+  final int totalPages;
 
-  static final List<PurchaseReturn> _initialMockReturns = [
-    PurchaseReturn(
-      id: 'pr_001',
-      debitNoteNumber: 'DN/26-27/001',
-      originalPurchaseId: 'pur_101',
-      originalPurchaseBillNumber: 'PUR-2026-0045',
-      supplierId: 'sup_01',
-      supplierName: 'Apex Electronics Ltd',
-      supplierGstin: '27AAAAA0000A1Z5',
-      returnDate: DateTime(2026, 5, 24),
-      items: const [
-        PurchaseReturnItem(
-          id: 'pri_01',
-          productId: 'prod_01',
-          productName: 'Wireless Bluetooth Headphones',
-          hsnCode: '85183000',
-          quantityReturned: 5,
-          unit: 'PCS',
-          unitPrice: 1500.0,
-          gstRate: 18.0,
-          taxAmount: 1350.0,
-          totalAmount: 8850.0,
-          returnReason: 'Defective Audio / Mic Issue',
-        ),
-        PurchaseReturnItem(
-          id: 'pri_02',
-          productId: 'prod_02',
-          productName: 'USB-C Fast Charging Cable 2M',
-          hsnCode: '85444299',
-          quantityReturned: 10,
-          unit: 'PCS',
-          unitPrice: 350.0,
-          gstRate: 18.0,
-          taxAmount: 630.0,
-          totalAmount: 4130.0,
-          returnReason: 'Damaged in transit packaging',
-        ),
-      ],
-      subtotal: 11000.00,
-      taxAmount: 1980.00,
-      totalAmount: 12980.00,
-      amountAdjusted: 12980.00,
-      status: PurchaseReturnStatus.adjusted,
-      returnReason: 'Defective and Damaged Goods',
-      notes: 'Debit Note issued and adjusted against next supplier invoice.',
-    ),
-    PurchaseReturn(
-      id: 'pr_002',
-      debitNoteNumber: 'DN/26-27/002',
-      originalPurchaseId: 'pur_102',
-      originalPurchaseBillNumber: 'PUR-2026-0052',
-      supplierId: 'sup_02',
-      supplierName: 'Global Traders Pvt Ltd',
-      supplierGstin: '29BBBBB1111B2Z6',
-      returnDate: DateTime(2026, 5, 22),
-      items: const [
-        PurchaseReturnItem(
-          id: 'pri_03',
-          productId: 'prod_03',
-          productName: 'Ultra HD 4K LED Monitor 27"',
-          hsnCode: '85285200',
-          quantityReturned: 2,
-          unit: 'PCS',
-          unitPrice: 18000.0,
-          gstRate: 18.0,
-          taxAmount: 6480.0,
-          totalAmount: 42480.0,
-          returnReason: 'Dead pixels on screen display',
-        ),
-      ],
-      subtotal: 36000.00,
-      taxAmount: 6480.00,
-      totalAmount: 42480.00,
-      amountAdjusted: 0.0,
-      status: PurchaseReturnStatus.confirmed,
-      returnReason: 'Screen defect found during QA testing',
-      notes: 'Awaiting supplier credit approval or bank refund.',
-    ),
-    PurchaseReturn(
-      id: 'pr_003',
-      debitNoteNumber: 'DN/26-27/003',
-      originalPurchaseId: 'pur_103',
-      originalPurchaseBillNumber: 'PUR-2026-0060',
-      supplierId: 'sup_03',
-      supplierName: 'Vertex Logistics & Supplies',
-      supplierGstin: '07CCCCC2222C3Z7',
-      returnDate: DateTime(2026, 5, 20),
-      items: const [
-        PurchaseReturnItem(
-          id: 'pri_04',
-          productId: 'prod_04',
-          productName: 'Ergonomic Mesh Office Chair',
-          hsnCode: '94013000',
-          quantityReturned: 4,
-          unit: 'PCS',
-          unitPrice: 5500.0,
-          gstRate: 18.0,
-          taxAmount: 3960.0,
-          totalAmount: 25960.0,
-          returnReason: 'Wrong color model supplied',
-        ),
-      ],
-      subtotal: 22000.00,
-      taxAmount: 3960.00,
-      totalAmount: 25960.00,
-      amountAdjusted: 25960.00,
-      status: PurchaseReturnStatus.refunded,
-      returnReason: 'Incorrect specification delivered',
-      notes: 'Supplier refunded amount via NEFT.',
-    ),
-    PurchaseReturn(
-      id: 'pr_004',
-      debitNoteNumber: 'DN/26-27/004',
-      originalPurchaseId: 'pur_104',
-      originalPurchaseBillNumber: 'PUR-2026-0068',
-      supplierId: 'sup_04',
-      supplierName: 'Premier Wholesale Distributors',
-      supplierGstin: '19DDDDD3333D4Z8',
-      returnDate: DateTime(2026, 5, 18),
-      items: const [
-        PurchaseReturnItem(
-          id: 'pri_05',
-          productId: 'prod_05',
-          productName: 'Mechanical Gaming Keyboard RGB',
-          hsnCode: '84716060',
-          quantityReturned: 6,
-          unit: 'PCS',
-          unitPrice: 2200.0,
-          gstRate: 18.0,
-          taxAmount: 2376.0,
-          totalAmount: 15576.0,
-          returnReason: 'Key switches not functioning',
-        ),
-      ],
-      subtotal: 13200.00,
-      taxAmount: 2376.00,
-      totalAmount: 15576.00,
-      amountAdjusted: 0.0,
-      status: PurchaseReturnStatus.draft,
-      returnReason: 'Defective batches',
-      notes: 'Draft debit note created for review.',
-    ),
-    PurchaseReturn(
-      id: 'pr_005',
-      debitNoteNumber: 'DN/26-27/005',
-      originalPurchaseId: 'pur_105',
-      originalPurchaseBillNumber: 'PUR-2026-0074',
-      supplierId: 'sup_05',
-      supplierName: 'Om Paper Products & Stationery',
-      supplierGstin: '24EEEEE4444E5Z9',
-      returnDate: DateTime(2026, 5, 15),
-      items: const [
-        PurchaseReturnItem(
-          id: 'pri_06',
-          productId: 'prod_06',
-          productName: 'A4 Copier Paper 75 GSM (Box of 5)',
-          hsnCode: '48025690',
-          quantityReturned: 20,
-          unit: 'BOX',
-          unitPrice: 1100.0,
-          gstRate: 12.0,
-          taxAmount: 2640.0,
-          totalAmount: 24640.0,
-          returnReason: 'Water damaged outer boxes',
-        ),
-      ],
-      subtotal: 22000.00,
-      taxAmount: 2640.00,
-      totalAmount: 24640.00,
-      amountAdjusted: 24640.00,
-      status: PurchaseReturnStatus.adjusted,
-      returnReason: 'Water damage in monsoon transit',
-      notes: 'Offset against current outstanding balance.',
-    ),
-  ];
+  const PurchaseReturnListState({
+    this.returns = const [],
+    this.isLoading = false,
+    this.isSaving = false,
+    this.error,
+    this.metrics,
+    this.total = 0,
+    this.page = 1,
+    this.limit = 50,
+    this.totalPages = 1,
+  });
 
-  void addReturn(PurchaseReturn item) {
-    state = [item, ...state];
-  }
-
-  void updateReturn(PurchaseReturn item) {
-    state = state.map((r) => r.id == item.id ? item : r).toList();
-  }
-
-  void deleteReturn(String id) {
-    state = state.where((r) => r.id != id).toList();
-  }
-
-  void updateStatus(String id, PurchaseReturnStatus status) {
-    state = state.map((r) {
-      if (r.id == id) {
-        return r.copyWith(status: status);
-      }
-      return r;
-    }).toList();
+  PurchaseReturnListState copyWith({
+    List<PurchaseReturn>? returns,
+    bool? isLoading,
+    bool? isSaving,
+    String? error,
+    bool clearError = false,
+    PurchaseReturnMetricsDto? metrics,
+    int? total,
+    int? page,
+    int? limit,
+    int? totalPages,
+  }) {
+    return PurchaseReturnListState(
+      returns: returns ?? this.returns,
+      isLoading: isLoading ?? this.isLoading,
+      isSaving: isSaving ?? this.isSaving,
+      error: clearError ? null : (error ?? this.error),
+      metrics: metrics ?? this.metrics,
+      total: total ?? this.total,
+      page: page ?? this.page,
+      limit: limit ?? this.limit,
+      totalPages: totalPages ?? this.totalPages,
+    );
   }
 }
 
-final purchaseReturnsProvider =
-    StateNotifierProvider<PurchaseReturnNotifier, List<PurchaseReturn>>((ref) {
-  return PurchaseReturnNotifier();
+class PurchaseReturnListNotifier extends StateNotifier<PurchaseReturnListState> {
+  final PurchaseReturnApiService _apiService;
+  final Ref _ref;
+
+  PurchaseReturnListNotifier(this._apiService, this._ref)
+      : super(const PurchaseReturnListState()) {
+    loadReturns();
+  }
+
+  Future<void> loadReturns({bool refresh = false}) async {
+    final filter = _ref.read(purchaseReturnFilterProvider);
+    state = state.copyWith(isLoading: true, clearError: true);
+    try {
+      final res = await _apiService.getPurchaseReturns(
+        search: filter.searchQuery.isNotEmpty ? filter.searchQuery : null,
+        status: filter.selectedStatus,
+        page: filter.currentPage,
+        limit: filter.rowsPerPage,
+      );
+
+      PurchaseReturnMetricsDto? metrics;
+      try {
+        metrics = await _apiService.getMetrics();
+      } catch (_) {}
+
+      state = state.copyWith(
+        returns: res.returns,
+        total: res.total,
+        page: res.page,
+        limit: res.limit,
+        totalPages: res.totalPages,
+        metrics: metrics,
+        isLoading: false,
+        clearError: true,
+      );
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        error: e.toString().replaceAll('Exception:', '').trim(),
+      );
+    }
+  }
+
+  Future<PurchaseReturn?> createReturn(
+    PurchaseReturn item, {
+    PurchaseReturnStatus saveAs = PurchaseReturnStatus.confirmed,
+  }) async {
+    state = state.copyWith(isSaving: true, clearError: true);
+    try {
+      final created = await _apiService.createPurchaseReturn(
+        item,
+        saveAs: saveAs,
+      );
+      state = state.copyWith(
+        returns: [created, ...state.returns],
+        isSaving: false,
+      );
+      await loadReturns(refresh: true);
+      return created;
+    } catch (e) {
+      state = state.copyWith(
+        isSaving: false,
+        error: e.toString().replaceAll('Exception:', '').trim(),
+      );
+      rethrow;
+    }
+  }
+
+  Future<void> updateStatus(String id, PurchaseReturnStatus status) async {
+    try {
+      final updated = await _apiService.updateStatus(id, status);
+      state = state.copyWith(
+        returns: state.returns
+            .map((r) => r.id == id ? updated : r)
+            .toList(),
+      );
+      await loadReturns(refresh: true);
+    } catch (e) {
+      state = state.copyWith(
+        error: e.toString().replaceAll('Exception:', '').trim(),
+      );
+      rethrow;
+    }
+  }
+
+  Future<void> deleteReturn(String id) async {
+    try {
+      await _apiService.deletePurchaseReturn(id);
+      state = state.copyWith(
+        returns: state.returns.where((r) => r.id != id).toList(),
+      );
+    } catch (e) {
+      state = state.copyWith(
+        error: e.toString().replaceAll('Exception:', '').trim(),
+      );
+      rethrow;
+    }
+  }
+}
+
+final purchaseReturnListProvider =
+    StateNotifierProvider<PurchaseReturnListNotifier, PurchaseReturnListState>(
+        (ref) {
+  final apiService = ref.watch(purchaseReturnApiServiceProvider);
+  return PurchaseReturnListNotifier(apiService, ref);
 });
 
-class PurchaseReturnFilterNotifier extends StateNotifier<PurchaseReturnFilterState> {
-  PurchaseReturnFilterNotifier() : super(const PurchaseReturnFilterState());
+/// Backward-compatible list of returns (same shape as older mock provider)
+final purchaseReturnsProvider = Provider<List<PurchaseReturn>>((ref) {
+  return ref.watch(purchaseReturnListProvider).returns;
+});
 
-  void setSearchQuery(String q) => state = state.copyWith(searchQuery: q, currentPage: 1);
-  void setSelectedStatus(String s) => state = state.copyWith(selectedStatus: s, currentPage: 1);
+class PurchaseReturnFilterNotifier
+    extends StateNotifier<PurchaseReturnFilterState> {
+  PurchaseReturnFilterNotifier(this._ref)
+      : super(const PurchaseReturnFilterState());
+
+  final Ref _ref;
+
+  void setSearchQuery(String q) {
+    state = state.copyWith(searchQuery: q, currentPage: 1);
+    _ref.read(purchaseReturnListProvider.notifier).loadReturns();
+  }
+
+  void setSelectedStatus(String s) {
+    state = state.copyWith(selectedStatus: s, currentPage: 1);
+    _ref.read(purchaseReturnListProvider.notifier).loadReturns();
+  }
+
   void setSortBy(String s) => state = state.copyWith(sortBy: s);
-  void setPage(int p) => state = state.copyWith(currentPage: p);
-  void reset() => state = const PurchaseReturnFilterState();
+
+  void setPage(int p) {
+    state = state.copyWith(currentPage: p);
+    _ref.read(purchaseReturnListProvider.notifier).loadReturns();
+  }
+
+  void setRowsPerPage(int n) {
+    state = state.copyWith(rowsPerPage: n, currentPage: 1);
+    _ref.read(purchaseReturnListProvider.notifier).loadReturns();
+  }
+
+  void reset() {
+    state = const PurchaseReturnFilterState();
+    _ref.read(purchaseReturnListProvider.notifier).loadReturns();
+  }
 }
 
-final purchaseReturnFilterProvider =
-    StateNotifierProvider<PurchaseReturnFilterNotifier, PurchaseReturnFilterState>((ref) {
-  return PurchaseReturnFilterNotifier();
+final purchaseReturnFilterProvider = StateNotifierProvider<
+    PurchaseReturnFilterNotifier, PurchaseReturnFilterState>((ref) {
+  return PurchaseReturnFilterNotifier(ref);
 });
 
 class PurchaseReturnMetrics {
@@ -271,37 +259,13 @@ class PurchaseReturnMetrics {
 }
 
 final purchaseReturnMetricsProvider = Provider<PurchaseReturnMetrics>((ref) {
-  final allReturns = ref.watch(purchaseReturnsProvider);
+  final listState = ref.watch(purchaseReturnListProvider);
   final filter = ref.watch(purchaseReturnFilterProvider);
-
-  final totalCount = allReturns.length;
-  final totalValue = allReturns.fold(0.0, (sum, r) => sum + r.totalAmount);
-  final adjusted = allReturns
-      .where((r) => r.status == PurchaseReturnStatus.adjusted || r.status == PurchaseReturnStatus.refunded)
-      .fold(0.0, (sum, r) => sum + r.amountAdjusted);
-  final pending = allReturns
-      .where((r) => r.status == PurchaseReturnStatus.confirmed || r.status == PurchaseReturnStatus.draft)
-      .fold(0.0, (sum, r) => sum + (r.totalAmount - r.amountAdjusted));
+  final allReturns = listState.returns;
+  final apiMetrics = listState.metrics;
 
   var filtered = List<PurchaseReturn>.from(allReturns);
 
-  // Status filter
-  if (filter.selectedStatus != 'All') {
-    filtered = filtered.where((r) => r.status.name.toLowerCase() == filter.selectedStatus.toLowerCase()).toList();
-  }
-
-  // Search filter
-  if (filter.searchQuery.isNotEmpty) {
-    final q = filter.searchQuery.toLowerCase();
-    filtered = filtered.where((r) {
-      return r.debitNoteNumber.toLowerCase().contains(q) ||
-          r.originalPurchaseBillNumber.toLowerCase().contains(q) ||
-          r.supplierName.toLowerCase().contains(q) ||
-          r.returnReason.toLowerCase().contains(q);
-    }).toList();
-  }
-
-  // Sort
   if (filter.sortBy == 'Date (Newest)') {
     filtered.sort((a, b) => b.returnDate.compareTo(a.returnDate));
   } else if (filter.sortBy == 'Date (Oldest)') {
@@ -313,10 +277,25 @@ final purchaseReturnMetricsProvider = Provider<PurchaseReturnMetrics>((ref) {
   }
 
   return PurchaseReturnMetrics(
-    totalReturnsCount: totalCount,
-    totalReturnValue: totalValue,
-    adjustedAgainstBills: adjusted,
-    pendingRefunds: pending,
+    totalReturnsCount:
+        apiMetrics?.totalReturnsCount ?? listState.total,
+    totalReturnValue: apiMetrics?.totalReturnValue ??
+        allReturns.fold(0.0, (sum, r) => sum + r.totalAmount),
+    adjustedAgainstBills: apiMetrics?.adjustedAgainstBills ??
+        allReturns
+            .where((r) =>
+                r.status == PurchaseReturnStatus.adjusted ||
+                r.status == PurchaseReturnStatus.refunded)
+            .fold(0.0, (sum, r) => sum + r.amountAdjusted),
+    pendingRefunds: apiMetrics?.pendingRefunds ??
+        allReturns
+            .where((r) =>
+                r.status == PurchaseReturnStatus.confirmed ||
+                r.status == PurchaseReturnStatus.draft)
+            .fold(
+              0.0,
+              (sum, r) => sum + (r.totalAmount - r.amountAdjusted),
+            ),
     filteredItems: filtered,
   );
 });

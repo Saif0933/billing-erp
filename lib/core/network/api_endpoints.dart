@@ -79,4 +79,7 @@ class ApiEndpoints {
 
   // Purchase Bills (backend: module/purchase/purchase-bill)
   static const String purchases = '/api/v1/purchases';
+
+  // Purchase Returns / Debit Notes (backend: module/purchase/purchaseReturn)
+  static const String purchaseReturns = '/api/v1/purchase-returns';
 }

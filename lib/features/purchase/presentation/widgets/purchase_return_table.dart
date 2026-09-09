@@ -135,7 +135,9 @@ class PurchaseReturnTable extends ConsumerWidget {
                                   DropdownMenuItem(value: 20, child: Text('20')),
                                 ],
                                 onChanged: (val) {
-                                  if (val != null) notifier.setPage(1);
+                                  if (val != null) {
+                                    notifier.setRowsPerPage(val);
+                                  }
                                 },
                               ),
                             ),
@@ -317,18 +319,65 @@ class PurchaseReturnTable extends ConsumerWidget {
                     color: isDark ? Colors.white54 : const Color(0xFF94A3B8),
                   ),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                  onSelected: (val) {
+                  onSelected: (val) async {
                     if (val == 'view') {
                       PurchaseReturnDetailDialog.show(context, item);
                     } else if (val == 'confirm') {
-                      ref.read(purchaseReturnsProvider.notifier).updateStatus(item.id, PurchaseReturnStatus.confirmed);
-                      AppFeedback.showSnackbar(context, message: 'Debit Note ${item.debitNoteNumber} Confirmed!');
+                      try {
+                        await ref
+                            .read(purchaseReturnListProvider.notifier)
+                            .updateStatus(item.id, PurchaseReturnStatus.confirmed);
+                        if (context.mounted) {
+                          AppFeedback.showSnackbar(context,
+                              message:
+                                  'Debit Note ${item.debitNoteNumber} Confirmed!');
+                        }
+                      } catch (e) {
+                        if (context.mounted) {
+                          AppFeedback.showSnackbar(
+                            context,
+                            message:
+                                e.toString().replaceAll('Exception:', '').trim(),
+                          );
+                        }
+                      }
                     } else if (val == 'adjust') {
-                      ref.read(purchaseReturnsProvider.notifier).updateStatus(item.id, PurchaseReturnStatus.adjusted);
-                      AppFeedback.showSnackbar(context, message: 'Debit Note adjusted against supplier payable!');
+                      try {
+                        await ref
+                            .read(purchaseReturnListProvider.notifier)
+                            .updateStatus(item.id, PurchaseReturnStatus.adjusted);
+                        if (context.mounted) {
+                          AppFeedback.showSnackbar(context,
+                              message:
+                                  'Debit Note adjusted against supplier payable!');
+                        }
+                      } catch (e) {
+                        if (context.mounted) {
+                          AppFeedback.showSnackbar(
+                            context,
+                            message:
+                                e.toString().replaceAll('Exception:', '').trim(),
+                          );
+                        }
+                      }
                     } else if (val == 'cancel') {
-                      ref.read(purchaseReturnsProvider.notifier).updateStatus(item.id, PurchaseReturnStatus.cancelled);
-                      AppFeedback.showSnackbar(context, message: 'Debit Note Cancelled!');
+                      try {
+                        await ref
+                            .read(purchaseReturnListProvider.notifier)
+                            .updateStatus(item.id, PurchaseReturnStatus.cancelled);
+                        if (context.mounted) {
+                          AppFeedback.showSnackbar(context,
+                              message: 'Debit Note Cancelled!');
+                        }
+                      } catch (e) {
+                        if (context.mounted) {
+                          AppFeedback.showSnackbar(
+                            context,
+                            message:
+                                e.toString().replaceAll('Exception:', '').trim(),
+                          );
+                        }
+                      }
                     }
                   },
                   itemBuilder: (ctx) => [
