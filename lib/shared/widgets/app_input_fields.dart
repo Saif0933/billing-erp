@@ -20,6 +20,8 @@ class AppTextField extends StatelessWidget {
   final VoidCallback? onTap;
   final int maxLines;
   final void Function(String)? onChanged;
+  final void Function(String)? onFieldSubmitted;
+  final FocusNode? focusNode;
 
   const AppTextField({
     super.key,
@@ -36,6 +38,8 @@ class AppTextField extends StatelessWidget {
     this.onTap,
     this.maxLines = 1,
     this.onChanged,
+    this.onFieldSubmitted,
+    this.focusNode,
   });
 
   @override
@@ -56,6 +60,7 @@ class AppTextField extends StatelessWidget {
         const SizedBox(height: AppSpacing.xs),
         TextFormField(
           controller: controller,
+          focusNode: focusNode,
           obscureText: obscureText,
           keyboardType: keyboardType,
           validator: validator,
@@ -64,6 +69,7 @@ class AppTextField extends StatelessWidget {
           onTap: onTap,
           maxLines: maxLines,
           onChanged: onChanged,
+          onFieldSubmitted: onFieldSubmitted,
           style: AppTypography.bodyMedium.copyWith(
             color: isDark
                 ? AppColors.textDarkPrimary

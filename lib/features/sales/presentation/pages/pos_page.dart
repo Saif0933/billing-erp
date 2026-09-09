@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_colors.dart';
@@ -37,9 +38,15 @@ class _POSPageState extends ConsumerState<POSPage> {
   bool _isOpenSessionDialogShown = false;
   bool _isLeavingToDashboard = false;
 
+  final StringBuffer _hardwareScanBuffer = StringBuffer();
+  DateTime _lastHardwareKeyTime = DateTime.now();
+  String? _lastHandledBarcode;
+  DateTime? _lastHandledScanTime;
+
   @override
   void initState() {
     super.initState();
+    HardwareKeyboard.instance.addHandler(_handleGlobalHardwareKey);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(posNotifierProvider.notifier).refreshCatalog();
       ref.read(posNotifierProvider.notifier).checkActiveSession();
@@ -47,13 +54,85 @@ class _POSPageState extends ConsumerState<POSPage> {
     });
   }
 
+  String? _getCharFromLogicalKey(LogicalKeyboardKey key) {
+    if (key == LogicalKeyboardKey.digit0 || key == LogicalKeyboardKey.numpad0) return '0';
+    if (key == LogicalKeyboardKey.digit1 || key == LogicalKeyboardKey.numpad1) return '1';
+    if (key == LogicalKeyboardKey.digit2 || key == LogicalKeyboardKey.numpad2) return '2';
+    if (key == LogicalKeyboardKey.digit3 || key == LogicalKeyboardKey.numpad3) return '3';
+    if (key == LogicalKeyboardKey.digit4 || key == LogicalKeyboardKey.numpad4) return '4';
+    if (key == LogicalKeyboardKey.digit5 || key == LogicalKeyboardKey.numpad5) return '5';
+    if (key == LogicalKeyboardKey.digit6 || key == LogicalKeyboardKey.numpad6) return '6';
+    if (key == LogicalKeyboardKey.digit7 || key == LogicalKeyboardKey.numpad7) return '7';
+    if (key == LogicalKeyboardKey.digit8 || key == LogicalKeyboardKey.numpad8) return '8';
+    if (key == LogicalKeyboardKey.digit9 || key == LogicalKeyboardKey.numpad9) return '9';
+    if (key == LogicalKeyboardKey.minus || key == LogicalKeyboardKey.numpadSubtract) return '-';
+    if (key == LogicalKeyboardKey.period || key == LogicalKeyboardKey.numpadDecimal) return '.';
+    if (key == LogicalKeyboardKey.slash || key == LogicalKeyboardKey.numpadDivide) return '/';
+    if (key.keyLabel.length == 1) return key.keyLabel;
+    return null;
+  }
+
+  bool _handleGlobalHardwareKey(KeyEvent event) {
+    if (event is! KeyDownEvent) return false;
+
+    final now = DateTime.now();
+    final elapsedMs = now.difference(_lastHardwareKeyTime).inMilliseconds;
+    _lastHardwareKeyTime = now;
+
+    final isEnter = event.logicalKey == LogicalKeyboardKey.enter ||
+        event.logicalKey == LogicalKeyboardKey.numpadEnter ||
+        event.character == '\n' ||
+        event.character == '\r';
+
+    if (isEnter) {
+      final bufferBarcode = _hardwareScanBuffer.toString().trim();
+      _hardwareScanBuffer.clear();
+
+      final inputBarcode = _searchController.text.trim();
+      final codeToProcess = bufferBarcode.isNotEmpty ? bufferBarcode : inputBarcode;
+
+      if (codeToProcess.length >= 2) {
+        _onBarcodeScanned(codeToProcess);
+        return true;
+      }
+      return false;
+    }
+
+    String? char = event.character;
+    if (char == null || char.isEmpty || char == '\u0000') {
+      char = _getCharFromLogicalKey(event.logicalKey);
+    }
+
+    if (char != null && char.isNotEmpty && RegExp(r'^[A-Za-z0-9\-_./]$').hasMatch(char)) {
+      if (elapsedMs > 450) {
+        _hardwareScanBuffer.clear();
+      }
+      _hardwareScanBuffer.write(char);
+      return false;
+    }
+
+    return false;
+  }
+
   Future<void> _onBarcodeScanned(String barcode) async {
     final trimmed = barcode.trim();
     if (trimmed.isEmpty) return;
+
+    final now = DateTime.now();
+    if (_lastHandledBarcode == trimmed &&
+        _lastHandledScanTime != null &&
+        now.difference(_lastHandledScanTime!).inMilliseconds < 600) {
+      return;
+    }
+    _lastHandledBarcode = trimmed;
+    _lastHandledScanTime = now;
+
+    _hardwareScanBuffer.clear();
+    _searchController.clear();
+
     final added =
         await ref.read(posNotifierProvider.notifier).scanBarcodeAndAdd(trimmed);
     if (added) {
-      _searchController.clear();
       if (mounted) {
         AppFeedback.showSnackbar(
           context,
@@ -73,6 +152,7 @@ class _POSPageState extends ConsumerState<POSPage> {
 
   @override
   void dispose() {
+    HardwareKeyboard.instance.removeHandler(_handleGlobalHardwareKey);
     _searchController.dispose();
     _openingCashController.dispose();
     _closingCashController.dispose();
@@ -653,6 +733,7 @@ class _POSPageState extends ConsumerState<POSPage> {
                     onPressed: () => _onBarcodeScanned(_searchController.text),
                   ),
                   onChanged: (_) => setState(() {}),
+                  onFieldSubmitted: (val) => _onBarcodeScanned(val),
                 ),
                 const SizedBox(height: AppSpacing.sm),
                 AppDropdownField<String>(
@@ -681,6 +762,7 @@ class _POSPageState extends ConsumerState<POSPage> {
                       onPressed: () => _onBarcodeScanned(_searchController.text),
                     ),
                     onChanged: (_) => setState(() {}),
+                    onFieldSubmitted: (val) => _onBarcodeScanned(val),
                   ),
                 ),
                 const SizedBox(width: 8),

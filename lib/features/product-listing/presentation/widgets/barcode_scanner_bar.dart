@@ -9,11 +9,13 @@ import 'scanner_status_badge.dart';
 class BarcodeScannerBar extends ConsumerStatefulWidget {
   final FocusNode focusNode;
   final TextEditingController controller;
+  final ValueChanged<String>? onBarcodeSubmitted;
 
   const BarcodeScannerBar({
     super.key,
     required this.focusNode,
     required this.controller,
+    this.onBarcodeSubmitted,
   });
 
   @override
@@ -51,6 +53,11 @@ class _BarcodeScannerBarState extends ConsumerState<BarcodeScannerBar> {
 
     // Ensure focus is kept on scanner field
     widget.focusNode.requestFocus();
+
+    if (widget.onBarcodeSubmitted != null) {
+      widget.onBarcodeSubmitted!(raw);
+      return;
+    }
 
     final result = await ref.read(billingCartProvider.notifier).processBarcode(raw);
 

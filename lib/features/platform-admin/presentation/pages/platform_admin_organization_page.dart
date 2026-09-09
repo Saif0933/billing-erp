@@ -61,6 +61,7 @@ class _PlatformAdminOrganizationPageState
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
                       Container(
                         width: 3,
@@ -71,16 +72,12 @@ class _PlatformAdminOrganizationPageState
                         ),
                       ),
                       const SizedBox(width: 10),
-                      Flexible(
-                        child: Text(
-                          'Tenant Organization Directory',
-                          style: TextStyle(
-                            fontSize: isSmall ? 20 : 22,
-                            fontWeight: FontWeight.w700,
-                            color: isDark ? Colors.white : const Color(0xFF0F172A),
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                      Text(
+                        'Tenant Organization Directory',
+                        style: TextStyle(
+                          fontSize: isSmall ? 20 : 22,
+                          fontWeight: FontWeight.w700,
+                          color: isDark ? Colors.white : const Color(0xFF0F172A),
                         ),
                       ),
                     ],
@@ -166,7 +163,8 @@ class _PlatformAdminOrganizationPageState
               return Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  titleSection,
+                  Expanded(child: titleSection),
+                  const SizedBox(width: 16),
                   actionButtons,
                 ],
               );

@@ -30,6 +30,7 @@ class _PlatformAdminOnboardingPageState extends ConsumerState<PlatformAdminOnboa
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   Container(
                     width: 3,
@@ -40,16 +41,12 @@ class _PlatformAdminOnboardingPageState extends ConsumerState<PlatformAdminOnboa
                     ),
                   ),
                   const SizedBox(width: 10),
-                  Flexible(
-                    child: Text(
-                      'Enterprise Onboarding',
-                      style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.w700,
-                        color: isDark ? Colors.white : const Color(0xFF0F172A),
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                  Text(
+                    'Enterprise Onboarding',
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w700,
+                      color: isDark ? Colors.white : const Color(0xFF0F172A),
                     ),
                   ),
                 ],

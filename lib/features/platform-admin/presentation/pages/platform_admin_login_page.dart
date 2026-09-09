@@ -46,6 +46,17 @@ class _PlatformAdminLoginPageState extends ConsumerState<PlatformAdminLoginPage>
       setState(() => _isLoading = false);
 
       if (success) {
+        final authState = ref.read(authProvider);
+        if (!authState.isPlatformAdmin) {
+          await ref.read(authProvider.notifier).logout();
+          if (!mounted) return;
+          AppFeedback.showSnackbar(
+            context,
+            message: 'Access Denied: This account does not possess Platform Administrator permissions.',
+            isError: true,
+          );
+          return;
+        }
         ref.read(platformAdminProvider.notifier).login(email, password);
         AppFeedback.showSnackbar(context, message: 'SuperAdmin Authentication Successful!');
         context.go('/platform-admin');
@@ -358,7 +369,7 @@ class _PlatformAdminLoginPageState extends ConsumerState<PlatformAdminLoginPage>
                 'Return to Tenant Billing App',
                 style: TextStyle(fontSize: 12.5, color: Color(0xFF818CF8), fontWeight: FontWeight.w600),
               ),
-              onPressed: () => context.go('/dashboard'),
+              onPressed: () => context.go('/login'),
             ),
           ),
         ],

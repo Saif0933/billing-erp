@@ -160,7 +160,10 @@ class ScannedProductsTable extends ConsumerWidget {
                         overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 2),
-                      Row(
+                      Wrap(
+                        spacing: 6,
+                        runSpacing: 2,
+                        crossAxisAlignment: WrapCrossAlignment.center,
                         children: [
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
@@ -181,14 +184,14 @@ class ScannedProductsTable extends ConsumerWidget {
                               ),
                             ),
                           ),
-                          const SizedBox(width: 6),
-                          Text(
-                            p.sku,
-                            style: TextStyle(
-                              fontSize: 10.5,
-                              color: isDark ? Colors.white38 : const Color(0xFF94A3B8),
+                          if (p.sku.isNotEmpty)
+                            Text(
+                              p.sku,
+                              style: TextStyle(
+                                fontSize: 10.5,
+                                color: isDark ? Colors.white38 : const Color(0xFF94A3B8),
+                              ),
                             ),
-                          ),
                         ],
                       ),
                     ],

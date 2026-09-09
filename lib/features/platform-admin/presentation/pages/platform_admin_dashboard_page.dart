@@ -26,7 +26,7 @@ class PlatformAdminDashboardPage extends ConsumerWidget {
               final isSmall = constraints.maxWidth < 600;
 
               final headerInfo = Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Row(
                     children: [
@@ -43,7 +43,7 @@ class PlatformAdminDashboardPage extends ConsumerWidget {
                         child: Text(
                           'Platform SuperAdmin',
                           style: TextStyle(
-                            fontSize: isSmall ? 20 : 22,
+                            fontSize: isSmall ? 18 : 22,
                             fontWeight: FontWeight.w700,
                             color: isDark ? Colors.white : const Color(0xFF0F172A),
                           ),
@@ -84,8 +84,9 @@ class PlatformAdminDashboardPage extends ConsumerWidget {
                 ],
               );
 
-              final actionButtons = Row(
-                mainAxisSize: MainAxisSize.min,
+              final actionButtons = Wrap(
+                spacing: 8,
+                runSpacing: 8,
                 children: [
                   OutlinedButton.icon(
                     style: OutlinedButton.styleFrom(
@@ -96,7 +97,6 @@ class PlatformAdminDashboardPage extends ConsumerWidget {
                     label: const Text('New Onboarding', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold)),
                     onPressed: () => notifier.setNavTab('onboarding'),
                   ),
-                  const SizedBox(width: 8),
                   ElevatedButton.icon(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF4F46E5),
@@ -113,7 +113,7 @@ class PlatformAdminDashboardPage extends ConsumerWidget {
 
               if (isSmall) {
                 return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     headerInfo,
                     const SizedBox(height: 12),
@@ -125,7 +125,8 @@ class PlatformAdminDashboardPage extends ConsumerWidget {
               return Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  headerInfo,
+                  Expanded(child: headerInfo),
+                  const SizedBox(width: 16),
                   actionButtons,
                 ],
               );
@@ -209,15 +210,14 @@ class PlatformAdminDashboardPage extends ConsumerWidget {
                       final isNarrow = constraints.maxWidth < 560;
 
                       final headerTitle = Row(
-                        mainAxisSize: MainAxisSize.min,
                         children: [
                           const Icon(Icons.pending_actions, color: Color(0xFFD97706), size: 18),
                           const SizedBox(width: 8),
-                          Flexible(
+                          Expanded(
                             child: Text(
                               'Pending Tenant Onboarding Approvals (${state.onboardingRequests.length})',
                               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5, color: Color(0xFFB45309)),
-                              maxLines: 1,
+                              maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
@@ -236,7 +236,7 @@ class PlatformAdminDashboardPage extends ConsumerWidget {
 
                       if (isNarrow) {
                         return Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
                             headerTitle,
                             const SizedBox(height: 4),

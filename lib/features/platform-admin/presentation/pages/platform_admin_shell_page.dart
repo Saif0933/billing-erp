@@ -72,17 +72,28 @@ class PlatformAdminShellPage extends ConsumerWidget {
     return Scaffold(
       backgroundColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
       appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(80),
+        preferredSize: const Size.fromHeight(64),
         child: Container(
+          height: 64,
           decoration: BoxDecoration(
             color: isDark ? const Color(0xFF1E293B) : Colors.white,
             border: Border(bottom: BorderSide(color: isDark ? Colors.white12 : const Color(0xFFE2E8F0))),
           ),
           child: SafeArea(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Row(
                 children: [
+                  if (!isDesktop) ...[
+                    Builder(
+                      builder: (scaffoldCtx) => IconButton(
+                        icon: const Icon(Icons.menu, size: 20),
+                        tooltip: 'Open Navigation',
+                        onPressed: () => Scaffold.of(scaffoldCtx).openDrawer(),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                  ],
                   // Logo & Platform Badge
                   Container(
                     padding: const EdgeInsets.all(6),
@@ -92,28 +103,25 @@ class PlatformAdminShellPage extends ConsumerWidget {
                     ),
                     child: const Icon(Icons.admin_panel_settings, size: 18, color: Colors.white),
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 10),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisAlignment: MainAxisAlignment.center,
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Row(
+                        Wrap(
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          spacing: 6,
                           children: [
-                            Flexible(
-                              child: Text(
-                                'Platform Admin',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w900,
-                                  color: isDark ? Colors.white : const Color(0xFF0F172A),
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
+                            Text(
+                              'Platform Admin',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w900,
+                                color: isDark ? Colors.white : const Color(0xFF0F172A),
                               ),
                             ),
-                            const SizedBox(width: 6),
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
                               decoration: BoxDecoration(
@@ -132,7 +140,8 @@ class PlatformAdminShellPage extends ConsumerWidget {
                             ),
                           ],
                         ),
-                        if (screenWidth >= 520)
+                        if (screenWidth >= 520) ...[
+                          const SizedBox(height: 2),
                           Text(
                             'Multi-Tenant SaaS Infrastructure',
                             style: TextStyle(
@@ -142,6 +151,7 @@ class PlatformAdminShellPage extends ConsumerWidget {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
+                        ],
                       ],
                     ),
                   ),

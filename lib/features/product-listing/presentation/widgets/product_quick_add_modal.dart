@@ -3,7 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/constants/app_radius.dart';
 import '../../../../core/constants/app_spacing.dart';
 import '../../../../shared/widgets/feedback.dart';
+import '../../domain/entities/product.dart';
 import '../../domain/models/product_listing_models.dart';
+import '../providers/billing_cart_provider.dart';
 import '../providers/product_listing_provider.dart';
 
 class ProductQuickAddModal extends ConsumerStatefulWidget {
@@ -350,10 +352,28 @@ class _ProductQuickAddModalState extends ConsumerState<ProductQuickAddModal> {
                     label: const Text('Add to Invoice', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
                     onPressed: () {
                       _saveProductEdits();
+                      final double? parsedPrice = double.tryParse(_priceController.text);
+                      final double? parsedMrp = double.tryParse(_mrpController.text);
+                      final productEntity = Product(
+                        id: widget.item.id,
+                        name: _nameController.text.trim().isNotEmpty ? _nameController.text.trim() : widget.item.name,
+                        barcode: widget.item.barcode,
+                        sku: widget.item.sku,
+                        category: _selectedCategory,
+                        sellingPrice: parsedPrice ?? widget.item.sellingPrice,
+                        purchasePrice: widget.item.sellingPrice * 0.8,
+                        mrp: parsedMrp ?? widget.item.mrp,
+                        stock: widget.item.stock,
+                        unit: widget.item.unit,
+                      );
+                      ref.read(billingCartProvider.notifier).addCustomProductAndAddToCart(productEntity);
+                      if (_quantity > 1) {
+                        ref.read(billingCartProvider.notifier).setQuantity(productEntity.id, _quantity);
+                      }
                       Navigator.pop(context);
                       AppFeedback.showSnackbar(
                         context,
-                        message: 'Listed & Added $_quantity × ${_nameController.text} to invoice!',
+                        message: 'Added $_quantity × ${productEntity.name} to active invoice!',
                       );
                     },
                   ),

@@ -7,9 +7,11 @@ import '../../../subscription/domain/entities/subscription_models.dart';
 import '../../../subscription/presentation/pages/locked_feature_page.dart';
 import '../../../subscription/presentation/providers/subscription_provider.dart';
 import '../providers/billing_cart_provider.dart';
+import '../providers/product_listing_provider.dart';
 import '../widgets/barcode_scanner_bar.dart';
 import '../widgets/empty_scanner_state.dart';
 import '../widgets/order_summary_card.dart';
+import '../widgets/product_not_found_dialog.dart';
 import '../widgets/scanned_product_card.dart';
 import '../widgets/scanned_products_table.dart';
 import '../widgets/product_scanner_card.dart';
@@ -31,6 +33,11 @@ class ProductListingPage extends ConsumerStatefulWidget {
 class _ProductListingPageState extends ConsumerState<ProductListingPage> {
   final FocusNode _barcodeFocusNode = FocusNode();
   final TextEditingController _barcodeController = TextEditingController();
+  final StringBuffer _hardwareScanBuffer = StringBuffer();
+  DateTime _lastHardwareKeyTime = DateTime.now();
+  DateTime? _lastHandledScanTime;
+  String? _lastHandledBarcode;
+
   ProductListingViewMode _viewMode = ProductListingViewMode.posBilling;
   Timer? _clockTimer;
   DateTime _currentDateTime = DateTime.now();
@@ -43,6 +50,9 @@ class _ProductListingPageState extends ConsumerState<ProductListingPage> {
       if (mounted) setState(() => _currentDateTime = DateTime.now());
     });
 
+    // Register global hardware keyboard interceptor for TVS-E & USB/Bluetooth HID scanners
+    HardwareKeyboard.instance.addHandler(_handleGlobalHardwareKey);
+
     // Automatically focus the barcode input on load for immediate USB/Bluetooth scanning
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _requestScannerFocus();
@@ -51,6 +61,7 @@ class _ProductListingPageState extends ConsumerState<ProductListingPage> {
 
   @override
   void dispose() {
+    HardwareKeyboard.instance.removeHandler(_handleGlobalHardwareKey);
     _clockTimer?.cancel();
     _barcodeFocusNode.dispose();
     _barcodeController.dispose();
@@ -60,6 +71,139 @@ class _ProductListingPageState extends ConsumerState<ProductListingPage> {
   void _requestScannerFocus() {
     if (mounted && _viewMode == ProductListingViewMode.posBilling) {
       _barcodeFocusNode.requestFocus();
+    }
+  }
+
+  String? _getCharFromLogicalKey(LogicalKeyboardKey key) {
+    if (key == LogicalKeyboardKey.digit0 || key == LogicalKeyboardKey.numpad0) return '0';
+    if (key == LogicalKeyboardKey.digit1 || key == LogicalKeyboardKey.numpad1) return '1';
+    if (key == LogicalKeyboardKey.digit2 || key == LogicalKeyboardKey.numpad2) return '2';
+    if (key == LogicalKeyboardKey.digit3 || key == LogicalKeyboardKey.numpad3) return '3';
+    if (key == LogicalKeyboardKey.digit4 || key == LogicalKeyboardKey.numpad4) return '4';
+    if (key == LogicalKeyboardKey.digit5 || key == LogicalKeyboardKey.numpad5) return '5';
+    if (key == LogicalKeyboardKey.digit6 || key == LogicalKeyboardKey.numpad6) return '6';
+    if (key == LogicalKeyboardKey.digit7 || key == LogicalKeyboardKey.numpad7) return '7';
+    if (key == LogicalKeyboardKey.digit8 || key == LogicalKeyboardKey.numpad8) return '8';
+    if (key == LogicalKeyboardKey.digit9 || key == LogicalKeyboardKey.numpad9) return '9';
+    if (key == LogicalKeyboardKey.minus || key == LogicalKeyboardKey.numpadSubtract) return '-';
+    if (key == LogicalKeyboardKey.period || key == LogicalKeyboardKey.numpadDecimal) return '.';
+    if (key == LogicalKeyboardKey.slash || key == LogicalKeyboardKey.numpadDivide) return '/';
+    if (key.keyLabel.length == 1) return key.keyLabel;
+    return null;
+  }
+
+  /// Global interceptor capturing TVS-E and USB/Bluetooth HID barcode scanner keystrokes
+  /// directly from hardware before focus displacement or race conditions occur.
+  bool _handleGlobalHardwareKey(KeyEvent event) {
+    if (event is! KeyDownEvent) return false;
+
+    final now = DateTime.now();
+    final elapsedMs = now.difference(_lastHardwareKeyTime).inMilliseconds;
+    _lastHardwareKeyTime = now;
+
+    final isEnter = event.logicalKey == LogicalKeyboardKey.enter ||
+        event.logicalKey == LogicalKeyboardKey.numpadEnter ||
+        event.character == '\n' ||
+        event.character == '\r';
+
+    // Check if another text field (e.g. dialog text field) is actively focused
+    final primaryFocus = FocusManager.instance.primaryFocus;
+    final isAnotherFieldFocused = primaryFocus != null &&
+        primaryFocus != _barcodeFocusNode &&
+        primaryFocus.context?.widget is EditableText;
+
+    if (isEnter) {
+      final bufferBarcode = _hardwareScanBuffer.toString().trim();
+      _hardwareScanBuffer.clear();
+
+      final inputBarcode = _barcodeController.text.trim();
+      final codeToProcess = bufferBarcode.isNotEmpty ? bufferBarcode : inputBarcode;
+
+      if (codeToProcess.length >= 2) {
+        _onBarcodeScanned(codeToProcess);
+        return true; // Consume Enter key so it doesn't trigger buttons or dialog submits
+      }
+      return false;
+    }
+
+    // If another text field is focused and keys arrive at normal human typing speed,
+    // let user type normally into that field.
+    if (isAnotherFieldFocused && elapsedMs > 100) {
+      _hardwareScanBuffer.clear();
+      return false;
+    }
+
+    String? char = event.character;
+    if (char == null || char.isEmpty || char == '\u0000') {
+      char = _getCharFromLogicalKey(event.logicalKey);
+    }
+
+    if (char != null && char.isNotEmpty && RegExp(r'^[A-Za-z0-9\-_./]$').hasMatch(char)) {
+      // Reset buffer if elapsed time between keystrokes exceeds 450ms
+      if (elapsedMs > 450) {
+        _hardwareScanBuffer.clear();
+      }
+      _hardwareScanBuffer.write(char);
+
+      // Echo to text field for immediate visual feedback if scanner input field is not focused
+      if (!_barcodeFocusNode.hasFocus) {
+        _barcodeController.text = _hardwareScanBuffer.toString();
+        _barcodeController.selection = TextSelection.collapsed(
+          offset: _barcodeController.text.length,
+        );
+      }
+      return false;
+    }
+
+    return false;
+  }
+
+  /// Unified barcode scanner processor for hardware scanner, text submission, and test chips
+  Future<void> _onBarcodeScanned(String barcode) async {
+    final clean = barcode.replaceAll(RegExp(r'[\r\n\t]'), '').trim();
+    if (clean.isEmpty) return;
+
+    final now = DateTime.now();
+    if (_lastHandledBarcode == clean &&
+        _lastHandledScanTime != null &&
+        now.difference(_lastHandledScanTime!).inMilliseconds < 600) {
+      return;
+    }
+    _lastHandledBarcode = clean;
+    _lastHandledScanTime = now;
+
+    _hardwareScanBuffer.clear();
+    _barcodeController.clear();
+
+    // If on Catalogue Directory tab, auto-switch to POS Billing view
+    if (_viewMode != ProductListingViewMode.posBilling) {
+      if (mounted) {
+        setState(() => _viewMode = ProductListingViewMode.posBilling);
+      }
+    }
+
+    // Add to active billing cart
+    final result = await ref.read(billingCartProvider.notifier).processBarcode(clean);
+
+    // Sync with catalogue provider
+    try {
+      ref.read(productListingProvider.notifier).handleScannedBarcode(clean);
+    } catch (_) {}
+
+    // Keep scanner focus active
+    _requestScannerFocus();
+
+    if (!mounted) return;
+
+    // Show dialog if unrecognized barcode could not be auto-added
+    if (!result.isSuccess && result.notFoundBarcode != null) {
+      await ProductNotFoundDialog.show(
+        context,
+        barcode: result.notFoundBarcode!,
+        onDismissed: () {
+          _requestScannerFocus();
+        },
+      );
     }
   }
 
@@ -76,40 +220,28 @@ class _ProductListingPageState extends ConsumerState<ProductListingPage> {
     return Scaffold(
       backgroundColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
       body: SafeArea(
-        child: KeyboardListener(
-          focusNode: FocusNode(),
-          autofocus: true,
-          onKeyEvent: (event) {
-            // If the user starts scanning or typing anywhere on the page, redirect focus to the barcode input
-            if (event is KeyDownEvent &&
-                !_barcodeFocusNode.hasFocus &&
-                _viewMode == ProductListingViewMode.posBilling) {
-              _requestScannerFocus();
-            }
-          },
-          child: SingleChildScrollView(
-            padding: EdgeInsets.symmetric(
-              horizontal: MediaQuery.sizeOf(context).width < 600 ? 12 : 16,
-              vertical: MediaQuery.sizeOf(context).width < 600 ? 12 : 14,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // Top Header: New Sale / Create Invoice + Metadata + View Switcher
-                _buildHeader(context, cartState, isDark),
-                const SizedBox(height: 14),
+        child: SingleChildScrollView(
+          padding: EdgeInsets.symmetric(
+            horizontal: MediaQuery.sizeOf(context).width < 600 ? 12 : 16,
+            vertical: MediaQuery.sizeOf(context).width < 600 ? 12 : 14,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Top Header: New Sale / Create Invoice + Metadata + View Switcher
+              _buildHeader(context, cartState, isDark),
+              const SizedBox(height: 14),
 
-                // Inline Toast / Success Feedback Banner
-                if (cartState.lastMessage != null)
-                  _buildStatusBanner(cartState, isDark),
+              // Inline Toast / Success Feedback Banner
+              if (cartState.lastMessage != null)
+                _buildStatusBanner(cartState, isDark),
 
-                // Mode-based View Rendering
-                if (_viewMode == ProductListingViewMode.posBilling)
-                  _buildPosBillingLayout(context, cartState, isDark)
-                else
-                  _buildCatalogueDirectoryLayout(),
-              ],
-            ),
+              // Mode-based View Rendering
+              if (_viewMode == ProductListingViewMode.posBilling)
+                _buildPosBillingLayout(context, cartState, isDark)
+              else
+                _buildCatalogueDirectoryLayout(),
+            ],
           ),
         ),
       ),
@@ -254,7 +386,8 @@ class _ProductListingPageState extends ConsumerState<ProductListingPage> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            titleSection,
+            Expanded(child: titleSection),
+            const SizedBox(width: 12),
             modeSelector,
           ],
         );
@@ -387,6 +520,7 @@ class _ProductListingPageState extends ConsumerState<ProductListingPage> {
         final scannerBar = BarcodeScannerBar(
           focusNode: _barcodeFocusNode,
           controller: _barcodeController,
+          onBarcodeSubmitted: _onBarcodeScanned,
         );
 
         // Scanned Products Section

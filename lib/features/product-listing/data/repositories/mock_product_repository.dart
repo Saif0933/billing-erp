@@ -36,7 +36,10 @@ class MockProductRepository implements ProductRepository {
 
     try {
       return _catalog.firstWhere(
-        (p) => p.barcode.trim().toUpperCase() == normalized,
+        (p) =>
+            p.barcode.trim().toUpperCase() == normalized ||
+            p.sku.trim().toUpperCase() == normalized ||
+            p.id.trim().toUpperCase() == normalized,
       );
     } catch (_) {
       return null;

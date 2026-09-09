@@ -110,6 +110,22 @@ class AuthNotifier extends StateNotifier<AuthState> {
         isPlatformAdminPortal: isPlatformAdminPortal,
       );
 
+      // Strict portal segregation: Platform Admin accounts cannot enter Organization portal
+      if (!isPlatformAdminPortal && response.user.isPlatformAdmin) {
+        state = const AuthState.unauthenticated(
+          error: 'Ye email aur password Platform Admin ke hain, isse Organization portal me login nahi kar sakte. Kripya Platform Admin tab use karein.',
+        );
+        return false;
+      }
+
+      // Non-admin accounts cannot enter Platform Admin portal
+      if (isPlatformAdminPortal && !response.user.isPlatformAdmin) {
+        state = const AuthState.unauthenticated(
+          error: 'Access Denied: This account does not possess Platform Administrator permissions.',
+        );
+        return false;
+      }
+
       await _secureStorage.setAccessToken(response.accessToken);
       await _secureStorage.setRefreshToken(response.refreshToken);
       await _storage.setCachedUserEmail(response.user.email);

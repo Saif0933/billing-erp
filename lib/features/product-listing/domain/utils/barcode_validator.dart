@@ -16,7 +16,7 @@ class BarcodeValidator {
   const BarcodeValidator._();
 
   static BarcodeValidationResult validate(String rawCode, {BarcodeFormat? format}) {
-    final clean = rawCode.trim();
+    final clean = rawCode.replaceAll(RegExp(r'[\r\n\t]'), '').trim();
 
     if (clean.isEmpty) {
       return const BarcodeValidationResult(
@@ -69,13 +69,11 @@ class BarcodeValidator {
       );
     }
 
-    // 5. Check for JSON / XML / paragraphs / multiline / space-separated texts
+    // 5. Check for JSON / XML / structured multiline payloads
     if (clean.contains('{') ||
         clean.contains('}') ||
         clean.contains('<') ||
         clean.contains('>') ||
-        clean.contains('\n') ||
-        clean.contains(' ') ||
         clean.contains('=')) {
       return const BarcodeValidationResult(
         isValid: false,
@@ -83,14 +81,11 @@ class BarcodeValidator {
       );
     }
 
-    // 6. Strict Product Barcode Formats:
-    // A) Standard Numeric Barcodes (EAN-13, EAN-8, UPC-A, UPC-E, ITF-14) -> 8 to 14 pure digits
-    final bool isStandardNumericBarcode = RegExp(r'^\d{8,14}$').hasMatch(clean);
+    // 6. Flexible Product Barcode Formats (EAN-13, EAN-8, UPC, Code-128, Code-39, Alphanumeric SKU):
+    // Accepts standard retail barcodes from 3 to 32 characters (digits, letters, hyphens, underscores, dots, slashes)
+    final bool isStandardBarcode = RegExp(r'^[A-Za-z0-9\-_./]{3,32}$').hasMatch(clean);
 
-    // B) Standard Code-128 / Code-39 / Alphanumeric Product SKU -> 6 to 20 uppercase alphanumeric
-    final bool isAlphaNumericSku = RegExp(r'^[A-Za-z0-9\-]{6,20}$').hasMatch(clean);
-
-    if (!isStandardNumericBarcode && !isAlphaNumericSku) {
+    if (!isStandardBarcode) {
       return BarcodeValidationResult(
         isValid: false,
         errorMessage: 'Invalid Barcode ($clean). Please scan a valid product barcode (EAN-13 / EAN-8 / UPC / Code-128).',

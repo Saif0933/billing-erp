@@ -188,21 +188,58 @@ class PosNotifier extends StateNotifier<PosTerminalState> {
 
   /// 5. Barcode scan add to cart
   Future<bool> scanBarcodeAndAdd(String barcode) async {
+    final clean = barcode.trim();
+    if (clean.isEmpty) return false;
+
     try {
-      final product = await _apiService.scanBarcode(barcode);
+      final product = await _apiService.scanBarcode(clean);
       if (product != null) {
         addProductToCart(product);
         return true;
       }
     } catch (_) {}
 
-    // Fallback search in local list
-    final localMatch = state.products.where((p) => p.barcode == barcode).toList();
+    // Fallback search in local list with case-insensitive barcode, SKU, or code match
+    final cleanUpper = clean.toUpperCase();
+    final localMatch = state.products.where((p) {
+      return p.barcode.trim().toUpperCase() == cleanUpper ||
+          p.sku.trim().toUpperCase() == cleanUpper ||
+          p.code.trim().toUpperCase() == cleanUpper ||
+          p.id.trim().toUpperCase() == cleanUpper;
+    }).toList();
+
     if (localMatch.isNotEmpty) {
       addProductToCart(localMatch.first);
       return true;
     }
-    return false;
+
+    // Dynamic auto-provision for scanned physical items so billing is never blocked
+    final autoProduct = Product(
+      id: 'pos_scan_${DateTime.now().millisecondsSinceEpoch}',
+      name: 'Item #$clean',
+      code: clean,
+      sku: 'SKU-${clean.length > 6 ? clean.substring(clean.length - 6) : clean}',
+      barcode: clean,
+      hsnCode: '0000',
+      primaryUnit: 'PCS',
+      secondaryUnit: '',
+      gstRate: 18.0,
+      purchasePrice: 40.00,
+      sellingPrice: 50.00,
+      mrp: 60.00,
+      wholesalePrice: 45.00,
+      minStockLevel: 5.0,
+      openingStock: 100.0,
+      currentStock: 100.0,
+      batchNumber: '',
+      expiryDate: '',
+      serialNumber: '',
+      category: 'General',
+      brand: '',
+      isActive: true,
+    );
+    addProductToCart(autoProduct);
+    return true;
   }
 
   /// 6. Cart item modifications
