@@ -16,6 +16,11 @@ class ApiEndpoints {
   // Invoices & Billing
   static const String invoices = '/api/v1/invoices';
   static const String invoiceSeries = '/api/v1/invoices/series';
+  static const String salesInvoices = '/api/v1/sales/invoices';
+  static const String salesInvoiceNextNumber = '/api/v1/sales/invoices/next-number';
+  static const String salesInvoiceMetrics = '/api/v1/sales/invoices/metrics/summary';
+  static const String salesInvoiceHeld = '/api/v1/sales/invoices/held/list';
+  static const String salesInvoiceHold = '/api/v1/sales/invoices/hold';
 
   // Customer & Supplier & Services
   static const String customers = '/api/v1/customers';
@@ -82,4 +87,9 @@ class ApiEndpoints {
 
   // Purchase Returns / Debit Notes (backend: module/purchase/purchaseReturn)
   static const String purchaseReturns = '/api/v1/purchase-returns';
+
+  // Sales Returns & Credit Notes (backend: module/salesopration/sales-return)
+  static const String salesReturns = '/api/v1/sales/returns';
+  static const String salesReturnNextNumber = '/api/v1/sales/returns/next-number';
+  static const String salesReturnMetrics = '/api/v1/sales/returns/metrics/summary';
 }

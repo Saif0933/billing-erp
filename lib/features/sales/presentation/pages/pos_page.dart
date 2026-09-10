@@ -3,17 +3,27 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/models/billing_models.dart';
 import '../../../../shared/widgets/feedback.dart';
 import '../../../customer/presentation/providers/customer_provider.dart';
 import '../models/sales_ui_models.dart';
+import '../providers/pos_provider.dart';
 import '../widgets/sales_category_bar.dart';
 import '../widgets/sales_current_bill_panel.dart';
 import '../widgets/sales_dialogs.dart';
 import '../widgets/sales_product_card.dart';
 import '../widgets/sales_top_header.dart';
+import '../providers/sales_invoice_provider.dart';
 
 class POSPage extends ConsumerStatefulWidget {
-  const POSPage({super.key});
+  final List<SalesProductItem>? initialProducts;
+  final List<SalesCartItem>? initialCartItems;
+
+  const POSPage({
+    super.key,
+    this.initialProducts,
+    this.initialCartItems,
+  });
 
   @override
   ConsumerState<POSPage> createState() => _POSPageState();
@@ -30,11 +40,12 @@ class _POSPageState extends ConsumerState<POSPage> {
   double _discountPercent = 0.0;
   double _discountAmount = 0.0;
 
-  // Default preloaded cart matching reference image exactly
+  // Cart items in current bill
   late List<SalesCartItem> _cartItems;
 
-  // Catalog products
+  // Catalog products (fetched from database or empty)
   late List<SalesProductItem> _products;
+  bool _isLoadingProducts = false;
 
   // Held bills storage
   final List<Map<String, dynamic>> _heldBills = [];
@@ -51,39 +62,138 @@ class _POSPageState extends ConsumerState<POSPage> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(customerProvider.notifier).loadCustomers();
+      _syncSalesBackend();
     });
   }
 
-  void _initCatalogAndCart() {
-    _products = List.from(kDefaultSalesProducts);
+  Future<void> _syncSalesBackend() async {
+    // 1. Fetch next bill number
+    try {
+      final nextNum = await ref.read(salesInvoiceNotifierProvider.notifier).fetchNextNumber();
+      if (mounted && nextNum.isNotEmpty && nextNum != _billNumber) {
+        setState(() {
+          _billNumber = nextNum;
+        });
+      }
+    } catch (_) {}
 
-    // Initial cart preloaded exactly as shown in screenshot:
-    // 1. Parle-G Biscuit 200g, Qty: 2, Rate: 28.00, Amount: 56.00
-    // 2. Amul Gold Milk 1L, Qty: 1, Rate: 62.00, Amount: 62.00
-    // 3. Maggi Noodles 70g, Qty: 3, Rate: 15.00, Amount: 45.00
-    // 4. Coca Cola 500ml, Qty: 1, Rate: 40.00, Amount: 40.00
-    _cartItems = [
-      SalesCartItem(
-        product: _products.firstWhere((p) => p.id == 'sp_002'),
-        quantity: 2,
-        rate: 28.00,
-      ),
-      SalesCartItem(
-        product: _products.firstWhere((p) => p.id == 'sp_003'),
-        quantity: 1,
-        rate: 62.00,
-      ),
-      SalesCartItem(
-        product: _products.firstWhere((p) => p.id == 'sp_004'),
-        quantity: 3,
-        rate: 15.00,
-      ),
-      SalesCartItem(
-        product: _products.firstWhere((p) => p.id == 'sp_001'),
-        quantity: 1,
-        rate: 40.00,
-      ),
-    ];
+    // 2. Fetch live products from database
+    if (widget.initialProducts == null) {
+      if (mounted) setState(() => _isLoadingProducts = true);
+      try {
+        final dbProducts = await ref.read(posApiServiceProvider).getProducts(limit: 100);
+        if (mounted) {
+          setState(() {
+            _products = dbProducts.map((p) => _mapToSalesProductItem(p)).toList();
+            _isLoadingProducts = false;
+          });
+        }
+      } catch (_) {
+        if (mounted) {
+          setState(() {
+            _products = [];
+            _isLoadingProducts = false;
+          });
+        }
+      }
+    }
+
+    // 3. Held invoices sync
+    try {
+      await ref.read(salesInvoiceNotifierProvider.notifier).refreshHeldInvoices();
+      final backendHeld = ref.read(salesInvoiceNotifierProvider).heldInvoices;
+      if (mounted && backendHeld.isNotEmpty) {
+        for (final bh in backendHeld) {
+          final alreadyExists = _heldBills.any((hb) => hb['billNumber'] == bh.invoiceNumber);
+          if (!alreadyExists) {
+            _heldBills.add({
+              'id': bh.id,
+              'billNumber': bh.invoiceNumber,
+              'customer': bh.customerName,
+              'items': bh.items.map((it) => SalesCartItem(
+                product: SalesProductItem(
+                  id: it.productId ?? it.id,
+                  name: it.productName,
+                  weight: it.unit,
+                  category: 'others',
+                  price: it.rate,
+                  mrp: it.mrp,
+                  stock: 100,
+                  barcode: '',
+                  sku: '',
+                ),
+                quantity: it.quantity.toInt(),
+                rate: it.rate,
+              )).toList(),
+              'amount': bh.grandTotal,
+              'time': '${bh.invoiceDate.hour.toString().padLeft(2, '0')}:${bh.invoiceDate.minute.toString().padLeft(2, '0')}',
+            });
+          }
+        }
+        setState(() {});
+      }
+    } catch (_) {}
+  }
+
+  void _initCatalogAndCart() {
+    _products = widget.initialProducts != null
+        ? List.from(widget.initialProducts!)
+        : [];
+
+    _cartItems = widget.initialCartItems != null
+        ? List.from(widget.initialCartItems!)
+        : [];
+  }
+
+  SalesProductItem _mapToSalesProductItem(Product p) {
+    return SalesProductItem(
+      id: p.id,
+      name: p.name,
+      weight: p.primaryUnit.isNotEmpty ? p.primaryUnit : '1 unit',
+      category: p.category.isNotEmpty ? p.category.toLowerCase() : 'others',
+      price: p.sellingPrice,
+      mrp: p.mrp > 0 ? p.mrp : p.sellingPrice,
+      stock: p.currentStock.toInt(),
+      isLowStock: p.currentStock <= 5,
+      barcode: p.barcode,
+      sku: p.sku,
+      imageUrl: p.imageUrl,
+      placeholderIcon: _getIconForCategory(p.category),
+      themeColor: _getColorForCategory(p.category),
+    );
+  }
+
+  IconData _getIconForCategory(String category) {
+    final cat = category.toLowerCase();
+    if (cat.contains('beverag') || cat.contains('drink') || cat.contains('soda')) {
+      return Icons.local_drink_outlined;
+    }
+    if (cat.contains('snack') || cat.contains('biscuit') || cat.contains('chip')) {
+      return Icons.cookie_outlined;
+    }
+    if (cat.contains('dairy') || cat.contains('milk') || cat.contains('cheese')) {
+      return Icons.water_drop_outlined;
+    }
+    if (cat.contains('grocer') || cat.contains('food') || cat.contains('staple')) {
+      return Icons.shopping_bag_outlined;
+    }
+    if (cat.contains('personal') || cat.contains('care') || cat.contains('beauty')) {
+      return Icons.spa_outlined;
+    }
+    if (cat.contains('clean') || cat.contains('house') || cat.contains('wash')) {
+      return Icons.cleaning_services_outlined;
+    }
+    return Icons.inventory_2_outlined;
+  }
+
+  Color _getColorForCategory(String category) {
+    final cat = category.toLowerCase();
+    if (cat.contains('beverag') || cat.contains('drink')) return const Color(0xFFDC2626);
+    if (cat.contains('snack') || cat.contains('biscuit')) return const Color(0xFFD97706);
+    if (cat.contains('dairy') || cat.contains('milk')) return const Color(0xFF2563EB);
+    if (cat.contains('grocer')) return const Color(0xFF059669);
+    if (cat.contains('personal') || cat.contains('care')) return const Color(0xFF9333EA);
+    return const Color(0xFF10B981);
   }
 
   @override
@@ -163,22 +273,55 @@ class _POSPageState extends ConsumerState<POSPage> {
     return false;
   }
 
-  void _handleBarcodeDetected(String barcode) {
-    final match = _products.firstWhere(
-      (p) => p.barcode == barcode || p.sku.toLowerCase() == barcode.toLowerCase(),
-      orElse: () => _products.firstWhere(
-        (p) => p.name.toLowerCase().contains(barcode.toLowerCase()),
-        orElse: () => _products.first,
-      ),
-    );
+  Future<void> _handleBarcodeDetected(String barcode) async {
+    final trimmed = barcode.trim();
+    if (trimmed.isEmpty) return;
 
-    _addProductToCart(match);
-    _searchController.clear();
-    setState(() {});
-    AppFeedback.showSnackbar(
-      context,
-      message: 'Scanned & added: ${match.name}',
-    );
+    // Search in current in-memory products
+    SalesProductItem? match;
+    for (final p in _products) {
+      if (p.barcode == trimmed || p.sku.toLowerCase() == trimmed.toLowerCase()) {
+        match = p;
+        break;
+      }
+    }
+
+    if (match == null) {
+      for (final p in _products) {
+        if (p.name.toLowerCase().contains(trimmed.toLowerCase())) {
+          match = p;
+          break;
+        }
+      }
+    }
+
+    // Try backend live lookup if not found locally
+    if (match == null) {
+      try {
+        final product = await ref.read(posApiServiceProvider).scanBarcode(trimmed);
+        if (product != null) {
+          match = _mapToSalesProductItem(product);
+          if (!_products.any((p) => p.id == match!.id)) {
+            _products.add(match);
+          }
+        }
+      } catch (_) {}
+    }
+
+    if (match != null) {
+      _addProductToCart(match);
+      _searchController.clear();
+      setState(() {});
+      AppFeedback.showSnackbar(
+        context,
+        message: 'Scanned & added: ${match.name}',
+      );
+    } else {
+      AppFeedback.showSnackbar(
+        context,
+        message: 'No product found for "$trimmed"',
+      );
+    }
   }
 
   void _addProductToCart(SalesProductItem product) {
@@ -263,19 +406,51 @@ class _POSPageState extends ConsumerState<POSPage> {
     final subtotal = _cartItems.fold(0.0, (s, it) => s + it.amount);
     final total = subtotal + (subtotal * 0.05);
 
+    final currentCartCopy = List<SalesCartItem>.from(_cartItems);
+    final customer = _selectedCustomer;
+    final note = _transactionNote;
+
     setState(() {
       _heldBills.add({
-        'customer': _selectedCustomer,
-        'items': List<SalesCartItem>.from(_cartItems),
+        'customer': customer,
+        'items': currentCartCopy,
         'amount': total,
         'time': '${DateTime.now().hour.toString().padLeft(2, '0')}:${DateTime.now().minute.toString().padLeft(2, '0')}',
       });
       _cartItems.clear();
       _transactionNote = null;
-      _billNumber = 'TB/25-26/000${124 + _heldBills.length}';
+      final nextNum = int.tryParse(_billNumber.replaceAll(RegExp(r'[^0-9]'), '')) ?? 123;
+      _billNumber = 'TB/25-26/000${nextNum + 1}';
     });
 
     AppFeedback.showSnackbar(context, message: 'Current bill held successfully! (F6)');
+
+    // Async sync to backend hold endpoint
+    try {
+      final itemsPayload = currentCartCopy.map((it) {
+        return {
+          'productId': it.product.id.startsWith('sp_') ? null : it.product.id,
+          'productName': it.product.displayNameWithWeight,
+          'quantity': it.quantity,
+          'unit': it.product.weight.isNotEmpty ? it.product.weight : 'PCS',
+          'rate': it.rate,
+          'mrp': it.product.mrp,
+          'taxableValue': it.amount,
+          'gstRatePercent': 5.0,
+          'lineTotal': it.amount * 1.05,
+        };
+      }).toList();
+
+      ref.read(salesInvoiceNotifierProvider.notifier).holdBill({
+        'customerName': customer,
+        'notes': note,
+        'discountPercent': _discountPercent,
+        'discountAmount': _discountAmount,
+        'items': itemsPayload,
+      }).then((_) {}, onError: (e) {
+        debugPrint('[POSPage] holdBill error: $e');
+      });
+    } catch (_) {}
   }
 
   void _showHeldBillsDialog() {
@@ -285,6 +460,10 @@ class _POSPageState extends ConsumerState<POSPage> {
         heldBills: _heldBills,
         onResume: (index) {
           final bill = _heldBills.removeAt(index);
+          final billId = bill['id'] as String?;
+          if (billId != null) {
+            ref.read(salesInvoiceNotifierProvider.notifier).resumeHeldBill(billId).then((_) {}, onError: (_) {});
+          }
           setState(() {
             _cartItems = List<SalesCartItem>.from(bill['items'] as List<SalesCartItem>);
             _selectedCustomer = bill['customer'] as String;
@@ -292,9 +471,12 @@ class _POSPageState extends ConsumerState<POSPage> {
           AppFeedback.showSnackbar(context, message: 'Held bill resumed!');
         },
         onDelete: (index) {
-          setState(() {
-            _heldBills.removeAt(index);
-          });
+          final bill = _heldBills.removeAt(index);
+          final billId = bill['id'] as String?;
+          if (billId != null) {
+            ref.read(salesInvoiceApiServiceProvider).deleteInvoice(billId).catchError((_) => true);
+          }
+          setState(() {});
           Navigator.pop(ctx);
           AppFeedback.showSnackbar(context, message: 'Held bill deleted.');
         },
@@ -339,8 +521,72 @@ class _POSPageState extends ConsumerState<POSPage> {
     );
   }
 
+  Future<void> _saveInvoiceToBackend({
+    required String status,
+    required double subtotal,
+    required double cgst,
+    required double sgst,
+    required double grandTotal,
+  }) async {
+    try {
+      final itemsPayload = _cartItems.map((it) {
+        final lineTaxable = it.amount;
+        final lineCgst = ((lineTaxable * 0.025 * 100).round()) / 100.0;
+        final lineSgst = ((lineTaxable * 0.025 * 100).round()) / 100.0;
+        return {
+          'productId': it.product.id.startsWith('sp_') ? null : it.product.id,
+          'productName': it.product.displayNameWithWeight,
+          'quantity': it.quantity,
+          'unit': it.product.weight.isNotEmpty ? it.product.weight : 'PCS',
+          'rate': it.rate,
+          'mrp': it.product.mrp,
+          'taxableValue': lineTaxable,
+          'gstRatePercent': 5.0,
+          'cgstAmount': lineCgst,
+          'sgstAmount': lineSgst,
+          'lineTotal': lineTaxable + lineCgst + lineSgst,
+        };
+      }).toList();
+
+      final payload = {
+        'invoiceNumber': _billNumber,
+        'customerName': _selectedCustomer,
+        'subtotal': subtotal,
+        'discountPercent': _discountPercent,
+        'discountAmount': _discountAmount,
+        'taxableValue': subtotal - _discountAmount,
+        'cgstAmount': cgst,
+        'sgstAmount': sgst,
+        'grandTotal': grandTotal,
+        'paidAmount': grandTotal,
+        'paymentMode': 'CASH',
+        'status': status,
+        'notes': _transactionNote,
+        'items': itemsPayload,
+      };
+
+      await ref.read(salesInvoiceNotifierProvider.notifier).createInvoice(payload);
+    } catch (e) {
+      debugPrint('[POSPage] Invoice backend sync notice: $e');
+    }
+  }
+
   void _saveAsDraft() {
     if (_cartItems.isEmpty) return;
+
+    final subtotal = _cartItems.fold(0.0, (s, it) => s + it.amount);
+    final cgst = ((subtotal * 0.025 * 100).round()) / 100.0;
+    final sgst = ((subtotal * 0.025 * 100).round()) / 100.0;
+    final grandTotal = subtotal + cgst + sgst;
+
+    _saveInvoiceToBackend(
+      status: 'DRAFT',
+      subtotal: subtotal,
+      cgst: cgst,
+      sgst: sgst,
+      grandTotal: grandTotal,
+    );
+
     AppFeedback.showSnackbar(
       context,
       message: 'Bill $_billNumber saved as draft!',
@@ -354,6 +600,14 @@ class _POSPageState extends ConsumerState<POSPage> {
     final cgst = ((subtotal * 0.025 * 100).round()) / 100.0;
     final sgst = ((subtotal * 0.025 * 100).round()) / 100.0;
     final grandTotal = subtotal + cgst + sgst;
+
+    _saveInvoiceToBackend(
+      status: 'PRINTED',
+      subtotal: subtotal,
+      cgst: cgst,
+      sgst: sgst,
+      grandTotal: grandTotal,
+    );
 
     showDialog(
       context: context,
@@ -387,6 +641,14 @@ class _POSPageState extends ConsumerState<POSPage> {
       final nextNum = int.tryParse(_billNumber.replaceAll(RegExp(r'[^0-9]'), '')) ?? 123;
       _billNumber = 'TB/25-26/000${nextNum + 1}';
     });
+
+    ref.read(salesInvoiceNotifierProvider.notifier).fetchNextNumber().then((newNum) {
+      if (mounted && newNum.isNotEmpty && newNum != _billNumber) {
+        setState(() {
+          _billNumber = newNum;
+        });
+      }
+    }, onError: (_) {});
   }
 
   void _showMoreMenu() {
@@ -768,39 +1030,64 @@ class _POSPageState extends ConsumerState<POSPage> {
   }
 
   Widget _buildEmptyProductsView() {
+    if (_isLoadingProducts) {
+      return const Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            CircularProgressIndicator(color: Color(0xFF10B981)),
+            SizedBox(height: 12),
+            Text(
+              'Loading products...',
+              style: TextStyle(
+                fontSize: 14,
+                color: Color(0xFF6B7280),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    final isFiltered = _searchController.text.trim().isNotEmpty || _selectedCategoryId != 'all';
+
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(
-            Icons.search_off_outlined,
-            size: 48,
-            color: Color(0xFF9CA3AF),
+          Icon(
+            isFiltered ? Icons.search_off_outlined : Icons.inventory_2_outlined,
+            size: 52,
+            color: const Color(0xFF9CA3AF),
           ),
           const SizedBox(height: 12),
-          const Text(
-            'No matching products found',
-            style: TextStyle(
-              fontSize: 15,
+          Text(
+            isFiltered ? 'No matching products found' : 'No products in catalog',
+            style: const TextStyle(
+              fontSize: 16,
               fontWeight: FontWeight.bold,
               color: Color(0xFF374151),
             ),
           ),
-          const SizedBox(height: 4),
-          const Text(
-            'Try searching for another keyword or change category',
-            style: TextStyle(fontSize: 12, color: Color(0xFF6B7280)),
+          const SizedBox(height: 6),
+          Text(
+            isFiltered
+                ? 'Try searching for another keyword or change category'
+                : 'Products added to the database will appear here',
+            style: const TextStyle(fontSize: 13, color: Color(0xFF6B7280)),
           ),
-          const SizedBox(height: 14),
-          OutlinedButton(
-            onPressed: () {
-              setState(() {
-                _searchController.clear();
-                _selectedCategoryId = 'all';
-              });
-            },
-            child: const Text('Reset Filters'),
-          ),
+          if (isFiltered) ...[
+            const SizedBox(height: 14),
+            OutlinedButton(
+              onPressed: () {
+                setState(() {
+                  _searchController.clear();
+                  _selectedCategoryId = 'all';
+                });
+              },
+              child: const Text('Reset Filters'),
+            ),
+          ],
         ],
       ),
     );

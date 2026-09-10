@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/entities/product.dart';
 import '../providers/billing_cart_provider.dart';
@@ -43,30 +44,18 @@ class _ProductNotFoundDialogState extends ConsumerState<ProductNotFoundDialog> {
   late TextEditingController _nameCtrl;
   late TextEditingController _barcodeCtrl;
   late TextEditingController _skuCtrl;
+  late TextEditingController _categoryCtrl;
+  late TextEditingController _subCategoryCtrl;
+  late TextEditingController _variantCtrl;
+  late TextEditingController _gstRateCtrl;
+  late TextEditingController _quantityCtrl;
   late TextEditingController _sellingPriceCtrl;
   late TextEditingController _purchasePriceCtrl;
   late TextEditingController _mrpCtrl;
-  late TextEditingController _stockCtrl;
 
-  String _selectedCategory = 'Groceries';
-  double _selectedGstRate = 0.0;
   String _selectedSupplierId = '';
   String _selectedSupplierName = '';
   bool _isSaving = false;
-
-  final List<String> _categories = [
-    'Groceries',
-    'Beverages',
-    'Snacks & Biscuits',
-    'Dairy',
-    'Home Care',
-    'Personal Care',
-    'Bakery & Dairy',
-    'Chocolates & Sweets',
-    'General',
-  ];
-
-  final List<double> _gstRates = [0.0, 5.0, 12.0, 18.0, 28.0];
 
   @override
   void initState() {
@@ -77,11 +66,15 @@ class _ProductNotFoundDialogState extends ConsumerState<ProductNotFoundDialog> {
       text:
           'SKU-${widget.barcode.length > 5 ? widget.barcode.substring(widget.barcode.length - 5) : widget.barcode}',
     );
-    // Unit price & GST left empty / zero — user enters manually
+    _categoryCtrl = TextEditingController(text: 'Groceries');
+    _subCategoryCtrl = TextEditingController();
+    _variantCtrl = TextEditingController();
+    _gstRateCtrl = TextEditingController(text: '0');
+    _quantityCtrl = TextEditingController(text: '1');
+    // Unit price & MRP left empty — user enters manually
     _sellingPriceCtrl = TextEditingController();
     _purchasePriceCtrl = TextEditingController();
     _mrpCtrl = TextEditingController();
-    _stockCtrl = TextEditingController(text: '0');
   }
 
   @override
@@ -89,10 +82,14 @@ class _ProductNotFoundDialogState extends ConsumerState<ProductNotFoundDialog> {
     _nameCtrl.dispose();
     _barcodeCtrl.dispose();
     _skuCtrl.dispose();
+    _categoryCtrl.dispose();
+    _subCategoryCtrl.dispose();
+    _variantCtrl.dispose();
+    _gstRateCtrl.dispose();
+    _quantityCtrl.dispose();
     _sellingPriceCtrl.dispose();
     _purchasePriceCtrl.dispose();
     _mrpCtrl.dispose();
-    _stockCtrl.dispose();
     super.dispose();
   }
 
@@ -104,18 +101,23 @@ class _ProductNotFoundDialogState extends ConsumerState<ProductNotFoundDialog> {
     final unitPrice = double.tryParse(_sellingPriceCtrl.text.trim()) ?? 0.0;
     final mrp = double.tryParse(_mrpCtrl.text.trim()) ?? unitPrice;
     final purchase = double.tryParse(_purchasePriceCtrl.text.trim()) ?? unitPrice;
+    final qty = int.tryParse(_quantityCtrl.text.trim()) ?? 1;
+    final gstRate = double.tryParse(_gstRateCtrl.text.trim()) ?? 0.0;
+    final category = _categoryCtrl.text.trim().isNotEmpty ? _categoryCtrl.text.trim() : 'General';
 
     final newProduct = Product(
       id: 'prod_custom_${DateTime.now().millisecondsSinceEpoch}',
       name: _nameCtrl.text.trim(),
       barcode: _barcodeCtrl.text.trim(),
       sku: _skuCtrl.text.trim(),
-      category: _selectedCategory,
+      category: category,
+      subCategory: _subCategoryCtrl.text.trim(),
+      variant: _variantCtrl.text.trim(),
       sellingPrice: unitPrice,
       purchasePrice: purchase,
       mrp: mrp,
-      gstRate: _selectedGstRate,
-      stock: int.tryParse(_stockCtrl.text.trim()) ?? 0,
+      gstRate: gstRate,
+      stock: qty,
       unit: 'pcs',
       placeholderIcon: Icons.qr_code_2,
       supplierId: _selectedSupplierId,
@@ -292,7 +294,7 @@ class _ProductNotFoundDialogState extends ConsumerState<ProductNotFoundDialog> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Category',
+                                'Category *',
                                 style: TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.bold,
@@ -300,25 +302,75 @@ class _ProductNotFoundDialogState extends ConsumerState<ProductNotFoundDialog> {
                                 ),
                               ),
                               const SizedBox(height: 6),
-                              DropdownButtonFormField<String>(
-                                initialValue: _selectedCategory,
+                              TextFormField(
+                                controller: _categoryCtrl,
                                 decoration: InputDecoration(
+                                  hintText: 'e.g. Groceries, Snacks',
                                   filled: true,
                                   fillColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
                                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                                   contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
                                 ),
-                                items: _categories
-                                    .map(
-                                      (c) => DropdownMenuItem(
-                                        value: c,
-                                        child: Text(c, style: const TextStyle(fontSize: 12)),
-                                      ),
-                                    )
-                                    .toList(),
-                                onChanged: (val) {
-                                  if (val != null) setState(() => _selectedCategory = val);
-                                },
+                                validator: (val) =>
+                                    val == null || val.trim().isEmpty ? 'Category is required' : null,
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Sub Category',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  color: isDark ? Colors.white70 : const Color(0xFF334155),
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              TextFormField(
+                                controller: _subCategoryCtrl,
+                                decoration: InputDecoration(
+                                  hintText: 'e.g. Chips, Soda, Biscuits',
+                                  filled: true,
+                                  fillColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                                  contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Variant',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  color: isDark ? Colors.white70 : const Color(0xFF334155),
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              TextFormField(
+                                controller: _variantCtrl,
+                                decoration: InputDecoration(
+                                  hintText: 'e.g. 500g, 1L, Red, Pack of 2',
+                                  filled: true,
+                                  fillColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                                  contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                                ),
                               ),
                             ],
                           ),
@@ -337,24 +389,26 @@ class _ProductNotFoundDialogState extends ConsumerState<ProductNotFoundDialog> {
                                 ),
                               ),
                               const SizedBox(height: 6),
-                              DropdownButtonFormField<double>(
-                                initialValue: _selectedGstRate,
+                              TextFormField(
+                                controller: _gstRateCtrl,
+                                keyboardType: const TextInputType.numberWithOptions(decimal: true),
                                 decoration: InputDecoration(
+                                  hintText: 'e.g. 0, 5, 12, 18, 28',
+                                  suffixText: '% GST',
                                   filled: true,
                                   fillColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
                                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                                   contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
                                 ),
-                                items: _gstRates
-                                    .map(
-                                      (r) => DropdownMenuItem(
-                                        value: r,
-                                        child: Text('${r.toInt()}% GST', style: const TextStyle(fontSize: 12)),
-                                      ),
-                                    )
-                                    .toList(),
-                                onChanged: (val) {
-                                  if (val != null) setState(() => _selectedGstRate = val);
+                                validator: (val) {
+                                  if (val == null || val.trim().isEmpty) {
+                                    return 'Enter GST rate';
+                                  }
+                                  final parsed = double.tryParse(val.trim());
+                                  if (parsed == null || parsed < 0 || parsed > 100) {
+                                    return 'Enter 0 to 100';
+                                  }
+                                  return null;
                                 },
                               ),
                             ],
@@ -479,7 +533,7 @@ class _ProductNotFoundDialogState extends ConsumerState<ProductNotFoundDialog> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Opening Stock',
+                                'Quantity *',
                                 style: TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.bold,
@@ -488,14 +542,23 @@ class _ProductNotFoundDialogState extends ConsumerState<ProductNotFoundDialog> {
                               ),
                               const SizedBox(height: 6),
                               TextFormField(
-                                controller: _stockCtrl,
+                                controller: _quantityCtrl,
                                 keyboardType: TextInputType.number,
+                                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                                 decoration: InputDecoration(
+                                  hintText: '1',
                                   filled: true,
                                   fillColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
                                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                                   contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
                                 ),
+                                validator: (val) {
+                                  final parsed = int.tryParse(val?.trim() ?? '');
+                                  if (parsed == null || parsed < 1) {
+                                    return 'Enter valid quantity';
+                                  }
+                                  return null;
+                                },
                               ),
                             ],
                           ),

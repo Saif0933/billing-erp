@@ -258,3 +258,28 @@ final List<SalesProductItem> kDefaultSalesProducts = [
     themeColor: Color(0xFF059669),
   ),
 ];
+
+/// Helper returning initial reference test cart items matching financial assertions
+List<SalesCartItem> createDefaultTestCartItems() => [
+  SalesCartItem(
+    product: kDefaultSalesProducts.firstWhere((p) => p.id == 'sp_002'),
+    quantity: 2,
+    rate: 28.00,
+  ),
+  SalesCartItem(
+    product: kDefaultSalesProducts.firstWhere((p) => p.id == 'sp_003'),
+    quantity: 1,
+    rate: 62.00,
+  ),
+  SalesCartItem(
+    product: kDefaultSalesProducts.firstWhere((p) => p.id == 'sp_004'),
+    quantity: 3,
+    rate: 15.00,
+  ),
+  SalesCartItem(
+    product: kDefaultSalesProducts.firstWhere((p) => p.id == 'sp_001'),
+    quantity: 1,
+    rate: 40.00,
+  ),
+];
+

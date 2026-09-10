@@ -197,6 +197,7 @@ class Product {
   final Map<String, double> warehouseStocks; // Map of warehouseId -> stock
   final String supplierId;
   final String supplierName;
+  final String? imageUrl;
 
   const Product({
     required this.id,
@@ -225,6 +226,7 @@ class Product {
     this.warehouseStocks = const {},
     this.supplierId = '',
     this.supplierName = '',
+    this.imageUrl,
   });
 
   Product copyWith({
@@ -253,6 +255,7 @@ class Product {
     Map<String, double>? warehouseStocks,
     String? supplierId,
     String? supplierName,
+    String? imageUrl,
   }) {
     return Product(
       id: id,
@@ -281,6 +284,7 @@ class Product {
       warehouseStocks: warehouseStocks ?? this.warehouseStocks,
       supplierId: supplierId ?? this.supplierId,
       supplierName: supplierName ?? this.supplierName,
+      imageUrl: imageUrl ?? this.imageUrl,
     );
   }
 }

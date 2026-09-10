@@ -287,22 +287,29 @@ class _ProductListingPageState extends ConsumerState<ProductListingPage> {
               ],
             ),
             const SizedBox(height: 3),
-            Row(
+            Wrap(
+              crossAxisAlignment: WrapCrossAlignment.center,
+              spacing: 6,
+              runSpacing: 2,
               children: [
-                Icon(
-                  Icons.schedule,
-                  size: 13,
-                  color: isDark ? Colors.white54 : const Color(0xFF64748B),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.schedule,
+                      size: 13,
+                      color: isDark ? Colors.white54 : const Color(0xFF64748B),
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      dateStr,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: isDark ? Colors.white54 : const Color(0xFF64748B),
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 4),
-                Text(
-                  dateStr,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: isDark ? Colors.white54 : const Color(0xFF64748B),
-                  ),
-                ),
-                const SizedBox(width: 8),
                 Text(
                   '• Scan EAN → enter price & GST → save to database',
                   style: TextStyle(

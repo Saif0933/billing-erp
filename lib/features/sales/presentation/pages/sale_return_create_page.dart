@@ -11,6 +11,7 @@ import '../../../../shared/widgets/app_input_fields.dart';
 import '../../../../shared/widgets/feedback.dart';
 import '../../../business/presentation/providers/business_provider.dart';
 import '../../../dashboard/presentation/providers/billing_repository.dart';
+import '../providers/sales_return_provider.dart';
 
 class ReturnItemEntry {
   final String id;
@@ -108,11 +109,19 @@ class _SaleReturnCreatePageState extends ConsumerState<SaleReturnCreatePage> {
     WidgetsBinding.instance.addPostFrameCallback((_) => _initForm());
   }
 
-  void _initForm() {
+  void _initForm() async {
     final billingState = ref.read(billingRepositoryProvider);
     final count = billingState.invoices.where((i) => i.isCreditNote).length + 1;
     _creditNoteNumberController.text =
         'CN/26-27/${count.toString().padLeft(4, '0')}';
+
+    try {
+      final backendNumber =
+          await ref.read(salesReturnNotifierProvider.notifier).fetchNextNumber();
+      if (mounted && backendNumber.isNotEmpty) {
+        _creditNoteNumberController.text = backendNumber;
+      }
+    } catch (_) {}
 
     if (widget.originalInvoiceId.isNotEmpty) {
       final invoice = billingState.invoices.cast<Invoice?>().firstWhere(
@@ -520,6 +529,44 @@ class _SaleReturnCreatePageState extends ConsumerState<SaleReturnCreatePage> {
           .read(billingRepositoryProvider.notifier)
           .addInvoice(returnInvoice);
 
+      // Asynchronously sync to backend module
+      try {
+        final backendPayload = <String, dynamic>{
+          'returnNumber': returnInvoice.invoiceNumber,
+          'returnDate': returnInvoice.invoiceDate.toIso8601String(),
+          if (_selectedInvoice != null) 'invoiceId': _selectedInvoice!.id,
+          if (_selectedCustomer != null) 'customerId': _selectedCustomer!.id,
+          'customerName': returnInvoice.customerName,
+          'customerPhone': _selectedCustomer?.mobile,
+          'billingAddress': returnInvoice.billingAddress,
+          'shippingAddress': returnInvoice.shippingAddress,
+          'placeOfSupply': returnInvoice.placeOfSupply,
+          'status': status == InvoiceStatus.confirmed ? 'CONFIRMED' : 'DRAFT',
+          'reason': _overallReason,
+          'refundMode': returnInvoice.paymentMode,
+          'warehouseId': _selectedWarehouseId,
+          'items': _items.map((it) => {
+            if (it.productId.isNotEmpty) 'productId': it.productId,
+            if (it.serviceId.isNotEmpty) 'serviceId': it.serviceId,
+            'productName': it.name,
+            'hsnSac': it.hsnSac,
+            'quantity': it.quantity,
+            'unit': it.unit,
+            'rate': it.rate,
+            'discountPercentage': it.discountPercentage,
+            'discountAmount': it.discountAmount,
+            'gstRatePercent': it.gstRate,
+            'reason': it.reason,
+            'stockRestocked': status == InvoiceStatus.confirmed,
+          }).toList(),
+          'notes': returnInvoice.notes,
+          'termsConditions': returnInvoice.termsConditions,
+        };
+        await ref
+            .read(salesReturnNotifierProvider.notifier)
+            .createReturn(backendPayload);
+      } catch (_) {}
+
       if (mounted) {
         AppFeedback.showSnackbar(
           context,
@@ -540,8 +587,9 @@ class _SaleReturnCreatePageState extends ConsumerState<SaleReturnCreatePage> {
     // Filter eligible invoices for selected customer (confirmed or paid, not already a credit note)
     final eligibleInvoices = billingState.invoices.where((inv) {
       if (inv.isCreditNote) return false;
-      if (_selectedCustomer != null && inv.customerId != _selectedCustomer!.id)
+      if (_selectedCustomer != null && inv.customerId != _selectedCustomer!.id) {
         return false;
+      }
       return inv.status != InvoiceStatus.cancelled;
     }).toList();
 
@@ -814,7 +862,7 @@ class _SaleReturnCreatePageState extends ConsumerState<SaleReturnCreatePage> {
                             shrinkWrap: true,
                             physics: const NeverScrollableScrollPhysics(),
                             itemCount: _items.length,
-                            separatorBuilder: (_, __) =>
+                            separatorBuilder: (context, index) =>
                                 const Divider(height: 24),
                             itemBuilder: (ctx, index) {
                               final item = _items[index];

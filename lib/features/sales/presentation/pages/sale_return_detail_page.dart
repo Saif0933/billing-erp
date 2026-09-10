@@ -12,6 +12,7 @@ import '../../../../shared/widgets/app_table.dart';
 import '../../../../shared/widgets/feedback.dart';
 import '../../../business/presentation/providers/business_provider.dart';
 import '../../../dashboard/presentation/providers/billing_repository.dart';
+import '../providers/sales_return_provider.dart';
 
 class SaleReturnDetailPage extends ConsumerWidget {
   final String returnId;
@@ -41,10 +42,17 @@ class SaleReturnDetailPage extends ConsumerWidget {
               await ref
                   .read(billingRepositoryProvider.notifier)
                   .cancelInvoice(ret.id);
-              AppFeedback.showSnackbar(
-                context,
-                message: 'Sale return cancelled successfully.',
-              );
+              try {
+                await ref
+                    .read(salesReturnNotifierProvider.notifier)
+                    .cancelReturn(ret.id);
+              } catch (_) {}
+              if (context.mounted) {
+                AppFeedback.showSnackbar(
+                  context,
+                  message: 'Sale return cancelled successfully.',
+                );
+              }
             },
           ),
         ],
@@ -54,10 +62,18 @@ class SaleReturnDetailPage extends ConsumerWidget {
 
   void _confirmReturn(BuildContext context, WidgetRef ref, Invoice ret) async {
     await ref.read(billingRepositoryProvider.notifier).confirmInvoice(ret.id);
-    AppFeedback.showSnackbar(
-      context,
-      message: 'Sale return confirmed! Inventory restocked & balance adjusted.',
-    );
+    try {
+      await ref
+          .read(salesReturnNotifierProvider.notifier)
+          .confirmReturn(ret.id);
+    } catch (_) {}
+    if (context.mounted) {
+      AppFeedback.showSnackbar(
+        context,
+        message:
+            'Sale return confirmed! Inventory restocked & balance adjusted.',
+      );
+    }
   }
 
   Widget _buildStatusBadge(InvoiceStatus status) {

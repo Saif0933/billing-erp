@@ -24,7 +24,7 @@ class ApiProductRepository implements ProductRepository {
   Future<Product?> findProductByBarcode(String barcode) async {
     try {
       final dto = await _apiService.findProductByBarcode(barcode);
-      return dto.toDomainProduct();
+      return dto?.toDomainProduct();
     } catch (_) {
       return null;
     }
@@ -38,6 +38,8 @@ class ApiProductRepository implements ProductRepository {
       barcode: product.barcode,
       sku: product.sku,
       category: product.category,
+      subCategory: product.subCategory,
+      variant: product.variant,
       sellingPrice: product.sellingPrice,
       purchasePrice: product.purchasePrice,
       mrp: product.mrp,
@@ -64,6 +66,8 @@ class ApiProductRepository implements ProductRepository {
       barcode: product.barcode,
       sku: product.sku,
       category: product.category,
+      subCategory: product.subCategory,
+      variant: product.variant,
       sellingPrice: product.sellingPrice,
       purchasePrice: product.purchasePrice,
       mrp: product.mrp,
@@ -73,6 +77,7 @@ class ApiProductRepository implements ProductRepository {
       stock: product.stock,
       unit: product.unit,
       primaryUnit: product.unit.toUpperCase(),
+      openingStock: product.stock.toDouble(),
       supplierId: product.supplierId,
       supplierName: product.supplierName,
     );

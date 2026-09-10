@@ -32,7 +32,7 @@ class ScannedProductsTable extends ConsumerWidget {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: SizedBox(
-        width: 1060,
+        width: 1100,
         child: Column(
           children: [
             Container(
@@ -49,9 +49,10 @@ class ScannedProductsTable extends ConsumerWidget {
                 children: [
                   SizedBox(width: 36, child: Text('#', style: _headerStyle)),
                   Expanded(flex: 4, child: Text('Product & EAN', style: _headerStyle)),
-                  SizedBox(width: 220, child: Text('Supplier', style: _headerStyle)),
+                  SizedBox(width: 200, child: Text('Supplier', style: _headerStyle)),
+                  SizedBox(width: 110, child: Text('Qty', style: _headerStyle, textAlign: TextAlign.center)),
                   SizedBox(width: 110, child: Text('Unit Price', style: _headerStyle, textAlign: TextAlign.right)),
-                  SizedBox(width: 100, child: Text('GST %', style: _headerStyle, textAlign: TextAlign.center)),
+                  SizedBox(width: 95, child: Text('GST %', style: _headerStyle, textAlign: TextAlign.center)),
                   SizedBox(width: 90, child: Text('MRP', style: _headerStyle, textAlign: TextAlign.right)),
                   SizedBox(width: 50, child: Text('', style: _headerStyle, textAlign: TextAlign.center)),
                 ],
@@ -170,24 +171,47 @@ class ScannedProductsTable extends ConsumerWidget {
                         ],
                       ),
                       const SizedBox(height: 2),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-                        decoration: BoxDecoration(
-                          color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF1F5F9),
-                          borderRadius: BorderRadius.circular(4),
-                          border: Border.all(
-                            color: isDark ? Colors.white12 : const Color(0xFFCBD5E1),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                            decoration: BoxDecoration(
+                              color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF1F5F9),
+                              borderRadius: BorderRadius.circular(4),
+                              border: Border.all(
+                                color: isDark ? Colors.white12 : const Color(0xFFCBD5E1),
+                              ),
+                            ),
+                            child: Text(
+                              p.barcode,
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontFamily: 'monospace',
+                                fontWeight: FontWeight.w600,
+                                color: isDark ? Colors.white70 : const Color(0xFF475569),
+                              ),
+                            ),
                           ),
-                        ),
-                        child: Text(
-                          p.barcode,
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontFamily: 'monospace',
-                            fontWeight: FontWeight.w600,
-                            color: isDark ? Colors.white70 : const Color(0xFF475569),
-                          ),
-                        ),
+                          if (p.variant.isNotEmpty) ...[
+                            const SizedBox(width: 4),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                              decoration: BoxDecoration(
+                                color: isDark ? const Color(0xFF1E293B) : const Color(0xFFE0E7FF),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                p.variant,
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w600,
+                                  color: isDark ? const Color(0xFF818CF8) : const Color(0xFF4338CA),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
                     ],
                   ),
@@ -196,7 +220,7 @@ class ScannedProductsTable extends ConsumerWidget {
             ),
           ),
           SizedBox(
-            width: 220,
+            width: 200,
             child: ProductSupplierField(
               dense: true,
               supplierId: p.supplierId,
@@ -205,6 +229,88 @@ class ScannedProductsTable extends ConsumerWidget {
                 notifier.updateSupplier(p.id, sel.id, sel.name);
                 onActionCompleted();
               },
+            ),
+          ),
+          const SizedBox(width: 8),
+          // Quantity Increase & Decrease Stepper
+          SizedBox(
+            width: 110,
+            child: Center(
+              child: Container(
+                height: 32,
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF1F5F9),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: isDark ? Colors.white12 : const Color(0xFFCBD5E1),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    InkWell(
+                      onTap: () {
+                        notifier.decrementQuantity(p.id);
+                        onActionCompleted();
+                      },
+                      borderRadius: BorderRadius.circular(6),
+                      child: Container(
+                        width: 24,
+                        height: 24,
+                        decoration: BoxDecoration(
+                          color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(
+                            color: isDark ? Colors.white12 : const Color(0xFFE2E8F0),
+                          ),
+                        ),
+                        child: Icon(
+                          Icons.remove,
+                          size: 13,
+                          color: isDark ? Colors.white70 : const Color(0xFF334155),
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      child: Center(
+                        child: Text(
+                          '${item.quantity}',
+                          style: TextStyle(
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.bold,
+                            color: isDark ? Colors.white : const Color(0xFF0F172A),
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ),
+                    InkWell(
+                      onTap: () {
+                        notifier.incrementQuantity(p.id);
+                        onActionCompleted();
+                      },
+                      borderRadius: BorderRadius.circular(6),
+                      child: Container(
+                        width: 24,
+                        height: 24,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF16A34A).withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(
+                            color: const Color(0xFF16A34A).withValues(alpha: 0.4),
+                          ),
+                        ),
+                        child: const Icon(
+                          Icons.add,
+                          size: 13,
+                          color: Color(0xFF16A34A),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ),
           const SizedBox(width: 8),

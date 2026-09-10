@@ -292,7 +292,10 @@ class BillingCartNotifier extends StateNotifier<BillingCartState> {
       );
     } else {
       updatedItems = [
-        CartItem(product: product, quantity: 1),
+        CartItem(
+          product: product,
+          quantity: product.id.startsWith('prod_custom_') && product.stock > 0 ? product.stock : 1,
+        ),
         ...state.items,
       ];
     }
@@ -424,10 +427,26 @@ class BillingCartNotifier extends StateNotifier<BillingCartState> {
     );
   }
 
-  /// Add newly registered product from dialog into listing draft (local).
-  /// Call [saveAllToDatabase] to persist EAN + full details to DB.
+  /// Add newly registered product from dialog into listing draft and persist to database.
   Future<void> addCustomProductAndAddToCart(Product product) async {
-    _addProductToListing(product, markSaved: false);
+    Product productToAdd = product;
+
+    try {
+      final saved = await _repo.addProduct(product);
+      productToAdd = saved;
+
+      // Refresh product listing catalogue directory
+      final ref = _ref;
+      if (ref != null) {
+        try {
+          ref.read(productListingProvider.notifier).loadProducts(refresh: true);
+        } catch (_) {}
+      }
+    } catch (_) {
+      // Fallback: keep product in draft for user to save via OrderSummaryCard
+    }
+
+    _addProductToListing(productToAdd, markSaved: true);
   }
 
   /// Persist all listed products (EAN + name + unit price + GST + full info) to database.
@@ -490,14 +509,16 @@ class BillingCartNotifier extends StateNotifier<BillingCartState> {
         code: p.sku,
         itemCode: p.sku,
         category: p.category.isNotEmpty ? p.category : 'General',
+        subCategory: p.subCategory,
+        variant: p.variant,
         sellingPrice: p.sellingPrice,
         purchasePrice: p.purchasePrice > 0 ? p.purchasePrice : p.sellingPrice,
         mrp: p.mrp > 0 ? p.mrp : p.sellingPrice,
         gstRate: p.gstRate,
         gstRatePercent: p.gstRate,
-        openingStock: p.stock.toDouble(),
-        currentStock: p.stock.toDouble(),
-        stock: p.stock,
+        openingStock: p.stock > 0 ? p.stock.toDouble() : item.quantity.toDouble(),
+        currentStock: p.stock > 0 ? p.stock.toDouble() : item.quantity.toDouble(),
+        stock: p.stock > 0 ? p.stock : item.quantity,
         unit: p.unit,
         primaryUnit: p.unit.toUpperCase(),
         isActive: true,
@@ -513,33 +534,38 @@ class BillingCartNotifier extends StateNotifier<BillingCartState> {
           // Try create; if barcode already exists, update that record
           try {
             saved = await api.createProduct(dto);
-          } catch (_) {
+          } catch (createErr) {
             try {
               final existing = await api.findProductByBarcode(p.barcode);
-              saved = await api.updateProduct(ProductDto(
-                id: existing.id,
-                name: dto.name,
-                barcode: dto.barcode,
-                sku: dto.sku,
-                code: dto.code,
-                itemCode: dto.itemCode,
-                category: dto.category,
-                sellingPrice: dto.sellingPrice,
-                purchasePrice: dto.purchasePrice,
-                mrp: dto.mrp,
-                gstRate: dto.gstRate,
-                gstRatePercent: dto.gstRate,
-                openingStock: dto.openingStock,
-                currentStock: dto.currentStock,
-                stock: dto.stock,
-                unit: dto.unit,
-                primaryUnit: dto.primaryUnit,
-                isActive: true,
-                supplierId: dto.supplierId,
-                supplierName: dto.supplierName,
-              ));
+              if (existing != null) {
+                saved = await api.updateProduct(ProductDto(
+                  id: existing.id,
+                  name: dto.name,
+                  barcode: dto.barcode,
+                  sku: dto.sku,
+                  code: dto.code,
+                  itemCode: dto.itemCode,
+                  category: dto.category,
+                  sellingPrice: dto.sellingPrice,
+                  purchasePrice: dto.purchasePrice,
+                  mrp: dto.mrp,
+                  gstRate: dto.gstRate,
+                  gstRatePercent: dto.gstRate,
+                  openingStock: dto.openingStock,
+                  currentStock: dto.currentStock,
+                  stock: dto.stock,
+                  unit: dto.unit,
+                  primaryUnit: dto.primaryUnit,
+                  isActive: true,
+                  supplierId: dto.supplierId,
+                  supplierName: dto.supplierName,
+                ));
+              } else {
+                errors.add('${p.name} (${p.barcode}): ${createErr.toString().replaceAll('Exception:', '').trim()}');
+                continue;
+              }
             } catch (e2) {
-              errors.add('${p.barcode}: $e2');
+              errors.add('${p.name} (${p.barcode}): ${createErr.toString().replaceAll('Exception:', '').trim()}');
               continue;
             }
           }

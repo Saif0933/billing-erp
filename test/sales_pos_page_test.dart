@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:frontend/features/auth/presentation/providers/auth_provider.dart';
+import 'package:frontend/features/sales/presentation/models/sales_ui_models.dart';
 import 'package:frontend/features/sales/presentation/pages/pos_page.dart';
 
 void main() {
@@ -29,8 +30,11 @@ void main() {
     await tester.pumpWidget(
       UncontrolledProviderScope(
         container: container,
-        child: const MaterialApp(
-          home: POSPage(),
+        child: MaterialApp(
+          home: POSPage(
+            initialProducts: kDefaultSalesProducts,
+            initialCartItems: createDefaultTestCartItems(),
+          ),
         ),
       ),
     );
@@ -93,8 +97,11 @@ void main() {
     await tester.pumpWidget(
       UncontrolledProviderScope(
         container: container,
-        child: const MaterialApp(
-          home: POSPage(),
+        child: MaterialApp(
+          home: POSPage(
+            initialProducts: kDefaultSalesProducts,
+            initialCartItems: createDefaultTestCartItems(),
+          ),
         ),
       ),
     );
@@ -128,8 +135,11 @@ void main() {
     await tester.pumpWidget(
       UncontrolledProviderScope(
         container: container,
-        child: const MaterialApp(
-          home: POSPage(),
+        child: MaterialApp(
+          home: POSPage(
+            initialProducts: kDefaultSalesProducts,
+            initialCartItems: createDefaultTestCartItems(),
+          ),
         ),
       ),
     );
@@ -168,8 +178,11 @@ void main() {
     await tester.pumpWidget(
       UncontrolledProviderScope(
         container: container,
-        child: const MaterialApp(
-          home: POSPage(),
+        child: MaterialApp(
+          home: POSPage(
+            initialProducts: kDefaultSalesProducts,
+            initialCartItems: createDefaultTestCartItems(),
+          ),
         ),
       ),
     );
@@ -194,5 +207,40 @@ void main() {
     // Action buttons
     expect(find.text('Close'), findsOneWidget);
     expect(find.text('Print Receipt (Ctrl+P)'), findsOneWidget);
+  });
+
+  testWidgets('POSPage displays empty state when database has no products and cart is empty', (tester) async {
+    tester.view.physicalSize = const Size(1366, 768);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final container = ProviderContainer(
+      overrides: [
+        sharedPreferencesProvider.overrideWithValue(prefs),
+      ],
+    );
+    addTearDown(container.dispose);
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: const MaterialApp(
+          home: POSPage(
+            initialProducts: [],
+            initialCartItems: [],
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Verify empty catalog view is displayed cleanly
+    expect(find.text('No products in catalog'), findsOneWidget);
+    expect(find.text('Products added to the database will appear here'), findsOneWidget);
+
+    // Verify empty cart placeholder is shown
+    expect(find.text('Current Bill is empty'), findsOneWidget);
+    expect(find.text('Click on products to add to cart'), findsOneWidget);
   });
 }

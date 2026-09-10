@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:frontend/core/navigation/navigation_config.dart';
 import 'package:frontend/core/models/billing_models.dart';
 import 'package:frontend/features/dashboard/presentation/providers/billing_repository.dart';
+import 'package:frontend/features/sales/data/models/sales_return_dto.dart';
 
 void main() {
   group('Sale Return & Navigation Integration Tests', () {
@@ -19,6 +20,27 @@ void main() {
     test('Creating and confirming a Sale Return restocks inventory and decreases customer balance', () async {
       final container = ProviderContainer();
       final notifier = container.read(billingRepositoryProvider.notifier);
+
+      await notifier.addCustomer(const Customer(
+        id: 'cust_01',
+        name: 'Acme Corporates',
+        type: 'Wholesale',
+        gstin: '27AABCU9603R1ZM',
+        pan: 'AABCU9603R',
+        mobile: '9876543210',
+        email: 'billing@acme.com',
+        billingAddress: '101, Industrial Area, Mumbai',
+        shippingAddress: '101, Industrial Area, Mumbai',
+        state: 'Maharashtra',
+        stateCode: '27',
+        creditLimit: 50000.0,
+        creditPeriod: 30,
+        openingBalance: 5000.0,
+        currentBalance: 5000.0,
+        customerGroup: 'Corporate',
+        notes: '',
+        isRegistered: true,
+      ));
 
       final initialProduct = notifier.state.products.firstWhere((p) => p.id == 'prod_01');
       final initialStock = initialProduct.currentStock;
@@ -97,6 +119,27 @@ void main() {
     test('Cancelling a confirmed Sale Return reverses inventory stock and customer balance', () async {
       final container = ProviderContainer();
       final notifier = container.read(billingRepositoryProvider.notifier);
+
+      await notifier.addCustomer(const Customer(
+        id: 'cust_01',
+        name: 'Acme Corporates',
+        type: 'Wholesale',
+        gstin: '27AABCU9603R1ZM',
+        pan: 'AABCU9603R',
+        mobile: '9876543210',
+        email: 'billing@acme.com',
+        billingAddress: '101, Industrial Area, Mumbai',
+        shippingAddress: '101, Industrial Area, Mumbai',
+        state: 'Maharashtra',
+        stateCode: '27',
+        creditLimit: 50000.0,
+        creditPeriod: 30,
+        openingBalance: 5000.0,
+        currentBalance: 5000.0,
+        customerGroup: 'Corporate',
+        notes: '',
+        isRegistered: true,
+      ));
 
       final initialProduct = notifier.state.products.firstWhere((p) => p.id == 'prod_01');
       final initialStock = initialProduct.currentStock;
@@ -193,6 +236,68 @@ void main() {
       );
 
       expect(directReturn.isCreditNote, isTrue);
+    });
+
+    test('SalesReturnDto and items deserialization from JSON', () {
+      final json = {
+        'id': 'ret_101',
+        'returnNumber': 'CN/26-27/0001',
+        'returnDate': '2026-09-10T10:00:00.000Z',
+        'customerId': 'cust_01',
+        'customerName': 'Test Corp',
+        'status': 'CONFIRMED',
+        'subtotal': 1000.0,
+        'discountAmount': 0.0,
+        'taxableValue': 1000.0,
+        'cgstAmount': 25.0,
+        'sgstAmount': 25.0,
+        'igstAmount': 0.0,
+        'cessAmount': 0.0,
+        'roundOff': 0.0,
+        'totalAmount': 1050.0,
+        'items': [
+          {
+            'id': 'item_1',
+            'productId': 'prod_01',
+            'productName': 'Wheat Flour',
+            'quantity': 5.0,
+            'rate': 200.0,
+            'taxableValue': 1000.0,
+            'cgstAmount': 25.0,
+            'sgstAmount': 25.0,
+            'lineTotal': 1050.0,
+            'stockRestocked': true,
+          }
+        ]
+      };
+
+      final dto = SalesReturnDto.fromJson(json);
+      expect(dto.id, 'ret_101');
+      expect(dto.returnNumber, 'CN/26-27/0001');
+      expect(dto.status, 'CONFIRMED');
+      expect(dto.totalAmount, 1050.0);
+      expect(dto.items.length, 1);
+      expect(dto.items.first.productName, 'Wheat Flour');
+      expect(dto.items.first.stockRestocked, isTrue);
+    });
+
+    test('SalesReturnSummaryMetricsDto parsing from backend response', () {
+      final json = {
+        'totalReturnValue': 45200.5,
+        'confirmedCount': 12,
+        'draftCount': 3,
+        'cancelledCount': 1,
+        'itemsRestocked': 150.0,
+        'totalCount': 16,
+      };
+
+      final metrics = SalesReturnSummaryMetricsDto.fromJson(json);
+      expect(metrics.totalReturnValue, 45200.5);
+      expect(metrics.confirmedCount, 12);
+      expect(metrics.draftCount, 3);
+      expect(metrics.cancelledCount, 1);
+      expect(metrics.itemsRestocked, 150.0);
+      expect(metrics.totalCount, 16);
     });
   });
 }

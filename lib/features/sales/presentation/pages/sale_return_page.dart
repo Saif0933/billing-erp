@@ -14,6 +14,7 @@ import '../../../../shared/widgets/app_table.dart';
 import '../../../../shared/widgets/feedback.dart';
 import '../../../business/presentation/providers/business_provider.dart';
 import '../../../dashboard/presentation/providers/billing_repository.dart';
+import '../providers/sales_return_provider.dart';
 
 class SaleReturnPage extends ConsumerStatefulWidget {
   const SaleReturnPage({super.key});
@@ -560,6 +561,11 @@ class _SaleReturnPageState extends ConsumerState<SaleReturnPage> {
               await ref
                   .read(billingRepositoryProvider.notifier)
                   .cancelInvoice(ret.id);
+              try {
+                await ref
+                    .read(salesReturnNotifierProvider.notifier)
+                    .cancelReturn(ret.id);
+              } catch (_) {}
               if (mounted) {
                 AppFeedback.showSnackbar(
                   context,
@@ -575,6 +581,11 @@ class _SaleReturnPageState extends ConsumerState<SaleReturnPage> {
 
   void _confirmReturn(BuildContext context, Invoice ret) async {
     await ref.read(billingRepositoryProvider.notifier).confirmInvoice(ret.id);
+    try {
+      await ref
+          .read(salesReturnNotifierProvider.notifier)
+          .confirmReturn(ret.id);
+    } catch (_) {}
     if (mounted) {
       AppFeedback.showSnackbar(
         context,

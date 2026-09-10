@@ -60,19 +60,25 @@ class ProductApiService {
     throw Exception(data['message'] ?? 'Failed to retrieve products');
   }
 
-  /// High-speed Barcode/SKU scanner lookup for POS Billing
-  Future<ProductDto> findProductByBarcode(String barcode) async {
+  /// High-speed Barcode/SKU scanner lookup for Product Listing & POS Billing
+  Future<ProductDto?> findProductByBarcode(String barcode) async {
     final clean = barcode.trim();
-    final response = await _apiClient.get(
-      '${ApiEndpoints.products}/barcode/$clean',
-    );
+    try {
+      final response = await _apiClient.get(
+        '${ApiEndpoints.products}/barcode/$clean',
+      );
 
-    final data = response.data;
-    if (data['success'] == true && data['data'] != null) {
-      return ProductDto.fromJson(data['data'] as Map<String, dynamic>);
+      final data = response.data;
+      if (data is Map<String, dynamic> && data['success'] == true) {
+        if (data['data'] != null && data['data'] is Map<String, dynamic>) {
+          return ProductDto.fromJson(data['data'] as Map<String, dynamic>);
+        }
+        return null;
+      }
+      return null;
+    } catch (_) {
+      return null;
     }
-
-    throw Exception(data['message'] ?? 'Product not found for barcode: $barcode');
   }
 
   /// Get single product details by ID

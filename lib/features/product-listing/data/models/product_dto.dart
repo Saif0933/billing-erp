@@ -27,6 +27,8 @@ class ProductDto {
   final double currentStock;
   final int stock;
   final String category;
+  final String subCategory;
+  final String variant;
   final String brand;
   final String warehouseId;
   final String warehouseName;
@@ -66,6 +68,8 @@ class ProductDto {
     this.currentStock = 0.0,
     this.stock = 0,
     this.category = 'General',
+    this.subCategory = '',
+    this.variant = '',
     this.brand = '',
     this.warehouseId = '',
     this.warehouseName = '',
@@ -143,6 +147,8 @@ class ProductDto {
       currentStock: curStock,
       stock: parseInt(json['stock'] ?? curStock),
       category: json['category']?.toString() ?? 'General',
+      subCategory: json['subCategory']?.toString() ?? json['subcategory']?.toString() ?? '',
+      variant: json['variant']?.toString() ?? '',
       brand: json['brand']?.toString() ?? '',
       warehouseId: json['warehouseId']?.toString() ?? '',
       warehouseName: json['warehouseName']?.toString() ?? '',
@@ -234,6 +240,8 @@ class ProductDto {
       barcode: barcode,
       sku: sku.isNotEmpty ? sku : code,
       category: category,
+      subCategory: subCategory,
+      variant: variant,
       sellingPrice: sellingPrice,
       purchasePrice: purchasePrice,
       mrp: mrp > 0 ? mrp : sellingPrice,
@@ -315,8 +323,11 @@ class ProductDto {
       'mrp': mrp,
       'wholesalePrice': wholesalePrice,
       'minStockLevel': minStockLevel,
-      'openingStock': openingStock,
+      'openingStock': openingStock > 0 ? openingStock : stock.toDouble(),
+      'quantity': stock > 0 ? stock : openingStock.round(),
       'category': category.isNotEmpty ? category : 'General',
+      'subCategory': subCategory.isNotEmpty ? subCategory : null,
+      'variant': variant.isNotEmpty ? variant : null,
       'brand': brand.isNotEmpty ? brand : null,
       'supplierId': supplierId.isNotEmpty ? supplierId : null,
       'isActive': isActive,

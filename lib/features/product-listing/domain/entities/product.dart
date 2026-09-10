@@ -7,6 +7,8 @@ class Product {
   final String barcode;
   final String sku;
   final String category;
+  final String subCategory;
+  final String variant;
   final double sellingPrice;
   final double purchasePrice;
   final double mrp;
@@ -25,6 +27,8 @@ class Product {
     required this.barcode,
     required this.sku,
     required this.category,
+    this.subCategory = '',
+    this.variant = '',
     required this.sellingPrice,
     this.purchasePrice = 0.0,
     required this.mrp,
@@ -44,6 +48,8 @@ class Product {
     String? barcode,
     String? sku,
     String? category,
+    String? subCategory,
+    String? variant,
     double? sellingPrice,
     double? purchasePrice,
     double? mrp,
@@ -62,6 +68,8 @@ class Product {
       barcode: barcode ?? this.barcode,
       sku: sku ?? this.sku,
       category: category ?? this.category,
+      subCategory: subCategory ?? this.subCategory,
+      variant: variant ?? this.variant,
       sellingPrice: sellingPrice ?? this.sellingPrice,
       purchasePrice: purchasePrice ?? this.purchasePrice,
       mrp: mrp ?? this.mrp,

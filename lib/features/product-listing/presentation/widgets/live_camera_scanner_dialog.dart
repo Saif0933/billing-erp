@@ -132,13 +132,12 @@ class _LiveCameraScannerDialogState
         _currentScannedProduct = null;
       });
       if (mounted) {
+        final parentContext = Navigator.of(context).context;
         Navigator.pop(context);
-        // Use billing cart flow via ProductNotFoundDialog
-        // ignore: use_build_context_synchronously
         Future.microtask(() {
-          if (context.mounted) {
+          if (parentContext.mounted) {
             ProductNotFoundDialog.show(
-              context,
+              parentContext,
               barcode: cleanCode,
               onDismissed: () {},
             );

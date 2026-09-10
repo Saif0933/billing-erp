@@ -68,17 +68,114 @@ class ScannedProductCard extends ConsumerWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 2),
-                    Text(
-                      'EAN: ${p.barcode}',
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontFamily: 'monospace',
-                        color: isDark ? Colors.white54 : const Color(0xFF64748B),
+                    Row(
+                      children: [
+                        Text(
+                          'EAN: ${p.barcode}',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontFamily: 'monospace',
+                            color: isDark ? Colors.white54 : const Color(0xFF64748B),
+                          ),
+                        ),
+                        if (p.variant.isNotEmpty) ...[
+                          const SizedBox(width: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                            decoration: BoxDecoration(
+                              color: isDark ? const Color(0xFF1E293B) : const Color(0xFFE0E7FF),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              p.variant,
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w600,
+                                color: isDark ? const Color(0xFF818CF8) : const Color(0xFF4338CA),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              // Quantity Stepper (Increase / Decrease)
+              Container(
+                height: 30,
+                padding: const EdgeInsets.symmetric(horizontal: 2),
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF1F5F9),
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(
+                    color: isDark ? Colors.white12 : const Color(0xFFCBD5E1),
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    InkWell(
+                      onTap: () {
+                        notifier.decrementQuantity(p.id);
+                        onActionCompleted();
+                      },
+                      borderRadius: BorderRadius.circular(4),
+                      child: Container(
+                        width: 22,
+                        height: 22,
+                        decoration: BoxDecoration(
+                          color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                          borderRadius: BorderRadius.circular(4),
+                          border: Border.all(
+                            color: isDark ? Colors.white12 : const Color(0xFFE2E8F0),
+                          ),
+                        ),
+                        child: Icon(
+                          Icons.remove,
+                          size: 11,
+                          color: isDark ? Colors.white70 : const Color(0xFF334155),
+                        ),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 6),
+                      child: Text(
+                        '${item.quantity}',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: isDark ? Colors.white : const Color(0xFF0F172A),
+                        ),
+                      ),
+                    ),
+                    InkWell(
+                      onTap: () {
+                        notifier.incrementQuantity(p.id);
+                        onActionCompleted();
+                      },
+                      borderRadius: BorderRadius.circular(4),
+                      child: Container(
+                        width: 22,
+                        height: 22,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF16A34A).withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(4),
+                          border: Border.all(
+                            color: const Color(0xFF16A34A).withValues(alpha: 0.4),
+                          ),
+                        ),
+                        child: const Icon(
+                          Icons.add,
+                          size: 11,
+                          color: Color(0xFF16A34A),
+                        ),
                       ),
                     ),
                   ],
                 ),
               ),
+              const SizedBox(width: 4),
               IconButton(
                 icon: const Icon(Icons.delete_outline, size: 18),
                 color: Colors.redAccent.shade200,

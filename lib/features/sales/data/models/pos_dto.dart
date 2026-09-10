@@ -15,6 +15,7 @@ class PosProductDto {
   final double gstRate;
   final String category;
   final String? brand;
+  final String? imageUrl;
   final bool isLowStock;
 
   const PosProductDto({
@@ -31,6 +32,7 @@ class PosProductDto {
     required this.gstRate,
     required this.category,
     this.brand,
+    this.imageUrl,
     this.isLowStock = false,
   });
 
@@ -53,6 +55,7 @@ class PosProductDto {
       gstRate: (json['gstRate'] as num?)?.toDouble() ?? 0.0,
       category: json['category']?.toString() ?? 'General',
       brand: json['brand']?.toString(),
+      imageUrl: json['imageUrl']?.toString(),
       isLowStock: json['isLowStock'] == true,
     );
   }
@@ -80,6 +83,7 @@ class PosProductDto {
       serialNumber: '',
       category: category,
       brand: brand ?? '',
+      imageUrl: imageUrl,
       warehouseStocks: {'main': currentStock},
     );
   }
