@@ -15,7 +15,17 @@ import '../providers/supplier_provider.dart';
 
 class SupplierFormPage extends ConsumerStatefulWidget {
   final String? supplierId;
-  const SupplierFormPage({super.key, this.supplierId});
+  final bool isDialog;
+  const SupplierFormPage({super.key, this.supplierId, this.isDialog = false});
+
+  static Future<Supplier?> showAsDialog(BuildContext context) {
+    return showDialog<Supplier>(
+      context: context,
+      barrierDismissible: false,
+      useRootNavigator: true,
+      builder: (ctx) => const SupplierFormPage(isDialog: true),
+    );
+  }
 
   @override
   ConsumerState<SupplierFormPage> createState() => _SupplierFormPageState();
@@ -160,18 +170,26 @@ class _SupplierFormPageState extends ConsumerState<SupplierFormPage> {
       try {
         final supplierNotifier = ref.read(supplierProvider.notifier);
         if (_isEdit) {
-          await supplierNotifier.updateSupplier(supplier);
+          final updated = await supplierNotifier.updateSupplier(supplier);
           if (mounted) {
             AppFeedback.showSnackbar(context,
                 message: 'Supplier updated successfully!');
-            context.pop();
+            if (widget.isDialog) {
+              Navigator.of(context).pop(updated);
+            } else {
+              context.pop(updated);
+            }
           }
         } else {
-          await supplierNotifier.addSupplier(supplier);
+          final created = await supplierNotifier.addSupplier(supplier);
           if (mounted) {
             AppFeedback.showSnackbar(context,
                 message: 'Supplier created successfully!');
-            context.pop();
+            if (widget.isDialog) {
+              Navigator.of(context).pop(created);
+            } else {
+              context.pop(created);
+            }
           }
         }
       } catch (e) {
@@ -191,8 +209,352 @@ class _SupplierFormPageState extends ConsumerState<SupplierFormPage> {
     }
   }
 
+  Widget _buildFormContent(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'General Information',
+          style: AppTypography.titleLarge.copyWith(fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: AppSpacing.lg),
+        AppTextField(
+          label: 'Supplier Company Name *',
+          controller: _nameController,
+          validator: (val) => val == null || val.trim().isEmpty
+              ? 'Supplier name is required'
+              : null,
+        ),
+        const SizedBox(height: AppSpacing.md),
+        ResponsiveRow(
+          children: [
+            Expanded(
+              child: AppPhoneField(
+                label: 'Mobile Number',
+                controller: _mobileController,
+              ),
+            ),
+            Expanded(
+              child: AppTextField(
+                label: 'Email Address',
+                controller: _emailController,
+                keyboardType: TextInputType.emailAddress,
+                validator: (val) {
+                  if (val == null || val.isEmpty) return null;
+                  final regex = RegExp(r'^[^@]+@[^@]+\.[^@]+$');
+                  if (!regex.hasMatch(val.trim())) {
+                    return 'Enter a valid email address';
+                  }
+                  return null;
+                },
+              ),
+            ),
+          ],
+        ),
+        const Divider(height: AppSpacing.xl),
+        Text(
+          'GSTIN & Financial Identifiers',
+          style: AppTypography.titleLarge.copyWith(fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        SwitchListTile(
+          title: const Text('Registered under GST?'),
+          value: _isRegistered,
+          onChanged: (val) => setState(() => _isRegistered = val),
+          contentPadding: EdgeInsets.zero,
+        ),
+        if (_isRegistered) ...[
+          const SizedBox(height: AppSpacing.sm),
+          ResponsiveRow(
+            children: [
+              Expanded(
+                child: AppGstinField(
+                  label: 'GSTIN *',
+                  controller: _gstinController,
+                  validator: (val) {
+                    if (!_isRegistered) return null;
+                    if (val == null || val.trim().isEmpty) {
+                      return 'GSTIN is required for registered vendors';
+                    }
+                    final regex = RegExp(
+                        r'^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$');
+                    if (!regex.hasMatch(val.trim())) {
+                      return 'Invalid GSTIN format (e.g. 27AADCA1234F1Z5)';
+                    }
+                    return null;
+                  },
+                ),
+              ),
+              Expanded(
+                child: AppTextField(
+                  label: 'PAN (Optional)',
+                  controller: _panController,
+                  inputFormatters: [
+                    LengthLimitingTextInputFormatter(10),
+                  ],
+                  onChanged: (val) {
+                    final upper = val.toUpperCase();
+                    if (upper != val) {
+                      _panController.value = _panController.value.copyWith(
+                        text: upper,
+                        selection:
+                            TextSelection.collapsed(offset: upper.length),
+                      );
+                    }
+                  },
+                  validator: (val) {
+                    if (val == null || val.isEmpty) return null;
+                    final regex = RegExp(r'^[A-Z]{5}[0-9]{4}[A-Z]{1}$');
+                    if (!regex.hasMatch(val.trim())) {
+                      return 'Enter a valid 10-character PAN';
+                    }
+                    return null;
+                  },
+                ),
+              ),
+            ],
+          ),
+        ] else ...[
+          const SizedBox(height: AppSpacing.sm),
+          AppTextField(
+            label: 'PAN (Optional)',
+            controller: _panController,
+            inputFormatters: [
+              LengthLimitingTextInputFormatter(10),
+            ],
+            onChanged: (val) {
+              final upper = val.toUpperCase();
+              if (upper != val) {
+                _panController.value = _panController.value.copyWith(
+                  text: upper,
+                  selection:
+                      TextSelection.collapsed(offset: upper.length),
+                );
+              }
+            },
+            validator: (val) {
+              if (val == null || val.isEmpty) return null;
+              final regex = RegExp(r'^[A-Z]{5}[0-9]{4}[A-Z]{1}$');
+              if (!regex.hasMatch(val.trim())) {
+                return 'Enter a valid 10-character PAN';
+              }
+              return null;
+            },
+          ),
+        ],
+        const Divider(height: AppSpacing.xl),
+        Text(
+          'Address & State Supply Code',
+          style: AppTypography.titleLarge.copyWith(fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: AppSpacing.lg),
+        ResponsiveRow(
+          children: [
+            Expanded(
+              child: AppTextField(
+                label: 'State Name *',
+                controller: _stateController,
+                validator: (val) => val == null || val.trim().isEmpty
+                    ? 'State name is required'
+                    : null,
+              ),
+            ),
+            Expanded(
+              child: AppTextField(
+                label: 'State Code (2 Digits) *',
+                controller: _stateCodeController,
+                validator: (val) {
+                  if (val == null || val.trim().isEmpty) {
+                    return 'State code is required';
+                  }
+                  if (val.trim().length != 2 ||
+                      int.tryParse(val.trim()) == null) {
+                    return 'Must be a 2-digit number';
+                  }
+                  return null;
+                },
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: AppSpacing.md),
+        AppTextField(
+          label: 'Supplier Warehouse/Office Address *',
+          controller: _addressController,
+          maxLines: 2,
+          validator: (val) =>
+              val == null || val.trim().isEmpty ? 'Address is required' : null,
+        ),
+        const Divider(height: AppSpacing.xl),
+        Text(
+          'Credit Terms & Balances',
+          style: AppTypography.titleLarge.copyWith(fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: AppSpacing.lg),
+        ResponsiveRow(
+          children: [
+            Expanded(
+              child: AppTextField(
+                label: 'Credit Period (Days)',
+                controller: _creditTermsController,
+                keyboardType: TextInputType.number,
+              ),
+            ),
+            Expanded(
+              child: AppTextField(
+                label: 'Opening Balance (₹)',
+                controller: _openingBalanceController,
+                keyboardType: TextInputType.number,
+                readOnly: _isEdit,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: AppSpacing.md),
+        ResponsiveRow(
+          children: [
+            Expanded(
+              child: AppTextField(
+                label: 'Supplier Group / Category',
+                controller: _supplierGroupController,
+              ),
+            ),
+            Expanded(
+              child: AppTextField(
+                label: 'Notes',
+                controller: _notesController,
+                maxLines: 1,
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    if (widget.isDialog) {
+      final isDark = Theme.of(context).brightness == Brightness.dark;
+      return Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+        insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+        child: Container(
+          constraints: const BoxConstraints(maxWidth: 720, maxHeight: 750),
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: isDark
+                          ? const Color(0xFF064E3B)
+                          : const Color(0xFFDCFCE7),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(
+                      Icons.local_shipping_outlined,
+                      color: Color(0xFF15803D),
+                      size: 24,
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          _isEdit
+                              ? 'Edit Supplier Profile'
+                              : 'New Supplier Profile',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color:
+                                isDark ? Colors.white : const Color(0xFF0F172A),
+                          ),
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          'Set up supplier contact details, GST registry, and business parameters.',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: isDark
+                                ? Colors.white60
+                                : const Color(0xFF64748B),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close, size: 20),
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              const Divider(height: 1),
+              const SizedBox(height: 16),
+              if (_isSaving)
+                const Padding(
+                  padding: EdgeInsets.only(bottom: 12),
+                  child: LinearProgressIndicator(),
+                ),
+              Expanded(
+                child: SingleChildScrollView(
+                  child: Form(
+                    key: _formKey,
+                    child: _buildFormContent(context),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Divider(height: 1),
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  OutlinedButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 12),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8)),
+                    ),
+                    child: const Text('Cancel'),
+                  ),
+                  const SizedBox(width: 12),
+                  ElevatedButton(
+                    onPressed: _isSaving ? null : _handleSave,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF15803D),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 12),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8)),
+                    ),
+                    child: Text(
+                      _isSaving ? 'Saving...' : 'Save Profile',
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: Text(_isEdit ? 'Edit Supplier' : 'Add Supplier'),
@@ -227,233 +589,7 @@ class _SupplierFormPageState extends ConsumerState<SupplierFormPage> {
                             padding: EdgeInsets.only(bottom: AppSpacing.md),
                             child: LinearProgressIndicator(),
                           ),
-                        Text(
-                          'General Information',
-                          style: AppTypography.titleLarge
-                              .copyWith(fontWeight: FontWeight.bold),
-                        ),
-                        const SizedBox(height: AppSpacing.lg),
-                        AppTextField(
-                          label: 'Supplier Company Name *',
-                          controller: _nameController,
-                          validator: (val) => val == null || val.trim().isEmpty
-                              ? 'Supplier name is required'
-                              : null,
-                        ),
-                        const SizedBox(height: AppSpacing.md),
-                        ResponsiveRow(
-                          children: [
-                            Expanded(
-                              child: AppPhoneField(
-                                label: 'Mobile Number',
-                                controller: _mobileController,
-                              ),
-                            ),
-                            Expanded(
-                              child: AppTextField(
-                                label: 'Email Address',
-                                controller: _emailController,
-                                keyboardType: TextInputType.emailAddress,
-                                validator: (val) {
-                                  if (val == null || val.isEmpty) return null;
-                                  final regex = RegExp(r'^[^@]+@[^@]+\.[^@]+$');
-                                  if (!regex.hasMatch(val.trim())) {
-                                    return 'Enter a valid email address';
-                                  }
-                                  return null;
-                                },
-                              ),
-                            ),
-                          ],
-                        ),
-                        const Divider(height: AppSpacing.xl),
-                        Text(
-                          'GSTIN & Financial Identifiers',
-                          style: AppTypography.titleLarge
-                              .copyWith(fontWeight: FontWeight.bold),
-                        ),
-                        const SizedBox(height: AppSpacing.sm),
-                        SwitchListTile(
-                          title: const Text('Registered under GST?'),
-                          value: _isRegistered,
-                          onChanged: (val) =>
-                              setState(() => _isRegistered = val),
-                          contentPadding: EdgeInsets.zero,
-                        ),
-                        if (_isRegistered) ...[
-                          const SizedBox(height: AppSpacing.sm),
-                          ResponsiveRow(
-                            children: [
-                              Expanded(
-                                child: AppGstinField(
-                                  label: 'GSTIN *',
-                                  controller: _gstinController,
-                                  validator: (val) {
-
-                                    if (!_isRegistered) return null;
-                                    if (val == null || val.trim().isEmpty) {
-                                      return 'GSTIN is required for registered vendors';
-                                    }
-                                    final regex = RegExp(
-                                        r'^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$');
-                                    if (!regex.hasMatch(val.trim())) {
-                                      return 'Invalid GSTIN format (e.g. 27AADCA1234F1Z5)';
-                                    }
-                                    return null;
-                                  },
-                                ),
-                              ),
-                              Expanded(
-                                child: AppTextField(
-                                  label: 'PAN (Optional)',
-                                  controller: _panController,
-                                  inputFormatters: [
-                                    LengthLimitingTextInputFormatter(10),
-                                  ],
-                                  onChanged: (val) {
-                                    final upper = val.toUpperCase();
-                                    if (upper != val) {
-                                      _panController.value =
-                                          _panController.value.copyWith(
-                                        text: upper,
-                                        selection: TextSelection.collapsed(
-                                            offset: upper.length),
-                                      );
-                                    }
-                                  },
-                                  validator: (val) {
-                                    if (val == null || val.isEmpty) return null;
-                                    final regex =
-                                        RegExp(r'^[A-Z]{5}[0-9]{4}[A-Z]{1}$');
-                                    if (!regex.hasMatch(val.trim())) {
-                                      return 'Enter a valid 10-character PAN';
-                                    }
-                                    return null;
-                                  },
-                                ),
-                              ),
-                            ],
-                          ),
-                        ] else ...[
-                          const SizedBox(height: AppSpacing.sm),
-                          AppTextField(
-                            label: 'PAN (Optional)',
-                            controller: _panController,
-                            inputFormatters: [
-                              LengthLimitingTextInputFormatter(10),
-                            ],
-                            onChanged: (val) {
-                              final upper = val.toUpperCase();
-                              if (upper != val) {
-                                _panController.value =
-                                    _panController.value.copyWith(
-                                  text: upper,
-                                  selection: TextSelection.collapsed(
-                                      offset: upper.length),
-                                );
-                              }
-                            },
-                            validator: (val) {
-                              if (val == null || val.isEmpty) return null;
-                              final regex =
-                                  RegExp(r'^[A-Z]{5}[0-9]{4}[A-Z]{1}$');
-                              if (!regex.hasMatch(val.trim())) {
-                                return 'Enter a valid 10-character PAN';
-                              }
-                              return null;
-                            },
-                          ),
-                        ],
-                        const Divider(height: AppSpacing.xl),
-                        Text(
-                          'Address & State Supply Code',
-                          style: AppTypography.titleLarge
-                              .copyWith(fontWeight: FontWeight.bold),
-                        ),
-                        const SizedBox(height: AppSpacing.lg),
-                        ResponsiveRow(
-                          children: [
-                            Expanded(
-                              child: AppTextField(
-                                label: 'State Name *',
-                                controller: _stateController,
-                                validator: (val) =>
-                                    val == null || val.trim().isEmpty
-                                        ? 'State name is required'
-                                        : null,
-                              ),
-                            ),
-                            Expanded(
-                              child: AppTextField(
-                                label: 'State Code (2 Digits) *',
-                                controller: _stateCodeController,
-                                validator: (val) {
-                                  if (val == null || val.trim().isEmpty) {
-                                    return 'State code is required';
-                                  }
-                                  if (val.trim().length != 2 ||
-                                      int.tryParse(val.trim()) == null) {
-                                    return 'Must be a 2-digit number';
-                                  }
-                                  return null;
-                                },
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: AppSpacing.md),
-                        AppTextField(
-                          label: 'Supplier Warehouse/Office Address *',
-                          controller: _addressController,
-                          maxLines: 2,
-                          validator: (val) => val == null || val.trim().isEmpty
-                              ? 'Address is required'
-                              : null,
-                        ),
-                        const Divider(height: AppSpacing.xl),
-                        Text(
-                          'Credit Terms & Balances',
-                          style: AppTypography.titleLarge
-                              .copyWith(fontWeight: FontWeight.bold),
-                        ),
-                        const SizedBox(height: AppSpacing.lg),
-                        ResponsiveRow(
-                          children: [
-                            Expanded(
-                              child: AppTextField(
-                                label: 'Credit Period (Days)',
-                                controller: _creditTermsController,
-                                keyboardType: TextInputType.number,
-                              ),
-                            ),
-                            Expanded(
-                              child: AppTextField(
-                                label: 'Opening Balance (₹)',
-                                controller: _openingBalanceController,
-                                keyboardType: TextInputType.number,
-                                readOnly: _isEdit,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: AppSpacing.md),
-                        ResponsiveRow(
-                          children: [
-                            Expanded(
-                              child: AppTextField(
-                                label: 'Supplier Group / Category',
-                                controller: _supplierGroupController,
-                              ),
-                            ),
-                            Expanded(
-                              child: AppTextField(
-                                label: 'Notes',
-                                controller: _notesController,
-                                maxLines: 1,
-                              ),
-                            ),
-                          ],
-                        ),
+                        _buildFormContent(context),
                         const SizedBox(height: AppSpacing.xl),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.end,

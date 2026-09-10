@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import '../../../../core/models/billing_models.dart';
+import '../../../supplier/presentation/pages/supplier_form_page.dart';
 import '../../../supplier/presentation/providers/supplier_provider.dart';
 
 /// Pick an existing supplier, or open the supplier profile screen to create one.
@@ -140,20 +140,11 @@ class ProductSupplierField extends ConsumerWidget {
   }
 
   Future<void> _openSupplierProfileScreen(BuildContext context, WidgetRef ref) async {
-    final beforeIds = ref.read(supplierProvider).suppliers.map((s) => s.id).toSet();
-
-    await context.push('/suppliers/new');
+    final created = await SupplierFormPage.showAsDialog(context);
     if (!context.mounted) return;
 
-    await ref.read(supplierProvider.notifier).loadSuppliers();
-    if (!context.mounted) return;
-
-    final after = ref.read(supplierProvider).suppliers;
-    for (final s in after) {
-      if (!beforeIds.contains(s.id)) {
-        onChanged((id: s.id, name: s.name));
-        break;
-      }
+    if (created != null) {
+      onChanged((id: created.id, name: created.name));
     }
   }
 }

@@ -9,6 +9,7 @@ import 'package:frontend/features/product-listing/presentation/pages/product_lis
 import 'package:frontend/features/product-listing/presentation/providers/billing_cart_provider.dart';
 import 'package:frontend/features/product-listing/presentation/widgets/product_not_found_dialog.dart';
 import 'package:frontend/features/product-listing/presentation/widgets/scanned_products_table.dart';
+import 'package:frontend/features/supplier/presentation/pages/supplier_form_page.dart';
 
 void main() {
   late SharedPreferences prefs;
@@ -81,8 +82,19 @@ void main() {
       final cartState = container.read(billingCartProvider);
       expect(cartState.items.length, 1);
       expect(cartState.items.first.product.barcode, '8901000100712');
+      expect(cartState.items.first.quantity, 1);
+      expect(find.byType(ProductNotFoundDialog), findsNothing);
       expect(find.text('Products to List (1)'), findsOneWidget);
       expect(find.textContaining('Maggi 2-Minute Noodles'), findsWidgets);
+
+      // Scanning the same database product AGAIN directly increments quantity and NEVER opens dialog
+      await tester.runAsync(() => Future.delayed(const Duration(milliseconds: 650)));
+      await simulateBarcodeScan(tester, '8901000100712');
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      expect(find.byType(ProductNotFoundDialog), findsNothing);
+      expect(container.read(billingCartProvider).items.first.quantity, 2);
     });
 
     testWidgets('TVS-E scanner scan of physical unrecognized barcode opens List New Product dialog without 404 crash', (tester) async {
@@ -178,6 +190,17 @@ void main() {
       expect(find.text('Products to List (1)'), findsOneWidget);
       expect(find.textContaining('Amul Butter 100g'), findsWidgets);
       expect(find.text('100g Bar'), findsWidgets);
+
+      // Rescan the SAME barcode: it is now in the listing & DB
+      // Must directly increment quantity in list section and NOT open ProductNotFoundDialog!
+      await tester.runAsync(() => Future.delayed(const Duration(milliseconds: 650)));
+      await simulateBarcodeScan(tester, unknownBarcode);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      expect(find.byType(ProductNotFoundDialog), findsNothing);
+      expect(container.read(billingCartProvider).items.first.quantity, 6);
+      expect(find.text('Products to List (1)'), findsOneWidget);
     });
 
     testWidgets('TVS-E scanner scan while on Catalogue tab auto-switches to POS billing and adds item', (tester) async {
@@ -281,6 +304,85 @@ void main() {
 
       // Quantity decreased back to 1
       expect(container.read(billingCartProvider).items.first.quantity, 1);
+    });
+
+    testWidgets('List New Product dialog opens SupplierFormPage as modal dialog without losing filled product details', (tester) async {
+      tester.view.physicalSize = const Size(1280, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final container = ProviderContainer(
+        overrides: [
+          sharedPreferencesProvider.overrideWithValue(prefs),
+          productRepositoryProvider.overrideWithValue(MockProductRepository()),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const MaterialApp(
+            home: ProductListingPage(),
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      // Scan unknown barcode to open ProductNotFoundDialog
+      const unknownBarcode = '8906009999999';
+      await simulateBarcodeScan(tester, unknownBarcode);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      expect(find.text('List New Product'), findsOneWidget);
+
+      // Enter product name
+      final nameField = find.descendant(
+        of: find.byType(ProductNotFoundDialog),
+        matching: find.byWidgetPredicate((w) => w is TextField && w.decoration?.hintText?.contains('Kurkure') == true),
+      );
+      await tester.enterText(nameField, 'Draft Product ABC');
+      await tester.pump();
+
+      // Click outside dialog to verify barrierDismissible is false and dialog is NOT dismissed
+      await tester.tapAt(const Offset(10, 10));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(find.text('List New Product'), findsOneWidget);
+      expect(find.text('Draft Product ABC'), findsOneWidget);
+
+      // Tap "New" supplier button in ProductSupplierField
+      final newSupplierBtn = find.descendant(
+        of: find.byType(ProductNotFoundDialog),
+        matching: find.widgetWithText(OutlinedButton, 'New'),
+      );
+      expect(newSupplierBtn, findsOneWidget);
+      await tester.ensureVisible(newSupplierBtn);
+      await tester.tap(newSupplierBtn);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      // SupplierFormPage dialog is now open on top!
+      expect(find.byType(SupplierFormPage), findsOneWidget);
+      expect(find.text('New Supplier Profile'), findsOneWidget);
+
+      // Tap Cancel on SupplierFormPage dialog
+      final cancelSupplierBtn = find.descendant(
+        of: find.byType(SupplierFormPage),
+        matching: find.widgetWithText(OutlinedButton, 'Cancel'),
+      );
+      expect(cancelSupplierBtn, findsOneWidget);
+      await tester.tap(cancelSupplierBtn);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      // SupplierFormPage is closed and we are still in ProductNotFoundDialog with 'Draft Product ABC' intact!
+      expect(find.byType(SupplierFormPage), findsNothing);
+      expect(find.text('List New Product'), findsOneWidget);
+      expect(find.text('Draft Product ABC'), findsOneWidget);
     });
   });
 }

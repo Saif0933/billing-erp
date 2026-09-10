@@ -194,19 +194,50 @@ class BillingCartNotifier extends StateNotifier<BillingCartState> {
 
     try {
       Product? product;
-      try {
-        product = await _repo.findProductByBarcode(cleanBarcode);
-      } catch (_) {}
 
+      final cleanUpper = cleanBarcode.toUpperCase();
+      final cleanAlt = cleanUpper.length == 13 && cleanUpper.startsWith('0')
+          ? cleanUpper.substring(1)
+          : (cleanUpper.length == 12 ? '0$cleanUpper' : null);
+
+      // 1. Check if product is already in active listing cart (state.items)
+      for (final item in state.items) {
+        final b = item.product.barcode.trim().toUpperCase();
+        final s = item.product.sku.trim().toUpperCase();
+        final id = item.product.id.trim().toUpperCase();
+        if ((b.isNotEmpty && (b == cleanUpper || (cleanAlt != null && b == cleanAlt))) ||
+            (s.isNotEmpty && (s == cleanUpper || (cleanAlt != null && s == cleanAlt))) ||
+            (id.isNotEmpty && id == cleanUpper)) {
+          product = item.product;
+          break;
+        }
+      }
+
+      // 2. If not in active cart, check database via backend REST API
+      if (product == null) {
+        try {
+          product = await _repo.findProductByBarcode(cleanBarcode);
+        } catch (_) {}
+      }
+      if (product == null && cleanAlt != null) {
+        try {
+          product = await _repo.findProductByBarcode(cleanAlt);
+        } catch (_) {}
+      }
+
+      // 3. Fallback: check billing repository products
       if (product == null && _ref != null) {
-        final cleanUpper = cleanBarcode.toUpperCase();
         try {
           final billingProducts = _ref.read(billingRepositoryProvider).products;
           for (final bp in billingProducts) {
-            if (bp.barcode.trim().toUpperCase() == cleanUpper ||
-                bp.sku.trim().toUpperCase() == cleanUpper ||
-                bp.code.trim().toUpperCase() == cleanUpper ||
-                bp.id.trim().toUpperCase() == cleanUpper) {
+            final b = bp.barcode.trim().toUpperCase();
+            final s = bp.sku.trim().toUpperCase();
+            final c = bp.code.trim().toUpperCase();
+            final id = bp.id.trim().toUpperCase();
+            if ((b.isNotEmpty && (b == cleanUpper || (cleanAlt != null && b == cleanAlt))) ||
+                (s.isNotEmpty && (s == cleanUpper || (cleanAlt != null && s == cleanAlt))) ||
+                (c.isNotEmpty && (c == cleanUpper || (cleanAlt != null && c == cleanAlt))) ||
+                (id.isNotEmpty && id == cleanUpper)) {
               product = Product(
                 id: bp.id,
                 name: bp.name,
@@ -228,14 +259,17 @@ class BillingCartNotifier extends StateNotifier<BillingCartState> {
         } catch (_) {}
       }
 
+      // 4. Fallback: check catalogue directory products
       if (product == null && _ref != null) {
-        final cleanUpper = cleanBarcode.toUpperCase();
         try {
           final listingProducts = _ref.read(productListingProvider).allProducts;
           for (final lp in listingProducts) {
-            if (lp.barcode.trim().toUpperCase() == cleanUpper ||
-                lp.sku.trim().toUpperCase() == cleanUpper ||
-                lp.id.trim().toUpperCase() == cleanUpper) {
+            final b = lp.barcode.trim().toUpperCase();
+            final s = lp.sku.trim().toUpperCase();
+            final id = lp.id.trim().toUpperCase();
+            if ((b.isNotEmpty && (b == cleanUpper || (cleanAlt != null && b == cleanAlt))) ||
+                (s.isNotEmpty && (s == cleanUpper || (cleanAlt != null && s == cleanAlt))) ||
+                (id.isNotEmpty && id == cleanUpper)) {
               product = Product(
                 id: lp.id,
                 name: lp.name,
@@ -279,22 +313,39 @@ class BillingCartNotifier extends StateNotifier<BillingCartState> {
   }
 
   BarcodeScanResult _addProductToListing(Product product, {bool markSaved = true}) {
+    final cleanPBarcode = product.barcode.trim().toLowerCase();
+    final cleanPAlt = cleanPBarcode.length == 13 && cleanPBarcode.startsWith('0')
+        ? cleanPBarcode.substring(1)
+        : (cleanPBarcode.length == 12 ? '0$cleanPBarcode' : null);
+
     final existingIndex = state.items.indexWhere(
-      (item) => item.product.id == product.id || item.product.barcode == product.barcode,
+      (item) {
+        if (item.product.id.isNotEmpty && item.product.id == product.id) return true;
+        final b = item.product.barcode.trim().toLowerCase();
+        if (b.isNotEmpty && (b == cleanPBarcode || (cleanPAlt != null && b == cleanPAlt))) {
+          return true;
+        }
+        return false;
+      },
     );
 
     List<CartItem> updatedItems;
+    int resultingQuantity = 1;
     if (existingIndex >= 0) {
       updatedItems = List<CartItem>.from(state.items);
-      updatedItems[existingIndex] = updatedItems[existingIndex].copyWith(
+      final existingItem = updatedItems[existingIndex];
+      resultingQuantity = existingItem.quantity + 1;
+      updatedItems[existingIndex] = existingItem.copyWith(
         product: product,
+        quantity: resultingQuantity,
         addedAt: DateTime.now(),
       );
     } else {
+      resultingQuantity = product.id.startsWith('prod_custom_') && product.stock > 0 ? product.stock : 1;
       updatedItems = [
         CartItem(
           product: product,
-          quantity: product.id.startsWith('prod_custom_') && product.stock > 0 ? product.stock : 1,
+          quantity: resultingQuantity,
         ),
         ...state.items,
       ];
@@ -308,8 +359,8 @@ class BillingCartNotifier extends StateNotifier<BillingCartState> {
     final savedIds = Set<String>.from(state.savedProductIds);
     if (markSaved && !product.id.startsWith('prod_scan_') && !product.id.startsWith('prod_custom_')) {
       savedIds.add(product.id);
-    } else {
-      savedIds.remove(product.id);
+    } else if (markSaved && product.id.startsWith('prod_custom_')) {
+      savedIds.add(product.id);
     }
 
     state = state.copyWith(
@@ -317,12 +368,12 @@ class BillingCartNotifier extends StateNotifier<BillingCartState> {
       recentScans: updatedRecentScans,
       lastScannedProduct: product,
       isProcessing: false,
-      lastMessage: '✓ ${product.name} (${product.barcode})',
+      lastMessage: '✓ ${product.name} (Qty: $resultingQuantity)',
       isLastMessageError: false,
       savedProductIds: savedIds,
     );
 
-    return BarcodeScanResult.success(product, 1);
+    return BarcodeScanResult.success(product, resultingQuantity);
   }
 
   /// Manually update unit price for a listed product

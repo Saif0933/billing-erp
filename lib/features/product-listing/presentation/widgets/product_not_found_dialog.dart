@@ -25,7 +25,7 @@ class ProductNotFoundDialog extends ConsumerStatefulWidget {
   }) async {
     await showDialog(
       context: context,
-      barrierDismissible: true,
+      barrierDismissible: false,
       builder: (ctx) => ProductNotFoundDialog(
         barcode: barcode,
         onDismissed: onDismissed,
