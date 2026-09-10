@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/entities/cart_item.dart';
 import '../providers/billing_cart_provider.dart';
+import 'product_supplier_field.dart';
 
 /// Desktop & Tablet Product Listing table with manual Unit Price & GST editing.
 class ScannedProductsTable extends ConsumerWidget {
@@ -31,7 +32,7 @@ class ScannedProductsTable extends ConsumerWidget {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: SizedBox(
-        width: 820,
+        width: 1060,
         child: Column(
           children: [
             Container(
@@ -48,6 +49,7 @@ class ScannedProductsTable extends ConsumerWidget {
                 children: [
                   SizedBox(width: 36, child: Text('#', style: _headerStyle)),
                   Expanded(flex: 4, child: Text('Product & EAN', style: _headerStyle)),
+                  SizedBox(width: 220, child: Text('Supplier', style: _headerStyle)),
                   SizedBox(width: 110, child: Text('Unit Price', style: _headerStyle, textAlign: TextAlign.right)),
                   SizedBox(width: 100, child: Text('GST %', style: _headerStyle, textAlign: TextAlign.center)),
                   SizedBox(width: 90, child: Text('MRP', style: _headerStyle, textAlign: TextAlign.right)),
@@ -193,6 +195,19 @@ class ScannedProductsTable extends ConsumerWidget {
               ],
             ),
           ),
+          SizedBox(
+            width: 220,
+            child: ProductSupplierField(
+              dense: true,
+              supplierId: p.supplierId,
+              supplierName: p.supplierName,
+              onChanged: (sel) {
+                notifier.updateSupplier(p.id, sel.id, sel.name);
+                onActionCompleted();
+              },
+            ),
+          ),
+          const SizedBox(width: 8),
           // Editable Unit Price
           SizedBox(
             width: 110,

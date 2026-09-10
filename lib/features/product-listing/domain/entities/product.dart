@@ -16,6 +16,8 @@ class Product {
   final String unit; // 'pcs', 'kg', 'ltr', 'pack'
   final Color? categoryBadgeColor;
   final IconData placeholderIcon;
+  final String supplierId;
+  final String supplierName;
 
   const Product({
     required this.id,
@@ -32,6 +34,8 @@ class Product {
     this.unit = 'pcs',
     this.categoryBadgeColor,
     this.placeholderIcon = Icons.inventory_2_outlined,
+    this.supplierId = '',
+    this.supplierName = '',
   });
 
   Product copyWith({
@@ -49,6 +53,8 @@ class Product {
     String? unit,
     Color? categoryBadgeColor,
     IconData? placeholderIcon,
+    String? supplierId,
+    String? supplierName,
   }) {
     return Product(
       id: id ?? this.id,
@@ -65,6 +71,8 @@ class Product {
       unit: unit ?? this.unit,
       categoryBadgeColor: categoryBadgeColor ?? this.categoryBadgeColor,
       placeholderIcon: placeholderIcon ?? this.placeholderIcon,
+      supplierId: supplierId ?? this.supplierId,
+      supplierName: supplierName ?? this.supplierName,
     );
   }
 

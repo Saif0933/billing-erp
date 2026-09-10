@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/entities/product.dart';
 import '../providers/billing_cart_provider.dart';
+import 'product_supplier_field.dart';
 
 /// Dialog shown when a scanned EAN/barcode is not yet in the product catalogue.
 /// User must enter name, unit price and GST manually — then product is added
@@ -49,6 +50,8 @@ class _ProductNotFoundDialogState extends ConsumerState<ProductNotFoundDialog> {
 
   String _selectedCategory = 'Groceries';
   double _selectedGstRate = 0.0;
+  String _selectedSupplierId = '';
+  String _selectedSupplierName = '';
   bool _isSaving = false;
 
   final List<String> _categories = [
@@ -115,6 +118,8 @@ class _ProductNotFoundDialogState extends ConsumerState<ProductNotFoundDialog> {
       stock: int.tryParse(_stockCtrl.text.trim()) ?? 0,
       unit: 'pcs',
       placeholderIcon: Icons.qr_code_2,
+      supplierId: _selectedSupplierId,
+      supplierName: _selectedSupplierName,
     );
 
     await ref.read(billingCartProvider.notifier).addCustomProductAndAddToCart(newProduct);
@@ -356,6 +361,17 @@ class _ProductNotFoundDialogState extends ConsumerState<ProductNotFoundDialog> {
                           ),
                         ),
                       ],
+                    ),
+                    const SizedBox(height: 12),
+                    ProductSupplierField(
+                      supplierId: _selectedSupplierId,
+                      supplierName: _selectedSupplierName,
+                      onChanged: (sel) {
+                        setState(() {
+                          _selectedSupplierId = sel.id;
+                          _selectedSupplierName = sel.name;
+                        });
+                      },
                     ),
                     const SizedBox(height: 12),
                     Row(

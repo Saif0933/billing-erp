@@ -48,6 +48,8 @@ class ApiProductRepository implements ProductRepository {
       unit: product.unit,
       primaryUnit: product.unit.toUpperCase(),
       openingStock: product.stock.toDouble(),
+      supplierId: product.supplierId,
+      supplierName: product.supplierName,
     );
 
     final created = await _apiService.createProduct(dto);
@@ -71,6 +73,8 @@ class ApiProductRepository implements ProductRepository {
       stock: product.stock,
       unit: product.unit,
       primaryUnit: product.unit.toUpperCase(),
+      supplierId: product.supplierId,
+      supplierName: product.supplierName,
     );
 
     final updated = await _apiService.updateProduct(dto);

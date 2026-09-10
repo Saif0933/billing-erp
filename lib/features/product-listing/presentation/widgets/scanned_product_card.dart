@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/entities/cart_item.dart';
 import '../providers/billing_cart_provider.dart';
+import 'product_supplier_field.dart';
 
 /// Mobile card for a listed product with editable unit price & GST.
 class ScannedProductCard extends ConsumerWidget {
@@ -91,6 +92,16 @@ class ScannedProductCard extends ConsumerWidget {
           ),
           const SizedBox(height: 10),
           const Divider(height: 1),
+          const SizedBox(height: 10),
+          ProductSupplierField(
+            dense: true,
+            supplierId: p.supplierId,
+            supplierName: p.supplierName,
+            onChanged: (sel) {
+              notifier.updateSupplier(p.id, sel.id, sel.name);
+              onActionCompleted();
+            },
+          ),
           const SizedBox(height: 10),
           Row(
             children: [

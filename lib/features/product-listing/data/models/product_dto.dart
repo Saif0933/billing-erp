@@ -31,6 +31,8 @@ class ProductDto {
   final String warehouseId;
   final String warehouseName;
   final String rackOrBin;
+  final String supplierId;
+  final String supplierName;
   final bool hasBatchTracking;
   final bool hasSerialTracking;
   final bool hasExpiryTracking;
@@ -68,6 +70,8 @@ class ProductDto {
     this.warehouseId = '',
     this.warehouseName = '',
     this.rackOrBin = '',
+    this.supplierId = '',
+    this.supplierName = '',
     this.hasBatchTracking = false,
     this.hasSerialTracking = false,
     this.hasExpiryTracking = false,
@@ -106,6 +110,16 @@ class ProductDto {
     final gst = parseDouble(json['gstRate'] ?? json['gstRatePercent'] ?? 0.0);
     final curStock = parseDouble(json['currentStock'] ?? json['openingStock'] ?? json['stock'] ?? 0.0);
 
+    final supplierMap = json['supplier'] is Map<String, dynamic>
+        ? json['supplier'] as Map<String, dynamic>
+        : null;
+    final supplierId = json['supplierId']?.toString() ??
+        supplierMap?['id']?.toString() ??
+        '';
+    final supplierName = json['supplierName']?.toString() ??
+        supplierMap?['name']?.toString() ??
+        '';
+
     return ProductDto(
       id: json['id']?.toString() ?? '',
       businessId: json['businessId']?.toString(),
@@ -133,6 +147,8 @@ class ProductDto {
       warehouseId: json['warehouseId']?.toString() ?? '',
       warehouseName: json['warehouseName']?.toString() ?? '',
       rackOrBin: json['rackOrBin']?.toString() ?? '',
+      supplierId: supplierId,
+      supplierName: supplierName,
       hasBatchTracking: json['hasBatchTracking'] == true,
       hasSerialTracking: json['hasSerialTracking'] == true,
       hasExpiryTracking: json['hasExpiryTracking'] == true,
@@ -175,6 +191,8 @@ class ProductDto {
       categoryBadgeText: badgeText,
       placeholderIcon: Icons.inventory_2_outlined,
       iconColor: badgeText,
+      supplierId: supplierId,
+      supplierName: supplierName,
     );
   }
 
@@ -203,6 +221,8 @@ class ProductDto {
       category: category,
       brand: brand,
       isActive: isActive,
+      supplierId: supplierId,
+      supplierName: supplierName,
     );
   }
 
@@ -220,6 +240,8 @@ class ProductDto {
       gstRate: gstRate,
       stock: stock > 0 ? stock : currentStock.round(),
       unit: unit,
+      supplierId: supplierId,
+      supplierName: supplierName,
     );
   }
 
@@ -241,6 +263,8 @@ class ProductDto {
       stock: item.stock,
       unit: item.unit,
       primaryUnit: item.unit,
+      supplierId: item.supplierId,
+      supplierName: item.supplierName,
     );
   }
 
@@ -270,6 +294,8 @@ class ProductDto {
       category: product.category,
       brand: product.brand,
       isActive: product.isActive,
+      supplierId: product.supplierId,
+      supplierName: product.supplierName,
     );
   }
 
@@ -292,6 +318,7 @@ class ProductDto {
       'openingStock': openingStock,
       'category': category.isNotEmpty ? category : 'General',
       'brand': brand.isNotEmpty ? brand : null,
+      'supplierId': supplierId.isNotEmpty ? supplierId : null,
       'isActive': isActive,
     };
 

@@ -373,6 +373,8 @@ class _ProductQuickAddModalState extends ConsumerState<ProductQuickAddModal> {
                         gstRate: widget.item.gstRate,
                         stock: widget.item.stock,
                         unit: widget.item.unit,
+                        supplierId: widget.item.supplierId,
+                        supplierName: widget.item.supplierName,
                       );
                       ref.read(billingCartProvider.notifier).addCustomProductAndAddToCart(productEntity);
                       Navigator.pop(context);

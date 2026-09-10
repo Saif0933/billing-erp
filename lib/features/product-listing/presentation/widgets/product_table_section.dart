@@ -172,7 +172,7 @@ class ProductTableSection extends ConsumerWidget {
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: SizedBox(
-              width: 820,
+              width: 980,
               child: Column(
                 children: [
                   // Column Headers
@@ -183,6 +183,7 @@ class ProductTableSection extends ConsumerWidget {
                       children: const [
                         SizedBox(width: 70, child: Text('Image', style: _headerStyle)),
                         Expanded(flex: 3, child: Text('Product Name', style: _headerStyle)),
+                        SizedBox(width: 140, child: Text('Supplier', style: _headerStyle)),
                         SizedBox(width: 120, child: Text('Category', style: _headerStyle)),
                         SizedBox(width: 90, child: Text('MRP', style: _headerStyle)),
                         SizedBox(width: 100, child: Text('Selling Price', style: _headerStyle)),
@@ -388,7 +389,24 @@ class ProductTableSection extends ConsumerWidget {
             ),
           ),
 
-          // 3. Category Badge
+          // 3. Supplier
+          SizedBox(
+            width: 140,
+            child: Text(
+              item.supplierName.isNotEmpty ? item.supplierName : '—',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: item.supplierName.isNotEmpty ? FontWeight.w600 : FontWeight.w400,
+                color: item.supplierName.isNotEmpty
+                    ? (isDark ? Colors.white : const Color(0xFF0F172A))
+                    : (isDark ? Colors.white38 : const Color(0xFF94A3B8)),
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+
+          // 4. Category Badge
           SizedBox(
             width: 120,
             child: Align(

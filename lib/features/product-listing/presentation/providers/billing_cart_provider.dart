@@ -219,6 +219,8 @@ class BillingCartNotifier extends StateNotifier<BillingCartState> {
                 gstRate: bp.gstRate,
                 stock: bp.currentStock.toInt(),
                 unit: bp.primaryUnit.isNotEmpty ? bp.primaryUnit : 'pcs',
+                supplierId: bp.supplierId,
+                supplierName: bp.supplierName,
               );
               break;
             }
@@ -246,6 +248,8 @@ class BillingCartNotifier extends StateNotifier<BillingCartState> {
                 gstRate: lp.gstRate,
                 stock: lp.stock,
                 unit: lp.unit,
+                supplierId: lp.supplierId,
+                supplierName: lp.supplierName,
               );
               break;
             }
@@ -339,6 +343,22 @@ class BillingCartNotifier extends StateNotifier<BillingCartState> {
     final item = updated[index];
     updated[index] = item.copyWith(
       product: item.product.copyWith(gstRate: gstRate < 0 ? 0 : gstRate),
+    );
+    final savedIds = Set<String>.from(state.savedProductIds)..remove(productId);
+    state = state.copyWith(items: updated, savedProductIds: savedIds);
+  }
+
+  /// Assign or clear the product's supplier
+  void updateSupplier(String productId, String supplierId, String supplierName) {
+    final index = state.items.indexWhere((i) => i.product.id == productId);
+    if (index < 0) return;
+    final updated = List<CartItem>.from(state.items);
+    final item = updated[index];
+    updated[index] = item.copyWith(
+      product: item.product.copyWith(
+        supplierId: supplierId,
+        supplierName: supplierName,
+      ),
     );
     final savedIds = Set<String>.from(state.savedProductIds)..remove(productId);
     state = state.copyWith(items: updated, savedProductIds: savedIds);
@@ -481,6 +501,8 @@ class BillingCartNotifier extends StateNotifier<BillingCartState> {
         unit: p.unit,
         primaryUnit: p.unit.toUpperCase(),
         isActive: true,
+        supplierId: p.supplierId,
+        supplierName: p.supplierName,
       );
 
       try {
@@ -513,6 +535,8 @@ class BillingCartNotifier extends StateNotifier<BillingCartState> {
                 unit: dto.unit,
                 primaryUnit: dto.primaryUnit,
                 isActive: true,
+                supplierId: dto.supplierId,
+                supplierName: dto.supplierName,
               ));
             } catch (e2) {
               errors.add('${p.barcode}: $e2');

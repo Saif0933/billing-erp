@@ -49,7 +49,8 @@ class ProductListingState {
           p.name.toLowerCase().contains(q) ||
           p.barcode.toLowerCase().contains(q) ||
           p.sku.toLowerCase().contains(q) ||
-          p.category.toLowerCase().contains(q);
+          p.category.toLowerCase().contains(q) ||
+          p.supplierName.toLowerCase().contains(q);
 
       return matchesCategory && matchesSearch;
     }).toList();

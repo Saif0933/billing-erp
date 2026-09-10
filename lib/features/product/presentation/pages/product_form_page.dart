@@ -13,6 +13,7 @@ import '../../../dashboard/presentation/providers/billing_repository.dart';
 import '../../../product-listing/data/models/product_dto.dart';
 import '../../../product-listing/presentation/providers/billing_cart_provider.dart';
 import '../../../product-listing/presentation/providers/product_listing_provider.dart';
+import '../../../product-listing/presentation/widgets/product_supplier_field.dart';
 
 class ProductFormPage extends ConsumerStatefulWidget {
   final String? productId;
@@ -44,6 +45,8 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage> {
   final _brandController = TextEditingController();
 
   double _selectedGstRate = 18.0;
+  String _selectedSupplierId = '';
+  String _selectedSupplierName = '';
   bool _isEdit = false;
   bool _isLoading = false;
   bool _isSaving = false;
@@ -96,6 +99,8 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage> {
 
         setState(() {
           _selectedGstRate = found!.gstRate;
+          _selectedSupplierId = found.supplierId;
+          _selectedSupplierName = found.supplierName;
         });
       }
     } catch (e) {
@@ -178,6 +183,8 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage> {
           ? _categoryController.text.trim()
           : 'General',
       brand: _brandController.text.trim(),
+      supplierId: _selectedSupplierId,
+      supplierName: _selectedSupplierName,
     );
 
     try {
@@ -337,6 +344,17 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage> {
                                     ),
                                   ),
                                 ],
+                              ),
+                              const SizedBox(height: AppSpacing.md),
+                              ProductSupplierField(
+                                supplierId: _selectedSupplierId,
+                                supplierName: _selectedSupplierName,
+                                onChanged: (sel) {
+                                  setState(() {
+                                    _selectedSupplierId = sel.id;
+                                    _selectedSupplierName = sel.name;
+                                  });
+                                },
                               ),
                               const Divider(height: AppSpacing.xl),
                               Text(

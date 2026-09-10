@@ -17,6 +17,8 @@ class ProductListingItem {
   final Color iconColor;
   final String unit;
   final DateTime? lastScannedAt;
+  final String supplierId;
+  final String supplierName;
 
   const ProductListingItem({
     required this.id,
@@ -35,6 +37,8 @@ class ProductListingItem {
     this.iconColor = const Color(0xFF15803D),
     this.unit = 'pcs',
     this.lastScannedAt,
+    this.supplierId = '',
+    this.supplierName = '',
   });
 
   ProductListingItem copyWith({
@@ -54,6 +58,8 @@ class ProductListingItem {
     Color? iconColor,
     String? unit,
     DateTime? lastScannedAt,
+    String? supplierId,
+    String? supplierName,
   }) {
     return ProductListingItem(
       id: id ?? this.id,
@@ -72,6 +78,8 @@ class ProductListingItem {
       iconColor: iconColor ?? this.iconColor,
       unit: unit ?? this.unit,
       lastScannedAt: lastScannedAt ?? this.lastScannedAt,
+      supplierId: supplierId ?? this.supplierId,
+      supplierName: supplierName ?? this.supplierName,
     );
   }
 }
