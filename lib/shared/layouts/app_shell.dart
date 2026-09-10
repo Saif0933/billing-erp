@@ -361,7 +361,8 @@ class _AppShellState extends ConsumerState<AppShell> {
     final String currentLoc = widget.currentLocation ?? state.uri.path;
 
     final isMobile = ResponsiveBreakpoints.isMobile(context);
-    final isTabScreen = _isTabRoute(currentLoc);
+    final isPosTerminal = currentLoc == '/pos' || currentLoc.startsWith('/pos');
+    final isTabScreen = _isTabRoute(currentLoc) && !isPosTerminal;
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
@@ -373,13 +374,13 @@ class _AppShellState extends ConsumerState<AppShell> {
       drawer: (isMobile && isTabScreen) ? const MobileDrawer() : null,
       body: Row(
         children: [
-          // Sidebar for Desktop & Tablet
-          if (!isMobile) const DesktopSidebar(),
+          // Sidebar for Desktop & Tablet (Hidden on POS Sales Terminal for full screen width)
+          if (!isMobile && !isPosTerminal) const DesktopSidebar(),
           // Content Area
           Expanded(
             child: SafeArea(
-              top: !isTabScreen,
-              bottom: !isTabScreen,
+              top: !isTabScreen && !isPosTerminal,
+              bottom: !isTabScreen && !isPosTerminal,
               child: widget.child,
             ),
           ),

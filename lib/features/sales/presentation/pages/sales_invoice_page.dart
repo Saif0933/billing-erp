@@ -354,31 +354,63 @@ class _SalesInvoicePageState extends ConsumerState<SalesInvoicePage> {
               ),
             ],
           ),
-          const SizedBox(height: 24),
-          ElevatedButton.icon(
-            icon: const Icon(
-              Icons.post_add_outlined,
-              color: Color(0xFF0F5A3C),
-              size: 20,
-            ),
-            label: const Text(
-              'Create Invoice',
-              style: TextStyle(
-                color: Color(0xFF0F5A3C),
-                fontWeight: FontWeight.bold,
-                fontSize: 15,
+          Row(
+            children: [
+              Expanded(
+                child: ElevatedButton.icon(
+                  icon: const Icon(
+                    Icons.point_of_sale_outlined,
+                    color: Colors.white,
+                    size: 20,
+                  ),
+                  label: const Text(
+                    'Retail POS Terminal',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                    ),
+                  ),
+                  onPressed: () => context.go('/pos'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF10B981),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    elevation: 0,
+                  ),
+                ),
               ),
-            ),
-            onPressed: () => context.push('/sales/new'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.white,
-              foregroundColor: const Color(0xFF0F5A3C),
-              padding: const EdgeInsets.symmetric(vertical: 14),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+              const SizedBox(width: 12),
+              Expanded(
+                child: ElevatedButton.icon(
+                  icon: const Icon(
+                    Icons.post_add_outlined,
+                    color: Color(0xFF0F5A3C),
+                    size: 20,
+                  ),
+                  label: const Text(
+                    'Create Invoice',
+                    style: TextStyle(
+                      color: Color(0xFF0F5A3C),
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                    ),
+                  ),
+                  onPressed: () => context.push('/sales/new'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: const Color(0xFF0F5A3C),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    elevation: 0,
+                  ),
+                ),
               ),
-              elevation: 0,
-            ),
+            ],
           ),
         ],
       ),
