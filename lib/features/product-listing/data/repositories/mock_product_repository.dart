@@ -50,18 +50,24 @@ class MockProductRepository implements ProductRepository {
   Future<Product> addProduct(Product product) async {
     await Future.delayed(const Duration(milliseconds: 20));
 
-    // If barcode already exists, update it, otherwise prepend to catalog
+    // If barcode already exists, update and add stock to existing product
     final existingIndex = _catalog.indexWhere(
       (p) => p.barcode.trim().toUpperCase() == product.barcode.trim().toUpperCase(),
     );
 
     if (existingIndex >= 0) {
-      _catalog[existingIndex] = product;
+      final existing = _catalog[existingIndex];
+      final combinedStock = existing.stock + product.stock;
+      final updated = product.copyWith(
+        id: existing.id,
+        stock: combinedStock,
+      );
+      _catalog[existingIndex] = updated;
+      return updated;
     } else {
       _catalog.insert(0, product);
+      return product;
     }
-
-    return product;
   }
 
   @override

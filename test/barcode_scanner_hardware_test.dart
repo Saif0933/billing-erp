@@ -9,6 +9,7 @@ import 'package:frontend/features/product-listing/presentation/pages/product_lis
 import 'package:frontend/features/product-listing/presentation/providers/billing_cart_provider.dart';
 import 'package:frontend/features/product-listing/presentation/widgets/product_not_found_dialog.dart';
 import 'package:frontend/features/product-listing/presentation/widgets/scanned_products_table.dart';
+import 'package:frontend/features/product-listing/domain/entities/product.dart';
 import 'package:frontend/features/supplier/presentation/pages/supplier_form_page.dart';
 
 void main() {
@@ -384,5 +385,100 @@ void main() {
       expect(find.text('List New Product'), findsOneWidget);
       expect(find.text('Draft Product ABC'), findsOneWidget);
     });
+
+    testWidgets('Existing product barcode stock addition accumulates stock and quantity in database', (tester) async {
+      tester.view.physicalSize = const Size(1280, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final repo = MockProductRepository();
+      // Coca Cola (5449000200427) has initial stock = 60
+      final initialProduct = await repo.findProductByBarcode('5449000200427');
+      expect(initialProduct, isNotNull);
+      expect(initialProduct!.stock, 60);
+
+      final container = ProviderContainer(
+        overrides: [
+          sharedPreferencesProvider.overrideWithValue(prefs),
+          productRepositoryProvider.overrideWithValue(repo),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const MaterialApp(
+            home: ProductListingPage(),
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      // 1. Scan Coca Cola (5449000200427)
+      await simulateBarcodeScan(tester, '5449000200427');
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      expect(container.read(billingCartProvider).items.length, 1);
+      expect(container.read(billingCartProvider).items.first.quantity, 1);
+
+      // Increase quantity to 5 via increment button (tap 4 times)
+      final addQtyBtn = find.byIcon(Icons.add);
+      expect(addQtyBtn, findsOneWidget);
+      for (int i = 0; i < 4; i++) {
+        await tester.tap(addQtyBtn);
+        await tester.pump();
+      }
+      expect(container.read(billingCartProvider).items.first.quantity, 5);
+
+      // 2. Save products to database
+      final saveBtn = find.textContaining('Save Products to Database');
+      expect(saveBtn, findsOneWidget);
+      await tester.tap(saveBtn);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      // Verify that database product stock has been incremented: 60 + 5 = 65!
+      final updatedProduct = await repo.findProductByBarcode('5449000200427');
+      expect(updatedProduct, isNotNull);
+      expect(updatedProduct!.stock, 65);
+
+      // Dismiss the success dialog if present
+      final okBtn = find.widgetWithText(ElevatedButton, 'OK');
+      if (okBtn.evaluate().isNotEmpty) {
+        await tester.tap(okBtn);
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 300));
+      }
+
+      // 3. Scan again and add custom product with same barcode
+      await tester.runAsync(() => Future.delayed(const Duration(milliseconds: 650)));
+      await container.read(billingCartProvider.notifier).addCustomProductAndAddToCart(
+        const Product(
+          id: 'prod_custom_test_coke',
+          name: 'Coca Cola 500ml',
+          barcode: '5449000200427',
+          sku: 'CC-500ML',
+          category: 'Beverages',
+          sellingPrice: 40.00,
+          purchasePrice: 32.00,
+          mrp: 50.00,
+          gstRate: 18.0,
+          stock: 10,
+          unit: 'btl',
+        ),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      // Verify stock accumulated: 65 + 10 = 75!
+      final reUpdatedProduct = await repo.findProductByBarcode('5449000200427');
+      expect(reUpdatedProduct, isNotNull);
+      expect(reUpdatedProduct!.stock, 75);
+    });
   });
 }
+

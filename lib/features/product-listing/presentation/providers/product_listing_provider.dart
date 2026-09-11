@@ -1,6 +1,8 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../dashboard/presentation/providers/billing_repository.dart';
 import '../../data/models/product_dto.dart';
+import '../../data/repositories/api_product_repository.dart';
 import '../../data/services/product_api_service.dart';
 import '../../domain/models/product_listing_models.dart';
 import '../../domain/utils/barcode_validator.dart';
@@ -127,8 +129,43 @@ class ProductListingNotifier extends StateNotifier<ProductListingState> {
     }
   }
 
-  /// Load products from backend REST API (no mock fallback)
+  /// Load products from repository or backend REST API
   Future<void> loadProducts({bool refresh = false}) async {
+    final repo = _ref?.read(productRepositoryProvider);
+    if (repo != null && repo is! ApiProductRepository) {
+      try {
+        final products = await repo.getProducts(
+          query: state.searchQuery.isNotEmpty ? state.searchQuery : null,
+          category: state.selectedCategory == 'All' ? null : state.selectedCategory,
+        );
+        final items = products.map((p) => ProductListingItem(
+          id: p.id,
+          name: p.name,
+          barcode: p.barcode,
+          sku: p.sku,
+          category: p.category,
+          mrp: p.mrp > 0 ? p.mrp : p.sellingPrice,
+          sellingPrice: p.sellingPrice,
+          gstRate: p.gstRate,
+          stock: p.stock,
+          categoryBadgeBg: const Color(0xFFDCFCE7),
+          categoryBadgeText: const Color(0xFF15803D),
+          unit: p.unit,
+          supplierId: p.supplierId,
+          supplierName: p.supplierName,
+        )).toList();
+
+        state = state.copyWith(
+          allProducts: items,
+          isLoading: false,
+          clearError: true,
+        );
+      } catch (_) {
+        state = state.copyWith(isLoading: false);
+      }
+      return;
+    }
+
     final api = _apiService;
     if (api == null) {
       state = state.copyWith(isLoading: false);

@@ -312,7 +312,7 @@ class BillingCartNotifier extends StateNotifier<BillingCartState> {
     }
   }
 
-  BarcodeScanResult _addProductToListing(Product product, {bool markSaved = true}) {
+  BarcodeScanResult _addProductToListing(Product product, {bool markSaved = true, int? quantity}) {
     final cleanPBarcode = product.barcode.trim().toLowerCase();
     final cleanPAlt = cleanPBarcode.length == 13 && cleanPBarcode.startsWith('0')
         ? cleanPBarcode.substring(1)
@@ -331,17 +331,18 @@ class BillingCartNotifier extends StateNotifier<BillingCartState> {
 
     List<CartItem> updatedItems;
     int resultingQuantity = 1;
+    final initialQty = quantity ?? (product.id.startsWith('prod_custom_') && product.stock > 0 ? product.stock : 1);
     if (existingIndex >= 0) {
       updatedItems = List<CartItem>.from(state.items);
       final existingItem = updatedItems[existingIndex];
-      resultingQuantity = existingItem.quantity + 1;
+      resultingQuantity = existingItem.quantity + (quantity ?? 1);
       updatedItems[existingIndex] = existingItem.copyWith(
         product: product,
         quantity: resultingQuantity,
         addedAt: DateTime.now(),
       );
     } else {
-      resultingQuantity = product.id.startsWith('prod_custom_') && product.stock > 0 ? product.stock : 1;
+      resultingQuantity = initialQty;
       updatedItems = [
         CartItem(
           product: product,
@@ -480,6 +481,7 @@ class BillingCartNotifier extends StateNotifier<BillingCartState> {
 
   /// Add newly registered product from dialog into listing draft and persist to database.
   Future<void> addCustomProductAndAddToCart(Product product) async {
+    final qtyToAdd = product.stock > 0 ? product.stock : 1;
     Product productToAdd = product;
 
     try {
@@ -497,7 +499,7 @@ class BillingCartNotifier extends StateNotifier<BillingCartState> {
       // Fallback: keep product in draft for user to save via OrderSummaryCard
     }
 
-    _addProductToListing(productToAdd, markSaved: true);
+    _addProductToListing(productToAdd, markSaved: true, quantity: qtyToAdd);
   }
 
   /// Persist all listed products (EAN + name + unit price + GST + full info) to database.
@@ -533,13 +535,34 @@ class BillingCartNotifier extends StateNotifier<BillingCartState> {
     state = state.copyWith(isSaving: true, lastMessage: null);
 
     final api = _ref?.read(productApiServiceProvider);
-    if (api == null) {
-      state = state.copyWith(
-        isSaving: false,
-        lastMessage: 'API service unavailable. Cannot save products.',
-        isLastMessageError: true,
-      );
-      return false;
+    if (api == null || _repo is! ApiProductRepository) {
+      // Fallback to repository (e.g. MockProductRepository in widget/unit tests)
+      try {
+        final updatedItems = List<CartItem>.from(state.items);
+        final savedIds = Set<String>.from(state.savedProductIds);
+        for (var i = 0; i < updatedItems.length; i++) {
+          final item = updatedItems[i];
+          final p = item.product.copyWith(stock: item.quantity);
+          final saved = await _repo.addProduct(p);
+          updatedItems[i] = item.copyWith(product: saved);
+          savedIds.add(saved.id);
+        }
+        state = state.copyWith(
+          isSaving: false,
+          items: updatedItems,
+          savedProductIds: savedIds,
+          lastMessage: '✓ Saved ${updatedItems.length} product(s) to database successfully.',
+          isLastMessageError: false,
+        );
+        return true;
+      } catch (e) {
+        state = state.copyWith(
+          isSaving: false,
+          lastMessage: 'Failed to save products: $e',
+          isLastMessageError: true,
+        );
+        return false;
+      }
     }
 
     final savedIds = Set<String>.from(state.savedProductIds);
@@ -550,6 +573,8 @@ class BillingCartNotifier extends StateNotifier<BillingCartState> {
     for (var i = 0; i < updatedItems.length; i++) {
       final item = updatedItems[i];
       final p = item.product;
+      final addedQty = item.quantity.toDouble();
+
       final dto = ProductDto(
         id: p.id,
         name: p.name.trim(),
@@ -567,9 +592,9 @@ class BillingCartNotifier extends StateNotifier<BillingCartState> {
         mrp: p.mrp > 0 ? p.mrp : p.sellingPrice,
         gstRate: p.gstRate,
         gstRatePercent: p.gstRate,
-        openingStock: p.stock > 0 ? p.stock.toDouble() : item.quantity.toDouble(),
-        currentStock: p.stock > 0 ? p.stock.toDouble() : item.quantity.toDouble(),
-        stock: p.stock > 0 ? p.stock : item.quantity,
+        openingStock: addedQty,
+        currentStock: addedQty,
+        stock: item.quantity,
         unit: p.unit,
         primaryUnit: p.unit.toUpperCase(),
         isActive: true,
@@ -581,35 +606,43 @@ class BillingCartNotifier extends StateNotifier<BillingCartState> {
         final isTempId =
             p.id.startsWith('prod_scan_') || p.id.startsWith('prod_custom_') || p.id.isEmpty;
         ProductDto saved;
+
         if (isTempId || !savedIds.contains(p.id)) {
-          // Try create; if barcode already exists, update that record
+          // Try create; if barcode already exists, backend automatically adds stock & quantity!
           try {
             saved = await api.createProduct(dto);
           } catch (createErr) {
             try {
               final existing = await api.findProductByBarcode(p.barcode);
               if (existing != null) {
+                final currentDbStock = existing.openingStock > 0
+                    ? existing.openingStock
+                    : existing.currentStock;
+                final newStock = currentDbStock + addedQty;
+
                 saved = await api.updateProduct(ProductDto(
                   id: existing.id,
-                  name: dto.name,
+                  name: dto.name.isNotEmpty ? dto.name : existing.name,
                   barcode: dto.barcode,
-                  sku: dto.sku,
-                  code: dto.code,
-                  itemCode: dto.itemCode,
-                  category: dto.category,
-                  sellingPrice: dto.sellingPrice,
-                  purchasePrice: dto.purchasePrice,
-                  mrp: dto.mrp,
+                  sku: dto.sku.isNotEmpty ? dto.sku : existing.sku,
+                  code: dto.code.isNotEmpty ? dto.code : existing.code,
+                  itemCode: dto.itemCode.isNotEmpty ? dto.itemCode : existing.itemCode,
+                  category: dto.category.isNotEmpty ? dto.category : existing.category,
+                  subCategory: dto.subCategory.isNotEmpty ? dto.subCategory : existing.subCategory,
+                  variant: dto.variant.isNotEmpty ? dto.variant : existing.variant,
+                  sellingPrice: dto.sellingPrice > 0 ? dto.sellingPrice : existing.sellingPrice,
+                  purchasePrice: dto.purchasePrice > 0 ? dto.purchasePrice : existing.purchasePrice,
+                  mrp: dto.mrp > 0 ? dto.mrp : existing.mrp,
                   gstRate: dto.gstRate,
                   gstRatePercent: dto.gstRate,
-                  openingStock: dto.openingStock,
-                  currentStock: dto.currentStock,
-                  stock: dto.stock,
+                  openingStock: newStock,
+                  currentStock: newStock,
+                  stock: newStock.round(),
                   unit: dto.unit,
                   primaryUnit: dto.primaryUnit,
                   isActive: true,
-                  supplierId: dto.supplierId,
-                  supplierName: dto.supplierName,
+                  supplierId: dto.supplierId.isNotEmpty ? dto.supplierId : existing.supplierId,
+                  supplierName: dto.supplierName.isNotEmpty ? dto.supplierName : existing.supplierName,
                 ));
               } else {
                 errors.add('${p.name} (${p.barcode}): ${createErr.toString().replaceAll('Exception:', '').trim()}');
@@ -621,7 +654,43 @@ class BillingCartNotifier extends StateNotifier<BillingCartState> {
             }
           }
         } else {
-          saved = await api.updateProduct(dto);
+          // Product already known in DB — add addedQty to database stock!
+          ProductDto? existing;
+          try {
+            existing = await api.getProductById(p.id);
+          } catch (_) {
+            existing = await api.findProductByBarcode(p.barcode);
+          }
+
+          final currentDbStock = existing != null
+              ? (existing.openingStock > 0 ? existing.openingStock : existing.currentStock)
+              : p.stock.toDouble();
+          final newStock = currentDbStock + addedQty;
+
+          saved = await api.updateProduct(ProductDto(
+            id: p.id,
+            name: dto.name,
+            barcode: dto.barcode,
+            sku: dto.sku,
+            code: dto.code,
+            itemCode: dto.itemCode,
+            category: dto.category,
+            subCategory: dto.subCategory,
+            variant: dto.variant,
+            sellingPrice: dto.sellingPrice,
+            purchasePrice: dto.purchasePrice,
+            mrp: dto.mrp,
+            gstRate: dto.gstRate,
+            gstRatePercent: dto.gstRate,
+            openingStock: newStock,
+            currentStock: newStock,
+            stock: newStock.round(),
+            unit: dto.unit,
+            primaryUnit: dto.primaryUnit,
+            isActive: true,
+            supplierId: dto.supplierId,
+            supplierName: dto.supplierName,
+          ));
         }
 
         final domainSaved = saved.toDomainProduct();
