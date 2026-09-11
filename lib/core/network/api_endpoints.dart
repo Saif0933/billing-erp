@@ -31,7 +31,9 @@ class ApiEndpoints {
   // Inventory & Products
   static const String products = '/api/v1/products';
   static const String warehouses = '/api/v1/warehouses';
-  static const String stockMovements = '/api/v1/inventory/movements';
+  static const String stockValuation = '/api/v1/inventory/stock-valuation';
+  static const String stockMovements = '/api/v1/inventory/stock-valuation/movements';
+  static const String goodsWarehouse = '/api/v1/inventory/goods-warehouse';
 
   // Subscription & Plans
   static const String plans = '/api/v1/subscriptions/plans';

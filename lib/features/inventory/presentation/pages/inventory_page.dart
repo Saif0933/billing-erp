@@ -13,6 +13,7 @@ import '../../../../shared/widgets/app_input_fields.dart';
 import '../../../../shared/widgets/app_table.dart';
 import '../../../../shared/widgets/feedback.dart';
 import '../../../dashboard/presentation/providers/billing_repository.dart';
+import '../providers/stock_valuation_provider.dart';
 
 class InventoryPage extends ConsumerStatefulWidget {
   const InventoryPage({super.key});
@@ -44,7 +45,7 @@ class _InventoryPageState extends ConsumerState<InventoryPage> {
     return value.toStringAsFixed(2);
   }
 
-  String _formatCurrency(double value) => '₹${value.toStringAsFixed(2)}';
+  String _formatCurrency(double value) => '\u20B9${value.toStringAsFixed(2)}';
 
   String _movementTypeLabel(StockMovementType type) {
     switch (type) {
@@ -169,13 +170,21 @@ class _InventoryPageState extends ConsumerState<InventoryPage> {
                       return;
                     }
 
-                    await ref
-                        .read(billingRepositoryProvider.notifier)
-                        .adjustStock(
-                          _selectedProduct!.id,
-                          qty,
-                          _reasonController.text,
+                    final ok = await ref
+                        .read(stockValuationProvider.notifier)
+                        .createAdjustment(
+                          productId: _selectedProduct!.id,
+                          quantity: qty,
+                          reason: _reasonController.text,
                         );
+                    if (!ok) {
+                      AppFeedback.showSnackbar(
+                        context,
+                        message: 'Failed to adjust stock. Please try again.',
+                        isError: true,
+                      );
+                      return;
+                    }
 
                     if (mounted) {
                       Navigator.pop(ctx);
@@ -426,7 +435,7 @@ class _InventoryPageState extends ConsumerState<InventoryPage> {
             ),
             const SizedBox(height: 6),
             Text(
-              '${p.code}  ·  ${p.sku}',
+              '${p.code}  \u00B7  ${p.sku}',
               style: AppTypography.bodySmall.copyWith(
                 color: isDark
                     ? AppColors.textDarkMuted
@@ -536,20 +545,46 @@ class _InventoryPageState extends ConsumerState<InventoryPage> {
 
   @override
   Widget build(BuildContext context) {
+    final valuationState = ref.watch(stockValuationProvider);
     final billingState = ref.watch(billingRepositoryProvider);
-    final allProducts = billingState.products;
+
+    // Prefer live API stock-valuation items; fall back to local only if API unavailable
+    final allProducts = (!valuationState.isUsingLocalFallback ||
+            valuationState.products.isNotEmpty)
+        ? (valuationState.products.isNotEmpty
+            ? valuationState.products
+            : billingState.products)
+        : billingState.products;
+
+    // Map API stockValue by product for accurate Pur Price / Stock Value display
+    final stockValueById = <String, double>{
+      for (final item in valuationState.items) item.productId: item.stockValue,
+    };
+    final purchasePriceById = <String, double>{
+      for (final item in valuationState.items) item.productId: item.purchasePrice,
+    };
 
     final lowStockItems = allProducts
         .where((p) => p.currentStock <= p.minStockLevel)
         .toList();
 
-    final double stockValuation = allProducts.fold(
-      0.0,
-      (sum, p) => sum + (p.currentStock * p.purchasePrice),
-    );
+    // Total Stock Valuation from API summary (dynamic)
+    final double stockValuation =
+        valuationState.summary?.totalStockValuation ??
+            allProducts.fold(
+              0.0,
+              (sum, p) =>
+                  sum +
+                  (stockValueById[p.id] ??
+                      (p.currentStock *
+                          (purchasePriceById[p.id] ?? p.purchasePrice))),
+            );
 
-    final movements = List<StockMovement>.from(billingState.stockMovements)
-      ..sort((a, b) => b.date.compareTo(a.date));
+    // Stock Ledger from API movements (dynamic); local only on fallback
+    final movements = !valuationState.isUsingLocalFallback
+        ? List<StockMovement>.from(valuationState.domainMovements)
+        : (List<StockMovement>.from(billingState.stockMovements)
+          ..sort((a, b) => b.date.compareTo(a.date)));
 
     final query = _searchController.text.trim().toLowerCase();
     final filteredProducts = allProducts.where((p) {
@@ -582,7 +617,7 @@ class _InventoryPageState extends ConsumerState<InventoryPage> {
       _buildMetricCard(
         isDark: isDark,
         title: 'Unique Product Items',
-        value: '${allProducts.length}',
+        value: '${valuationState.summary?.uniqueProductCount ?? allProducts.length}',
         subtitle: 'Active products in directory',
         icon: Icons.inventory_2_outlined,
         color: AppColors.info,
@@ -590,7 +625,7 @@ class _InventoryPageState extends ConsumerState<InventoryPage> {
       _buildMetricCard(
         isDark: isDark,
         title: 'Low Stock Alerts',
-        value: '${lowStockItems.length}',
+        value: '${valuationState.summary?.lowStockCount ?? lowStockItems.length}',
         subtitle: lowStockItems.isNotEmpty
             ? 'Requires replenishment'
             : 'Stock levels are healthy',
@@ -667,7 +702,12 @@ class _InventoryPageState extends ConsumerState<InventoryPage> {
                                 : 'Search by product or reference',
                             controller: _searchController,
                             prefixIcon: const Icon(Icons.search, size: 20),
-                            onChanged: (_) => setState(() {}),
+                            onChanged: (value) {
+                              setState(() {});
+                              ref
+                                  .read(stockValuationProvider.notifier)
+                                  .setSearchQuery(value);
+                            },
                           ),
                           if (_selectedTab == 0) ...[
                             const SizedBox(height: AppSpacing.sm),
@@ -678,8 +718,12 @@ class _InventoryPageState extends ConsumerState<InventoryPage> {
                                   'Low stock only (${lowStockItems.length})',
                                 ),
                                 selected: _lowStockOnly,
-                                onSelected: (value) =>
-                                    setState(() => _lowStockOnly = value),
+                                onSelected: (value) {
+                                  setState(() => _lowStockOnly = value);
+                                  ref
+                                      .read(stockValuationProvider.notifier)
+                                      .setLowStockOnly(value);
+                                },
                                 selectedColor:
                                     AppColors.error.withValues(alpha: 0.14),
                                 checkmarkColor: AppColors.error,
@@ -699,7 +743,12 @@ class _InventoryPageState extends ConsumerState<InventoryPage> {
                                   : 'Search by product or reference',
                               controller: _searchController,
                               prefixIcon: const Icon(Icons.search, size: 20),
-                              onChanged: (_) => setState(() {}),
+                              onChanged: (value) {
+                              setState(() {});
+                              ref
+                                  .read(stockValuationProvider.notifier)
+                                  .setSearchQuery(value);
+                            },
                             ),
                           ),
                           if (_selectedTab == 0) ...[
@@ -711,8 +760,12 @@ class _InventoryPageState extends ConsumerState<InventoryPage> {
                                   'Low stock only (${lowStockItems.length})',
                                 ),
                                 selected: _lowStockOnly,
-                                onSelected: (value) =>
-                                    setState(() => _lowStockOnly = value),
+                                onSelected: (value) {
+                                  setState(() => _lowStockOnly = value);
+                                  ref
+                                      .read(stockValuationProvider.notifier)
+                                      .setLowStockOnly(value);
+                                },
                                 selectedColor:
                                     AppColors.error.withValues(alpha: 0.14),
                                 checkmarkColor: AppColors.error,
@@ -749,7 +802,7 @@ class _InventoryPageState extends ConsumerState<InventoryPage> {
                             label: 'Pur Price',
                             isNumeric: true,
                             cellBuilder: (p) =>
-                                Text(_formatCurrency(p.purchasePrice)),
+                                Text(_formatCurrency(purchasePriceById[p.id] ?? p.purchasePrice)),
                           ),
                           TableColumnSpec<Product>(
                             label: 'Current Stock',
@@ -789,11 +842,12 @@ class _InventoryPageState extends ConsumerState<InventoryPage> {
                             ),
                           ),
                           TableColumnSpec<Product>(
-                            label: 'Stock Value (₹)',
+                            label: 'Stock Value (\u20B9)',
                             isNumeric: true,
                             cellBuilder: (p) => Text(
                               _formatCurrency(
-                                p.currentStock * p.purchasePrice,
+                                stockValueById[p.id] ??
+                                    (p.currentStock * (purchasePriceById[p.id] ?? p.purchasePrice)),
                               ),
                               style: const TextStyle(
                                 fontWeight: FontWeight.bold,
@@ -866,3 +920,6 @@ class _InventoryPageState extends ConsumerState<InventoryPage> {
     );
   }
 }
+
+
+

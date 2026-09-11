@@ -455,22 +455,24 @@ void main() {
       }
 
       // 3. Scan again and add custom product with same barcode
-      await tester.runAsync(() => Future.delayed(const Duration(milliseconds: 650)));
-      await container.read(billingCartProvider.notifier).addCustomProductAndAddToCart(
-        const Product(
-          id: 'prod_custom_test_coke',
-          name: 'Coca Cola 500ml',
-          barcode: '5449000200427',
-          sku: 'CC-500ML',
-          category: 'Beverages',
-          sellingPrice: 40.00,
-          purchasePrice: 32.00,
-          mrp: 50.00,
-          gstRate: 18.0,
-          stock: 10,
-          unit: 'btl',
-        ),
-      );
+      await tester.runAsync(() async {
+        await Future.delayed(const Duration(milliseconds: 650));
+        await container.read(billingCartProvider.notifier).addCustomProductAndAddToCart(
+          const Product(
+            id: 'prod_custom_test_coke',
+            name: 'Coca Cola 500ml',
+            barcode: '5449000200427',
+            sku: 'CC-500ML',
+            category: 'Beverages',
+            sellingPrice: 40.00,
+            purchasePrice: 32.00,
+            mrp: 50.00,
+            gstRate: 18.0,
+            stock: 10,
+            unit: 'btl',
+          ),
+        );
+      });
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 300));
 

@@ -14,6 +14,7 @@ import '../../../../shared/widgets/app_table.dart';
 import '../../../../shared/widgets/feedback.dart';
 import '../../../dashboard/presentation/providers/billing_repository.dart';
 import '../../../subscription/domain/services/feature_access_service.dart';
+import '../providers/goods_warehouse_provider.dart';
 
 class WarehousePage extends ConsumerStatefulWidget {
   const WarehousePage({super.key});
@@ -131,27 +132,23 @@ class _WarehousePageState extends ConsumerState<WarehousePage> {
                   return;
                 }
 
-                if (warehouse == null) {
-                  final newW = Warehouse(
-                    id: 'wh_${DateTime.now().millisecondsSinceEpoch}',
-                    name: _nameController.text.trim(),
-                    code: _codeController.text.trim(),
-                    address: _addressController.text.trim(),
-                    contact: _contactController.text.trim(),
+                final ok = await ref
+                    .read(goodsWarehouseProvider.notifier)
+                    .saveWarehouse(
+                      existing: warehouse,
+                      name: _nameController.text.trim(),
+                      code: _codeController.text.trim(),
+                      address: _addressController.text.trim(),
+                      contact: _contactController.text.trim(),
+                    );
+
+                if (!ok) {
+                  AppFeedback.showSnackbar(
+                    context,
+                    message: 'Failed to save warehouse. Please try again.',
+                    isError: true,
                   );
-                  await ref
-                      .read(billingRepositoryProvider.notifier)
-                      .addWarehouse(newW);
-                } else {
-                  final editW = warehouse.copyWith(
-                    name: _nameController.text.trim(),
-                    code: _codeController.text.trim(),
-                    address: _addressController.text.trim(),
-                    contact: _contactController.text.trim(),
-                  );
-                  await ref
-                      .read(billingRepositoryProvider.notifier)
-                      .updateWarehouse(editW);
+                  return;
                 }
 
                 if (ctx.mounted) {
@@ -203,7 +200,22 @@ class _WarehousePageState extends ConsumerState<WarehousePage> {
   }
 
   void _submitTransfer() async {
-    if (_srcWhId == _destWhId) {
+    final warehouseState = ref.read(goodsWarehouseProvider);
+    final billingState = ref.read(billingRepositoryProvider);
+    final warehouses = (!warehouseState.isUsingLocalFallback &&
+            warehouseState.domainWarehouses.isNotEmpty)
+        ? warehouseState.domainWarehouses
+        : billingState.warehouses;
+    final sourceId = warehouses.any((w) => w.id == _srcWhId)
+        ? _srcWhId
+        : (warehouses.isNotEmpty ? warehouses.first.id : _srcWhId);
+    final destId = warehouses.any((w) => w.id == _destWhId)
+        ? _destWhId
+        : (warehouses.length > 1
+            ? warehouses[1].id
+            : (warehouses.isNotEmpty ? warehouses.first.id : _destWhId));
+
+    if (sourceId == destId) {
       AppFeedback.showSnackbar(
         context,
         message: 'Source and Destination Warehouses must be different!',
@@ -228,18 +240,22 @@ class _WarehousePageState extends ConsumerState<WarehousePage> {
       return;
     }
 
-    final transfer = StockTransfer(
-      id: 'trans_${DateTime.now().millisecondsSinceEpoch}',
-      sourceWarehouseId: _srcWhId,
-      destinationWarehouseId: _destWhId,
-      items: _transferItems,
-      transferDate: DateTime.now(),
-      referenceNumber: _refController.text.trim(),
-      status: StockTransferStatus.confirmed,
-      notes: _notesController.text.trim(),
-    );
+    final ok = await ref.read(goodsWarehouseProvider.notifier).recordTransfer(
+          fromWarehouseId: sourceId,
+          toWarehouseId: destId,
+          referenceNumber: _refController.text.trim(),
+          notes: _notesController.text.trim(),
+          items: _transferItems,
+        );
 
-    await ref.read(billingRepositoryProvider.notifier).transferStock(transfer);
+    if (!ok) {
+      AppFeedback.showSnackbar(
+        context,
+        message: 'Failed to record stock transfer. Please try again.',
+        isError: true,
+      );
+      return;
+    }
 
     if (mounted) {
       setState(() {
@@ -257,7 +273,20 @@ class _WarehousePageState extends ConsumerState<WarehousePage> {
   @override
   Widget build(BuildContext context) {
     final billingState = ref.watch(billingRepositoryProvider);
+    final warehouseState = ref.watch(goodsWarehouseProvider);
     final featureAccess = ref.watch(featureAccessServiceProvider);
+    final warehouses = (!warehouseState.isUsingLocalFallback &&
+            warehouseState.domainWarehouses.isNotEmpty)
+        ? warehouseState.domainWarehouses
+        : billingState.warehouses;
+    final products = (!warehouseState.isUsingLocalFallback &&
+            warehouseState.domainProducts.isNotEmpty)
+        ? warehouseState.domainProducts
+        : billingState.products;
+    final stockTransfers = (!warehouseState.isUsingLocalFallback &&
+            warehouseState.domainTransfers.isNotEmpty)
+        ? warehouseState.domainTransfers
+        : billingState.stockTransfers;
     final isMobile = Responsive.isMobile(context);
     final isMobileOrTablet = Responsive.isMobileOrTablet(context);
     final pagePadding = EdgeInsets.all(isMobile ? AppSpacing.md : AppSpacing.lg);
@@ -357,7 +386,7 @@ class _WarehousePageState extends ConsumerState<WarehousePage> {
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Text(
-                                '${billingState.warehouses.length} Active',
+                                '${warehouses.length} Active',
                                 style: AppTypography.labelSmall.copyWith(
                                   color: AppColors.primary,
                                   fontWeight: FontWeight.bold,
@@ -398,7 +427,7 @@ class _WarehousePageState extends ConsumerState<WarehousePage> {
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Text(
-                                  '${billingState.warehouses.length} Active',
+                                  '${warehouses.length} Active',
                                   style: AppTypography.labelSmall.copyWith(
                                     color: AppColors.primary,
                                     fontWeight: FontWeight.bold,
@@ -419,7 +448,7 @@ class _WarehousePageState extends ConsumerState<WarehousePage> {
                   AppCard(
                     padding: EdgeInsets.zero,
                     child: AppTable<Warehouse>(
-                      items: billingState.warehouses,
+                      items: warehouses,
                       emptyMessage: 'No warehouses configured yet.',
                       mobileCardBuilder: (w) => Card(
                         elevation: 0,
@@ -599,7 +628,13 @@ class _WarehousePageState extends ConsumerState<WarehousePage> {
             // Tab 2: Stock Transfer Entry
             SingleChildScrollView(
               padding: pagePadding,
-              child: _buildTransferTab(context, billingState, isMobile, isMobileOrTablet),
+              child: _buildTransferTab(
+                context,
+                warehouses,
+                products,
+                isMobile,
+                isMobileOrTablet,
+              ),
             ),
 
             // Tab 3: History Logs
@@ -633,7 +668,7 @@ class _WarehousePageState extends ConsumerState<WarehousePage> {
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Text(
-                          '${billingState.stockTransfers.length} Records',
+                          '${stockTransfers.length} Records',
                           style: AppTypography.labelSmall.copyWith(
                             color: Colors.blue.shade700,
                             fontWeight: FontWeight.bold,
@@ -646,15 +681,15 @@ class _WarehousePageState extends ConsumerState<WarehousePage> {
                   AppCard(
                     padding: EdgeInsets.zero,
                     child: AppTable<StockTransfer>(
-                      items: billingState.stockTransfers,
+                      items: stockTransfers,
                       emptyMessage: 'No stock transfer logs recorded.',
                       mobileCardBuilder: (st) {
-                        final fromName = billingState.warehouses
+                        final fromName = warehouses
                                 .where((w) => w.id == st.sourceWarehouseId)
                                 .firstOrNull
                                 ?.name ??
                             st.sourceWarehouseId;
-                        final toName = billingState.warehouses
+                        final toName = warehouses
                                 .where((w) => w.id == st.destinationWarehouseId)
                                 .firstOrNull
                                 ?.name ??
@@ -869,7 +904,7 @@ class _WarehousePageState extends ConsumerState<WarehousePage> {
                         TableColumnSpec<StockTransfer>(
                           label: 'From Location',
                           cellBuilder: (st) {
-                            final name = billingState.warehouses
+                            final name = warehouses
                                     .where((w) => w.id == st.sourceWarehouseId)
                                     .firstOrNull
                                     ?.name ??
@@ -880,7 +915,7 @@ class _WarehousePageState extends ConsumerState<WarehousePage> {
                         TableColumnSpec<StockTransfer>(
                           label: 'To Location',
                           cellBuilder: (st) {
-                            final name = billingState.warehouses
+                            final name = warehouses
                                     .where(
                                       (w) => w.id == st.destinationWarehouseId,
                                     )
@@ -918,10 +953,20 @@ class _WarehousePageState extends ConsumerState<WarehousePage> {
 
   Widget _buildTransferTab(
     BuildContext context,
-    BillingState billingState,
+    List<Warehouse> warehouses,
+    List<Product> products,
     bool isMobile,
     bool isMobileOrTablet,
   ) {
+    final sourceId = warehouses.any((w) => w.id == _srcWhId)
+        ? _srcWhId
+        : (warehouses.isNotEmpty ? warehouses.first.id : _srcWhId);
+    final destId = warehouses.any((w) => w.id == _destWhId)
+        ? _destWhId
+        : (warehouses.length > 1
+            ? warehouses[1].id
+            : (warehouses.isNotEmpty ? warehouses.first.id : _destWhId));
+
     final configCard = AppCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -944,8 +989,8 @@ class _WarehousePageState extends ConsumerState<WarehousePage> {
           const Divider(),
           AppDropdownField<String>(
             label: 'Source Warehouse *',
-            value: _srcWhId,
-            items: billingState.warehouses.map((wh) {
+            value: sourceId,
+            items: warehouses.map((wh) {
               return DropdownMenuItem<String>(
                 value: wh.id,
                 child: Text(wh.name),
@@ -973,8 +1018,8 @@ class _WarehousePageState extends ConsumerState<WarehousePage> {
           const SizedBox(height: AppSpacing.xs),
           AppDropdownField<String>(
             label: 'Destination Warehouse *',
-            value: _destWhId,
-            items: billingState.warehouses.map((wh) {
+            value: destId,
+            items: warehouses.map((wh) {
               return DropdownMenuItem<String>(
                 value: wh.id,
                 child: Text(wh.name),
@@ -1061,8 +1106,8 @@ class _WarehousePageState extends ConsumerState<WarehousePage> {
             AppDropdownField<Product>(
               label: 'Select Product Item *',
               value: _selectedProduct,
-              items: billingState.products.map((p) {
-                final stock = p.warehouseStocks[_srcWhId] ?? 0.0;
+              items: products.map((p) {
+                final stock = p.warehouseStocks[sourceId] ?? 0.0;
                 return DropdownMenuItem<Product>(
                   value: p,
                   child: Text(
@@ -1105,8 +1150,8 @@ class _WarehousePageState extends ConsumerState<WarehousePage> {
                   child: AppDropdownField<Product>(
                     label: 'Select Product Item *',
                     value: _selectedProduct,
-                    items: billingState.products.map((p) {
-                      final stock = p.warehouseStocks[_srcWhId] ?? 0.0;
+                    items: products.map((p) {
+                      final stock = p.warehouseStocks[sourceId] ?? 0.0;
                       return DropdownMenuItem<Product>(
                         value: p,
                         child: Text(

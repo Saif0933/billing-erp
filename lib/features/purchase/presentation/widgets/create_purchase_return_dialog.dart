@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/constants/app_radius.dart';
+import '../../../../core/models/billing_models.dart';
 import '../../../../shared/widgets/feedback.dart';
 import '../../data/models/purchase_return_dto.dart';
 import '../../domain/models/purchase_return_model.dart';
+import '../providers/purchase_provider.dart';
 import '../providers/purchase_return_provider.dart';
 
 class CreatePurchaseReturnDialog extends ConsumerStatefulWidget {
@@ -46,6 +48,7 @@ class _CreatePurchaseReturnDialogState
   List<EligiblePurchaseDto> _eligiblePurchases = [];
   EligiblePurchaseDto? _selectedPurchase;
   EligiblePurchaseItemDto? _selectedItem;
+  bool _loadingItems = false;
 
   @override
   void initState() {
@@ -65,11 +68,13 @@ class _CreatePurchaseReturnDialogState
         api.getEligiblePurchases(limit: 50),
       ]);
       if (!mounted) return;
+      final purchases = results[1] as List<EligiblePurchaseDto>;
       setState(() {
         _debitNoteNoController.text = results[0] as String;
-        _eligiblePurchases = results[1] as List<EligiblePurchaseDto>;
+        _eligiblePurchases = purchases;
         _loadingMeta = false;
       });
+      await _hydrateMissingItems(purchases);
     } catch (e) {
       if (!mounted) return;
       setState(() {
@@ -89,6 +94,7 @@ class _CreatePurchaseReturnDialogState
         _eligiblePurchases = list;
         _searching = false;
       });
+      await _hydrateMissingItems(list);
     } catch (_) {
       if (!mounted) return;
       setState(() => _searching = false);
@@ -237,11 +243,162 @@ class _CreatePurchaseReturnDialogState
     }
   }
 
-  void _selectPurchase(EligiblePurchaseDto purchase) {
+  Future<void> _selectPurchase(EligiblePurchaseDto purchase) async {
     setState(() {
       _selectedPurchase = purchase;
-      _selectedItem = purchase.items.isNotEmpty ? purchase.items.first : null;
-      _qtyController.text = '1';
+      _selectedItem =
+          purchase.items.isNotEmpty ? purchase.items.first : null;
+      _qtyController.text = _defaultQty(_selectedItem);
+      _loadingItems = purchase.items.isEmpty;
+    });
+
+    final resolved = await _resolvePurchaseItems(purchase);
+    if (!mounted) return;
+    if (_selectedPurchase?.id != purchase.id) return;
+
+    setState(() {
+      _selectedPurchase = resolved;
+      _selectedItem =
+          resolved.items.isNotEmpty ? resolved.items.first : null;
+      _qtyController.text = _defaultQty(_selectedItem);
+      _loadingItems = false;
+      _eligiblePurchases = _eligiblePurchases
+          .map((p) => p.id == resolved.id ? resolved : p)
+          .toList();
+    });
+  }
+
+  EligiblePurchaseItemDto _mapBillItem(PurchaseItem item) {
+    return EligiblePurchaseItemDto(
+      id: item.id,
+      productId: item.productId,
+      productName: item.name,
+      hsnCode: item.hsnCode,
+      quantity: item.quantity,
+      alreadyReturned: 0,
+      remainingQty: item.quantity,
+      unit: item.unit.isEmpty ? 'PCS' : item.unit,
+      rate: item.rate,
+      gstRate: item.gstRate,
+    );
+  }
+
+  Future<EligiblePurchaseDto> _resolvePurchaseItems(
+    EligiblePurchaseDto purchase,
+  ) async {
+    if (purchase.items.isNotEmpty) return purchase;
+
+    try {
+      final detailed = await ref
+          .read(purchaseReturnApiServiceProvider)
+          .getReturnableItems(purchase.id);
+      if (detailed.items.isNotEmpty) {
+        return purchase.copyWith(items: detailed.items);
+      }
+    } catch (_) {}
+
+    try {
+      final bill = await ref
+          .read(purchaseApiServiceProvider)
+          .getPurchaseById(purchase.id);
+      final items = bill.items.map(_mapBillItem).toList();
+      if (items.isNotEmpty) return purchase.copyWith(items: items);
+    } catch (_) {}
+
+    return purchase;
+  }
+
+  Future<void> _hydrateMissingItems(List<EligiblePurchaseDto> purchases) async {
+    final missing = purchases.where((p) => p.items.isEmpty).take(20).toList();
+    if (missing.isEmpty) return;
+
+    final resolved = await Future.wait(
+      missing.map(_resolvePurchaseItems),
+    );
+    if (!mounted) return;
+
+    final byId = {for (final p in resolved) p.id: p};
+    setState(() {
+      _eligiblePurchases = _eligiblePurchases
+          .map((p) => byId[p.id] ?? p)
+          .toList();
+      if (_selectedPurchase != null) {
+        final updated = byId[_selectedPurchase!.id];
+        if (updated != null) {
+          _selectedPurchase = updated;
+          if (_selectedItem == null && updated.items.isNotEmpty) {
+            _selectedItem = updated.items.first;
+            _qtyController.text = _defaultQty(_selectedItem);
+          }
+        }
+      }
+    });
+  }
+
+  List<_ReturnableLine> _productLines() {
+    final source = (_selectedPurchase != null &&
+            _selectedPurchase!.items.isNotEmpty)
+        ? [_selectedPurchase!]
+        : _eligiblePurchases;
+    final lines = <_ReturnableLine>[];
+    final seen = <String>{};
+    for (final purchase in source) {
+      for (final item in purchase.items) {
+        final key = '${purchase.id}:${item.selectionKey}';
+        if (!seen.add(key)) continue;
+        lines.add(_ReturnableLine(purchase: purchase, item: item));
+      }
+    }
+    return lines;
+  }
+
+  String _defaultQty(EligiblePurchaseItemDto? item) {
+    if (item == null) return '1';
+    if (item.remainingQty >= 1) return '1';
+    if (item.remainingQty > 0) return item.remainingQty.toString();
+    if (item.quantity >= 1) return '1';
+    return item.quantity > 0 ? item.quantity.toString() : '1';
+  }
+
+  Future<void> _openProductPicker() async {
+    setState(() => _loadingItems = true);
+    try {
+      if (_selectedPurchase != null && _selectedPurchase!.items.isEmpty) {
+        await _selectPurchase(_selectedPurchase!);
+      } else if (_productLines().isEmpty) {
+        await _hydrateMissingItems(_eligiblePurchases);
+      }
+    } finally {
+      if (mounted) setState(() => _loadingItems = false);
+    }
+    if (!mounted) return;
+
+    final lines = _productLines();
+    if (lines.isEmpty) {
+      AppFeedback.showSnackbar(
+        context,
+        message: _selectedPurchase == null
+            ? 'Select a purchase bill first, or wait for products to load'
+            : 'No products found on this purchase bill',
+      );
+      return;
+    }
+
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final picked = await showDialog<_ReturnableLine>(
+      context: context,
+      useRootNavigator: true,
+      builder: (ctx) => _ReturnProductPickerDialog(
+        lines: lines,
+        selectedKey: _selectedItem?.selectionKey,
+        isDark: isDark,
+      ),
+    );
+    if (picked == null || !mounted) return;
+    setState(() {
+      _selectedPurchase = picked.purchase;
+      _selectedItem = picked.item;
+      _qtyController.text = _defaultQty(picked.item);
     });
   }
 
@@ -818,48 +975,153 @@ class _CreatePurchaseReturnDialogState
   }
 
   Widget _buildProductDropdown(bool isDark) {
-    final items = _selectedPurchase?.items ?? [];
-    return DropdownButtonFormField<String>(
-      value: _selectedItem?.productId,
-      isExpanded: true,
-      dropdownColor: isDark ? const Color(0xFF1E293B) : Colors.white,
-      decoration: _fieldDecoration(
-        label: 'Product / Item *',
-        prefixIcon: Icon(
-          Icons.inventory_2_outlined,
-          size: 18,
-          color: isDark ? Colors.white54 : _muted,
-        ),
-        isDark: isDark,
-      ),
-      items: items
-          .map(
-            (item) => DropdownMenuItem(
-              value: item.productId,
-              child: Text(
-                '${item.productName}  ·  Rem ${item.remainingQty} ${item.unit}',
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: 13,
-                  color: isDark ? Colors.white : _slate,
-                ),
+    final lines = _productLines();
+    final selectedLabel = _selectedItem?.label;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        InkWell(
+          onTap: _loadingItems ? null : _openProductPicker,
+          borderRadius: BorderRadius.circular(10),
+          child: InputDecorator(
+            decoration: _fieldDecoration(
+              label: 'Product / Item *',
+              hint: 'Tap to select product',
+              prefixIcon: Icon(
+                Icons.inventory_2_outlined,
+                size: 18,
+                color: isDark ? Colors.white54 : _muted,
+              ),
+              suffixIcon: _loadingItems
+                  ? const Padding(
+                      padding: EdgeInsets.all(12),
+                      child: SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: _green,
+                        ),
+                      ),
+                    )
+                  : Icon(
+                      Icons.keyboard_arrow_down_rounded,
+                      color: isDark ? Colors.white54 : _muted,
+                    ),
+              isDark: isDark,
+            ),
+            child: Text(
+              selectedLabel?.isNotEmpty == true
+                  ? selectedLabel!
+                  : (lines.isEmpty
+                      ? 'Tap to select product'
+                      : 'Tap to select product (${lines.length} available)'),
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 13.5,
+                fontWeight: selectedLabel == null
+                    ? FontWeight.w500
+                    : FontWeight.w700,
+                color: selectedLabel == null
+                    ? (isDark ? Colors.white38 : const Color(0xFF94A3B8))
+                    : (isDark ? Colors.white : _slate),
               ),
             ),
-          )
-          .toList(),
-      onChanged: items.isEmpty
-          ? null
-          : (val) {
-              if (val == null || _selectedPurchase == null) return;
-              final match = _selectedPurchase!.items
-                  .where((i) => i.productId == val)
-                  .toList();
-              setState(() {
-                _selectedItem = match.isNotEmpty ? match.first : null;
-                _qtyController.text = '1';
-              });
-            },
-      validator: (val) => val == null || val.isEmpty ? 'Required' : null,
+          ),
+        ),
+        if (lines.isNotEmpty) ...[
+          const SizedBox(height: 8),
+          Container(
+            constraints: const BoxConstraints(maxHeight: 180),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: isDark ? Colors.white24 : _border),
+              color: isDark ? const Color(0xFF0F172A) : Colors.white,
+            ),
+            child: ListView.separated(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              shrinkWrap: true,
+              itemCount: lines.length,
+              separatorBuilder: (_, __) => Divider(
+                height: 1,
+                color: isDark ? Colors.white10 : const Color(0xFFF1F5F9),
+              ),
+              itemBuilder: (context, index) {
+                final line = lines[index];
+                final item = line.item;
+                final selected =
+                    item.selectionKey == _selectedItem?.selectionKey &&
+                        line.purchase.id ==
+                            (_selectedPurchase?.id ?? line.purchase.id);
+                return Material(
+                  color: selected
+                      ? (isDark ? _green.withValues(alpha: 0.18) : _greenSoft)
+                      : Colors.transparent,
+                  child: InkWell(
+                    onTap: () {
+                      setState(() {
+                        _selectedPurchase = line.purchase;
+                        _selectedItem = item;
+                        _qtyController.text = _defaultQty(item);
+                      });
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 10,
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            selected
+                                ? Icons.check_circle_rounded
+                                : Icons.inventory_2_outlined,
+                            size: 18,
+                            color: selected
+                                ? (isDark ? const Color(0xFF34D399) : _green)
+                                : (isDark ? Colors.white54 : _muted),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  item.label,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w700,
+                                    color: selected
+                                        ? (isDark
+                                            ? const Color(0xFF34D399)
+                                            : _green)
+                                        : (isDark ? Colors.white : _slate),
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  '${line.purchase.displayBillNumber}  ·  Rem ${item.remainingQty} ${item.unit}  ·  ₹${item.rate.toStringAsFixed(2)}',
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontSize: 11.5,
+                                    color: isDark ? Colors.white54 : _muted,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ],
     );
   }
 
@@ -1096,6 +1358,174 @@ class _CreatePurchaseReturnDialogState
                 submitBtn,
               ],
             ),
+    );
+  }
+}
+
+class _ReturnableLine {
+  final EligiblePurchaseDto purchase;
+  final EligiblePurchaseItemDto item;
+
+  const _ReturnableLine({required this.purchase, required this.item});
+}
+
+class _ReturnProductPickerDialog extends StatefulWidget {
+  final List<_ReturnableLine> lines;
+  final String? selectedKey;
+  final bool isDark;
+
+  const _ReturnProductPickerDialog({
+    required this.lines,
+    required this.selectedKey,
+    required this.isDark,
+  });
+
+  @override
+  State<_ReturnProductPickerDialog> createState() =>
+      _ReturnProductPickerDialogState();
+}
+
+class _ReturnProductPickerDialogState extends State<_ReturnProductPickerDialog> {
+  static const _green = Color(0xFF15803D);
+  static const _greenSoft = Color(0xFFDCFCE7);
+  static const _slate = Color(0xFF0F172A);
+  static const _muted = Color(0xFF64748B);
+
+  final _searchController = TextEditingController();
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final query = _searchController.text.trim().toLowerCase();
+    final filtered = query.isEmpty
+        ? widget.lines
+        : widget.lines.where((line) {
+            final haystack =
+                '${line.item.label} ${line.item.productId} ${line.purchase.displayBillNumber} ${line.purchase.supplierName}'
+                    .toLowerCase();
+            return haystack.contains(query);
+          }).toList();
+    final isDark = widget.isDark;
+
+    return AlertDialog(
+      backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+      titlePadding: const EdgeInsets.fromLTRB(20, 16, 12, 0),
+      contentPadding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+      title: Row(
+        children: [
+          Expanded(
+            child: Text(
+              'Select product',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w800,
+                color: isDark ? Colors.white : _slate,
+              ),
+            ),
+          ),
+          IconButton(
+            onPressed: () => Navigator.pop(context),
+            icon: Icon(
+              Icons.close_rounded,
+              color: isDark ? Colors.white70 : _muted,
+            ),
+          ),
+        ],
+      ),
+      content: SizedBox(
+        width: 420,
+        height: 420,
+        child: Column(
+          children: [
+            TextField(
+              controller: _searchController,
+              autofocus: true,
+              onChanged: (_) => setState(() {}),
+              style: TextStyle(
+                fontSize: 13,
+                color: isDark ? Colors.white : _slate,
+              ),
+              decoration: InputDecoration(
+                hintText: 'Search product / bill / supplier',
+                prefixIcon: const Icon(Icons.search_rounded, size: 18),
+                filled: true,
+                fillColor:
+                    isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
+            Expanded(
+              child: filtered.isEmpty
+                  ? Center(
+                      child: Text(
+                        'No matching products',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: isDark ? Colors.white60 : _muted,
+                        ),
+                      ),
+                    )
+                  : ListView.separated(
+                      itemCount: filtered.length,
+                      separatorBuilder: (_, __) => Divider(
+                        height: 1,
+                        color: isDark ? Colors.white10 : const Color(0xFFF1F5F9),
+                      ),
+                      itemBuilder: (context, index) {
+                        final line = filtered[index];
+                        final selected =
+                            line.item.selectionKey == widget.selectedKey;
+                        return ListTile(
+                          dense: true,
+                          selected: selected,
+                          selectedTileColor: isDark
+                              ? _green.withValues(alpha: 0.18)
+                              : _greenSoft,
+                          leading: Icon(
+                            selected
+                                ? Icons.check_circle_rounded
+                                : Icons.inventory_2_outlined,
+                            color: selected
+                                ? (isDark ? const Color(0xFF34D399) : _green)
+                                : (isDark ? Colors.white54 : _muted),
+                          ),
+                          title: Text(
+                            line.item.label,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontWeight: FontWeight.w700,
+                              fontSize: 13,
+                              color: isDark ? Colors.white : _slate,
+                            ),
+                          ),
+                          subtitle: Text(
+                            '${line.purchase.displayBillNumber} · Rem ${line.item.remainingQty} ${line.item.unit} · ₹${line.item.rate.toStringAsFixed(2)}',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 11.5,
+                              color: isDark ? Colors.white54 : _muted,
+                            ),
+                          ),
+                          onTap: () => Navigator.pop(context, line),
+                        );
+                      },
+                    ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

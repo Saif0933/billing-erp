@@ -11,10 +11,11 @@ class PurchaseReturnApiService {
   PurchaseReturnApiService(this._apiClient);
 
   Map<String, dynamic> _unwrap(dynamic data) {
-    if (data is Map<String, dynamic>) {
-      final inner = data['data'];
-      if (inner is Map<String, dynamic>) return inner;
-      return data;
+    if (data is Map) {
+      final map = Map<String, dynamic>.from(data);
+      final inner = map['data'];
+      if (inner is Map) return Map<String, dynamic>.from(inner);
+      return map;
     }
     return <String, dynamic>{};
   }
@@ -110,7 +111,7 @@ class PurchaseReturnApiService {
       queryParameters: queryParams,
     );
     final payload = _unwrap(response.data);
-    final list = payload['purchases'];
+    final list = payload['purchases'] ?? payload['data'];
     if (list is! List) return const [];
     return list
         .whereType<Map>()

@@ -2,8 +2,22 @@ import '../../domain/models/purchase_return_model.dart';
 
 double _parseDouble(dynamic value) {
   if (value == null) return 0.0;
-  if (value is num) return value.toDouble();
-  return double.tryParse(value.toString()) ?? 0.0;
+  if (value is num) return value.isFinite ? value.toDouble() : 0.0;
+  if (value is Map) {
+    final map = Map<String, dynamic>.from(value);
+    for (final key in ['value', 'amount', 'quantity', 'remainingQty']) {
+      if (map[key] != null && map[key] is! Map) {
+        return _parseDouble(map[key]);
+      }
+    }
+  }
+  return double.tryParse(value.toString().trim()) ?? 0.0;
+}
+
+String _parseNonEmpty(dynamic value) {
+  final text = value?.toString().trim() ?? '';
+  if (text.isEmpty || text.toLowerCase() == 'null') return '';
+  return text;
 }
 
 DateTime _parseDate(dynamic value) {
@@ -388,18 +402,52 @@ class EligiblePurchaseItemDto {
   });
 
   factory EligiblePurchaseItemDto.fromJson(Map<String, dynamic> json) {
+    final product = json['product'];
+    final productMap =
+        product is Map ? Map<String, dynamic>.from(product) : null;
+    final quantity = _parseDouble(json['quantity']);
+    final alreadyReturned = _parseDouble(json['alreadyReturned']);
+    final remainingRaw = json['remainingQty'] ??
+        json['returnableQty'] ??
+        json['remainingQuantity'];
+    final remainingQty = remainingRaw != null
+        ? _parseDouble(remainingRaw)
+        : (quantity - alreadyReturned).clamp(0, double.infinity).toDouble();
+    final unit = _parseNonEmpty(json['unit'] ?? productMap?['primaryUnit']);
     return EligiblePurchaseItemDto(
-      id: json['id']?.toString() ?? '',
-      productId: json['productId']?.toString() ?? '',
-      productName: json['productName']?.toString() ?? '',
-      hsnCode: json['hsnCode']?.toString() ?? '',
-      quantity: _parseDouble(json['quantity']),
-      alreadyReturned: _parseDouble(json['alreadyReturned']),
-      remainingQty: _parseDouble(json['remainingQty']),
-      unit: json['unit']?.toString() ?? 'PCS',
-      rate: _parseDouble(json['rate']),
-      gstRate: _parseDouble(json['gstRate'] ?? json['gstRatePercent']),
+      id: _parseNonEmpty(json['id'] ?? json['purchaseItemId']),
+      productId: _parseNonEmpty(json['productId'] ?? productMap?['id']),
+      productName: _parseNonEmpty(
+        json['productName'] ?? json['name'] ?? productMap?['name'],
+      ),
+      hsnCode: _parseNonEmpty(json['hsnCode'] ?? productMap?['hsnCode']),
+      quantity: quantity,
+      alreadyReturned: alreadyReturned,
+      remainingQty: remainingQty > 0
+          ? remainingQty
+          : (quantity > alreadyReturned
+              ? quantity - alreadyReturned
+              : quantity),
+      unit: unit.isEmpty ? 'PCS' : unit,
+      rate: _parseDouble(json['rate'] ?? json['unitPrice']),
+      gstRate: _parseDouble(
+        json['gstRate'] ??
+            json['gstRatePercent'] ??
+            productMap?['gstRatePercent'],
+      ),
     );
+  }
+
+  String get selectionKey {
+    if (id.isNotEmpty) return 'line:$id';
+    if (productId.isNotEmpty) return 'product:$productId';
+    return 'name:$productName';
+  }
+
+  String get label {
+    if (productName.isNotEmpty) return productName;
+    if (productId.isNotEmpty) return 'Product $productId';
+    return 'Purchase item';
   }
 }
 
@@ -427,29 +475,69 @@ class EligiblePurchaseDto {
   });
 
   factory EligiblePurchaseDto.fromJson(Map<String, dynamic> json) {
-    final itemsRaw = json['items'];
-    final items = itemsRaw is List
-        ? itemsRaw
-            .whereType<Map>()
-            .map((e) => EligiblePurchaseItemDto.fromJson(
-                  Map<String, dynamic>.from(e),
-                ))
-            .toList()
-        : <EligiblePurchaseItemDto>[];
-
     return EligiblePurchaseDto(
       id: json['id']?.toString() ?? json['purchaseId']?.toString() ?? '',
       purchaseNumber: json['purchaseNumber']?.toString() ?? '',
       supplierInvoiceNumber: json['supplierInvoiceNumber']?.toString() ?? '',
       supplierId: json['supplierId']?.toString() ?? '',
-      supplierName: json['supplierName']?.toString() ?? '',
-      supplierGstin: json['supplierGstin']?.toString() ?? '',
+      supplierName: json['supplierName']?.toString() ??
+          (json['supplier'] is Map
+              ? json['supplier']['name']?.toString() ?? ''
+              : ''),
+      supplierGstin: json['supplierGstin']?.toString() ??
+          (json['supplier'] is Map
+              ? json['supplier']['gstin']?.toString() ?? ''
+              : ''),
       purchaseDate: _parseDate(json['purchaseDate']),
       totalAmount: _parseDouble(json['totalAmount']),
-      items: items,
+      items: _parseEligibleItems(json['items']),
+    );
+  }
+
+  EligiblePurchaseDto copyWith({
+    String? id,
+    String? purchaseNumber,
+    String? supplierInvoiceNumber,
+    String? supplierId,
+    String? supplierName,
+    String? supplierGstin,
+    DateTime? purchaseDate,
+    double? totalAmount,
+    List<EligiblePurchaseItemDto>? items,
+  }) {
+    return EligiblePurchaseDto(
+      id: id ?? this.id,
+      purchaseNumber: purchaseNumber ?? this.purchaseNumber,
+      supplierInvoiceNumber:
+          supplierInvoiceNumber ?? this.supplierInvoiceNumber,
+      supplierId: supplierId ?? this.supplierId,
+      supplierName: supplierName ?? this.supplierName,
+      supplierGstin: supplierGstin ?? this.supplierGstin,
+      purchaseDate: purchaseDate ?? this.purchaseDate,
+      totalAmount: totalAmount ?? this.totalAmount,
+      items: items ?? this.items,
     );
   }
 
   String get displayBillNumber =>
       purchaseNumber.isNotEmpty ? purchaseNumber : supplierInvoiceNumber;
+}
+
+List<EligiblePurchaseItemDto> _parseEligibleItems(dynamic itemsRaw) {
+  if (itemsRaw is! List) return const [];
+  final items = <EligiblePurchaseItemDto>[];
+  final seen = <String>{};
+  for (var i = 0; i < itemsRaw.length; i++) {
+    final e = itemsRaw[i];
+    if (e is! Map) continue;
+    final item = EligiblePurchaseItemDto.fromJson(
+      Map<String, dynamic>.from(e),
+    );
+    final hasProduct = item.productId.isNotEmpty || item.productName.isNotEmpty;
+    if (!hasProduct && item.quantity <= 0 && item.remainingQty <= 0) continue;
+    final key = item.id.isNotEmpty ? 'id:${item.id}' : 'p:${item.productId}:$i';
+    if (!seen.add(key)) continue;
+    items.add(item);
+  }
+  return items;
 }
