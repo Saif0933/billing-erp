@@ -1,5 +1,14 @@
 // Sales Return DTOs matching backend module/salesopration/sales-return
 
+import '../../../../core/models/billing_models.dart';
+
+double _asDouble(dynamic value, [double fallback = 0]) {
+  if (value == null) return fallback;
+  if (value is num) return value.toDouble();
+  if (value is String) return double.tryParse(value) ?? fallback;
+  return fallback;
+}
+
 class SalesReturnDto {
   final String id;
   final String returnNumber;
@@ -93,20 +102,63 @@ class SalesReturnDto {
       reason: json['reason']?.toString(),
       refundMode: json['refundMode']?.toString() ?? 'Credit Note (Store Credit)',
       warehouseId: json['warehouseId']?.toString(),
-      subtotal: (json['subtotal'] as num?)?.toDouble() ?? 0.0,
-      discountAmount: (json['discountAmount'] as num?)?.toDouble() ?? 0.0,
-      taxableValue: (json['taxableValue'] as num?)?.toDouble() ?? 0.0,
-      cgstAmount: (json['cgstAmount'] as num?)?.toDouble() ?? 0.0,
-      sgstAmount: (json['sgstAmount'] as num?)?.toDouble() ?? 0.0,
-      igstAmount: (json['igstAmount'] as num?)?.toDouble() ?? 0.0,
-      cessAmount: (json['cessAmount'] as num?)?.toDouble() ?? 0.0,
-      roundOff: (json['roundOff'] as num?)?.toDouble() ?? 0.0,
-      totalAmount: (json['totalAmount'] as num?)?.toDouble() ?? 0.0,
+      subtotal: _asDouble(json['subtotal']),
+      discountAmount: _asDouble(json['discountAmount']),
+      taxableValue: _asDouble(json['taxableValue']),
+      cgstAmount: _asDouble(json['cgstAmount']),
+      sgstAmount: _asDouble(json['sgstAmount']),
+      igstAmount: _asDouble(json['igstAmount']),
+      cessAmount: _asDouble(json['cessAmount']),
+      roundOff: _asDouble(json['roundOff']),
+      totalAmount: _asDouble(json['totalAmount'] ?? json['grandTotal']),
       notes: json['notes']?.toString(),
       termsConditions: json['termsConditions']?.toString(),
       items: rawItems
-          .map((it) => SalesReturnItemDto.fromJson(it as Map<String, dynamic>))
+          .whereType<Map>()
+          .map((it) => SalesReturnItemDto.fromJson(Map<String, dynamic>.from(it)))
           .toList(),
+    );
+  }
+
+  InvoiceStatus get domainStatus {
+    switch (status.toUpperCase()) {
+      case 'CANCELLED':
+        return InvoiceStatus.cancelled;
+      case 'DRAFT':
+        return InvoiceStatus.draft;
+      case 'ADJUSTED':
+        return InvoiceStatus.partiallyPaid;
+      default:
+        return InvoiceStatus.confirmed;
+    }
+  }
+
+  Invoice toInvoice() {
+    return Invoice(
+      id: id,
+      invoiceNumber: returnNumber,
+      invoiceDate: returnDate,
+      customerId: customerId ?? '',
+      customerName: customerName,
+      billingAddress: billingAddress ?? '',
+      shippingAddress: shippingAddress ?? '',
+      placeOfSupply: placeOfSupply ?? '',
+      items: items.map((it) => it.toInvoiceItem()).toList(),
+      taxableAmount: taxableValue,
+      cgst: cgstAmount,
+      sgst: sgstAmount,
+      igst: igstAmount,
+      cess: cessAmount,
+      roundOff: roundOff,
+      grandTotal: totalAmount,
+      balanceAmount: 0,
+      paymentMode: refundMode ?? 'Credit Note (Store Credit)',
+      status: domainStatus,
+      notes: notes ?? (reason ?? ''),
+      termsConditions: termsConditions ?? '',
+      originalInvoiceId: originalInvoiceNumber ?? invoiceId ?? '',
+      warehouseId: warehouseId ?? '',
+      isCreditNote: true,
     );
   }
 }
@@ -161,20 +213,41 @@ class SalesReturnItemDto {
       serviceId: json['serviceId']?.toString(),
       productName: json['productName']?.toString() ?? 'Returned Item',
       hsnSac: json['hsnSac']?.toString(),
-      quantity: (json['quantity'] as num?)?.toDouble() ?? 1.0,
+      quantity: _asDouble(json['quantity'], 1),
       unit: json['unit']?.toString() ?? 'PCS',
-      rate: (json['rate'] as num?)?.toDouble() ?? 0.0,
-      discountPercentage: (json['discountPercentage'] as num?)?.toDouble() ?? 0.0,
-      discountAmount: (json['discountAmount'] as num?)?.toDouble() ?? 0.0,
-      taxableValue: (json['taxableValue'] as num?)?.toDouble() ?? 0.0,
-      gstRatePercent: (json['gstRatePercent'] as num?)?.toDouble() ?? 0.0,
-      cgstAmount: (json['cgstAmount'] as num?)?.toDouble() ?? 0.0,
-      sgstAmount: (json['sgstAmount'] as num?)?.toDouble() ?? 0.0,
-      igstAmount: (json['igstAmount'] as num?)?.toDouble() ?? 0.0,
-      cessAmount: (json['cessAmount'] as num?)?.toDouble() ?? 0.0,
-      lineTotal: (json['lineTotal'] as num?)?.toDouble() ?? 0.0,
+      rate: _asDouble(json['rate']),
+      discountPercentage: _asDouble(json['discountPercentage']),
+      discountAmount: _asDouble(json['discountAmount']),
+      taxableValue: _asDouble(json['taxableValue']),
+      gstRatePercent: _asDouble(json['gstRatePercent'] ?? json['gstRate']),
+      cgstAmount: _asDouble(json['cgstAmount']),
+      sgstAmount: _asDouble(json['sgstAmount']),
+      igstAmount: _asDouble(json['igstAmount']),
+      cessAmount: _asDouble(json['cessAmount']),
+      lineTotal: _asDouble(json['lineTotal']),
       reason: json['reason']?.toString(),
       stockRestocked: json['stockRestocked'] == true,
+    );
+  }
+
+  InvoiceItem toInvoiceItem() {
+    return InvoiceItem(
+      id: id.isNotEmpty ? id : 'ret_item_${productName.hashCode}',
+      productId: productId ?? '',
+      serviceId: serviceId ?? '',
+      name: productName,
+      hsnSac: hsnSac ?? '',
+      quantity: quantity,
+      unit: unit,
+      rate: rate,
+      discountPercentage: discountPercentage,
+      discountAmount: discountAmount,
+      taxableValue: taxableValue,
+      gstRate: gstRatePercent,
+      cgst: cgstAmount,
+      sgst: sgstAmount,
+      igst: igstAmount,
+      cess: cessAmount,
     );
   }
 }
@@ -198,11 +271,11 @@ class SalesReturnSummaryMetricsDto {
 
   factory SalesReturnSummaryMetricsDto.fromJson(Map<String, dynamic> json) {
     return SalesReturnSummaryMetricsDto(
-      totalReturnValue: (json['totalReturnValue'] as num?)?.toDouble() ?? 0.0,
+      totalReturnValue: _asDouble(json['totalReturnValue']),
       confirmedCount: (json['confirmedCount'] as num?)?.toInt() ?? 0,
       draftCount: (json['draftCount'] as num?)?.toInt() ?? 0,
       cancelledCount: (json['cancelledCount'] as num?)?.toInt() ?? 0,
-      itemsRestocked: (json['itemsRestocked'] as num?)?.toDouble() ?? 0.0,
+      itemsRestocked: _asDouble(json['itemsRestocked']),
       totalCount: (json['totalCount'] as num?)?.toInt() ?? 0,
     );
   }

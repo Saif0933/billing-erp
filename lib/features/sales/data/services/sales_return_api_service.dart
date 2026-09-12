@@ -8,6 +8,23 @@ class SalesReturnApiService {
 
   SalesReturnApiService(this._apiClient);
 
+  Map<String, dynamic> _unwrap(dynamic raw) {
+    if (raw is! Map) return <String, dynamic>{};
+    final map = Map<String, dynamic>.from(raw);
+    final data = map['data'];
+    if (data is Map) {
+      final inner = Map<String, dynamic>.from(data);
+      if (inner['salesReturn'] is Map) {
+        return Map<String, dynamic>.from(inner['salesReturn'] as Map);
+      }
+      return inner;
+    }
+    if (map['salesReturn'] is Map) {
+      return Map<String, dynamic>.from(map['salesReturn'] as Map);
+    }
+    return map;
+  }
+
   /// 1. Get next auto-formatted return / credit note number (e.g. CN/25-26/0001)
   Future<String> getNextReturnNumber() async {
     try {
@@ -41,7 +58,7 @@ class SalesReturnApiService {
 
     final data = response.data as Map<String, dynamic>;
     final result = (data['data'] as Map<String, dynamic>?) ?? data;
-    return SalesReturnDto.fromJson(result);
+    return SalesReturnDto.fromJson(_unwrap(result));
   }
 
   /// 4. Query list of sales returns
@@ -51,7 +68,7 @@ class SalesReturnApiService {
     String? invoiceId,
     String? status,
     int page = 1,
-    int limit = 20,
+    int limit = 100,
   }) async {
     try {
       final queryParams = <String, dynamic>{
@@ -78,10 +95,20 @@ class SalesReturnApiService {
 
       final data = response.data as Map<String, dynamic>;
       final payload = (data['data'] as Map<String, dynamic>?) ?? data;
-      final returnsRaw = payload['returns'] as List<dynamic>? ?? [];
+      final returnsRaw = payload['returns'] as List<dynamic>? ??
+          (payload['data'] is List ? payload['data'] as List<dynamic> : null) ??
+          (data['returns'] as List<dynamic>? ?? []);
 
       return returnsRaw
-          .map((ret) => SalesReturnDto.fromJson(ret as Map<String, dynamic>))
+          .whereType<Map>()
+          .map((ret) {
+            try {
+              return SalesReturnDto.fromJson(Map<String, dynamic>.from(ret));
+            } catch (_) {
+              return null;
+            }
+          })
+          .whereType<SalesReturnDto>()
           .toList();
     } catch (_) {
       return [];
@@ -92,24 +119,21 @@ class SalesReturnApiService {
   Future<SalesReturnDto> getReturnById(String id) async {
     final response = await _apiClient.get('${ApiEndpoints.salesReturns}/$id');
     final data = response.data as Map<String, dynamic>;
-    final payload = (data['data'] as Map<String, dynamic>?) ?? data;
-    return SalesReturnDto.fromJson(payload);
+    return SalesReturnDto.fromJson(_unwrap(data));
   }
 
   /// 6. Confirm sales return (restocks inventory, issues credit note & updates ledger)
   Future<SalesReturnDto> confirmSalesReturn(String id) async {
     final response = await _apiClient.post('${ApiEndpoints.salesReturns}/$id/confirm');
     final data = response.data as Map<String, dynamic>;
-    final payload = (data['data'] as Map<String, dynamic>?) ?? data;
-    return SalesReturnDto.fromJson(payload);
+    return SalesReturnDto.fromJson(_unwrap(data));
   }
 
   /// 7. Cancel sales return (reverses inventory restock & ledger balance)
   Future<SalesReturnDto> cancelSalesReturn(String id) async {
     final response = await _apiClient.post('${ApiEndpoints.salesReturns}/$id/cancel');
     final data = response.data as Map<String, dynamic>;
-    final payload = (data['data'] as Map<String, dynamic>?) ?? data;
-    return SalesReturnDto.fromJson(payload);
+    return SalesReturnDto.fromJson(_unwrap(data));
   }
 
   /// 8. Delete sales return (drafts only)

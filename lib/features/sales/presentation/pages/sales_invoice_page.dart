@@ -5,12 +5,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/constants/app_colors.dart';
-import '../../../../core/constants/app_spacing.dart';
 import '../../../../core/constants/app_typography.dart';
 import '../../../../core/models/billing_models.dart';
+import '../../../../core/responsive/responsive.dart';
 import '../../../../shared/widgets/app_cards.dart';
 import '../../../../shared/widgets/app_table.dart';
 import '../../../dashboard/presentation/providers/billing_repository.dart';
+import '../providers/sales_invoice_provider.dart';
 
 class SalesInvoicePage extends ConsumerStatefulWidget {
   const SalesInvoicePage({super.key});
@@ -23,6 +24,19 @@ class _SalesInvoicePageState extends ConsumerState<SalesInvoicePage> {
   final _searchController = TextEditingController();
   String _searchQuery = '';
   String _selectedStatusFilter = 'All';
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final notifier = ref.read(salesInvoiceNotifierProvider.notifier);
+      final remote = await notifier.refreshInvoices();
+      if (!mounted) return;
+      ref.read(billingRepositoryProvider.notifier).mergeRemoteInvoices(
+            remote.map((dto) => dto.toInvoice()).toList(),
+          );
+    });
+  }
 
   @override
   void dispose() {
@@ -196,7 +210,10 @@ class _SalesInvoicePageState extends ConsumerState<SalesInvoicePage> {
   }
 
   Widget _buildGreenBanner(BuildContext context) {
-    return Container(
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final compact = constraints.maxWidth <= Responsive.compactMax;
+        return Container(
       width: double.infinity,
       decoration: BoxDecoration(
         gradient: const LinearGradient(
@@ -213,7 +230,7 @@ class _SalesInvoicePageState extends ConsumerState<SalesInvoicePage> {
           ),
         ],
       ),
-      padding: const EdgeInsets.all(24),
+      padding: EdgeInsets.all(compact ? 16 : 24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -224,17 +241,17 @@ class _SalesInvoicePageState extends ConsumerState<SalesInvoicePage> {
                 flex: 3,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: const [
+                  children: [
                     Text(
                       'Sales Invoices',
                       style: TextStyle(
-                        fontSize: 24,
+                        fontSize: compact ? 20 : 24,
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
                       ),
                     ),
-                    SizedBox(height: 8),
-                    Text(
+                    const SizedBox(height: 8),
+                    const Text(
                       'Create and track tax invoices, credit notes, and customer account receipts.',
                       style: TextStyle(
                         fontSize: 13,
@@ -245,6 +262,7 @@ class _SalesInvoicePageState extends ConsumerState<SalesInvoicePage> {
                   ],
                 ),
               ),
+              if (!compact) ...[
               const SizedBox(width: 16),
               Expanded(
                 flex: 2,
@@ -352,9 +370,11 @@ class _SalesInvoicePageState extends ConsumerState<SalesInvoicePage> {
                   ),
                 ),
               ),
+              ],
             ],
           ),
-          Row(
+          const SizedBox(height: 16),
+          ResponsiveRow(
             children: [
               Expanded(
                 child: ElevatedButton.icon(
@@ -370,6 +390,7 @@ class _SalesInvoicePageState extends ConsumerState<SalesInvoicePage> {
                       fontWeight: FontWeight.bold,
                       fontSize: 14,
                     ),
+                    overflow: TextOverflow.ellipsis,
                   ),
                   onPressed: () => context.go('/pos'),
                   style: ElevatedButton.styleFrom(
@@ -382,7 +403,6 @@ class _SalesInvoicePageState extends ConsumerState<SalesInvoicePage> {
                   ),
                 ),
               ),
-              const SizedBox(width: 12),
               Expanded(
                 child: ElevatedButton.icon(
                   icon: const Icon(
@@ -397,6 +417,7 @@ class _SalesInvoicePageState extends ConsumerState<SalesInvoicePage> {
                       fontWeight: FontWeight.bold,
                       fontSize: 14,
                     ),
+                    overflow: TextOverflow.ellipsis,
                   ),
                   onPressed: () => context.push('/sales/new'),
                   style: ElevatedButton.styleFrom(
@@ -415,9 +436,11 @@ class _SalesInvoicePageState extends ConsumerState<SalesInvoicePage> {
         ],
       ),
     );
+      },
+    );
   }
 
-  Widget _buildEmptyState(BuildContext context) {
+  Widget _buildEmptyState(BuildContext context, {required String message}) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return CustomPaint(
       painter: DashedRectPainter(
@@ -482,7 +505,7 @@ class _SalesInvoicePageState extends ConsumerState<SalesInvoicePage> {
             ),
             const SizedBox(height: 8),
             Text(
-              'No invoices match the selected search criteria.',
+              message,
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 14,
@@ -500,17 +523,31 @@ class _SalesInvoicePageState extends ConsumerState<SalesInvoicePage> {
   @override
   Widget build(BuildContext context) {
     final billingState = ref.watch(billingRepositoryProvider);
-    final allInvoices = billingState.invoices
-        .where((inv) => !inv.isCreditNote)
-        .toList();
+    final invoiceState = ref.watch(salesInvoiceNotifierProvider);
+
+    final mergedByNumber = <String, Invoice>{};
+    for (final inv in billingState.invoices.where((i) => !i.isCreditNote)) {
+      final key = inv.invoiceNumber.trim().isNotEmpty
+          ? inv.invoiceNumber.trim().toLowerCase()
+          : inv.id;
+      mergedByNumber[key] = inv;
+    }
+    for (final dto in invoiceState.invoices) {
+      final inv = dto.toInvoice();
+      final key = inv.invoiceNumber.trim().isNotEmpty
+          ? inv.invoiceNumber.trim().toLowerCase()
+          : inv.id;
+      mergedByNumber[key] = inv;
+    }
+    final allInvoices = mergedByNumber.values.toList()
+      ..sort((a, b) => b.invoiceDate.compareTo(a.invoiceDate));
 
     // Filter invoices
     final filteredInvoices = allInvoices.where((inv) {
-      final matchesSearch =
-          inv.invoiceNumber.toLowerCase().contains(
-            _searchQuery.toLowerCase(),
-          ) ||
-          inv.customerName.toLowerCase().contains(_searchQuery.toLowerCase());
+      final q = _searchQuery.trim().toLowerCase();
+      final matchesSearch = q.isEmpty ||
+          inv.invoiceNumber.toLowerCase().contains(q) ||
+          inv.customerName.toLowerCase().contains(q);
       final matchesStatus =
           _selectedStatusFilter == 'All' ||
           inv.status.name.toLowerCase() == _selectedStatusFilter.toLowerCase();
@@ -518,8 +555,9 @@ class _SalesInvoicePageState extends ConsumerState<SalesInvoicePage> {
     }).toList();
 
     return Scaffold(
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(AppSpacing.lg),
+      body: SafeArea(
+        child: SingleChildScrollView(
+        padding: Responsive.pagePadding(context),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -623,8 +661,18 @@ class _SalesInvoicePageState extends ConsumerState<SalesInvoicePage> {
               ),
             ),
             const SizedBox(height: 16),
-            if (filteredInvoices.isEmpty)
-              _buildEmptyState(context)
+            if (invoiceState.isLoadingList && filteredInvoices.isEmpty)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 48),
+                child: Center(child: CircularProgressIndicator()),
+              )
+            else if (filteredInvoices.isEmpty)
+              _buildEmptyState(
+                context,
+                message: allInvoices.isEmpty
+                    ? 'No sales invoices yet. Create an invoice to see it here.'
+                    : 'No invoices match the selected search criteria.',
+              )
             else
               AppCard(
                 padding: EdgeInsets.zero,
@@ -793,6 +841,7 @@ class _SalesInvoicePageState extends ConsumerState<SalesInvoicePage> {
                 ),
               ),
           ],
+        ),
         ),
       ),
     );

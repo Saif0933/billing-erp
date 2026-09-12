@@ -39,14 +39,15 @@ class SaleReturnDetailPage extends ConsumerWidget {
             child: const Text('Yes, Cancel Return'),
             onPressed: () async {
               Navigator.pop(ctx);
-              await ref
-                  .read(billingRepositoryProvider.notifier)
-                  .cancelInvoice(ret.id);
               try {
                 await ref
                     .read(salesReturnNotifierProvider.notifier)
                     .cancelReturn(ret.id);
-              } catch (_) {}
+              } catch (_) {
+                await ref
+                    .read(billingRepositoryProvider.notifier)
+                    .cancelInvoice(ret.id);
+              }
               if (context.mounted) {
                 AppFeedback.showSnackbar(
                   context,
@@ -61,12 +62,13 @@ class SaleReturnDetailPage extends ConsumerWidget {
   }
 
   void _confirmReturn(BuildContext context, WidgetRef ref, Invoice ret) async {
-    await ref.read(billingRepositoryProvider.notifier).confirmInvoice(ret.id);
     try {
       await ref
           .read(salesReturnNotifierProvider.notifier)
           .confirmReturn(ret.id);
-    } catch (_) {}
+    } catch (_) {
+      await ref.read(billingRepositoryProvider.notifier).confirmInvoice(ret.id);
+    }
     if (context.mounted) {
       AppFeedback.showSnackbar(
         context,
@@ -126,10 +128,11 @@ class SaleReturnDetailPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final billingState = ref.watch(billingRepositoryProvider);
+    final detailAsync = ref.watch(salesReturnDetailProvider(returnId));
     final activeBiz = ref.watch(businessProvider).activeBusiness;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    final ret = billingState.invoices.firstWhere(
+    Invoice ret = billingState.invoices.firstWhere(
       (inv) =>
           inv.id == returnId ||
           inv.invoiceNumber.toLowerCase() == returnId.toLowerCase(),
@@ -158,7 +161,18 @@ class SaleReturnDetailPage extends ConsumerWidget {
       ),
     );
 
+    final remote = detailAsync.asData?.value;
+    if (ret.id.isEmpty && remote != null) {
+      ret = remote.toInvoice();
+    }
+
     if (ret.id.isEmpty) {
+      if (detailAsync.isLoading) {
+        return Scaffold(
+          appBar: AppBar(title: const Text('Sale Return Details')),
+          body: const Center(child: CircularProgressIndicator()),
+        );
+      }
       return Scaffold(
         appBar: AppBar(title: const Text('Sale Return Details')),
         body: Center(
@@ -223,7 +237,7 @@ class SaleReturnDetailPage extends ConsumerWidget {
         ],
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(AppSpacing.lg),
+        padding: Responsive.pagePadding(context),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [

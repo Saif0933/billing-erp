@@ -51,7 +51,7 @@ class SalesInvoiceApiService {
     String? status,
     bool? isHeld,
     int page = 1,
-    int limit = 20,
+    int limit = 100,
   }) async {
     try {
       final queryParams = <String, dynamic>{
@@ -78,10 +78,20 @@ class SalesInvoiceApiService {
 
       final data = response.data as Map<String, dynamic>;
       final payload = (data['data'] as Map<String, dynamic>?) ?? data;
-      final invoicesRaw = payload['invoices'] as List<dynamic>? ?? [];
+      final invoicesRaw = payload['invoices'] as List<dynamic>? ??
+          (payload['data'] is List ? payload['data'] as List<dynamic> : null) ??
+          (data['invoices'] as List<dynamic>? ?? []);
 
       return invoicesRaw
-          .map((inv) => SalesInvoiceDto.fromJson(inv as Map<String, dynamic>))
+          .whereType<Map>()
+          .map((inv) {
+            try {
+              return SalesInvoiceDto.fromJson(Map<String, dynamic>.from(inv));
+            } catch (_) {
+              return null;
+            }
+          })
+          .whereType<SalesInvoiceDto>()
           .toList();
     } catch (_) {
       return [];
@@ -93,7 +103,10 @@ class SalesInvoiceApiService {
     final response = await _apiClient.get('${ApiEndpoints.salesInvoices}/$id');
     final data = response.data as Map<String, dynamic>;
     final payload = (data['data'] as Map<String, dynamic>?) ?? data;
-    return SalesInvoiceDto.fromJson(payload);
+    final invoiceJson = payload['invoice'] is Map
+        ? Map<String, dynamic>.from(payload['invoice'] as Map)
+        : payload;
+    return SalesInvoiceDto.fromJson(invoiceJson);
   }
 
   /// 6. Fast hold / park bill

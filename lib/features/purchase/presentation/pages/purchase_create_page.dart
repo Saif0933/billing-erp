@@ -123,19 +123,15 @@ class _PurchaseCreatePageState extends ConsumerState<PurchaseCreatePage> {
   }
 
   List<String> _categorySuggestions(PurchaseListState purchaseState) {
-    final typed = _categoryController.text.trim().toLowerCase();
-    final all = purchaseState.categories
+    return purchaseState.categories
         .map((c) => c.category)
         .where((c) => c.trim().isNotEmpty)
         .toSet()
         .toList()
       ..sort();
-    if (typed.isEmpty) return all;
-    return all.where((c) => c.toLowerCase().contains(typed)).toList();
   }
 
   List<String> _subCategorySuggestions(PurchaseListState purchaseState) {
-    final typed = _subCategoryController.text.trim().toLowerCase();
     final category = _categoryController.text.trim();
     final Set<String> all = {};
     for (final node in purchaseState.categories) {
@@ -152,9 +148,7 @@ class _PurchaseCreatePageState extends ConsumerState<PurchaseCreatePage> {
         all.add(p.subCategory.trim());
       }
     }
-    final list = all.toList()..sort();
-    if (typed.isEmpty) return list;
-    return list.where((s) => s.toLowerCase().contains(typed)).toList();
+    return all.toList()..sort();
   }
 
   void _applySelectedProduct(Product prod) {
@@ -459,7 +453,7 @@ class _PurchaseCreatePageState extends ConsumerState<PurchaseCreatePage> {
         elevation: 0.5,
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(AppSpacing.md),
+        padding: Responsive.pagePadding(context),
         child: Form(
           key: _formKey,
           child: Column(
@@ -845,7 +839,7 @@ class _PurchaseCreatePageState extends ConsumerState<PurchaseCreatePage> {
                               ResponsiveRow(
                                 children: [
                                   Expanded(
-                                    child: _buildSuggestTextField(
+                                    child: _PurchaseSuggestField(
                                       label: 'Category',
                                       hintText: 'Type category (e.g. Dairy)',
                                       controller: _categoryController,
@@ -872,7 +866,10 @@ class _PurchaseCreatePageState extends ConsumerState<PurchaseCreatePage> {
                                     ),
                                   ),
                                   Expanded(
-                                    child: _buildSuggestTextField(
+                                    child: _PurchaseSuggestField(
+                                      key: ValueKey(
+                                        'subcat-${_categoryController.text.trim().toLowerCase()}',
+                                      ),
                                       label: 'Sub Category',
                                       hintText: 'Type sub category',
                                       controller: _subCategoryController,
@@ -1415,7 +1412,7 @@ class _PurchaseCreatePageState extends ConsumerState<PurchaseCreatePage> {
 
                         const SizedBox(height: 20),
 
-                        Row(
+                        ResponsiveRow(
                           children: [
                             Expanded(
                               child: OutlinedButton(
@@ -1441,7 +1438,6 @@ class _PurchaseCreatePageState extends ConsumerState<PurchaseCreatePage> {
                                 ),
                               ),
                             ),
-                            const SizedBox(width: 12),
                             Expanded(
                               flex: 2,
                               child: ElevatedButton.icon(
@@ -1508,82 +1504,6 @@ class _PurchaseCreatePageState extends ConsumerState<PurchaseCreatePage> {
     );
   }
 
-  /// Manual text input with optional suggestion chips / autocomplete list
-  Widget _buildSuggestTextField({
-    required String label,
-    required String hintText,
-    required TextEditingController controller,
-    required FocusNode focusNode,
-    required List<String> suggestions,
-    required ValueChanged<String> onChanged,
-    required ValueChanged<String> onSuggestionSelected,
-  }) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        return RawAutocomplete<String>(
-          textEditingController: controller,
-          focusNode: focusNode,
-          optionsBuilder: (TextEditingValue value) {
-            final q = value.text.trim().toLowerCase();
-            if (q.isEmpty) return suggestions;
-            return suggestions
-                .where((s) => s.toLowerCase().contains(q))
-                .toList();
-          },
-          onSelected: onSuggestionSelected,
-          fieldViewBuilder: (context, textController, fieldFocusNode, onSubmit) {
-            return AppTextField(
-              label: label,
-              hintText: hintText,
-              controller: textController,
-              focusNode: fieldFocusNode,
-              onChanged: onChanged,
-              onFieldSubmitted: (_) => onSubmit(),
-              suffixIcon: textController.text.isNotEmpty
-                  ? IconButton(
-                      icon: const Icon(Icons.clear, size: 18),
-                      onPressed: () {
-                        textController.clear();
-                        onChanged('');
-                        setState(() {});
-                      },
-                    )
-                  : const Icon(Icons.edit_outlined, size: 18),
-            );
-          },
-          optionsViewBuilder: (context, onSelected, options) {
-            if (options.isEmpty) return const SizedBox.shrink();
-            return Align(
-              alignment: Alignment.topLeft,
-              child: Material(
-                elevation: 4,
-                borderRadius: BorderRadius.circular(10),
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(
-                    maxHeight: 200,
-                    maxWidth: constraints.maxWidth,
-                  ),
-                  child: ListView.builder(
-                    padding: EdgeInsets.zero,
-                    shrinkWrap: true,
-                    itemCount: options.length,
-                    itemBuilder: (context, index) {
-                      final option = options.elementAt(index);
-                      return ListTile(
-                        dense: true,
-                        title: Text(option, style: const TextStyle(fontSize: 13)),
-                        onTap: () => onSelected(option),
-                      );
-                    },
-                  ),
-                ),
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
 
   Widget _buildProductSuggestField() {
     return LayoutBuilder(
@@ -1712,6 +1632,243 @@ class _PurchaseCreatePageState extends ConsumerState<PurchaseCreatePage> {
               ),
             );
           },
+        );
+      },
+    );
+  }
+}
+
+/// Always shows the full suggestion list on open (not filtered by the
+/// already-selected value). Typing a new name is still allowed.
+class _PurchaseSuggestField extends StatefulWidget {
+  const _PurchaseSuggestField({
+    super.key,
+    required this.label,
+    required this.hintText,
+    required this.controller,
+    required this.focusNode,
+    required this.suggestions,
+    required this.onChanged,
+    required this.onSuggestionSelected,
+  });
+
+  final String label;
+  final String hintText;
+  final TextEditingController controller;
+  final FocusNode focusNode;
+  final List<String> suggestions;
+  final ValueChanged<String> onChanged;
+  final ValueChanged<String> onSuggestionSelected;
+
+  @override
+  State<_PurchaseSuggestField> createState() => _PurchaseSuggestFieldState();
+}
+
+class _PurchaseSuggestFieldState extends State<_PurchaseSuggestField> {
+  final LayerLink _layerLink = LayerLink();
+  OverlayEntry? _overlayEntry;
+  double _fieldWidth = 280;
+
+  @override
+  void initState() {
+    super.initState();
+    widget.focusNode.addListener(_onFocusChange);
+  }
+
+  @override
+  void didUpdateWidget(_PurchaseSuggestField oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.focusNode != widget.focusNode) {
+      oldWidget.focusNode.removeListener(_onFocusChange);
+      widget.focusNode.addListener(_onFocusChange);
+    }
+    if (_overlayEntry != null) {
+      _overlayEntry!.markNeedsBuild();
+    }
+  }
+
+  @override
+  void dispose() {
+    widget.focusNode.removeListener(_onFocusChange);
+    _removeOverlay();
+    super.dispose();
+  }
+
+  void _onFocusChange() {
+    if (widget.focusNode.hasFocus) {
+      _showOverlay();
+    } else {
+      Future<void>.delayed(const Duration(milliseconds: 180), () {
+        if (!mounted) return;
+        if (!widget.focusNode.hasFocus) {
+          _removeOverlay();
+        }
+      });
+    }
+  }
+
+  void _showOverlay() {
+    if (widget.suggestions.isEmpty) {
+      _removeOverlay();
+      return;
+    }
+    if (_overlayEntry != null) {
+      _overlayEntry!.markNeedsBuild();
+      return;
+    }
+    final overlay = Overlay.maybeOf(context, rootOverlay: true);
+    if (overlay == null) return;
+
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final panelColor = isDark ? AppColors.surfaceDark : Colors.white;
+    final borderColor = isDark ? AppColors.borderDark : AppColors.borderLight;
+
+    _overlayEntry = OverlayEntry(
+      builder: (context) {
+        final options = List<String>.from(widget.suggestions);
+        if (options.isEmpty) return const SizedBox.shrink();
+        return Positioned.fill(
+          child: Stack(
+            children: [
+              Positioned.fill(
+                child: GestureDetector(
+                  behavior: HitTestBehavior.translucent,
+                  onTap: () {
+                    widget.focusNode.unfocus();
+                    _removeOverlay();
+                  },
+                ),
+              ),
+              CompositedTransformFollower(
+                link: _layerLink,
+                showWhenUnlinked: false,
+                offset: const Offset(0, 4),
+                targetAnchor: Alignment.bottomLeft,
+                followerAnchor: Alignment.topLeft,
+                child: TextFieldTapRegion(
+                  child: Material(
+                    color: panelColor,
+                    elevation: 8,
+                    shadowColor: Colors.black54,
+                    borderRadius: BorderRadius.circular(10),
+                    clipBehavior: Clip.antiAlias,
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: panelColor,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: borderColor),
+                      ),
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(
+                          maxHeight: 220,
+                          minWidth: _fieldWidth,
+                          maxWidth: _fieldWidth,
+                        ),
+                        child: ListView.builder(
+                          padding: EdgeInsets.zero,
+                          shrinkWrap: true,
+                          itemCount: options.length,
+                          itemBuilder: (context, index) {
+                            final option = options[index];
+                            final selected = option.toLowerCase() ==
+                                widget.controller.text.trim().toLowerCase();
+                            return InkWell(
+                              onTap: () => _pick(option),
+                              child: Container(
+                                width: _fieldWidth,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 10,
+                                ),
+                                color: selected
+                                    ? AppColors.accent.withValues(alpha: 0.15)
+                                    : Colors.transparent,
+                                child: Text(
+                                  option,
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: selected
+                                        ? FontWeight.w600
+                                        : FontWeight.w400,
+                                    color: selected
+                                        ? AppColors.accent
+                                        : (isDark
+                                            ? AppColors.textDarkPrimary
+                                            : AppColors.textLightPrimary),
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+    overlay.insert(_overlayEntry!);
+  }
+
+  void _removeOverlay() {
+    _overlayEntry?.remove();
+    _overlayEntry = null;
+  }
+
+  void _pick(String option) {
+    widget.controller.text = option;
+    widget.controller.selection = TextSelection.collapsed(
+      offset: option.length,
+    );
+    widget.onSuggestionSelected(option);
+    widget.focusNode.unfocus();
+    _removeOverlay();
+  }
+
+  void _clear() {
+    widget.controller.clear();
+    widget.onChanged('');
+    setState(() {});
+    _showOverlay();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        _fieldWidth = constraints.maxWidth;
+        return CompositedTransformTarget(
+          link: _layerLink,
+          child: AppTextField(
+            label: widget.label,
+            hintText: widget.hintText,
+            controller: widget.controller,
+            focusNode: widget.focusNode,
+            onTap: _showOverlay,
+            onChanged: (val) {
+              widget.onChanged(val);
+              _showOverlay();
+            },
+            suffixIcon: widget.controller.text.isNotEmpty
+                ? IconButton(
+                    icon: const Icon(Icons.clear, size: 18),
+                    onPressed: _clear,
+                  )
+                : IconButton(
+                    icon: const Icon(Icons.arrow_drop_down, size: 22),
+                    onPressed: () {
+                      if (widget.focusNode.hasFocus) {
+                        _showOverlay();
+                      } else {
+                        widget.focusNode.requestFocus();
+                      }
+                    },
+                  ),
+          ),
         );
       },
     );

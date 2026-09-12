@@ -63,26 +63,31 @@ class AppTable<T> extends StatelessWidget {
       );
     }
 
-    final isMobile = Responsive.isMobile(context);
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final width = constraints.maxWidth.isFinite
+            ? constraints.maxWidth
+            : MediaQuery.sizeOf(context).width;
+        final compact = width <= Responsive.compactMax;
 
-    if (isMobile && mobileCardBuilder != null) {
-      return _buildMobileList(context);
-    }
+        if (compact && mobileCardBuilder != null) {
+          return _buildMobileList(context);
+        }
 
-    if (isMobile) {
-      final double minWidth = columns.length * 120.0;
-      return SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: SizedBox(
-          width: minWidth > MediaQuery.sizeOf(context).width
-              ? minWidth
-              : MediaQuery.sizeOf(context).width,
-          child: _buildDesktopTable(context),
-        ),
-      );
-    }
+        final double minWidth = columns.length * 120.0;
+        if (compact || width < minWidth) {
+          return SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: SizedBox(
+              width: minWidth > width ? minWidth : width,
+              child: _buildDesktopTable(context),
+            ),
+          );
+        }
 
-    return _buildDesktopTable(context);
+        return _buildDesktopTable(context);
+      },
+    );
   }
 
   Widget _buildMobileList(BuildContext context) {

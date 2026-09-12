@@ -14,6 +14,7 @@ import '../../../../shared/widgets/app_table.dart';
 import '../../../../shared/widgets/feedback.dart';
 import '../../../business/presentation/providers/business_provider.dart';
 import '../../../dashboard/presentation/providers/billing_repository.dart';
+import '../../data/models/sales_return_dto.dart';
 import '../providers/sales_return_provider.dart';
 
 class SaleReturnPage extends ConsumerStatefulWidget {
@@ -29,78 +30,23 @@ class _SaleReturnPageState extends ConsumerState<SaleReturnPage> {
   String _selectedStatusFilter = 'All';
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final notifier = ref.read(salesReturnNotifierProvider.notifier);
+      final remote = await notifier.refreshReturns();
+      await notifier.refreshMetrics();
+      if (!mounted) return;
+      ref.read(billingRepositoryProvider.notifier).mergeRemoteInvoices(
+            remote.map((dto) => dto.toInvoice()).toList(),
+          );
+    });
+  }
+
+  @override
   void dispose() {
     _searchController.dispose();
     super.dispose();
-  }
-
-  void _showFilterBottomSheet(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: isDark ? AppColors.surfaceDark : Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      builder: (ctx) {
-        return Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Filter by Status',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: isDark
-                      ? AppColors.textDarkPrimary
-                      : AppColors.textLightPrimary,
-                ),
-              ),
-              const SizedBox(height: 16),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: ['All', 'Draft', 'Confirmed', 'Cancelled'].map((
-                  status,
-                ) {
-                  final isSelected = _selectedStatusFilter == status;
-                  return ChoiceChip(
-                    label: Text(status),
-                    selected: isSelected,
-                    selectedColor: isDark
-                        ? const Color(0xFF1E3A2F)
-                        : const Color(0xFFE8F5E9),
-                    checkmarkColor: const Color(0xFF2E7D32),
-                    labelStyle: TextStyle(
-                      color: isSelected
-                          ? const Color(0xFF2E7D32)
-                          : (isDark
-                                ? AppColors.textDarkSecondary
-                                : AppColors.textLightSecondary),
-                      fontWeight: isSelected
-                          ? FontWeight.bold
-                          : FontWeight.normal,
-                    ),
-                    onSelected: (selected) {
-                      if (selected) {
-                        setState(() {
-                          _selectedStatusFilter = status;
-                        });
-                        Navigator.pop(ctx);
-                      }
-                    },
-                  );
-                }).toList(),
-              ),
-              const SizedBox(height: 16),
-            ],
-          ),
-        );
-      },
-    );
   }
 
   Widget _buildPageHeader(BuildContext context) {
@@ -196,6 +142,66 @@ class _SaleReturnPageState extends ConsumerState<SaleReturnPage> {
     );
   }
 
+  Widget _saleReturnBannerCopy({required bool compact}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Wrap(
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 10,
+                vertical: 4,
+              ),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.15),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.assignment_return,
+                    color: Colors.white,
+                    size: 14,
+                  ),
+                  SizedBox(width: 6),
+                  Text(
+                    'CREDIT NOTES & RETURNS',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Text(
+          'Sale Returns Management',
+          style: TextStyle(
+            fontSize: compact ? 20 : 22,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
+        const SizedBox(height: 6),
+        const Text(
+          'Record returned goods, adjust customer receivables, issue GST Credit Notes, and automatically restock your inventory.',
+          style: TextStyle(
+            fontSize: 13,
+            color: Colors.white70,
+            height: 1.4,
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildTealBanner(BuildContext context) {
     return Container(
       width: double.infinity,
@@ -214,111 +220,103 @@ class _SaleReturnPageState extends ConsumerState<SaleReturnPage> {
           ),
         ],
       ),
-      padding: const EdgeInsets.all(24),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
+      padding: EdgeInsets.all(
+        MediaQuery.sizeOf(context).width <= Responsive.compactMax ? 16 : 24,
+      ),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final compact = constraints.maxWidth <= Responsive.compactMax;
+          return compact
+              ? Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 4,
+                    _saleReturnBannerCopy(compact: true),
+                    const SizedBox(height: 16),
+                    ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        foregroundColor: const Color(0xFF004D40),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 16,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        elevation: 3,
                       ),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.15),
-                        borderRadius: BorderRadius.circular(20),
+                      icon: const Icon(Icons.add_circle_outline, size: 20),
+                      label: const Text(
+                        'New Sale Return',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
                       ),
-                      child: const Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.assignment_return,
-                            color: Colors.white,
-                            size: 14,
-                          ),
-                          SizedBox(width: 6),
-                          Text(
-                            'CREDIT NOTES & RETURNS',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 11,
-                              fontWeight: FontWeight.bold,
-                              letterSpacing: 0.5,
-                            ),
-                          ),
-                        ],
-                      ),
+                      onPressed: () => context.push('/sales/returns/new'),
                     ),
                   ],
-                ),
-                const SizedBox(height: 12),
-                const Text(
-                  'Sale Returns Management',
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                const Text(
-                  'Record returned goods, adjust customer receivables, issue GST Credit Notes, and automatically restock your inventory.',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: Colors.white70,
-                    height: 1.4,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          if (!Responsive.isMobile(context)) ...[
-            const SizedBox(width: 20),
-            ElevatedButton.icon(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.white,
-                foregroundColor: const Color(0xFF004D40),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 16,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                elevation: 3,
-              ),
-              icon: const Icon(Icons.add_circle_outline, size: 20),
-              label: const Text(
-                'New Sale Return',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-              ),
-              onPressed: () => context.push('/sales/returns/new'),
-            ),
-          ],
-        ],
+                )
+              : Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Expanded(child: _saleReturnBannerCopy(compact: false)),
+                    const SizedBox(width: 20),
+                    ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        foregroundColor: const Color(0xFF004D40),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 16,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        elevation: 3,
+                      ),
+                      icon: const Icon(Icons.add_circle_outline, size: 20),
+                      label: const Text(
+                        'New Sale Return',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
+                      ),
+                      onPressed: () => context.push('/sales/returns/new'),
+                    ),
+                  ],
+                );
+        },
       ),
     );
   }
 
-  Widget _buildSummaryCards(List<Invoice> returns) {
-    final confirmedReturns = returns
+  Widget _buildSummaryCards(
+    List<Invoice> returns,
+    SalesReturnSummaryMetricsDto? metrics,
+  ) {
+    final confirmedCount =
+        metrics?.confirmedCount ??
+        returns.where((r) => r.status == InvoiceStatus.confirmed).length;
+    final draftCount =
+        metrics?.draftCount ??
+        returns.where((r) => r.status == InvoiceStatus.draft).length;
+    final fallbackReturnValue = returns
         .where((r) => r.status == InvoiceStatus.confirmed)
-        .toList();
-    final draftReturns = returns
-        .where((r) => r.status == InvoiceStatus.draft)
-        .toList();
-    final totalReturnValue = confirmedReturns.fold(
-      0.0,
-      (sum, r) => sum + r.grandTotal,
-    );
-    final totalRestockedItems = confirmedReturns.fold(0.0, (sum, r) {
-      return sum + r.items.fold(0.0, (iSum, item) => iSum + item.quantity);
-    });
+        .fold<double>(0, (sum, r) => sum + r.grandTotal);
+    final totalReturnValue = metrics?.totalReturnValue ?? fallbackReturnValue;
+
+    final fallbackRestockedItems = returns
+        .where((r) => r.status == InvoiceStatus.confirmed)
+        .fold<double>(
+          0,
+          (sum, r) =>
+              sum +
+              r.items.fold<double>(0, (iSum, item) => iSum + item.quantity),
+        );
+    final totalRestockedItems =
+        metrics?.itemsRestocked ?? fallbackRestockedItems;
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -330,14 +328,14 @@ class _SaleReturnPageState extends ConsumerState<SaleReturnPage> {
           _buildStatCard(
             title: 'Total Returns Value',
             value: '₹${totalReturnValue.toStringAsFixed(2)}',
-            subtitle: '${confirmedReturns.length} confirmed returns',
+            subtitle: '$confirmedCount confirmed returns',
             icon: Icons.currency_rupee,
             accentColor: const Color(0xFF00897B),
             bgColor: const Color(0xFFE0F2F1),
           ),
           _buildStatCard(
             title: 'Confirmed Returns',
-            value: '${confirmedReturns.length}',
+            value: '$confirmedCount',
             subtitle: 'Credit notes issued',
             icon: Icons.check_circle_outline,
             accentColor: const Color(0xFF2E7D32),
@@ -353,7 +351,7 @@ class _SaleReturnPageState extends ConsumerState<SaleReturnPage> {
           ),
           _buildStatCard(
             title: 'Pending Drafts',
-            value: '${draftReturns.length}',
+            value: '${draftCount}',
             subtitle: 'Returns awaiting approval',
             icon: Icons.pending_actions_outlined,
             accentColor: const Color(0xFFF57C00),
@@ -558,14 +556,15 @@ class _SaleReturnPageState extends ConsumerState<SaleReturnPage> {
             child: const Text('Yes, Cancel Return'),
             onPressed: () async {
               Navigator.pop(ctx);
-              await ref
-                  .read(billingRepositoryProvider.notifier)
-                  .cancelInvoice(ret.id);
               try {
                 await ref
                     .read(salesReturnNotifierProvider.notifier)
                     .cancelReturn(ret.id);
-              } catch (_) {}
+              } catch (_) {
+                await ref
+                    .read(billingRepositoryProvider.notifier)
+                    .cancelInvoice(ret.id);
+              }
               if (mounted) {
                 AppFeedback.showSnackbar(
                   context,
@@ -580,12 +579,13 @@ class _SaleReturnPageState extends ConsumerState<SaleReturnPage> {
   }
 
   void _confirmReturn(BuildContext context, Invoice ret) async {
-    await ref.read(billingRepositoryProvider.notifier).confirmInvoice(ret.id);
     try {
       await ref
           .read(salesReturnNotifierProvider.notifier)
           .confirmReturn(ret.id);
-    } catch (_) {}
+    } catch (_) {
+      await ref.read(billingRepositoryProvider.notifier).confirmInvoice(ret.id);
+    }
     if (mounted) {
       AppFeedback.showSnackbar(
         context,
@@ -599,12 +599,25 @@ class _SaleReturnPageState extends ConsumerState<SaleReturnPage> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final billingState = ref.watch(billingRepositoryProvider);
+    final returnState = ref.watch(salesReturnNotifierProvider);
     final activeBiz = ref.watch(businessProvider).activeBusiness;
 
-    // Filter to Credit Notes only
-    final allReturns = billingState.invoices
-        .where((inv) => inv.isCreditNote)
-        .toList();
+    final mergedByNumber = <String, Invoice>{};
+    for (final inv in billingState.invoices.where((i) => i.isCreditNote)) {
+      final key = inv.invoiceNumber.trim().isNotEmpty
+          ? inv.invoiceNumber.trim().toLowerCase()
+          : inv.id;
+      mergedByNumber[key] = inv;
+    }
+    for (final dto in returnState.returnsList) {
+      final inv = dto.toInvoice();
+      final key = inv.invoiceNumber.trim().isNotEmpty
+          ? inv.invoiceNumber.trim().toLowerCase()
+          : inv.id;
+      mergedByNumber[key] = inv;
+    }
+    final allReturns = mergedByNumber.values.toList()
+      ..sort((a, b) => b.invoiceDate.compareTo(a.invoiceDate));
 
     final filteredReturns = allReturns.where((ret) {
       final matchesSearch =
@@ -625,23 +638,16 @@ class _SaleReturnPageState extends ConsumerState<SaleReturnPage> {
     }).toList();
 
     return Scaffold(
-      floatingActionButton: Responsive.isMobile(context)
-          ? FloatingActionButton.extended(
-              onPressed: () => context.push('/sales/returns/new'),
-              icon: const Icon(Icons.add),
-              label: const Text('New Return'),
-              backgroundColor: const Color(0xFF00897B),
-            )
-          : null,
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(AppSpacing.lg),
+      body: SafeArea(
+        child: SingleChildScrollView(
+        padding: Responsive.pagePadding(context),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             _buildPageHeader(context),
             _buildTealBanner(context),
             const SizedBox(height: AppSpacing.lg),
-            _buildSummaryCards(allReturns),
+            _buildSummaryCards(allReturns, returnState.metrics),
             const SizedBox(height: AppSpacing.lg),
 
             // Search & Filter Card
@@ -662,10 +668,8 @@ class _SaleReturnPageState extends ConsumerState<SaleReturnPage> {
                               setState(() => _searchQuery = val),
                         ),
                       ),
-                      if (!Responsive.isMobile(context))
-                        SizedBox(
-                          width: 180,
-                          child: AppDropdownField<String>(
+                      Expanded(
+                        child: AppDropdownField<String>(
                             label: 'Filter Status',
                             value: _selectedStatusFilter,
                             items: const [
@@ -690,16 +694,7 @@ class _SaleReturnPageState extends ConsumerState<SaleReturnPage> {
                               () => _selectedStatusFilter = val ?? 'All',
                             ),
                           ),
-                        ),
-                      if (Responsive.isMobile(context))
-                        Align(
-                          alignment: Alignment.centerRight,
-                          child: OutlinedButton.icon(
-                            icon: const Icon(Icons.filter_list),
-                            label: Text('Status: $_selectedStatusFilter'),
-                            onPressed: () => _showFilterBottomSheet(context),
-                          ),
-                        ),
+                      ),
                     ],
                   ),
                   const SizedBox(height: AppSpacing.lg),
@@ -707,6 +702,7 @@ class _SaleReturnPageState extends ConsumerState<SaleReturnPage> {
                   // Returns Table / List
                   AppTable<Invoice>(
                     items: filteredReturns,
+                    isLoading: returnState.isLoadingList && allReturns.isEmpty,
                     emptyMessage: allReturns.isEmpty
                         ? 'No sale returns recorded yet. Click "New Sale Return" to create your first credit note.'
                         : 'No sale returns match your search or filter criteria.',
@@ -739,15 +735,7 @@ class _SaleReturnPageState extends ConsumerState<SaleReturnPage> {
                       TableColumnSpec<Invoice>(
                         label: 'Original Invoice',
                         cellBuilder: (ret) {
-                          final origInv = billingState.invoices.firstWhere(
-                            (i) =>
-                                i.id == ret.originalInvoiceId ||
-                                i.invoiceNumber == ret.originalInvoiceId,
-                            orElse: () => ret,
-                          );
-                          final origNo = origInv.invoiceNumber.isNotEmpty
-                              ? origInv.invoiceNumber
-                              : ret.originalInvoiceId;
+                          final origNo = ret.originalInvoiceId;
 
                           return Container(
                             padding: const EdgeInsets.symmetric(
@@ -847,54 +835,83 @@ class _SaleReturnPageState extends ConsumerState<SaleReturnPage> {
                       ),
                       TableColumnSpec<Invoice>(
                         label: 'Actions',
-                        cellBuilder: (ret) => Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            IconButton(
-                              icon: const Icon(
-                                Icons.visibility_outlined,
-                                size: 18,
-                                color: Color(0xFF00897B),
-                              ),
-                              tooltip: 'View Details',
-                              onPressed: () =>
-                                  context.push('/sales/returns/${ret.id}'),
-                            ),
-                            IconButton(
-                              icon: const Icon(
-                                Icons.print_outlined,
-                                size: 18,
-                                color: Colors.blueGrey,
-                              ),
-                              tooltip: 'Print Credit Note PDF',
-                              onPressed: () {
-                                if (activeBiz != null) {
-                                  InvoicePdfService.share(ret, activeBiz);
-                                }
-                              },
-                            ),
-                            if (ret.status == InvoiceStatus.draft)
+                        cellBuilder: (ret) => FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: Alignment.centerLeft,
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
                               IconButton(
-                                icon: const Icon(
-                                  Icons.check_circle_outline,
-                                  size: 18,
-                                  color: Colors.green,
+                                visualDensity: VisualDensity.compact,
+                                padding: EdgeInsets.zero,
+                                constraints: const BoxConstraints(
+                                  minWidth: 32,
+                                  minHeight: 32,
                                 ),
-                                tooltip: 'Confirm Return',
-                                onPressed: () => _confirmReturn(context, ret),
-                              ),
-                            if (ret.status != InvoiceStatus.cancelled)
-                              IconButton(
                                 icon: const Icon(
-                                  Icons.cancel_outlined,
+                                  Icons.visibility_outlined,
                                   size: 18,
-                                  color: Colors.red,
+                                  color: Color(0xFF00897B),
                                 ),
-                                tooltip: 'Cancel Return',
+                                tooltip: 'View Details',
                                 onPressed: () =>
-                                    _showCancelDialog(context, ret),
+                                    context.push('/sales/returns/${ret.id}'),
                               ),
-                          ],
+                              IconButton(
+                                visualDensity: VisualDensity.compact,
+                                padding: EdgeInsets.zero,
+                                constraints: const BoxConstraints(
+                                  minWidth: 32,
+                                  minHeight: 32,
+                                ),
+                                icon: const Icon(
+                                  Icons.print_outlined,
+                                  size: 18,
+                                  color: Colors.blueGrey,
+                                ),
+                                tooltip: 'Print Credit Note PDF',
+                                onPressed: () {
+                                  if (activeBiz != null) {
+                                    InvoicePdfService.share(ret, activeBiz);
+                                  }
+                                },
+                              ),
+                              if (ret.status == InvoiceStatus.draft)
+                                IconButton(
+                                  visualDensity: VisualDensity.compact,
+                                  padding: EdgeInsets.zero,
+                                  constraints: const BoxConstraints(
+                                    minWidth: 32,
+                                    minHeight: 32,
+                                  ),
+                                  icon: const Icon(
+                                    Icons.check_circle_outline,
+                                    size: 18,
+                                    color: Colors.green,
+                                  ),
+                                  tooltip: 'Confirm Return',
+                                  onPressed: () =>
+                                      _confirmReturn(context, ret),
+                                ),
+                              if (ret.status != InvoiceStatus.cancelled)
+                                IconButton(
+                                  visualDensity: VisualDensity.compact,
+                                  padding: EdgeInsets.zero,
+                                  constraints: const BoxConstraints(
+                                    minWidth: 32,
+                                    minHeight: 32,
+                                  ),
+                                  icon: const Icon(
+                                    Icons.cancel_outlined,
+                                    size: 18,
+                                    color: Colors.red,
+                                  ),
+                                  tooltip: 'Cancel Return',
+                                  onPressed: () =>
+                                      _showCancelDialog(context, ret),
+                                ),
+                            ],
+                          ),
                         ),
                       ),
                     ],
@@ -1025,6 +1042,7 @@ class _SaleReturnPageState extends ConsumerState<SaleReturnPage> {
               ),
             ),
           ],
+        ),
         ),
       ),
     );

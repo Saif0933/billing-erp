@@ -381,6 +381,44 @@ class InvoiceItem {
     required this.cess,
   });
 
+  InvoiceItem copyWith({
+    String? id,
+    String? productId,
+    String? serviceId,
+    String? name,
+    String? hsnSac,
+    double? quantity,
+    String? unit,
+    double? rate,
+    double? discountPercentage,
+    double? discountAmount,
+    double? taxableValue,
+    double? gstRate,
+    double? cgst,
+    double? sgst,
+    double? igst,
+    double? cess,
+  }) {
+    return InvoiceItem(
+      id: id ?? this.id,
+      productId: productId ?? this.productId,
+      serviceId: serviceId ?? this.serviceId,
+      name: name ?? this.name,
+      hsnSac: hsnSac ?? this.hsnSac,
+      quantity: quantity ?? this.quantity,
+      unit: unit ?? this.unit,
+      rate: rate ?? this.rate,
+      discountPercentage: discountPercentage ?? this.discountPercentage,
+      discountAmount: discountAmount ?? this.discountAmount,
+      taxableValue: taxableValue ?? this.taxableValue,
+      gstRate: gstRate ?? this.gstRate,
+      cgst: cgst ?? this.cgst,
+      sgst: sgst ?? this.sgst,
+      igst: igst ?? this.igst,
+      cess: cess ?? this.cess,
+    );
+  }
+
   bool get isProduct => productId.isNotEmpty;
   bool get isService => serviceId.isNotEmpty;
 }

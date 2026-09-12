@@ -710,6 +710,25 @@ class BillingNotifier extends StateNotifier<BillingState> {
     }
   }
 
+  /// Merge invoices fetched from the backend without re-running stock/ledger posting.
+  void mergeRemoteInvoices(List<Invoice> remote) {
+    if (remote.isEmpty && state.invoices.isEmpty) return;
+    final byNumber = <String, Invoice>{};
+    for (final inv in state.invoices) {
+      final key = inv.invoiceNumber.trim().isNotEmpty
+          ? inv.invoiceNumber.trim().toLowerCase()
+          : inv.id;
+      byNumber[key] = inv;
+    }
+    for (final inv in remote) {
+      final key = inv.invoiceNumber.trim().isNotEmpty
+          ? inv.invoiceNumber.trim().toLowerCase()
+          : inv.id;
+      byNumber[key] = inv;
+    }
+    state = state.copyWith(invoices: byNumber.values.toList());
+  }
+
   Future<void> confirmInvoice(String invoiceId) async {
     final invoiceIndex = state.invoices.indexWhere((inv) => inv.id == invoiceId);
     if (invoiceIndex == -1) return;

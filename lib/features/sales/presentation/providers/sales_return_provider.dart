@@ -25,6 +25,7 @@ final salesReturnMetricsProvider =
 /// State for Sales Return Operations
 class SalesReturnState {
   final bool isLoading;
+  final bool isLoadingList;
   final String? error;
   final String currentReturnNumber;
   final List<SalesReturnDto> returnsList;
@@ -33,8 +34,9 @@ class SalesReturnState {
 
   const SalesReturnState({
     this.isLoading = false,
+    this.isLoadingList = false,
     this.error,
-    this.currentReturnNumber = 'CN/25-26/0001',
+    this.currentReturnNumber = '',
     this.returnsList = const [],
     this.metrics,
     this.lastCreatedReturn,
@@ -42,6 +44,7 @@ class SalesReturnState {
 
   SalesReturnState copyWith({
     bool? isLoading,
+    bool? isLoadingList,
     String? error,
     bool clearError = false,
     String? currentReturnNumber,
@@ -51,6 +54,7 @@ class SalesReturnState {
   }) {
     return SalesReturnState(
       isLoading: isLoading ?? this.isLoading,
+      isLoadingList: isLoadingList ?? this.isLoadingList,
       error: clearError ? null : (error ?? this.error),
       currentReturnNumber: currentReturnNumber ?? this.currentReturnNumber,
       returnsList: returnsList ?? this.returnsList,
@@ -95,15 +99,18 @@ class SalesReturnNotifier extends StateNotifier<SalesReturnState> {
     String? customerId,
     String? status,
   }) async {
+    state = state.copyWith(isLoadingList: true, clearError: true);
     try {
       final list = await _apiService.getSalesReturns(
         search: search,
         customerId: customerId,
         status: status,
+        limit: 200,
       );
-      state = state.copyWith(returnsList: list);
+      state = state.copyWith(isLoadingList: false, returnsList: list);
       return list;
-    } catch (_) {
+    } catch (e) {
+      state = state.copyWith(isLoadingList: false, error: e.toString());
       return state.returnsList;
     }
   }
@@ -177,4 +184,19 @@ final salesReturnNotifierProvider =
     StateNotifierProvider<SalesReturnNotifier, SalesReturnState>((ref) {
   final api = ref.watch(salesReturnApiServiceProvider);
   return SalesReturnNotifier(api);
+});
+
+final salesReturnDetailProvider =
+    FutureProvider.family<SalesReturnDto?, String>((ref, id) async {
+  final cached = ref.watch(salesReturnNotifierProvider).returnsList.where(
+        (r) =>
+            r.id == id ||
+            r.returnNumber.toLowerCase() == id.toLowerCase(),
+      );
+  if (cached.isNotEmpty) return cached.first;
+  try {
+    return await ref.read(salesReturnApiServiceProvider).getReturnById(id);
+  } catch (_) {
+    return null;
+  }
 });

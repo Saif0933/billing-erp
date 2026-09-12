@@ -13,6 +13,8 @@ import '../../../../shared/widgets/feedback.dart';
 import '../../../business/presentation/providers/business_provider.dart';
 import '../../../customer/presentation/providers/customer_provider.dart';
 import '../../../dashboard/presentation/providers/billing_repository.dart';
+import '../../../purchase/presentation/providers/purchase_provider.dart';
+import '../providers/sales_invoice_provider.dart';
 
 class InvoiceCreatePage extends ConsumerStatefulWidget {
   const InvoiceCreatePage({super.key});
@@ -53,14 +55,22 @@ class _InvoiceCreatePageState extends ConsumerState<InvoiceCreatePage> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _initInvoiceNo();
       ref.read(customerProvider.notifier).loadCustomers();
+      ref.read(purchaseProvider.notifier).loadProducts();
     });
   }
 
-  void _initInvoiceNo() {
+  Future<void> _initInvoiceNo() async {
     final billingState = ref.read(billingRepositoryProvider);
     final count = billingState.invoices.length + 1;
     _invoiceNumberController.text =
         'TB/26-27/${count.toString().padLeft(4, '0')}';
+    try {
+      final backendNumber =
+          await ref.read(salesInvoiceNotifierProvider.notifier).fetchNextNumber();
+      if (mounted && backendNumber.isNotEmpty) {
+        _invoiceNumberController.text = backendNumber;
+      }
+    } catch (_) {}
   }
 
   @override
@@ -77,6 +87,48 @@ class _InvoiceCreatePageState extends ConsumerState<InvoiceCreatePage> {
     super.dispose();
   }
 
+  List<T> _uniqueById<T>(Iterable<T> items, String Function(T item) idOf) {
+    final map = <String, T>{};
+    for (final item in items) {
+      final id = idOf(item);
+      if (id.isNotEmpty) map[id] = item;
+    }
+    return map.values.toList();
+  }
+
+  InvoiceItem _withTax(InvoiceItem item) {
+    final businessStateCode =
+        ref.read(businessProvider).activeBusiness?.stateCode ?? '27';
+    final customerStateCode = _selectedCustomer?.stateCode ?? '27';
+    final custGstType = _selectedCustomer?.isRegistered == true
+        ? 'Regular'
+        : 'Unregistered';
+    final taxRes = GstCalculationService.calculate(
+      quantity: item.quantity,
+      rate: item.rate,
+      discountPercentage: item.discountPercentage,
+      gstRate: item.gstRate,
+      businessStateCode: businessStateCode,
+      placeOfSupplyStateCode: customerStateCode,
+      customerGstType: custGstType,
+    );
+    final discAmt = item.quantity * item.rate * (item.discountPercentage / 100.0);
+    return item.copyWith(
+      discountAmount: discAmt,
+      taxableValue: taxRes.taxableValue,
+      cgst: taxRes.cgstAmount,
+      sgst: taxRes.sgstAmount,
+      igst: taxRes.igstAmount,
+      cess: taxRes.cessAmount,
+    );
+  }
+
+  void _repriceAllItems() {
+    for (var i = 0; i < _items.length; i++) {
+      _items[i] = _withTax(_items[i]);
+    }
+  }
+
   void _onCustomerSelected(Customer? customer) {
     if (customer == null) return;
     setState(() {
@@ -84,6 +136,36 @@ class _InvoiceCreatePageState extends ConsumerState<InvoiceCreatePage> {
       _billingAddressController.text = customer.billingAddress;
       _shippingAddressController.text = customer.shippingAddress;
       _placeOfSupplyController.text = customer.state;
+      if (_originalInvoiceId.isNotEmpty) {
+        final stillValid = ref.read(billingRepositoryProvider).invoices.any(
+          (inv) =>
+              inv.id == _originalInvoiceId &&
+              inv.customerId == customer.id &&
+              !inv.isCreditNote,
+        );
+        if (!stillValid) _originalInvoiceId = '';
+      }
+      _repriceAllItems();
+    });
+  }
+
+  void _patchItem(
+    String id, {
+    double? quantity,
+    double? rate,
+    double? discountPercentage,
+  }) {
+    final index = _items.indexWhere((it) => it.id == id);
+    if (index < 0) return;
+    final current = _items[index];
+    setState(() {
+      _items[index] = _withTax(
+        current.copyWith(
+          quantity: quantity,
+          rate: rate,
+          discountPercentage: discountPercentage,
+        ),
+      );
     });
   }
 
@@ -101,46 +183,38 @@ class _InvoiceCreatePageState extends ConsumerState<InvoiceCreatePage> {
     final double rate = double.tryParse(_rateController.text) ?? 0.0;
     final double disc = double.tryParse(_discountController.text) ?? 0.0;
 
-    final double grossAmount = qty * rate;
-    final double discAmt = grossAmount * (disc / 100.0);
+    if (qty <= 0) {
+      AppFeedback.showSnackbar(
+        context,
+        message: 'Quantity must be greater than 0!',
+        isError: true,
+      );
+      return;
+    }
 
-    final businessStateCode =
-        ref.read(businessProvider).activeBusiness?.stateCode ?? '27';
-    final customerStateCode = _selectedCustomer?.stateCode ?? '27';
-    final custGstType = _selectedCustomer?.isRegistered == true
-        ? 'Regular'
-        : 'Unregistered';
     final gstRate = _selectedProduct != null
         ? _selectedProduct!.gstRate
         : _selectedService!.gstRate;
 
-    final taxRes = GstCalculationService.calculate(
-      quantity: qty,
-      rate: rate,
-      discountPercentage: disc,
-      gstRate: gstRate,
-      businessStateCode: businessStateCode,
-      placeOfSupplyStateCode: customerStateCode,
-      customerGstType: custGstType,
-    );
-
-    final item = InvoiceItem(
-      id: 'item_${DateTime.now().millisecondsSinceEpoch}',
-      productId: _selectedProduct?.id ?? '',
-      serviceId: _selectedService?.id ?? '',
-      name: _selectedProduct?.name ?? _selectedService!.name,
-      hsnSac: _selectedProduct?.hsnCode ?? _selectedService!.sacCode,
-      quantity: qty,
-      unit: _selectedProduct?.primaryUnit ?? _selectedService!.unit,
-      rate: rate,
-      discountPercentage: disc,
-      discountAmount: discAmt,
-      taxableValue: taxRes.taxableValue,
-      gstRate: gstRate,
-      cgst: taxRes.cgstAmount,
-      sgst: taxRes.sgstAmount,
-      igst: taxRes.igstAmount,
-      cess: taxRes.cessAmount,
+    final item = _withTax(
+      InvoiceItem(
+        id: 'item_${DateTime.now().millisecondsSinceEpoch}',
+        productId: _selectedProduct?.id ?? '',
+        serviceId: _selectedService?.id ?? '',
+        name: _selectedProduct?.name ?? _selectedService!.name,
+        hsnSac: _selectedProduct?.hsnCode ?? _selectedService!.sacCode,
+        quantity: qty,
+        unit: _selectedProduct?.primaryUnit ?? _selectedService!.unit,
+        rate: rate,
+        discountPercentage: disc,
+        discountAmount: 0,
+        taxableValue: 0,
+        gstRate: gstRate,
+        cgst: 0,
+        sgst: 0,
+        igst: 0,
+        cess: 0,
+      ),
     );
 
     setState(() {
@@ -217,6 +291,60 @@ class _InvoiceCreatePageState extends ConsumerState<InvoiceCreatePage> {
 
       await ref.read(billingRepositoryProvider.notifier).addInvoice(invoice);
 
+      try {
+        final backendPayload = <String, dynamic>{
+          'invoiceNumber': invoice.invoiceNumber,
+          'invoiceDate': invoice.invoiceDate.toIso8601String(),
+          'customerId': invoice.customerId,
+          'customerName': invoice.customerName,
+          'customerPhone': _selectedCustomer?.mobile,
+          'billingAddress': invoice.billingAddress,
+          'shippingAddress': invoice.shippingAddress,
+          'placeOfSupply': invoice.placeOfSupply,
+          'supplyType': _selectedCustomer?.isRegistered == true ? 'B2B' : 'B2C',
+          'taxableValue': invoice.taxableAmount,
+          'subtotal': invoice.taxableAmount,
+          'cgstAmount': invoice.cgst,
+          'sgstAmount': invoice.sgst,
+          'igstAmount': invoice.igst,
+          'cessAmount': invoice.cess,
+          'roundOff': invoice.roundOff,
+          'grandTotal': invoice.grandTotal,
+          'balanceAmount': invoice.balanceAmount,
+          'paymentMode': invoice.paymentMode,
+          'paymentStatus': 'UNPAID',
+          'status': status == InvoiceStatus.confirmed ? 'SAVED' : 'DRAFT',
+          'notes': invoice.notes,
+          'termsAndConditions': invoice.termsConditions,
+          'items': _items
+              .map(
+                (it) => {
+                  if (it.productId.isNotEmpty) 'productId': it.productId,
+                  if (it.serviceId.isNotEmpty) 'serviceId': it.serviceId,
+                  'productName': it.name,
+                  'hsnOrSacCode': it.hsnSac,
+                  'quantity': it.quantity,
+                  'unit': it.unit,
+                  'rate': it.rate,
+                  'discountPercent': it.discountPercentage,
+                  'discountAmount': it.discountAmount,
+                  'taxableValue': it.taxableValue,
+                  'gstRatePercent': it.gstRate,
+                  'cgstAmount': it.cgst,
+                  'sgstAmount': it.sgst,
+                  'igstAmount': it.igst,
+                  'cessAmount': it.cess,
+                  'lineTotal':
+                      it.taxableValue + it.cgst + it.sgst + it.igst + it.cess,
+                },
+              )
+              .toList(),
+        };
+        await ref
+            .read(salesInvoiceNotifierProvider.notifier)
+            .createInvoice(backendPayload);
+      } catch (_) {}
+
       if (mounted) {
         AppFeedback.showSnackbar(
           context,
@@ -231,7 +359,55 @@ class _InvoiceCreatePageState extends ConsumerState<InvoiceCreatePage> {
   Widget build(BuildContext context) {
     final billingState = ref.watch(billingRepositoryProvider);
     final customerState = ref.watch(customerProvider);
-    final availableCustomers = customerState.customers;
+    final purchaseState = ref.watch(purchaseProvider);
+
+    final availableCustomers = _uniqueById<Customer>(
+      [...customerState.customers, ...billingState.customers],
+      (c) => c.id,
+    )..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+
+    final availableProducts = _uniqueById<Product>(
+      [
+        ...purchaseState.products,
+        ...billingState.products,
+      ],
+      (p) => p.id,
+    ).where((p) => p.isActive).toList();
+
+    final availableServices = _uniqueById<Service>(
+      billingState.services,
+      (s) => s.id,
+    ).where((s) => s.isActive).toList();
+
+    final eligibleOriginalInvoices = _uniqueById<Invoice>(
+      billingState.invoices.where(
+        (inv) =>
+            inv.customerId == _selectedCustomer?.id &&
+            inv.status != InvoiceStatus.cancelled &&
+            !inv.isCreditNote,
+      ),
+      (inv) => inv.id,
+    );
+
+    final selectedCustomerId =
+        (_selectedCustomer != null &&
+            availableCustomers.any((c) => c.id == _selectedCustomer!.id))
+        ? _selectedCustomer!.id
+        : null;
+    final selectedProductId =
+        (_selectedProduct != null &&
+            availableProducts.any((p) => p.id == _selectedProduct!.id))
+        ? _selectedProduct!.id
+        : null;
+    final selectedServiceId =
+        (_selectedService != null &&
+            availableServices.any((s) => s.id == _selectedService!.id))
+        ? _selectedService!.id
+        : null;
+    final selectedOriginalInvoiceId =
+        eligibleOriginalInvoices.any((inv) => inv.id == _originalInvoiceId)
+        ? _originalInvoiceId
+        : null;
 
     final double subTotal = _items.fold(
       0,
@@ -255,7 +431,7 @@ class _InvoiceCreatePageState extends ConsumerState<InvoiceCreatePage> {
         elevation: 0.5,
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(AppSpacing.md),
+        padding: Responsive.pagePadding(context),
         child: Form(
           key: _formKey,
           child: Column(
@@ -374,51 +550,94 @@ class _InvoiceCreatePageState extends ConsumerState<InvoiceCreatePage> {
                               ResponsiveRow(
                                 children: [
                                   Expanded(
-                                    child: availableCustomers.isEmpty
+                                    child: customerState.isLoading &&
+                                            availableCustomers.isEmpty
+                                        ? const Padding(
+                                            padding: EdgeInsets.symmetric(
+                                              vertical: 18,
+                                            ),
+                                            child: LinearProgressIndicator(),
+                                          )
+                                        : availableCustomers.isEmpty
                                         ? Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 12,
+                                              vertical: 10,
+                                            ),
                                             decoration: BoxDecoration(
                                               color: const Color(0xFFF1F5F9),
-                                              borderRadius: BorderRadius.circular(8),
-                                              border: Border.all(color: const Color(0xFFCBD5E1)),
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
+                                              border: Border.all(
+                                                color: const Color(0xFFCBD5E1),
+                                              ),
                                             ),
                                             child: Row(
                                               children: [
-                                                const Icon(Icons.people_outline, size: 18, color: Color(0xFF64748B)),
+                                                const Icon(
+                                                  Icons.people_outline,
+                                                  size: 18,
+                                                  color: Color(0xFF64748B),
+                                                ),
                                                 const SizedBox(width: 8),
                                                 const Expanded(
                                                   child: Text(
                                                     'No customers in database.',
-                                                    style: TextStyle(fontSize: 12, color: Color(0xFF475569)),
+                                                    style: TextStyle(
+                                                      fontSize: 12,
+                                                      color: Color(0xFF475569),
+                                                    ),
                                                   ),
                                                 ),
                                                 TextButton.icon(
-                                                  style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
-                                                  icon: const Icon(Icons.person_add_alt_1_outlined, size: 14),
-                                                  label: const Text('Add Customer', style: TextStyle(fontSize: 12)),
-                                                  onPressed: () => context.push('/customers/new'),
+                                                  style: TextButton.styleFrom(
+                                                    visualDensity:
+                                                        VisualDensity.compact,
+                                                  ),
+                                                  icon: const Icon(
+                                                    Icons.person_add_alt_1_outlined,
+                                                    size: 14,
+                                                  ),
+                                                  label: const Text(
+                                                    'Add Customer',
+                                                    style: TextStyle(fontSize: 12),
+                                                  ),
+                                                  onPressed: () => context.push(
+                                                    '/customers/new',
+                                                  ),
                                                 ),
                                               ],
                                             ),
                                           )
-                                        : AppDropdownField<Customer>(
+                                        : AppDropdownField<String>(
                                             label: 'Select Customer *',
-                                            value: availableCustomers.contains(_selectedCustomer)
-                                                ? _selectedCustomer
-                                                : null,
+                                            value: selectedCustomerId,
                                             items: availableCustomers.map((c) {
                                               return DropdownMenuItem(
-                                                value: c,
-                                                child: Text('${c.name} (${c.type})'),
+                                                value: c.id,
+                                                child: Text(
+                                                  '${c.name} (${c.type})',
+                                                  overflow: TextOverflow.ellipsis,
+                                                ),
                                               );
                                             }).toList(),
-                                            onChanged: _onCustomerSelected,
+                                            onChanged: (id) {
+                                              if (id == null) return;
+                                              final customer =
+                                                  availableCustomers.firstWhere(
+                                                (c) => c.id == id,
+                                              );
+                                              _onCustomerSelected(customer);
+                                            },
                                           ),
                                   ),
                                   Expanded(
                                     child: AppTextField(
                                       label: 'Place of Supply (State) *',
                                       controller: _placeOfSupplyController,
+                                      onChanged: (_) {
+                                        setState(_repriceAllItems);
+                                      },
                                     ),
                                   ),
                                 ],
@@ -427,30 +646,33 @@ class _InvoiceCreatePageState extends ConsumerState<InvoiceCreatePage> {
                                 const SizedBox(height: AppSpacing.md),
                                 AppDropdownField<String>(
                                   label: 'Select Original Sales Invoice *',
-                                  value: _originalInvoiceId.isEmpty
-                                      ? null
-                                      : _originalInvoiceId,
-                                  items: billingState.invoices
-                                      .where(
-                                        (inv) =>
-                                            inv.customerId ==
-                                                _selectedCustomer?.id &&
-                                            inv.status !=
-                                                InvoiceStatus.cancelled &&
-                                            !inv.isCreditNote,
-                                      )
-                                      .map((inv) {
-                                        return DropdownMenuItem(
-                                          value: inv.id,
-                                          child: Text(
-                                            '${inv.invoiceNumber} (₹${inv.grandTotal})',
-                                          ),
-                                        );
-                                      })
-                                      .toList(),
+                                  value: selectedOriginalInvoiceId,
+                                  items: eligibleOriginalInvoices.map((inv) {
+                                    return DropdownMenuItem(
+                                      value: inv.id,
+                                      child: Text(
+                                        '${inv.invoiceNumber} (₹${inv.grandTotal})',
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    );
+                                  }).toList(),
                                   onChanged: (val) {
                                     setState(() {
                                       _originalInvoiceId = val ?? '';
+                                      if (val == null) return;
+                                      final invoice = eligibleOriginalInvoices
+                                          .firstWhere((inv) => inv.id == val);
+                                      _items
+                                        ..clear()
+                                        ..addAll(
+                                          invoice.items.asMap().entries.map(
+                                            (entry) => _withTax(
+                                              entry.value.copyWith(
+                                                id: 'item_${DateTime.now().millisecondsSinceEpoch}_${entry.key}',
+                                              ),
+                                            ),
+                                          ),
+                                        );
                                     });
                                   },
                                 ),
@@ -518,30 +740,37 @@ class _InvoiceCreatePageState extends ConsumerState<InvoiceCreatePage> {
                               ResponsiveRow(
                                 children: [
                                   Expanded(
-                                    child: AppDropdownField<Product>(
+                                    child: AppDropdownField<String?>(
                                       label: 'Select Product',
-                                      value: _selectedProduct,
-                                      items: billingState.products
-                                          .where((p) => p.isActive)
-                                          .map((p) {
-                                            return DropdownMenuItem(
-                                              value: p,
-                                              child: Text(
-                                                '${p.name} (Stock: ${p.currentStock})',
-                                                overflow: TextOverflow.ellipsis,
-                                                maxLines: 1,
-                                              ),
-                                            );
-                                          })
-                                          .toList(),
-                                      onChanged: (prod) {
+                                      value: selectedProductId,
+                                      items: [
+                                        const DropdownMenuItem<String?>(
+                                          value: null,
+                                          child: Text('None (choose service)'),
+                                        ),
+                                        ...availableProducts.map((p) {
+                                          return DropdownMenuItem<String?>(
+                                            value: p.id,
+                                            child: Text(
+                                              '${p.name} (Stock: ${p.currentStock})',
+                                              overflow: TextOverflow.ellipsis,
+                                              maxLines: 1,
+                                            ),
+                                          );
+                                        }),
+                                      ],
+                                      onChanged: (id) {
                                         setState(() {
-                                          _selectedProduct = prod;
-                                          _selectedService = null;
-                                          if (prod != null) {
-                                            _rateController.text = prod
-                                                .sellingPrice
-                                                .toString();
+                                          _selectedProduct = id == null
+                                              ? null
+                                              : availableProducts.firstWhere(
+                                                  (p) => p.id == id,
+                                                );
+                                          if (_selectedProduct != null) {
+                                            _selectedService = null;
+                                            _rateController.text =
+                                                _selectedProduct!.sellingPrice
+                                                    .toString();
                                             _quantityController.text = '1';
                                           }
                                         });
@@ -549,25 +778,36 @@ class _InvoiceCreatePageState extends ConsumerState<InvoiceCreatePage> {
                                     ),
                                   ),
                                   Expanded(
-                                    child: AppDropdownField<Service>(
+                                    child: AppDropdownField<String?>(
                                       label: 'Select Service',
-                                      value: _selectedService,
-                                      items: billingState.services
-                                          .where((s) => s.isActive)
-                                          .map((s) {
-                                            return DropdownMenuItem(
-                                              value: s,
-                                              child: Text(s.name),
-                                            );
-                                          })
-                                          .toList(),
-                                      onChanged: (serv) {
+                                      value: selectedServiceId,
+                                      items: [
+                                        const DropdownMenuItem<String?>(
+                                          value: null,
+                                          child: Text('None'),
+                                        ),
+                                        ...availableServices.map((s) {
+                                          return DropdownMenuItem<String?>(
+                                            value: s.id,
+                                            child: Text(
+                                              s.name,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          );
+                                        }),
+                                      ],
+                                      onChanged: (id) {
                                         setState(() {
-                                          _selectedService = serv;
-                                          _selectedProduct = null;
-                                          if (serv != null) {
-                                            _rateController.text = serv.rate
-                                                .toString();
+                                          _selectedService = id == null
+                                              ? null
+                                              : availableServices.firstWhere(
+                                                  (s) => s.id == id,
+                                                );
+                                          if (_selectedService != null) {
+                                            _selectedProduct = null;
+                                            _rateController.text =
+                                                _selectedService!.rate
+                                                    .toString();
                                             _quantityController.text = '1';
                                           }
                                         });
@@ -600,9 +840,12 @@ class _InvoiceCreatePageState extends ConsumerState<InvoiceCreatePage> {
                                       keyboardType: TextInputType.number,
                                     ),
                                   ),
-                                  Padding(
+                                  Expanded(
+                                    child: Padding(
                                     padding: const EdgeInsets.only(top: 8),
-                                    child: ElevatedButton.icon(
+                                    child: SizedBox(
+                                      height: 48,
+                                      child: ElevatedButton.icon(
                                       icon: const Icon(Icons.add, size: 16),
                                       label: const Text('Add Item'),
                                       style: ElevatedButton.styleFrom(
@@ -621,6 +864,8 @@ class _InvoiceCreatePageState extends ConsumerState<InvoiceCreatePage> {
                                         ),
                                       ),
                                       onPressed: _addItem,
+                                    ),
+                                    ),
                                     ),
                                   ),
                                 ],
@@ -772,20 +1017,80 @@ class _InvoiceCreatePageState extends ConsumerState<InvoiceCreatePage> {
                                   TableColumnSpec<InvoiceItem>(
                                     label: 'Qty',
                                     isNumeric: true,
-                                    cellBuilder: (item) =>
-                                        Text('${item.quantity} ${item.unit}'),
+                                    cellBuilder: (item) => SizedBox(
+                                      width: 72,
+                                      child: TextFormField(
+                                        key: ValueKey('${item.id}_qty'),
+                                        initialValue: item.quantity.toString(),
+                                        keyboardType: TextInputType.number,
+                                        textAlign: TextAlign.right,
+                                        decoration: const InputDecoration(
+                                          isDense: true,
+                                          contentPadding: EdgeInsets.symmetric(
+                                            horizontal: 6,
+                                            vertical: 8,
+                                          ),
+                                        ),
+                                        onChanged: (val) {
+                                          final q = double.tryParse(val);
+                                          if (q == null || q <= 0) return;
+                                          _patchItem(item.id, quantity: q);
+                                        },
+                                      ),
+                                    ),
                                   ),
                                   TableColumnSpec<InvoiceItem>(
                                     label: 'Rate (₹)',
                                     isNumeric: true,
-                                    cellBuilder: (item) =>
-                                        Text(item.rate.toStringAsFixed(2)),
+                                    cellBuilder: (item) => SizedBox(
+                                      width: 88,
+                                      child: TextFormField(
+                                        key: ValueKey('${item.id}_rate'),
+                                        initialValue: item.rate.toString(),
+                                        keyboardType: TextInputType.number,
+                                        textAlign: TextAlign.right,
+                                        decoration: const InputDecoration(
+                                          isDense: true,
+                                          contentPadding: EdgeInsets.symmetric(
+                                            horizontal: 6,
+                                            vertical: 8,
+                                          ),
+                                        ),
+                                        onChanged: (val) {
+                                          final r = double.tryParse(val);
+                                          if (r == null || r < 0) return;
+                                          _patchItem(item.id, rate: r);
+                                        },
+                                      ),
+                                    ),
                                   ),
                                   TableColumnSpec<InvoiceItem>(
                                     label: 'Disc%',
                                     isNumeric: true,
-                                    cellBuilder: (item) => Text(
-                                      '${item.discountPercentage.toStringAsFixed(0)}%',
+                                    cellBuilder: (item) => SizedBox(
+                                      width: 64,
+                                      child: TextFormField(
+                                        key: ValueKey('${item.id}_disc'),
+                                        initialValue: item.discountPercentage
+                                            .toString(),
+                                        keyboardType: TextInputType.number,
+                                        textAlign: TextAlign.right,
+                                        decoration: const InputDecoration(
+                                          isDense: true,
+                                          contentPadding: EdgeInsets.symmetric(
+                                            horizontal: 6,
+                                            vertical: 8,
+                                          ),
+                                        ),
+                                        onChanged: (val) {
+                                          final d = double.tryParse(val);
+                                          if (d == null || d < 0) return;
+                                          _patchItem(
+                                            item.id,
+                                            discountPercentage: d,
+                                          );
+                                        },
+                                      ),
                                     ),
                                   ),
                                   TableColumnSpec<InvoiceItem>(
@@ -1096,7 +1401,7 @@ class _InvoiceCreatePageState extends ConsumerState<InvoiceCreatePage> {
                         const SizedBox(height: 20),
 
                         // Action Buttons
-                        Row(
+                        ResponsiveRow(
                           children: [
                             Expanded(
                               child: OutlinedButton(
@@ -1120,7 +1425,6 @@ class _InvoiceCreatePageState extends ConsumerState<InvoiceCreatePage> {
                                 ),
                               ),
                             ),
-                            const SizedBox(width: 12),
                             Expanded(
                               flex: 2,
                               child: ElevatedButton.icon(

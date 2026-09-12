@@ -1,5 +1,14 @@
 // Sales Invoice DTOs matching backend module/salesopration/sales-invoice
 
+import '../../../../core/models/billing_models.dart';
+
+double _asDouble(dynamic value, [double fallback = 0]) {
+  if (value == null) return fallback;
+  if (value is num) return value.toDouble();
+  if (value is String) return double.tryParse(value) ?? fallback;
+  return fallback;
+}
+
 class SalesInvoiceDto {
   final String id;
   final String invoiceNumber;
@@ -14,6 +23,7 @@ class SalesInvoiceDto {
   final double cgstAmount;
   final double sgstAmount;
   final double igstAmount;
+  final double cessAmount;
   final double grandTotal;
   final double paidAmount;
   final double balanceAmount;
@@ -22,6 +32,9 @@ class SalesInvoiceDto {
   final String status;
   final bool isHeld;
   final String? notes;
+  final String? billingAddress;
+  final String? shippingAddress;
+  final String? placeOfSupply;
   final List<SalesInvoiceItemDto> items;
 
   const SalesInvoiceDto({
@@ -38,6 +51,7 @@ class SalesInvoiceDto {
     required this.cgstAmount,
     required this.sgstAmount,
     required this.igstAmount,
+    this.cessAmount = 0,
     required this.grandTotal,
     required this.paidAmount,
     required this.balanceAmount,
@@ -46,6 +60,9 @@ class SalesInvoiceDto {
     required this.status,
     required this.isHeld,
     this.notes,
+    this.billingAddress,
+    this.shippingAddress,
+    this.placeOfSupply,
     this.items = const [],
   });
 
@@ -72,24 +89,66 @@ class SalesInvoiceDto {
           'Walk-in Customer',
       customerPhone: json['customerPhone']?.toString() ??
           (json['customer'] is Map ? json['customer']['mobileNumber']?.toString() : null),
-      subtotal: (json['subtotal'] as num?)?.toDouble() ?? 0.0,
-      discountPercent: (json['discountPercent'] as num?)?.toDouble() ?? 0.0,
-      discountAmount: (json['discountAmount'] as num?)?.toDouble() ?? 0.0,
-      taxableValue: (json['taxableValue'] as num?)?.toDouble() ?? 0.0,
-      cgstAmount: (json['cgstAmount'] as num?)?.toDouble() ?? 0.0,
-      sgstAmount: (json['sgstAmount'] as num?)?.toDouble() ?? 0.0,
-      igstAmount: (json['igstAmount'] as num?)?.toDouble() ?? 0.0,
-      grandTotal: (json['grandTotal'] as num?)?.toDouble() ?? 0.0,
-      paidAmount: (json['paidAmount'] as num?)?.toDouble() ?? 0.0,
-      balanceAmount: (json['balanceAmount'] as num?)?.toDouble() ?? 0.0,
+      subtotal: _asDouble(json['subtotal']),
+      discountPercent: _asDouble(json['discountPercent']),
+      discountAmount: _asDouble(json['discountAmount']),
+      taxableValue: _asDouble(json['taxableValue']),
+      cgstAmount: _asDouble(json['cgstAmount']),
+      sgstAmount: _asDouble(json['sgstAmount']),
+      igstAmount: _asDouble(json['igstAmount']),
+      cessAmount: _asDouble(json['cessAmount']),
+      grandTotal: _asDouble(json['grandTotal']),
+      paidAmount: _asDouble(json['paidAmount']),
+      balanceAmount: _asDouble(json['balanceAmount']),
       paymentMode: json['paymentMode']?.toString() ?? 'CASH',
       paymentStatus: json['paymentStatus']?.toString() ?? 'PAID',
       status: json['status']?.toString() ?? 'SAVED',
       isHeld: json['isHeld'] == true || json['status'] == 'HELD',
       notes: json['notes']?.toString(),
+      billingAddress: json['billingAddress']?.toString(),
+      shippingAddress: json['shippingAddress']?.toString(),
+      placeOfSupply: json['placeOfSupply']?.toString(),
       items: rawItems
           .map((item) => SalesInvoiceItemDto.fromJson(item as Map<String, dynamic>))
           .toList(),
+    );
+  }
+
+  InvoiceStatus get domainStatus {
+    final s = status.toUpperCase();
+    final pay = paymentStatus.toUpperCase();
+    if (s == 'CANCELLED') return InvoiceStatus.cancelled;
+    if (s == 'DRAFT' || s == 'HELD') return InvoiceStatus.draft;
+    if (pay == 'PAID') return InvoiceStatus.paid;
+    if (pay == 'PARTIALLY_PAID' || pay == 'PARTIAL') {
+      return InvoiceStatus.partiallyPaid;
+    }
+    return InvoiceStatus.confirmed;
+  }
+
+  Invoice toInvoice() {
+    return Invoice(
+      id: id,
+      invoiceNumber: invoiceNumber,
+      invoiceDate: invoiceDate,
+      customerId: customerId ?? '',
+      customerName: customerName,
+      billingAddress: billingAddress ?? '',
+      shippingAddress: shippingAddress ?? '',
+      placeOfSupply: placeOfSupply ?? '',
+      items: items.map((it) => it.toInvoiceItem()).toList(),
+      taxableAmount: taxableValue,
+      cgst: cgstAmount,
+      sgst: sgstAmount,
+      igst: igstAmount,
+      cess: cessAmount,
+      roundOff: 0,
+      grandTotal: grandTotal,
+      balanceAmount: balanceAmount,
+      paymentMode: paymentMode,
+      status: domainStatus,
+      notes: notes ?? '',
+      termsConditions: '',
     );
   }
 }
@@ -134,17 +193,38 @@ class SalesInvoiceItemDto {
       productName: json['productName']?.toString() ??
           (json['product'] is Map ? json['product']['name']?.toString() : null) ??
           'Item',
-      quantity: (json['quantity'] as num?)?.toDouble() ?? 1.0,
+      quantity: _asDouble(json['quantity'], 1),
       unit: json['unit']?.toString() ?? 'PCS',
-      rate: (json['rate'] as num?)?.toDouble() ?? 0.0,
-      mrp: (json['mrp'] as num?)?.toDouble() ?? (json['rate'] as num?)?.toDouble() ?? 0.0,
-      discountPercent: (json['discountPercent'] as num?)?.toDouble() ?? 0.0,
-      discountAmount: (json['discountAmount'] as num?)?.toDouble() ?? 0.0,
-      taxableValue: (json['taxableValue'] as num?)?.toDouble() ?? 0.0,
-      gstRatePercent: (json['gstRatePercent'] as num?)?.toDouble() ?? 0.0,
-      cgstAmount: (json['cgstAmount'] as num?)?.toDouble() ?? 0.0,
-      sgstAmount: (json['sgstAmount'] as num?)?.toDouble() ?? 0.0,
-      lineTotal: (json['lineTotal'] as num?)?.toDouble() ?? 0.0,
+      rate: _asDouble(json['rate']),
+      mrp: _asDouble(json['mrp'], _asDouble(json['rate'])),
+      discountPercent: _asDouble(json['discountPercent']),
+      discountAmount: _asDouble(json['discountAmount']),
+      taxableValue: _asDouble(json['taxableValue']),
+      gstRatePercent: _asDouble(json['gstRatePercent'] ?? json['gstRate']),
+      cgstAmount: _asDouble(json['cgstAmount']),
+      sgstAmount: _asDouble(json['sgstAmount']),
+      lineTotal: _asDouble(json['lineTotal']),
+    );
+  }
+
+  InvoiceItem toInvoiceItem() {
+    return InvoiceItem(
+      id: id.isNotEmpty ? id : 'item_${productName.hashCode}',
+      productId: productId ?? '',
+      serviceId: '',
+      name: productName,
+      hsnSac: '',
+      quantity: quantity,
+      unit: unit,
+      rate: rate,
+      discountPercentage: discountPercent,
+      discountAmount: discountAmount,
+      taxableValue: taxableValue,
+      gstRate: gstRatePercent,
+      cgst: cgstAmount,
+      sgst: sgstAmount,
+      igst: 0,
+      cess: 0,
     );
   }
 }

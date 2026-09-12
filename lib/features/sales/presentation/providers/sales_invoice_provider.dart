@@ -30,16 +30,20 @@ final salesInvoiceHeldListProvider = FutureProvider<List<SalesInvoiceDto>>((ref)
 /// State of Sales Invoice Operations
 class SalesInvoiceState {
   final bool isLoading;
+  final bool isLoadingList;
   final String? error;
   final String currentInvoiceNumber;
+  final List<SalesInvoiceDto> invoices;
   final List<SalesInvoiceDto> heldInvoices;
   final SalesInvoiceMetricsDto? metrics;
   final SalesInvoiceResponse? lastCreatedInvoice;
 
   const SalesInvoiceState({
     this.isLoading = false,
+    this.isLoadingList = false,
     this.error,
     this.currentInvoiceNumber = 'TB/25-26/000123',
+    this.invoices = const [],
     this.heldInvoices = const [],
     this.metrics,
     this.lastCreatedInvoice,
@@ -47,17 +51,21 @@ class SalesInvoiceState {
 
   SalesInvoiceState copyWith({
     bool? isLoading,
+    bool? isLoadingList,
     String? error,
     bool clearError = false,
     String? currentInvoiceNumber,
+    List<SalesInvoiceDto>? invoices,
     List<SalesInvoiceDto>? heldInvoices,
     SalesInvoiceMetricsDto? metrics,
     SalesInvoiceResponse? lastCreatedInvoice,
   }) {
     return SalesInvoiceState(
       isLoading: isLoading ?? this.isLoading,
+      isLoadingList: isLoadingList ?? this.isLoadingList,
       error: clearError ? null : (error ?? this.error),
       currentInvoiceNumber: currentInvoiceNumber ?? this.currentInvoiceNumber,
+      invoices: invoices ?? this.invoices,
       heldInvoices: heldInvoices ?? this.heldInvoices,
       metrics: metrics ?? this.metrics,
       lastCreatedInvoice: lastCreatedInvoice ?? this.lastCreatedInvoice,
@@ -72,6 +80,8 @@ class SalesInvoiceNotifier extends StateNotifier<SalesInvoiceState> {
   SalesInvoiceNotifier(this._apiService) : super(const SalesInvoiceState()) {
     fetchNextNumber();
     refreshHeldInvoices();
+    refreshInvoices();
+    refreshMetrics();
   }
 
   /// 1. Fetch next auto-incremented invoice number
@@ -93,7 +103,28 @@ class SalesInvoiceNotifier extends StateNotifier<SalesInvoiceState> {
     } catch (_) {}
   }
 
-  /// 3. Refresh metrics
+  /// 3. Refresh saved sales invoices for the billing list
+  Future<List<SalesInvoiceDto>> refreshInvoices({
+    String? search,
+    String? status,
+  }) async {
+    state = state.copyWith(isLoadingList: true, clearError: true);
+    try {
+      final list = await _apiService.getSalesInvoices(
+        search: search,
+        status: status,
+        limit: 200,
+      );
+      final visible = list.where((inv) => !inv.isHeld).toList();
+      state = state.copyWith(isLoadingList: false, invoices: visible);
+      return visible;
+    } catch (e) {
+      state = state.copyWith(isLoadingList: false, error: e.toString());
+      return state.invoices;
+    }
+  }
+
+  /// 4. Refresh metrics
   Future<void> refreshMetrics() async {
     try {
       final m = await _apiService.getMetrics();
@@ -110,8 +141,8 @@ class SalesInvoiceNotifier extends StateNotifier<SalesInvoiceState> {
         isLoading: false,
         lastCreatedInvoice: res,
       );
-      // Pre-fetch next number for seamless next transaction
       await fetchNextNumber();
+      await refreshInvoices();
       return res;
     } catch (e) {
       state = state.copyWith(isLoading: false, error: e.toString());

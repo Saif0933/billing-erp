@@ -49,9 +49,13 @@ class AppCard extends StatelessWidget {
                   ),
                 ),
               if (actions != null && actions!.isNotEmpty)
-                Wrap(
-                  spacing: AppSpacing.sm,
-                  children: actions!,
+                Flexible(
+                  child: Wrap(
+                    spacing: AppSpacing.sm,
+                    runSpacing: AppSpacing.sm,
+                    alignment: WrapAlignment.end,
+                    children: actions!,
+                  ),
                 ),
             ],
           ),
@@ -240,8 +244,13 @@ class AppPageHeader extends StatelessWidget {
             ),
             const SizedBox(height: AppSpacing.xs),
           ],
-          Responsive.isMobile(context)
-              ? Column(
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final compact =
+                  constraints.maxWidth <= Responsive.compactMax ||
+                  Responsive.isCompact(context);
+              if (compact) {
+                return Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     _titleBlock(primaryTextColor, secondaryTextColor),
@@ -254,22 +263,29 @@ class AppPageHeader extends StatelessWidget {
                       ),
                     ],
                   ],
-                )
-              : Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: _titleBlock(primaryTextColor, secondaryTextColor),
-                    ),
-                    if (actions.isNotEmpty) ...[
-                      const SizedBox(width: AppSpacing.md),
-                      Wrap(
+                );
+              }
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: _titleBlock(primaryTextColor, secondaryTextColor),
+                  ),
+                  if (actions.isNotEmpty) ...[
+                    const SizedBox(width: AppSpacing.md),
+                    Flexible(
+                      child: Wrap(
                         spacing: AppSpacing.sm,
+                        runSpacing: AppSpacing.sm,
+                        alignment: WrapAlignment.end,
                         children: actions,
                       ),
-                    ],
+                    ),
                   ],
-                ),
+                ],
+              );
+            },
+          ),
         ],
       ),
     );
@@ -285,6 +301,8 @@ class AppPageHeader extends StatelessWidget {
             color: primaryTextColor,
             fontWeight: FontWeight.bold,
           ),
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
         ),
         if (description != null) ...[
           const SizedBox(height: AppSpacing.xs),
