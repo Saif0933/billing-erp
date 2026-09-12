@@ -94,4 +94,9 @@ class ApiEndpoints {
   static const String salesReturns = '/api/v1/sales/returns';
   static const String salesReturnNextNumber = '/api/v1/sales/returns/next-number';
   static const String salesReturnMetrics = '/api/v1/sales/returns/metrics/summary';
+
+  // Expenses & Tracker (backend: module/expenses&tracker)
+  static const String expenses = '/api/v1/expenses';
+  static const String expenseSummary = '/api/v1/expenses/summary';
+  static const String expenseCategories = '/api/v1/expenses/categories';
 }

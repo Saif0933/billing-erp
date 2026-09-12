@@ -367,30 +367,7 @@ class BillingNotifier extends StateNotifier<BillingState> {
       ),
     ];
 
-    final expenses = [
-      Expense(
-        id: 'exp_01',
-        category: 'Rent',
-        date: DateTime.now().subtract(const Duration(days: 5)),
-        vendor: 'Apex Properties',
-        amount: 25000.0,
-        gst: 4500.0,
-        paymentMode: 'Bank',
-        attachmentPath: '',
-        notes: 'Office monthly rent',
-      ),
-      Expense(
-        id: 'exp_02',
-        category: 'Office Expenses',
-        date: DateTime.now().subtract(const Duration(days: 2)),
-        vendor: 'Stationery Zone',
-        amount: 1500.0,
-        gst: 270.0,
-        paymentMode: 'Cash',
-        attachmentPath: '',
-        notes: 'Notebooks and printer paper',
-      ),
-    ];
+    final expenses = <Expense>[];
 
     // Seed stock movement logs for opening stock
     final List<StockMovement> stockMovements = [];
@@ -1052,6 +1029,16 @@ class BillingNotifier extends StateNotifier<BillingState> {
   Future<void> addExpense(Expense exp) async {
     state = state.copyWith(expenses: [...state.expenses, exp]);
     _createJournalForExpense(exp);
+  }
+
+  Future<void> deleteExpense(String expenseId) async {
+    state = state.copyWith(
+      expenses: state.expenses.where((e) => e.id != expenseId).toList(),
+    );
+  }
+
+  void setExpenses(List<Expense> expenses) {
+    state = state.copyWith(expenses: expenses);
   }
 
   // --- Transaction Cancellation ---

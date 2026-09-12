@@ -12,6 +12,8 @@ import '../../../../shared/widgets/app_input_fields.dart';
 import '../../../../shared/widgets/app_table.dart';
 import '../../../../shared/widgets/feedback.dart';
 import '../../../dashboard/presentation/providers/billing_repository.dart';
+import '../../data/models/expense_dto.dart';
+import '../../data/services/expense_api_service.dart';
 
 class ExpensePage extends ConsumerStatefulWidget {
   const ExpensePage({super.key});
@@ -30,6 +32,82 @@ class _ExpensePageState extends ConsumerState<ExpensePage> {
   String _selectedCategory = 'Office Expenses';
   String _paymentMode = 'Bank';
   DateTime _expenseDate = DateTime.now();
+
+  bool _isLoading = false;
+  List<Expense> _apiExpenses = [];
+  ExpenseSummaryDto? _summary;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadExpenses();
+    });
+  }
+
+  Future<void> _loadExpenses() async {
+    if (!mounted) return;
+    setState(() => _isLoading = true);
+    try {
+      final api = ref.read(expenseApiServiceProvider);
+      final list = await api.getExpenses();
+      final summary = await api.getExpenseSummary();
+      if (mounted) {
+        setState(() {
+          _apiExpenses = list;
+          _summary = summary;
+          _isLoading = false;
+        });
+        ref.read(billingRepositoryProvider.notifier).setExpenses(list);
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  Future<void> _handleDeleteExpense(String id) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (c) => AlertDialog(
+        title: const Text('Delete Expense'),
+        content: const Text('Are you sure you want to delete this expense record?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(c, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(c, true),
+            child: const Text('Delete', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      try {
+        await ref.read(expenseApiServiceProvider).deleteExpense(id);
+        await ref.read(billingRepositoryProvider.notifier).deleteExpense(id);
+        if (mounted) {
+          AppFeedback.showSnackbar(
+            context,
+            message: 'Expense entry deleted successfully',
+          );
+          _loadExpenses();
+        }
+      } catch (e) {
+        if (mounted) {
+          AppFeedback.showSnackbar(
+            context,
+            message: 'Failed to delete expense: $e',
+            isError: true,
+          );
+        }
+      }
+    }
+  }
 
   @override
   void dispose() {
@@ -88,8 +166,8 @@ class _ExpensePageState extends ConsumerState<ExpensePage> {
 
   void _showAddExpenseDialog() {
     _vendorController.clear();
-    _amountController.text = '0.0';
-    _gstController.text = '0.0';
+    _amountController.clear();
+    _gstController.clear();
     _notesController.clear();
     _selectedCategory = 'Office Expenses';
     _paymentMode = 'Bank';
@@ -112,40 +190,62 @@ class _ExpensePageState extends ConsumerState<ExpensePage> {
 
     showDialog(
       context: context,
+      barrierDismissible: false,
       builder: (ctx) {
+        bool isSaving = false;
         return StatefulBuilder(
           builder: (dialogCtx, setDialogState) {
             Future<void> handleSaveExpense() async {
+              if (isSaving) return;
               if (_formKey.currentState!.validate()) {
+                setDialogState(() {
+                  isSaving = true;
+                });
+
                 final double amount =
-                    double.tryParse(_amountController.text) ?? 0.0;
+                    double.tryParse(_amountController.text.trim()) ?? 0.0;
                 final double gst =
-                    double.tryParse(_gstController.text) ?? 0.0;
+                    double.tryParse(_gstController.text.trim()) ?? 0.0;
 
-                final exp = Expense(
-                  id: 'exp_${DateTime.now().millisecondsSinceEpoch}',
-                  category: _selectedCategory,
-                  date: _expenseDate,
-                  vendor: _vendorController.text,
-                  amount: amount,
-                  gst: gst,
-                  paymentMode: _paymentMode,
-                  attachmentPath: '',
-                  notes: _notesController.text,
-                );
-
-                await ref
-                    .read(billingRepositoryProvider.notifier)
-                    .addExpense(exp);
-
-                if (ctx.mounted) {
-                  Navigator.pop(ctx);
-                }
-                if (mounted) {
-                  AppFeedback.showSnackbar(
-                    context,
-                    message: 'Expense entry saved successfully!',
+                try {
+                  final api = ref.read(expenseApiServiceProvider);
+                  final exp = await api.createExpense(
+                    category: _selectedCategory,
+                    vendor: _vendorController.text.trim(),
+                    amount: amount,
+                    gstAmount: gst,
+                    paymentMode: _paymentMode,
+                    date: _expenseDate,
+                    notes: _notesController.text.trim(),
                   );
+
+                  await ref
+                      .read(billingRepositoryProvider.notifier)
+                      .addExpense(exp);
+
+                  if (ctx.mounted) {
+                    Navigator.pop(ctx);
+                  }
+                  if (mounted) {
+                    AppFeedback.showSnackbar(
+                      context,
+                      message: 'Expense entry saved successfully!',
+                    );
+                    _loadExpenses();
+                  }
+                } catch (e) {
+                  if (dialogCtx.mounted) {
+                    setDialogState(() {
+                      isSaving = false;
+                    });
+                  }
+                  if (mounted) {
+                    AppFeedback.showSnackbar(
+                      context,
+                      message: 'Failed to save expense: $e',
+                      isError: true,
+                    );
+                  }
                 }
               }
             }
@@ -171,19 +271,21 @@ class _ExpensePageState extends ConsumerState<ExpensePage> {
                   ),
                   const SizedBox(height: AppSpacing.xs),
                   InkWell(
-                    onTap: () async {
-                      final selected = await showDatePicker(
-                        context: context,
-                        initialDate: _expenseDate,
-                        firstDate: DateTime(2020),
-                        lastDate: DateTime(2030),
-                      );
-                      if (selected != null) {
-                        setDialogState(() {
-                          _expenseDate = selected;
-                        });
-                      }
-                    },
+                    onTap: isSaving
+                        ? null
+                        : () async {
+                            final selected = await showDatePicker(
+                              context: context,
+                              initialDate: _expenseDate,
+                              firstDate: DateTime(2020),
+                              lastDate: DateTime(2030),
+                            );
+                            if (selected != null) {
+                              setDialogState(() {
+                                _expenseDate = selected;
+                              });
+                            }
+                          },
                     borderRadius: AppRadius.smBorder,
                     child: Container(
                       height: 48,
@@ -319,386 +421,439 @@ class _ExpensePageState extends ConsumerState<ExpensePage> {
                   ),
                 ),
               ],
-              onChanged: (val) => setDialogState(
-                () => _paymentMode = val ?? 'Bank',
-              ),
+              onChanged: isSaving
+                  ? null
+                  : (val) => setDialogState(
+                        () => _paymentMode = val ?? 'Bank',
+                      ),
             );
 
-            return AlertDialog(
-              insetPadding: isMobile
-                  ? const EdgeInsets.symmetric(horizontal: 16, vertical: 24)
-                  : const EdgeInsets.symmetric(horizontal: 40, vertical: 24),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-              clipBehavior: Clip.antiAlias,
-              titlePadding: EdgeInsets.zero,
-              title: Container(
-                padding: const EdgeInsets.fromLTRB(20, 16, 16, 16),
-                decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF1F5F9),
-                  border: Border(
-                    bottom: BorderSide(
-                      color: isDark ? Colors.white10 : const Color(0xFFE2E8F0),
+            return PopScope(
+              canPop: !isSaving,
+              child: AlertDialog(
+                insetPadding: isMobile
+                    ? const EdgeInsets.symmetric(horizontal: 16, vertical: 24)
+                    : const EdgeInsets.symmetric(horizontal: 40, vertical: 24),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                clipBehavior: Clip.antiAlias,
+                titlePadding: EdgeInsets.zero,
+                title: Container(
+                  padding: const EdgeInsets.fromLTRB(20, 16, 16, 16),
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF1F5F9),
+                    border: Border(
+                      bottom: BorderSide(
+                        color: isDark ? Colors.white10 : const Color(0xFFE2E8F0),
+                      ),
                     ),
                   ),
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: isDark
-                              ? [const Color(0xFF3B82F6), const Color(0xFF1D4ED8)]
-                              : [const Color(0xFF2563EB), const Color(0xFF1E40AF)],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: isDark
+                                ? [const Color(0xFF3B82F6), const Color(0xFF1D4ED8)]
+                                : [const Color(0xFF2563EB), const Color(0xFF1E40AF)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          borderRadius: BorderRadius.circular(10),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFF2563EB).withValues(alpha: 0.3),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
                         ),
-                        borderRadius: BorderRadius.circular(10),
-                        boxShadow: [
-                          BoxShadow(
-                            color: const Color(0xFF2563EB).withValues(alpha: 0.3),
-                            blurRadius: 8,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
+                        child: const Icon(
+                          Icons.receipt_long_rounded,
+                          size: 20,
+                          color: Colors.white,
+                        ),
                       ),
-                      child: const Icon(
-                        Icons.receipt_long_rounded,
-                        size: 20,
-                        color: Colors.white,
-                      ),
-                    ),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Record Basic Expense',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w700,
-                              letterSpacing: -0.2,
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Record Basic Expense',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: -0.2,
+                              ),
                             ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            'Log operational cash outflow & tax details',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: isDark
-                                  ? AppColors.textDarkMuted
-                                  : AppColors.textLightSecondary,
+                            const SizedBox(height: 2),
+                            Text(
+                              'Log operational cash outflow & tax details',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: isDark
+                                    ? AppColors.textDarkMuted
+                                    : AppColors.textLightSecondary,
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.close_rounded, size: 20),
-                      splashRadius: 20,
-                      tooltip: 'Close',
-                      onPressed: () => Navigator.pop(ctx),
-                    ),
-                  ],
+                      IconButton(
+                        icon: const Icon(Icons.close_rounded, size: 20),
+                        splashRadius: 20,
+                        tooltip: 'Close',
+                        onPressed: isSaving ? null : () => Navigator.pop(ctx),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-              contentPadding: isMobile
-                  ? const EdgeInsets.fromLTRB(16, 16, 16, 8)
-                  : const EdgeInsets.fromLTRB(24, 20, 24, 12),
-              content: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 520),
-                child: SingleChildScrollView(
-                  child: Form(
-                    key: _formKey,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        AppDropdownField<String>(
-                          label: 'Expense Category *',
-                          value: _selectedCategory,
-                          items: categories.map((cat) {
-                            final catColor = _getCategoryColor(cat);
-                            final catIcon = _getCategoryIcon(cat);
-                            return DropdownMenuItem(
-                              value: cat,
-                              child: Row(
-                                children: [
-                                  Container(
-                                    padding: const EdgeInsets.all(4),
-                                    decoration: BoxDecoration(
-                                      color: catColor.withValues(alpha: 0.12),
-                                      borderRadius: BorderRadius.circular(6),
-                                    ),
-                                    child: Icon(
-                                      catIcon,
-                                      size: 16,
-                                      color: catColor,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 10),
-                                  Expanded(
-                                    child: Text(
-                                      cat,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w500,
+                contentPadding: isMobile
+                    ? const EdgeInsets.fromLTRB(16, 16, 16, 8)
+                    : const EdgeInsets.fromLTRB(24, 20, 24, 12),
+                content: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 520),
+                  child: SingleChildScrollView(
+                    child: Form(
+                      key: _formKey,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          AppDropdownField<String>(
+                            label: 'Expense Category *',
+                            value: _selectedCategory,
+                            items: categories.map((cat) {
+                              final catColor = _getCategoryColor(cat);
+                              final catIcon = _getCategoryIcon(cat);
+                              return DropdownMenuItem(
+                                value: cat,
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.all(4),
+                                      decoration: BoxDecoration(
+                                        color: catColor.withValues(alpha: 0.12),
+                                        borderRadius: BorderRadius.circular(6),
+                                      ),
+                                      child: Icon(
+                                        catIcon,
+                                        size: 16,
+                                        color: catColor,
                                       ),
                                     ),
-                                  ),
-                                ],
-                              ),
-                            );
-                          }).toList(),
-                          onChanged: (val) => setDialogState(
-                            () => _selectedCategory = val ?? 'Office Expenses',
+                                    const SizedBox(width: 10),
+                                    Expanded(
+                                      child: Text(
+                                        cat,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            }).toList(),
+                            onChanged: isSaving
+                                ? null
+                                : (val) => setDialogState(
+                                      () => _selectedCategory = val ?? 'Office Expenses',
+                                    ),
                           ),
-                        ),
-                        const SizedBox(height: AppSpacing.md),
-                        AppTextField(
-                          label: 'Vendor / Payee Name *',
-                          hintText: 'e.g. Landlord, Power Utility, Vendor LLC',
-                          prefixIcon: const Icon(Icons.storefront_outlined, size: 20),
-                          controller: _vendorController,
-                          validator: (val) => val == null || val.isEmpty
-                              ? 'Vendor name is required'
-                              : null,
-                        ),
-                        const SizedBox(height: AppSpacing.md),
-                        if (isMobile) ...[
+                          const SizedBox(height: AppSpacing.md),
                           AppTextField(
-                            label: 'Expense Amount (₹) *',
-                            hintText: '0.00',
-                            prefixIcon: const Icon(Icons.currency_rupee, size: 18),
-                            controller: _amountController,
-                            keyboardType: TextInputType.number,
-                            onChanged: (_) => setDialogState(() {}),
-                            validator: (val) =>
-                                val == null || double.tryParse(val) == null
-                                ? 'Invalid amount'
+                            label: 'Vendor / Payee Name *',
+                            hintText: 'e.g. Landlord, Power Utility, Vendor LLC',
+                            prefixIcon: const Icon(Icons.storefront_outlined, size: 20),
+                            controller: _vendorController,
+                            readOnly: isSaving,
+                            validator: (val) => val == null || val.trim().isEmpty
+                                ? 'Vendor name is required'
                                 : null,
                           ),
                           const SizedBox(height: AppSpacing.md),
-                          AppTextField(
-                            label: 'GST Tax Included (₹)',
-                            hintText: '0.00',
-                            prefixIcon: const Icon(Icons.percent_rounded, size: 18),
-                            controller: _gstController,
-                            keyboardType: TextInputType.number,
-                            onChanged: (_) => setDialogState(() {}),
-                          ),
-                        ] else ...[
-                          Row(
-                            children: [
-                              Expanded(
-                                child: AppTextField(
-                                  label: 'Expense Amount (₹) *',
-                                  hintText: '0.00',
-                                  prefixIcon: const Icon(Icons.currency_rupee, size: 18),
-                                  controller: _amountController,
-                                  keyboardType: TextInputType.number,
-                                  onChanged: (_) => setDialogState(() {}),
-                                  validator: (val) =>
-                                      val == null || double.tryParse(val) == null
-                                      ? 'Invalid amount'
-                                      : null,
-                                ),
-                              ),
-                              const SizedBox(width: AppSpacing.md),
-                              Expanded(
-                                child: AppTextField(
-                                  label: 'GST Tax Included (₹)',
-                                  hintText: '0.00',
-                                  prefixIcon: const Icon(Icons.percent_rounded, size: 18),
-                                  controller: _gstController,
-                                  keyboardType: TextInputType.number,
-                                  onChanged: (_) => setDialogState(() {}),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                        const SizedBox(height: AppSpacing.sm),
-                        // Live Net Outflow breakdown card
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 10,
-                          ),
-                          decoration: BoxDecoration(
-                            color: isDark
-                                ? const Color(0xFF0F172A).withValues(alpha: 0.5)
-                                : const Color(0xFFF8FAFC),
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(
-                              color: isDark ? Colors.white12 : const Color(0xFFE2E8F0),
+                          if (isMobile) ...[
+                            AppTextField(
+                              label: 'Expense Amount (₹) *',
+                              hintText: '0.00',
+                              prefixIcon: const Icon(Icons.currency_rupee, size: 18),
+                              controller: _amountController,
+                              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                              readOnly: isSaving,
+                              onChanged: (_) => setDialogState(() {}),
+                              validator: (val) {
+                                if (val == null || val.trim().isEmpty) {
+                                  return 'Expense amount is required';
+                                }
+                                final amt = double.tryParse(val.trim());
+                                if (amt == null || amt <= 0) {
+                                  return 'Amount must be greater than 0';
+                                }
+                                return null;
+                              },
                             ),
-                          ),
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Row(
-                                      children: [
-                                        Icon(
-                                          Icons.account_balance_wallet_outlined,
-                                          size: 13,
-                                          color: isDark ? Colors.white60 : const Color(0xFF64748B),
-                                        ),
-                                        const SizedBox(width: 4),
-                                        Expanded(
-                                          child: Text(
-                                            'Net Outflow',
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                            style: TextStyle(
-                                              fontSize: 11,
-                                              fontWeight: FontWeight.w600,
-                                              color: isDark ? Colors.white60 : const Color(0xFF64748B),
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      '₹${netExpense.toStringAsFixed(2)}',
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w700,
-                                        color: isDark ? const Color(0xFFF87171) : const Color(0xFFDC2626),
-                                      ),
-                                    ),
-                                  ],
+                            const SizedBox(height: AppSpacing.md),
+                            AppTextField(
+                              label: 'GST Tax Included (₹)',
+                              hintText: '0.00',
+                              prefixIcon: const Icon(Icons.percent_rounded, size: 18),
+                              controller: _gstController,
+                              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                              readOnly: isSaving,
+                              onChanged: (_) => setDialogState(() {}),
+                              validator: (val) {
+                                if (val != null && val.trim().isNotEmpty) {
+                                  final gst = double.tryParse(val.trim());
+                                  if (gst == null || gst < 0) {
+                                    return 'GST cannot be negative';
+                                  }
+                                  final amt = double.tryParse(_amountController.text.trim()) ?? 0.0;
+                                  if (amt > 0 && gst > amt) {
+                                    return 'GST cannot exceed expense amount';
+                                  }
+                                }
+                                return null;
+                              },
+                            ),
+                          ] else ...[
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: AppTextField(
+                                    label: 'Expense Amount (₹) *',
+                                    hintText: '0.00',
+                                    prefixIcon: const Icon(Icons.currency_rupee, size: 18),
+                                    controller: _amountController,
+                                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                    readOnly: isSaving,
+                                    onChanged: (_) => setDialogState(() {}),
+                                    validator: (val) {
+                                      if (val == null || val.trim().isEmpty) {
+                                        return 'Expense amount is required';
+                                      }
+                                      final amt = double.tryParse(val.trim());
+                                      if (amt == null || amt <= 0) {
+                                        return 'Amount must be greater than 0';
+                                      }
+                                      return null;
+                                    },
+                                  ),
                                 ),
-                              ),
-                              Container(
-                                width: 1,
-                                height: 28,
-                                margin: const EdgeInsets.symmetric(horizontal: 8),
+                                const SizedBox(width: AppSpacing.md),
+                                Expanded(
+                                  child: AppTextField(
+                                    label: 'GST Tax Included (₹)',
+                                    hintText: '0.00',
+                                    prefixIcon: const Icon(Icons.percent_rounded, size: 18),
+                                    controller: _gstController,
+                                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                    readOnly: isSaving,
+                                    onChanged: (_) => setDialogState(() {}),
+                                    validator: (val) {
+                                      if (val != null && val.trim().isNotEmpty) {
+                                        final gst = double.tryParse(val.trim());
+                                        if (gst == null || gst < 0) {
+                                          return 'GST cannot be negative';
+                                        }
+                                        final amt = double.tryParse(_amountController.text.trim()) ?? 0.0;
+                                        if (amt > 0 && gst > amt) {
+                                          return 'GST cannot exceed expense amount';
+                                        }
+                                      }
+                                      return null;
+                                    },
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                          const SizedBox(height: AppSpacing.sm),
+                          // Live Net Outflow breakdown card
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 10,
+                            ),
+                            decoration: BoxDecoration(
+                              color: isDark
+                                  ? const Color(0xFF0F172A).withValues(alpha: 0.5)
+                                  : const Color(0xFFF8FAFC),
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(
                                 color: isDark ? Colors.white12 : const Color(0xFFE2E8F0),
                               ),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Row(
-                                      children: [
-                                        Icon(
-                                          Icons.receipt_outlined,
-                                          size: 13,
-                                          color: isDark ? Colors.white60 : const Color(0xFF64748B),
-                                        ),
-                                        const SizedBox(width: 4),
-                                        Expanded(
-                                          child: Text(
-                                            'Tax Credit',
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                            style: TextStyle(
-                                              fontSize: 11,
-                                              fontWeight: FontWeight.w600,
-                                              color: isDark ? Colors.white60 : const Color(0xFF64748B),
+                            ),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          Icon(
+                                            Icons.account_balance_wallet_outlined,
+                                            size: 13,
+                                            color: isDark ? Colors.white60 : const Color(0xFF64748B),
+                                          ),
+                                          const SizedBox(width: 4),
+                                          Expanded(
+                                            child: Text(
+                                              'Net Outflow',
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: TextStyle(
+                                                fontSize: 11,
+                                                fontWeight: FontWeight.w600,
+                                                color: isDark ? Colors.white60 : const Color(0xFF64748B),
+                                              ),
                                             ),
                                           ),
-                                        ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      '₹${enteredGst.toStringAsFixed(2)}',
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w700,
-                                        color: isDark ? const Color(0xFF34D399) : const Color(0xFF059669),
+                                        ],
                                       ),
-                                    ),
-                                  ],
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        '₹${netExpense.toStringAsFixed(2)}',
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w700,
+                                          color: isDark ? const Color(0xFFF87171) : const Color(0xFFDC2626),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
-                              ),
-                            ],
+                                Container(
+                                  width: 1,
+                                  height: 28,
+                                  margin: const EdgeInsets.symmetric(horizontal: 8),
+                                  color: isDark ? Colors.white12 : const Color(0xFFE2E8F0),
+                                ),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          Icon(
+                                            Icons.receipt_outlined,
+                                            size: 13,
+                                            color: isDark ? Colors.white60 : const Color(0xFF64748B),
+                                          ),
+                                          const SizedBox(width: 4),
+                                          Expanded(
+                                            child: Text(
+                                              'Tax Credit',
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: TextStyle(
+                                                fontSize: 11,
+                                                fontWeight: FontWeight.w600,
+                                                color: isDark ? Colors.white60 : const Color(0xFF64748B),
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        '₹${enteredGst.toStringAsFixed(2)}',
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w700,
+                                          color: isDark ? const Color(0xFF34D399) : const Color(0xFF059669),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: AppSpacing.md),
-                        if (isMobile) ...[
-                          paymentModeField,
                           const SizedBox(height: AppSpacing.md),
-                          buildDatePickerField(),
-                        ] else ...[
-                          Row(
-                            children: [
-                              Expanded(child: paymentModeField),
-                              const SizedBox(width: AppSpacing.md),
-                              Expanded(child: buildDatePickerField()),
-                            ],
+                          if (isMobile) ...[
+                            paymentModeField,
+                            const SizedBox(height: AppSpacing.md),
+                            buildDatePickerField(),
+                          ] else ...[
+                            Row(
+                              children: [
+                                Expanded(child: paymentModeField),
+                                const SizedBox(width: AppSpacing.md),
+                                Expanded(child: buildDatePickerField()),
+                              ],
+                            ),
+                          ],
+                          const SizedBox(height: AppSpacing.md),
+                          AppTextField(
+                            label: 'Internal Notes',
+                            hintText: 'Add invoice number, reference or payment details...',
+                            prefixIcon: const Icon(Icons.notes_rounded, size: 20),
+                            controller: _notesController,
+                            maxLines: 2,
+                            readOnly: isSaving,
                           ),
                         ],
-                        const SizedBox(height: AppSpacing.md),
-                        AppTextField(
-                          label: 'Internal Notes',
-                          hintText: 'Add invoice number, reference or payment details...',
-                          prefixIcon: const Icon(Icons.notes_rounded, size: 20),
-                          controller: _notesController,
-                          maxLines: 2,
-                        ),
-                      ],
+                      ),
                     ),
                   ),
                 ),
-              ),
-              actionsPadding: isMobile
-                  ? const EdgeInsets.fromLTRB(16, 0, 16, 16)
-                  : const EdgeInsets.fromLTRB(24, 0, 24, 20),
-              actions: isMobile
-                  ? [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: AppButton(
+                actionsPadding: isMobile
+                    ? const EdgeInsets.fromLTRB(16, 0, 16, 16)
+                    : const EdgeInsets.fromLTRB(24, 0, 24, 20),
+                actions: isMobile
+                    ? [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: AppButton(
+                                label: 'Cancel',
+                                type: AppButtonType.secondary,
+                                onPressed: isSaving ? null : () => Navigator.pop(ctx),
+                              ),
+                            ),
+                            const SizedBox(width: AppSpacing.md),
+                            Expanded(
+                              child: AppButton(
+                                label: isSaving ? 'Saving...' : 'Save Expense',
+                                icon: isSaving ? null : Icons.check_circle_outline,
+                                isLoading: isSaving,
+                                onPressed: isSaving ? null : handleSaveExpense,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ]
+                    : [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            AppButton(
                               label: 'Cancel',
                               type: AppButtonType.secondary,
-                              onPressed: () => Navigator.pop(ctx),
+                              onPressed: isSaving ? null : () => Navigator.pop(ctx),
                             ),
-                          ),
-                          const SizedBox(width: AppSpacing.md),
-                          Expanded(
-                            child: AppButton(
-                              label: 'Save Expense',
-                              icon: Icons.check_circle_outline,
-                              onPressed: handleSaveExpense,
+                            const SizedBox(width: AppSpacing.md),
+                            AppButton(
+                              label: isSaving ? 'Saving...' : 'Save Expense',
+                              icon: isSaving ? null : Icons.check_circle_outline,
+                              isLoading: isSaving,
+                              onPressed: isSaving ? null : handleSaveExpense,
                             ),
-                          ),
-                        ],
-                      ),
-                    ]
-                  : [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          AppButton(
-                            label: 'Cancel',
-                            type: AppButtonType.secondary,
-                            onPressed: () => Navigator.pop(ctx),
-                          ),
-                          const SizedBox(width: AppSpacing.md),
-                          AppButton(
-                            label: 'Save Expense',
-                            icon: Icons.check_circle_outline,
-                            onPressed: handleSaveExpense,
-                          ),
-                        ],
-                      ),
-                    ],
+                          ],
+                        ),
+                      ],
+              ),
             );
           },
         );
@@ -780,6 +935,15 @@ class _ExpensePageState extends ConsumerState<ExpensePage> {
                     style: TextStyle(
                       fontSize: 12,
                       color: isDark ? Colors.white60 : const Color(0xFF64748B),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  InkWell(
+                    onTap: () => _handleDeleteExpense(exp.id),
+                    borderRadius: BorderRadius.circular(4),
+                    child: const Padding(
+                      padding: EdgeInsets.all(2),
+                      child: Icon(Icons.delete_outline, size: 16, color: Colors.red),
                     ),
                   ),
                 ],
@@ -882,99 +1046,175 @@ class _ExpensePageState extends ConsumerState<ExpensePage> {
 
   @override
   Widget build(BuildContext context) {
-    final billingState = ref.watch(billingRepositoryProvider);
-    final expenses = billingState.expenses;
+    final expenses = _apiExpenses;
 
-    // Filter categories
-    final totalExpensesSum = expenses.fold<double>(
-      0.0,
-      (sum, e) => sum + e.amount,
-    );
+    final totalExpensesSum = _summary?.totalRecordedExpenses ??
+        expenses.fold<double>(0.0, (sum, e) => sum + e.amount);
+    final totalGstSum = _summary?.totalGstClaimed ??
+        expenses.fold<double>(0.0, (sum, e) => sum + e.gst);
+    final netOutflowSum = _summary?.netCashOutflow ??
+        (totalExpensesSum - totalGstSum).clamp(0.0, double.infinity);
+
+    final isMobile = Responsive.isMobile(context);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Expenses')),
-      body: SingleChildScrollView(
-        padding: Responsive.isMobile(context)
-            ? const EdgeInsets.all(AppSpacing.md)
-            : const EdgeInsets.all(AppSpacing.lg),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            AppPageHeader(
-              title: 'Business Expenses',
-              description:
-                  'Record operating expenses (electricity, rent, packaging) to track cash outflows.',
-              breadcrumbs: const ['Dashboard', 'Expenses'],
-              actions: [
-                AppButton(
-                  label: 'Record Expense',
-                  icon: Icons.add_circle_outline,
-                  onPressed: _showAddExpenseDialog,
-                ),
-              ],
-            ),
-
-            // Top Stat card
-            AppMetricCard(
-              title: 'Total Recorded Operating Expenses',
-              value: '₹${totalExpensesSum.toStringAsFixed(2)}',
-              subtitle: 'Cash outflows excluding merchant inventory purchases',
-              icon: Icons.money_off_outlined,
-              iconColor: Colors.red,
-            ),
-
-            const SizedBox(height: AppSpacing.xl),
-
-            // Table of expenses
-            AppCard(
-              padding: EdgeInsets.zero,
-              child: AppTable<Expense>(
-                items: expenses,
-                emptyMessage:
-                    'No expenses recorded yet. Click Record Expense to log a cash outflow.',
-                mobileCardBuilder: _buildExpenseCard,
-                columns: [
-                  TableColumnSpec<Expense>(
-                    label: 'Date',
-                    cellBuilder: (e) =>
-                        Text('${e.date.day}/${e.date.month}/${e.date.year}'),
-                  ),
-                  TableColumnSpec<Expense>(
-                    label: 'Category',
-                    cellBuilder: (e) => Text(
-                      e.category,
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                  TableColumnSpec<Expense>(
-                    label: 'Vendor / Payee',
-                    flex: 2,
-                    cellBuilder: (e) => Text(e.vendor),
-                  ),
-                  TableColumnSpec<Expense>(
-                    label: 'Payment Mode',
-                    cellBuilder: (e) => Text(e.paymentMode),
-                  ),
-                  TableColumnSpec<Expense>(
-                    label: 'Tax Included (GST) (₹)',
-                    isNumeric: true,
-                    cellBuilder: (e) => Text('₹${e.gst.toStringAsFixed(2)}'),
-                  ),
-                  TableColumnSpec<Expense>(
-                    label: 'Total Amount (₹)',
-                    isNumeric: true,
-                    cellBuilder: (e) => Text(
-                      '₹${e.amount.toStringAsFixed(2)}',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.red,
-                      ),
-                    ),
+      appBar: AppBar(
+        title: const Text('Expenses'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh_rounded),
+            tooltip: 'Refresh',
+            onPressed: _loadExpenses,
+          ),
+        ],
+      ),
+      body: RefreshIndicator(
+        onRefresh: _loadExpenses,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: isMobile
+              ? const EdgeInsets.all(AppSpacing.md)
+              : const EdgeInsets.all(AppSpacing.lg),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              AppPageHeader(
+                title: 'Business Expenses',
+                description:
+                    'Record operating expenses (electricity, rent, packaging) to track cash outflows.',
+                breadcrumbs: const ['Dashboard', 'Expenses'],
+                actions: [
+                  AppButton(
+                    label: 'Record Expense',
+                    icon: Icons.add_circle_outline,
+                    onPressed: _showAddExpenseDialog,
                   ),
                 ],
               ),
-            ),
-          ],
+
+              // Metric Cards
+              if (isMobile) ...[
+                AppMetricCard(
+                  title: 'Total Operating Expenses',
+                  value: '₹${totalExpensesSum.toStringAsFixed(2)}',
+                  subtitle: 'Cash outflows excluding merchant inventory purchases',
+                  icon: Icons.money_off_outlined,
+                  iconColor: Colors.red,
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                AppMetricCard(
+                  title: 'Tax Credit Claimed (GST)',
+                  value: '₹${totalGstSum.toStringAsFixed(2)}',
+                  subtitle: 'Input Tax Credit eligible on expenses',
+                  icon: Icons.percent_rounded,
+                  iconColor: const Color(0xFF059669),
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                AppMetricCard(
+                  title: 'Net Cash Outflow',
+                  value: '₹${netOutflowSum.toStringAsFixed(2)}',
+                  subtitle: 'Net cost after tax credit deductions',
+                  icon: Icons.account_balance_wallet_outlined,
+                  iconColor: const Color(0xFF2563EB),
+                ),
+              ] else ...[
+                Row(
+                  children: [
+                    Expanded(
+                      child: AppMetricCard(
+                        title: 'Total Operating Expenses',
+                        value: '₹${totalExpensesSum.toStringAsFixed(2)}',
+                        subtitle: 'Cash outflows excluding merchant inventory purchases',
+                        icon: Icons.money_off_outlined,
+                        iconColor: Colors.red,
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.md),
+                    Expanded(
+                      child: AppMetricCard(
+                        title: 'Tax Credit Claimed (GST)',
+                        value: '₹${totalGstSum.toStringAsFixed(2)}',
+                        subtitle: 'Input Tax Credit eligible on expenses',
+                        icon: Icons.percent_rounded,
+                        iconColor: const Color(0xFF059669),
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.md),
+                    Expanded(
+                      child: AppMetricCard(
+                        title: 'Net Cash Outflow',
+                        value: '₹${netOutflowSum.toStringAsFixed(2)}',
+                        subtitle: 'Net cost after tax credit deductions',
+                        icon: Icons.account_balance_wallet_outlined,
+                        iconColor: const Color(0xFF2563EB),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+
+              const SizedBox(height: AppSpacing.xl),
+
+              // Table of expenses
+              AppCard(
+                padding: EdgeInsets.zero,
+                child: AppTable<Expense>(
+                  items: expenses,
+                  isLoading: _isLoading,
+                  emptyMessage:
+                      'No expenses recorded yet. Click Record Expense to log a cash outflow.',
+                  mobileCardBuilder: _buildExpenseCard,
+                  columns: [
+                    TableColumnSpec<Expense>(
+                      label: 'Date',
+                      cellBuilder: (e) =>
+                          Text('${e.date.day.toString().padLeft(2, '0')}/${e.date.month.toString().padLeft(2, '0')}/${e.date.year}'),
+                    ),
+                    TableColumnSpec<Expense>(
+                      label: 'Category',
+                      cellBuilder: (e) => Text(
+                        e.category,
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                    TableColumnSpec<Expense>(
+                      label: 'Vendor / Payee',
+                      flex: 2,
+                      cellBuilder: (e) => Text(e.vendor),
+                    ),
+                    TableColumnSpec<Expense>(
+                      label: 'Payment Mode',
+                      cellBuilder: (e) => Text(e.paymentMode),
+                    ),
+                    TableColumnSpec<Expense>(
+                      label: 'Tax Included (GST) (₹)',
+                      isNumeric: true,
+                      cellBuilder: (e) => Text('₹${e.gst.toStringAsFixed(2)}'),
+                    ),
+                    TableColumnSpec<Expense>(
+                      label: 'Total Amount (₹)',
+                      isNumeric: true,
+                      cellBuilder: (e) => Text(
+                        '₹${e.amount.toStringAsFixed(2)}',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.red,
+                        ),
+                      ),
+                    ),
+                    TableColumnSpec<Expense>(
+                      label: 'Actions',
+                      cellBuilder: (e) => IconButton(
+                        icon: const Icon(Icons.delete_outline, color: Colors.red, size: 18),
+                        tooltip: 'Delete Expense',
+                        onPressed: () => _handleDeleteExpense(e.id),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
