@@ -13,6 +13,8 @@ import '../../../business/presentation/providers/business_provider.dart';
 import '../../../customer/presentation/providers/customer_provider.dart';
 import '../../../dashboard/presentation/providers/billing_repository.dart';
 import '../../../inventory/presentation/providers/goods_warehouse_provider.dart';
+import '../../../product-listing/domain/utils/listed_catalog.dart';
+import '../../../product-listing/presentation/providers/product_listing_provider.dart';
 import '../../../purchase/presentation/providers/purchase_provider.dart';
 import '../../../service/presentation/providers/service_provider.dart';
 import '../../data/models/sales_return_dto.dart';
@@ -119,6 +121,7 @@ class _SaleReturnCreatePageState extends ConsumerState<SaleReturnCreatePage> {
   void _initForm() async {
     ref.read(customerProvider.notifier).loadCustomers();
     ref.read(purchaseProvider.notifier).loadProducts();
+    ref.read(productListingProvider.notifier).loadProducts();
     ref.read(serviceProvider.notifier).loadServices();
     ref.read(goodsWarehouseProvider.notifier).loadData();
     await ref.read(salesInvoiceNotifierProvider.notifier).refreshInvoices();
@@ -286,6 +289,15 @@ class _SaleReturnCreatePageState extends ConsumerState<SaleReturnCreatePage> {
       AppFeedback.showSnackbar(
         context,
         message: 'Please select a product or service!',
+        isError: true,
+      );
+      return;
+    }
+
+    if (_manualProduct != null && !isListedSellableProduct(_manualProduct!)) {
+      AppFeedback.showSnackbar(
+        context,
+        message: kProductNotListedSaleMessage,
         isError: true,
       );
       return;
@@ -559,6 +571,7 @@ class _SaleReturnCreatePageState extends ConsumerState<SaleReturnCreatePage> {
     final serviceState = ref.watch(serviceProvider);
     final warehouseState = ref.watch(goodsWarehouseProvider);
     final invoiceState = ref.watch(salesInvoiceNotifierProvider);
+    ref.watch(productListingProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final availableCustomers = _uniqueById<Customer>(
@@ -569,7 +582,7 @@ class _SaleReturnCreatePageState extends ConsumerState<SaleReturnCreatePage> {
     final availableProducts = _uniqueById<Product>(
       [...purchaseState.products, ...billingState.products],
       (p) => p.id,
-    );
+    ).where(isListedSellableProduct).toList();
     final availableServices = _uniqueById<Service>(
       [...serviceState.services, ...billingState.services],
       (s) => s.id,

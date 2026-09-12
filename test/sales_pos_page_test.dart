@@ -237,7 +237,7 @@ void main() {
 
     // Verify empty catalog view is displayed cleanly
     expect(find.text('No products in catalog'), findsOneWidget);
-    expect(find.text('Products added to the database will appear here'), findsOneWidget);
+    expect(find.text('List products in Product Listing to show them here for sale'), findsOneWidget);
 
     // Verify empty cart placeholder is shown
     expect(find.text('Current Bill is empty'), findsOneWidget);

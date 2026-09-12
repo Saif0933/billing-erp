@@ -6,6 +6,8 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/models/billing_models.dart';
 import '../../../../shared/widgets/feedback.dart';
 import '../../../customer/presentation/providers/customer_provider.dart';
+import '../../../product-listing/domain/utils/listed_catalog.dart';
+import '../../../product-listing/presentation/providers/product_listing_provider.dart';
 import '../models/sales_ui_models.dart';
 import '../providers/pos_provider.dart';
 import '../widgets/sales_category_bar.dart';
@@ -62,6 +64,7 @@ class _POSPageState extends ConsumerState<POSPage> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(customerProvider.notifier).loadCustomers();
+      ref.read(productListingProvider.notifier).loadProducts();
       _syncSalesBackend();
     });
   }
@@ -81,10 +84,13 @@ class _POSPageState extends ConsumerState<POSPage> {
     if (widget.initialProducts == null) {
       if (mounted) setState(() => _isLoadingProducts = true);
       try {
-        final dbProducts = await ref.read(posApiServiceProvider).getProducts(limit: 100);
+        final dbProducts = await ref.read(posApiServiceProvider).getProducts(limit: 200);
         if (mounted) {
           setState(() {
-            _products = dbProducts.map((p) => _mapToSalesProductItem(p)).toList();
+            _products = dbProducts
+                .where(isListedSellableProduct)
+                .map(_mapToSalesProductItem)
+                .toList();
             _isLoadingProducts = false;
           });
         }
@@ -277,35 +283,38 @@ class _POSPageState extends ConsumerState<POSPage> {
     final trimmed = barcode.trim();
     if (trimmed.isEmpty) return;
 
-    // Search in current in-memory products
     SalesProductItem? match;
     for (final p in _products) {
-      if (p.barcode == trimmed || p.sku.toLowerCase() == trimmed.toLowerCase()) {
+      if (p.barcode.trim().toUpperCase() == trimmed.toUpperCase() ||
+          p.sku.trim().toUpperCase() == trimmed.toUpperCase() ||
+          p.id.trim().toUpperCase() == trimmed.toUpperCase()) {
         match = p;
         break;
       }
     }
 
     if (match == null) {
-      for (final p in _products) {
-        if (p.name.toLowerCase().contains(trimmed.toLowerCase())) {
-          match = p;
-          break;
-        }
-      }
-    }
-
-    // Try backend live lookup if not found locally
-    if (match == null) {
       try {
         final product = await ref.read(posApiServiceProvider).scanBarcode(trimmed);
-        if (product != null) {
+        if (product != null && isListedSellableProduct(product)) {
           match = _mapToSalesProductItem(product);
           if (!_products.any((p) => p.id == match!.id)) {
             _products.add(match);
           }
         }
-      } catch (_) {}
+      } catch (_) {
+        match = null;
+      }
+    }
+
+    if (match == null && !looksLikeBarcode(trimmed)) {
+      final query = trimmed.toLowerCase();
+      for (final p in _products) {
+        if (p.name.toLowerCase().contains(query)) {
+          match = p;
+          break;
+        }
+      }
     }
 
     if (match != null) {
@@ -316,12 +325,16 @@ class _POSPageState extends ConsumerState<POSPage> {
         context,
         message: 'Scanned & added: ${match.name}',
       );
-    } else {
-      AppFeedback.showSnackbar(
-        context,
-        message: 'No product found for "$trimmed"',
-      );
+      return;
     }
+
+    _searchController.clear();
+    setState(() {});
+    AppFeedback.showSnackbar(
+      context,
+      message: productNotListedScanMessage(trimmed),
+      isError: true,
+    );
   }
 
   void _addProductToCart(SalesProductItem product) {
@@ -1073,7 +1086,7 @@ class _POSPageState extends ConsumerState<POSPage> {
           Text(
             isFiltered
                 ? 'Try searching for another keyword or change category'
-                : 'Products added to the database will appear here',
+                : 'List products in Product Listing to show them here for sale',
             style: const TextStyle(fontSize: 13, color: Color(0xFF6B7280)),
           ),
           if (isFiltered) ...[

@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/models/billing_models.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../dashboard/presentation/providers/billing_repository.dart';
+import '../../../product-listing/domain/utils/listed_catalog.dart';
 import '../../data/models/pos_dto.dart';
 import '../../data/services/pos_api_service.dart';
 
@@ -117,7 +118,9 @@ class PosNotifier extends StateNotifier<PosTerminalState> {
       final customersFuture = _apiService.getCustomers();
 
       final results = await Future.wait([productsFuture, customersFuture]);
-      final products = results[0] as List<Product>;
+      final products = (results[0] as List<Product>)
+          .where(isListedSellableProduct)
+          .toList();
       final customers = results[1] as List<Customer>;
 
       state = state.copyWith(
@@ -126,10 +129,9 @@ class PosNotifier extends StateNotifier<PosTerminalState> {
         isLoading: false,
       );
     } catch (e) {
-      // Graceful fallback to repository state if offline
       final billingState = _ref.read(billingRepositoryProvider);
       state = state.copyWith(
-        products: billingState.products,
+        products: billingState.products.where(isListedSellableProduct).toList(),
         customers: billingState.customers,
         isLoading: false,
         error: e.toString(),
@@ -186,64 +188,56 @@ class PosNotifier extends StateNotifier<PosTerminalState> {
     }
   }
 
-  /// 5. Barcode scan add to cart
+  /// 5. Barcode scan add to cart — only listed products can be sold.
   Future<bool> scanBarcodeAndAdd(String barcode) async {
     final clean = barcode.trim();
     if (clean.isEmpty) return false;
 
     try {
       final product = await _apiService.scanBarcode(clean);
-      if (product != null) {
+      if (product != null && isListedSellableProduct(product)) {
         addProductToCart(product);
+        state = state.copyWith(clearError: true);
         return true;
       }
-    } catch (_) {}
+    } catch (e) {
+      final localMatch = _findListedProductByCode(clean);
+      if (localMatch != null) {
+        addProductToCart(localMatch);
+        state = state.copyWith(clearError: true);
+        return true;
+      }
+      state = state.copyWith(error: productNotListedScanMessage(clean));
+      return false;
+    }
 
-    // Fallback search in local list with case-insensitive barcode, SKU, or code match
-    final cleanUpper = clean.toUpperCase();
-    final localMatch = state.products.where((p) {
-      return p.barcode.trim().toUpperCase() == cleanUpper ||
-          p.sku.trim().toUpperCase() == cleanUpper ||
-          p.code.trim().toUpperCase() == cleanUpper ||
-          p.id.trim().toUpperCase() == cleanUpper;
-    }).toList();
-
-    if (localMatch.isNotEmpty) {
-      addProductToCart(localMatch.first);
+    final localMatch = _findListedProductByCode(clean);
+    if (localMatch != null) {
+      addProductToCart(localMatch);
+      state = state.copyWith(clearError: true);
       return true;
     }
 
-    // Dynamic auto-provision for scanned physical items so billing is never blocked
-    final autoProduct = Product(
-      id: 'pos_scan_${DateTime.now().millisecondsSinceEpoch}',
-      name: 'Item #$clean',
-      code: clean,
-      sku: 'SKU-${clean.length > 6 ? clean.substring(clean.length - 6) : clean}',
-      barcode: clean,
-      hsnCode: '0000',
-      primaryUnit: 'PCS',
-      secondaryUnit: '',
-      gstRate: 18.0,
-      purchasePrice: 40.00,
-      sellingPrice: 50.00,
-      mrp: 60.00,
-      wholesalePrice: 45.00,
-      minStockLevel: 5.0,
-      openingStock: 100.0,
-      currentStock: 100.0,
-      batchNumber: '',
-      expiryDate: '',
-      serialNumber: '',
-      category: 'General',
-      brand: '',
-      isActive: true,
-    );
-    addProductToCart(autoProduct);
-    return true;
+    state = state.copyWith(error: productNotListedScanMessage(clean));
+    return false;
   }
 
-  /// 6. Cart item modifications
+  Product? _findListedProductByCode(String code) {
+    for (final product in state.products) {
+      if (isListedSellableProduct(product) &&
+          billingProductMatchesCode(product, code)) {
+        return product;
+      }
+    }
+    return null;
+  }
+
+  /// 6. Cart item modifications — only listed products can be sold.
   void addProductToCart(Product p) {
+    if (!isListedSellableProduct(p)) {
+      state = state.copyWith(error: kProductNotListedSaleMessage);
+      return;
+    }
     final existingIdx = state.cartItems.indexWhere((item) => item.productId == p.id);
     if (existingIdx != -1) {
       final existingItem = state.cartItems[existingIdx];

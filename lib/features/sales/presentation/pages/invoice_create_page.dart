@@ -13,6 +13,8 @@ import '../../../../shared/widgets/feedback.dart';
 import '../../../business/presentation/providers/business_provider.dart';
 import '../../../customer/presentation/providers/customer_provider.dart';
 import '../../../dashboard/presentation/providers/billing_repository.dart';
+import '../../../product-listing/domain/utils/listed_catalog.dart';
+import '../../../product-listing/presentation/providers/product_listing_provider.dart';
 import '../../../purchase/presentation/providers/purchase_provider.dart';
 import '../providers/sales_invoice_provider.dart';
 
@@ -56,6 +58,7 @@ class _InvoiceCreatePageState extends ConsumerState<InvoiceCreatePage> {
       _initInvoiceNo();
       ref.read(customerProvider.notifier).loadCustomers();
       ref.read(purchaseProvider.notifier).loadProducts();
+      ref.read(productListingProvider.notifier).loadProducts();
     });
   }
 
@@ -174,6 +177,16 @@ class _InvoiceCreatePageState extends ConsumerState<InvoiceCreatePage> {
       AppFeedback.showSnackbar(
         context,
         message: 'Please select an item first!',
+        isError: true,
+      );
+      return;
+    }
+
+    if (_selectedProduct != null &&
+        !isListedSellableProduct(_selectedProduct!)) {
+      AppFeedback.showSnackbar(
+        context,
+        message: kProductNotListedSaleMessage,
         isError: true,
       );
       return;
@@ -360,6 +373,7 @@ class _InvoiceCreatePageState extends ConsumerState<InvoiceCreatePage> {
     final billingState = ref.watch(billingRepositoryProvider);
     final customerState = ref.watch(customerProvider);
     final purchaseState = ref.watch(purchaseProvider);
+    ref.watch(productListingProvider);
 
     final availableCustomers = _uniqueById<Customer>(
       [...customerState.customers, ...billingState.customers],
@@ -372,7 +386,7 @@ class _InvoiceCreatePageState extends ConsumerState<InvoiceCreatePage> {
         ...billingState.products,
       ],
       (p) => p.id,
-    ).where((p) => p.isActive).toList();
+    ).where(isListedSellableProduct).toList();
 
     final availableServices = _uniqueById<Service>(
       billingState.services,

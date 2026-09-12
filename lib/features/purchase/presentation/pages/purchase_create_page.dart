@@ -11,6 +11,8 @@ import '../../../../shared/widgets/app_input_fields.dart';
 import '../../../../shared/widgets/app_table.dart';
 import '../../../../shared/widgets/feedback.dart';
 import '../../../business/presentation/providers/business_provider.dart';
+import '../../../product-listing/domain/utils/listed_catalog.dart';
+import '../../../product-listing/presentation/providers/product_listing_provider.dart';
 import '../../../supplier/presentation/providers/supplier_provider.dart';
 import '../providers/purchase_provider.dart';
 
@@ -59,6 +61,7 @@ class _PurchaseCreatePageState extends ConsumerState<PurchaseCreatePage> {
       _initPurchaseNo();
       ref.read(supplierProvider.notifier).loadSuppliers();
       ref.read(purchaseProvider.notifier).loadProducts();
+      ref.read(productListingProvider.notifier).loadProducts();
       ref.read(purchaseProvider.notifier).loadCategories();
       ref.read(purchaseProvider.notifier).loadPurchases();
     });
@@ -182,14 +185,17 @@ class _PurchaseCreatePageState extends ConsumerState<PurchaseCreatePage> {
     try {
       Product? product = _selectedProduct;
 
-      // Match typed name to an existing product if user typed manually
+      // Match typed name / barcode / SKU to an existing listed product
       if (product == null ||
           product.name.trim().toLowerCase() != productName.toLowerCase()) {
         final products = ref.read(purchaseProvider).products;
         Product? match;
         for (final p in products) {
+          if (!isListedSellableProduct(p)) continue;
           if (p.name.toLowerCase() == productName.toLowerCase() ||
-              p.code.toLowerCase() == productName.toLowerCase()) {
+              p.code.toLowerCase() == productName.toLowerCase() ||
+              p.sku.toLowerCase() == productName.toLowerCase() ||
+              p.barcode.toLowerCase() == productName.toLowerCase()) {
             match = p;
             break;
           }
@@ -197,20 +203,17 @@ class _PurchaseCreatePageState extends ConsumerState<PurchaseCreatePage> {
         product = match;
       }
 
-      // Create product on the fly when typed name is new
-      if (product == null) {
-        product = await ref.read(purchaseProvider.notifier).createProductFromPurchase(
-              name: productName,
-              category: _categoryController.text.trim().isEmpty
-                  ? 'General'
-                  : _categoryController.text.trim(),
-              subCategory: _subCategoryController.text.trim().isEmpty
-                  ? null
-                  : _subCategoryController.text.trim(),
-              purchasePrice: double.tryParse(_rateController.text) ?? 0,
-              sellingPrice: double.tryParse(_rateController.text) ?? 0,
-              primaryUnit: 'PCS',
-            );
+      if (product == null || !isListedSellableProduct(product)) {
+        if (mounted) {
+          AppFeedback.showSnackbar(
+            context,
+            message: looksLikeBarcode(productName)
+                ? productNotListedScanMessage(productName)
+                : kProductNotListedPurchaseMessage,
+            isError: true,
+          );
+        }
+        return;
       }
 
       final double qty = double.tryParse(_quantityController.text) ?? 1.0;
@@ -1517,7 +1520,7 @@ class _PurchaseCreatePageState extends ConsumerState<PurchaseCreatePage> {
             final category = _categoryController.text.trim().toLowerCase();
             final subCategory = _subCategoryController.text.trim().toLowerCase();
             final all = ref.read(purchaseProvider).products.where((p) {
-              if (!p.isActive) return false;
+              if (!isListedSellableProduct(p)) return false;
               if (category.isNotEmpty &&
                   !p.category.toLowerCase().contains(category)) {
                 return false;
@@ -1538,7 +1541,7 @@ class _PurchaseCreatePageState extends ConsumerState<PurchaseCreatePage> {
           fieldViewBuilder: (context, textController, fieldFocusNode, onSubmit) {
             return AppTextField(
               label: 'Select Product *',
-              hintText: 'Type product name / code (manual entry allowed)',
+              hintText: 'Type listed product name / barcode',
               controller: textController,
               focusNode: fieldFocusNode,
               onChanged: (val) {
@@ -1576,13 +1579,13 @@ class _PurchaseCreatePageState extends ConsumerState<PurchaseCreatePage> {
                     constraints: BoxConstraints(maxWidth: constraints.maxWidth),
                     child: ListTile(
                       dense: true,
-                      leading: const Icon(Icons.add_circle_outline, size: 18),
+                      leading: const Icon(Icons.info_outline, size: 18),
                       title: Text(
-                        'New product: "$typed"',
+                        'Not listed: "$typed"',
                         style: const TextStyle(fontSize: 13),
                       ),
                       subtitle: const Text(
-                        'Will be created when you tap Add Item',
+                        'Add this product in Product Listing first',
                         style: TextStyle(fontSize: 11),
                       ),
                     ),

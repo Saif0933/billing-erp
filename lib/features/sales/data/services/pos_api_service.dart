@@ -49,20 +49,16 @@ class PosApiService {
         .toList();
   }
 
-  /// 2. Fast barcode scan lookup
+  /// 2. Fast barcode scan lookup against listed products only.
   Future<Product?> scanBarcode(String barcode) async {
-    try {
-      final response = await _apiClient.get(
-        '${ApiEndpoints.posScan}/${Uri.encodeComponent(barcode.trim())}',
-      );
-      final data = response.data as Map<String, dynamic>;
-      final payload = (data['data'] as Map<String, dynamic>?) ?? data;
-      final productRaw = payload['product'] as Map<String, dynamic>? ?? payload;
+    final response = await _apiClient.get(
+      '${ApiEndpoints.posScan}/${Uri.encodeComponent(barcode.trim())}',
+    );
+    final data = response.data as Map<String, dynamic>;
+    final payload = (data['data'] as Map<String, dynamic>?) ?? data;
+    final productRaw = payload['product'] as Map<String, dynamic>? ?? payload;
 
-      return PosProductDto.fromJson(productRaw).toDomain();
-    } catch (_) {
-      return null;
-    }
+    return PosProductDto.fromJson(productRaw).toDomain();
   }
 
   /// 3. Search & Fetch Customers for POS
