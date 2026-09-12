@@ -74,12 +74,17 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
       body: LayoutBuilder(
         builder: (context, constraints) {
           final width = constraints.maxWidth;
-          final isDesktop = width >= 1200;
-          final isTablet = width >= 768 && width < 1200;
-          final isMobile = width < 768;
+          final isDesktop = width >= 960;
+          final isTablet = width >= 600 && width < 960;
+          final isMobile = width < 600;
+
+          final double hPadding = isMobile ? 12 : (isTablet ? 16 : 24);
+          final double contentWidth = width - (hPadding * 2);
+          final double bannerWidth =
+              isDesktop ? ((contentWidth - 16) * 0.7) : contentWidth;
 
           return SingleChildScrollView(
-            padding: EdgeInsets.all(isMobile ? 12 : (isTablet ? 18 : 24)),
+            padding: EdgeInsets.all(hPadding),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -88,7 +93,10 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(flex: 7, child: _buildGreetingBanner(bizName)),
+                      Expanded(
+                        flex: 7,
+                        child: _buildGreetingBanner(bizName, bannerWidth),
+                      ),
                       const SizedBox(width: 16),
                       Expanded(flex: 3, child: _buildLiveClockCard()),
                     ],
@@ -97,7 +105,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      _buildGreetingBanner(bizName),
+                      _buildGreetingBanner(bizName, bannerWidth),
                       const SizedBox(height: 14),
                       _buildLiveClockCard(),
                     ],
@@ -106,22 +114,22 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                 const SizedBox(height: 18),
 
                 // 2. Financial KPI Metric Cards (4 Cards)
-                _buildKpiSection(width, billingState),
+                _buildKpiSection(contentWidth, billingState),
 
                 const SizedBox(height: 18),
 
                 // 3. Middle Section: Trend Chart + Cash & Bank + Inventory Summary
-                _buildMiddleSection(width, billingState),
+                _buildMiddleSection(contentWidth, billingState),
 
                 const SizedBox(height: 18),
 
                 // 4. Quick Actions Section
-                _buildQuickActions(width),
+                _buildQuickActions(contentWidth),
 
                 const SizedBox(height: 18),
 
                 // 5. Bottom Section: Recent Sales + Recent Purchases + Reminders & Insights
-                _buildBottomSection(width, billingState),
+                _buildBottomSection(contentWidth, billingState),
 
                 const SizedBox(height: 24),
               ],
@@ -136,7 +144,10 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
   // 1. GREETING BANNER & CLOCK
   // ==========================================
 
-  Widget _buildGreetingBanner(String businessName) {
+  Widget _buildGreetingBanner(String businessName, double bannerWidth) {
+    final isCompact = bannerWidth < 600;
+    final isNarrowScreen = bannerWidth < 420;
+
     return Container(
       constraints: const BoxConstraints(minHeight: 180),
       decoration: BoxDecoration(
@@ -180,111 +191,108 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
             ),
 
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  final isCompact = constraints.maxWidth < 600;
-
-                  return Row(
-                    children: [
-                      // Text Info
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisAlignment: MainAxisAlignment.center,
+              padding: EdgeInsets.symmetric(
+                horizontal: isNarrowScreen ? 16 : 24,
+                vertical: isNarrowScreen ? 16 : 20,
+              ),
+              child: Row(
+                children: [
+                  // Text Info
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          'Good Morning,',
+                          style: TextStyle(
+                            fontSize: 14.5,
+                            fontWeight: FontWeight.w600,
+                            color: _isDark
+                                ? const Color(0xFF6EE7B7)
+                                : const Color(0xFF064E3B),
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Row(
                           children: [
-                            Text(
-                              'Good Morning,',
-                              style: TextStyle(
-                                fontSize: 14.5,
-                                fontWeight: FontWeight.w600,
-                                color: _isDark
-                                    ? const Color(0xFF6EE7B7)
-                                    : const Color(0xFF064E3B),
+                            Flexible(
+                              child: Text(
+                                businessName,
+                                style: TextStyle(
+                                  fontSize: isCompact ? 19 : 24,
+                                  fontWeight: FontWeight.w900,
+                                  color: _isDark
+                                      ? Colors.white
+                                      : const Color(0xFF064E3B),
+                                  letterSpacing: -0.5,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
                             ),
-                            const SizedBox(height: 4),
-                            Row(
-                              children: [
-                                Flexible(
-                                  child: Text(
-                                    businessName,
-                                    style: TextStyle(
-                                      fontSize: isCompact ? 19 : 24,
-                                      fontWeight: FontWeight.w900,
-                                      color: _isDark
-                                          ? Colors.white
-                                          : const Color(0xFF064E3B),
-                                      letterSpacing: -0.5,
-                                    ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                                const SizedBox(width: 6),
-                                const Text(
-                                  '👋',
-                                  style: TextStyle(fontSize: 22),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 6),
-                            Text(
-                              'Manage your business smarter, faster and easier.',
-                              style: TextStyle(
-                                fontSize: 12.5,
-                                color: _isDark
-                                    ? const Color(0xFFA7F3D0)
-                                    : const Color(0xFF047857),
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-
-                            // Feature Badges
-                            Wrap(
-                              spacing: 8,
-                              runSpacing: 6,
-                              children: [
-                                _buildFeaturePill(
-                                  Icons.description_outlined,
-                                  'Billing',
-                                  '/sales',
-                                ),
-                                _buildFeaturePill(
-                                  Icons.inventory_2_outlined,
-                                  'Inventory',
-                                  '/inventory',
-                                ),
-                                _buildFeaturePill(
-                                  Icons.people_outline,
-                                  'Customers',
-                                  '/customers',
-                                ),
-                                _buildFeaturePill(
-                                  Icons.bar_chart_outlined,
-                                  'Reports',
-                                  '/reports',
-                                ),
-                                _buildFeaturePill(
-                                  Icons.verified_user_outlined,
-                                  'GST Compliant',
-                                  '/gst',
-                                ),
-                              ],
+                            const SizedBox(width: 6),
+                            const Text(
+                              '👋',
+                              style: TextStyle(fontSize: 22),
                             ),
                           ],
                         ),
-                      ),
+                        const SizedBox(height: 6),
+                        Text(
+                          'Manage your business smarter, faster and easier.',
+                          style: TextStyle(
+                            fontSize: 12.5,
+                            color: _isDark
+                                ? const Color(0xFFA7F3D0)
+                                : const Color(0xFF047857),
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
 
-                      // Storefront 3D Graphic
-                      if (!isCompact) ...[
-                        const SizedBox(width: 16),
-                        _buildStorefrontIllustration(),
+                        // Feature Badges
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 6,
+                          children: [
+                            _buildFeaturePill(
+                              Icons.description_outlined,
+                              'Billing',
+                              '/sales',
+                            ),
+                            _buildFeaturePill(
+                              Icons.inventory_2_outlined,
+                              'Inventory',
+                              '/inventory',
+                            ),
+                            _buildFeaturePill(
+                              Icons.people_outline,
+                              'Customers',
+                              '/customers',
+                            ),
+                            _buildFeaturePill(
+                              Icons.bar_chart_outlined,
+                              'Reports',
+                              '/reports',
+                            ),
+                            _buildFeaturePill(
+                              Icons.verified_user_outlined,
+                              'GST Compliant',
+                              '/gst',
+                            ),
+                          ],
+                        ),
                       ],
-                    ],
-                  );
-                },
+                    ),
+                  ),
+
+                  // Storefront 3D Graphic
+                  if (!isCompact) ...[
+                    const SizedBox(width: 16),
+                    _buildStorefrontIllustration(),
+                  ],
+                ],
               ),
             ),
           ],
@@ -611,24 +619,31 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: [
-                  const Icon(
-                    Icons.wb_sunny_outlined,
-                    size: 15,
-                    color: Color(0xFFF59E0B),
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    'Have a productive day!',
-                    style: TextStyle(
-                      fontSize: 11.5,
-                      fontWeight: FontWeight.w500,
-                      color: _textMuted,
+              Expanded(
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.wb_sunny_outlined,
+                      size: 15,
+                      color: Color(0xFFF59E0B),
                     ),
-                  ),
-                ],
+                    const SizedBox(width: 6),
+                    Flexible(
+                      child: Text(
+                        'Have a productive day!',
+                        style: TextStyle(
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w500,
+                          color: _textMuted,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
               ),
+              const SizedBox(width: 8),
 
               // Mini Translucent Green Bar Chart Graphic
               Row(
@@ -665,7 +680,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
   // 2. FINANCIAL KPI CARDS
   // ==========================================
 
-  Widget _buildKpiSection(double screenWidth, BillingState billingState) {
+  Widget _buildKpiSection(double contentWidth, BillingState billingState) {
     // Dynamic values with graceful fallbacks matching the exact design
     final salesTotal = billingState.invoices.isNotEmpty
         ? billingState.invoices.fold<double>(
@@ -729,7 +744,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
       ),
     ];
 
-    if (screenWidth >= 1100) {
+    if (contentWidth >= 1100) {
       return Row(
         children: cards
             .map(
@@ -744,20 +759,24 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
       );
     }
 
-    if (screenWidth >= 650) {
-      final w = (screenWidth - 48 - 12) / 2;
+    if (contentWidth >= 640) {
+      final itemW = (contentWidth - 12) / 2;
       return Wrap(
         spacing: 12,
         runSpacing: 12,
-        children: cards.map((c) => SizedBox(width: w, child: c)).toList(),
+        children: cards
+            .map((c) => SizedBox(width: itemW, child: c))
+            .toList(),
       );
     }
 
     return Column(
       children: cards
           .map(
-            (c) =>
-                Padding(padding: const EdgeInsets.only(bottom: 10), child: c),
+            (c) => Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: c,
+            ),
           )
           .toList(),
     );
@@ -806,15 +825,22 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                     fontWeight: FontWeight.w600,
                     color: _textSecondary,
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 6),
-                Text(
-                  value,
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w900,
-                    color: _textPrimary,
-                    letterSpacing: -0.4,
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    value,
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w900,
+                      color: _textPrimary,
+                      letterSpacing: -0.4,
+                    ),
+                    maxLines: 1,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -824,6 +850,8 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                     fontSize: 11,
                     color: _textMuted,
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),
@@ -875,12 +903,12 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
   // 3. MIDDLE SECTION (TREND CHART + CASH & BANK + INVENTORY)
   // ==========================================
 
-  Widget _buildMiddleSection(double screenWidth, BillingState billingState) {
+  Widget _buildMiddleSection(double contentWidth, BillingState billingState) {
     final trendWidget = _buildSalesPurchaseTrendCard();
     final bankWidget = _buildCashAndBankCard(billingState);
     final inventoryWidget = _buildInventorySummaryCard();
 
-    if (screenWidth >= 1250) {
+    if (contentWidth >= 1200) {
       return Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -893,7 +921,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
       );
     }
 
-    if (screenWidth >= 800) {
+    if (contentWidth >= 768) {
       return Column(
         children: [
           trendWidget,
@@ -924,9 +952,9 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
   Widget _buildSalesPurchaseTrendCard() {
     return LayoutBuilder(
       builder: (context, outerConstraints) {
-        final isNarrow = outerConstraints.maxWidth < 530;
+        final isNarrow = outerConstraints.maxWidth < 620;
         return Container(
-          height: isNarrow ? 365 : 330,
+          height: isNarrow ? 375 : 330,
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
             color: _cardBg,
@@ -958,16 +986,17 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                     ],
                   );
 
-                  final legendAndFilter = Row(
-                    mainAxisSize: isNarrow
-                        ? MainAxisSize.max
-                        : MainAxisSize.min,
-                    mainAxisAlignment: isNarrow
-                        ? MainAxisAlignment.spaceBetween
-                        : MainAxisAlignment.start,
+                  final legendAndFilter = Wrap(
+                    spacing: 12,
+                    runSpacing: 8,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    alignment: isNarrow
+                        ? WrapAlignment.spaceBetween
+                        : WrapAlignment.start,
                     children: [
                       // Legend: Sales
                       Row(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
                           const CircleAvatar(
                             radius: 4,
@@ -983,10 +1012,10 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                           ),
                         ],
                       ),
-                      const SizedBox(width: 12),
 
                       // Legend: Purchases
                       Row(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
                           const CircleAvatar(
                             radius: 4,
@@ -1161,7 +1190,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                         sideTitles: SideTitles(
                           showTitles: true,
                           reservedSize: 22,
-                          interval: 1,
+                          interval: outerConstraints.maxWidth < 460 ? 2 : 1,
                           getTitlesWidget: (value, meta) {
                             const months = [
                               'Jan',
@@ -1179,6 +1208,9 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                             ];
                             final index = value.toInt();
                             if (index >= 0 && index < months.length) {
+                              if (outerConstraints.maxWidth < 460 && index % 2 != 0) {
+                                return const SizedBox();
+                              }
                               return Text(
                                 months[index],
                                 style: const TextStyle(
@@ -1315,31 +1347,38 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(7),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF10B981).withValues(alpha: 0.15),
-                      shape: BoxShape.circle,
+              Expanded(
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(7),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF10B981).withValues(alpha: 0.15),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.account_balance_outlined,
+                        size: 16,
+                        color: Color(0xFF10B981),
+                      ),
                     ),
-                    child: const Icon(
-                      Icons.account_balance_outlined,
-                      size: 16,
-                      color: Color(0xFF10B981),
+                    const SizedBox(width: 8),
+                    Flexible(
+                      child: Text(
+                        'Cash & Bank Balance',
+                        style: TextStyle(
+                          fontSize: 13.5,
+                          fontWeight: FontWeight.w800,
+                          color: _textPrimary,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Cash & Bank Balance',
-                    style: TextStyle(
-                      fontSize: 13.5,
-                      fontWeight: FontWeight.w800,
-                      color: _textPrimary,
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
+              const SizedBox(width: 8),
               InkWell(
                 onTap: () => context.push('/accounting/bank-management'),
                 child: const Text(
@@ -1356,13 +1395,17 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
           const SizedBox(height: 12),
 
           // Total Balance Big Typography
-          const Text(
-            '₹ 1,73,500.00',
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.w900,
-              color: Color(0xFF10B981),
-              letterSpacing: -0.5,
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: const Text(
+              '₹ 1,73,500.00',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.w900,
+                color: Color(0xFF10B981),
+                letterSpacing: -0.5,
+              ),
             ),
           ),
           const SizedBox(height: 18),
@@ -1428,14 +1471,20 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                   fontWeight: FontWeight.w600,
                   color: _textPrimary,
                 ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
             ),
-            Text(
-              amount,
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w800,
-                color: _textPrimary,
+            const SizedBox(width: 8),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                amount,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w800,
+                  color: _textPrimary,
+                ),
               ),
             ),
           ],
@@ -1461,31 +1510,38 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(7),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF8B5CF6).withValues(alpha: 0.15),
-                      shape: BoxShape.circle,
+              Expanded(
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(7),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF8B5CF6).withValues(alpha: 0.15),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.inventory_2_outlined,
+                        size: 16,
+                        color: Color(0xFF8B5CF6),
+                      ),
                     ),
-                    child: const Icon(
-                      Icons.inventory_2_outlined,
-                      size: 16,
-                      color: Color(0xFF8B5CF6),
+                    const SizedBox(width: 8),
+                    Flexible(
+                      child: Text(
+                        'Inventory Summary',
+                        style: TextStyle(
+                          fontSize: 13.5,
+                          fontWeight: FontWeight.w800,
+                          color: _textPrimary,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Inventory Summary',
-                    style: TextStyle(
-                      fontSize: 13.5,
-                      fontWeight: FontWeight.w800,
-                      color: _textPrimary,
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
+              const SizedBox(width: 8),
               InkWell(
                 onTap: () => context.push('/inventory'),
                 child: const Text(
@@ -1503,94 +1559,102 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
 
           // Donut Chart + Legend Row
           Expanded(
-            child: Row(
-              children: [
-                // Donut PieChart with center text
-                Expanded(
-                  flex: 5,
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      PieChart(
-                        PieChartData(
-                          sectionsSpace: 3,
-                          centerSpaceRadius: 46,
-                          startDegreeOffset: -90,
-                          sections: [
-                            PieChartSectionData(
-                              value: 186,
-                              color: const Color(0xFF10B981),
-                              radius: 18,
-                              showTitle: false,
-                            ),
-                            PieChartSectionData(
-                              value: 42,
-                              color: const Color(0xFFF59E0B),
-                              radius: 18,
-                              showTitle: false,
-                            ),
-                            PieChartSectionData(
-                              value: 20,
-                              color: const Color(0xFFEF4444),
-                              radius: 18,
-                              showTitle: false,
-                            ),
-                          ],
-                        ),
-                      ),
-                      Column(
-                        mainAxisSize: MainAxisSize.min,
+            child: LayoutBuilder(
+              builder: (context, invConstraints) {
+                final isCompact = invConstraints.maxWidth < 320;
+                final centerRadius = isCompact ? 36.0 : 46.0;
+                final sectionRadius = isCompact ? 14.0 : 18.0;
+
+                return Row(
+                  children: [
+                    // Donut PieChart with center text
+                    Expanded(
+                      flex: 5,
+                      child: Stack(
+                        alignment: Alignment.center,
                         children: [
-                          Text(
-                            '248',
-                            style: TextStyle(
-                              fontSize: 22,
-                              fontWeight: FontWeight.w900,
-                              color: _textPrimary,
+                          PieChart(
+                            PieChartData(
+                              sectionsSpace: 3,
+                              centerSpaceRadius: centerRadius,
+                              startDegreeOffset: -90,
+                              sections: [
+                                PieChartSectionData(
+                                  value: 186,
+                                  color: const Color(0xFF10B981),
+                                  radius: sectionRadius,
+                                  showTitle: false,
+                                ),
+                                PieChartSectionData(
+                                  value: 42,
+                                  color: const Color(0xFFF59E0B),
+                                  radius: sectionRadius,
+                                  showTitle: false,
+                                ),
+                                PieChartSectionData(
+                                  value: 20,
+                                  color: const Color(0xFFEF4444),
+                                  radius: sectionRadius,
+                                  showTitle: false,
+                                ),
+                              ],
                             ),
                           ),
-                          Text(
-                            'Total Items',
-                            style: TextStyle(
-                              fontSize: 10,
-                              color: _textMuted,
-                            ),
+                          Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                '248',
+                                style: TextStyle(
+                                  fontSize: isCompact ? 18 : 22,
+                                  fontWeight: FontWeight.w900,
+                                  color: _textPrimary,
+                                ),
+                              ),
+                              Text(
+                                'Total Items',
+                                style: TextStyle(
+                                  fontSize: isCompact ? 9 : 10,
+                                  color: _textMuted,
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 14),
+                    ),
+                    const SizedBox(width: 14),
 
-                // Legend
-                Expanded(
-                  flex: 5,
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildInventoryLegendItem(
-                        color: const Color(0xFF10B981),
-                        label: 'In Stock',
-                        count: '186',
+                    // Legend
+                    Expanded(
+                      flex: 5,
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildInventoryLegendItem(
+                            color: const Color(0xFF10B981),
+                            label: 'In Stock',
+                            count: '186',
+                          ),
+                          const SizedBox(height: 14),
+                          _buildInventoryLegendItem(
+                            color: const Color(0xFFF59E0B),
+                            label: 'Low Stock',
+                            count: '42',
+                          ),
+                          const SizedBox(height: 14),
+                          _buildInventoryLegendItem(
+                            color: const Color(0xFFEF4444),
+                            label: 'Out of Stock',
+                            count: '20',
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 14),
-                      _buildInventoryLegendItem(
-                        color: const Color(0xFFF59E0B),
-                        label: 'Low Stock',
-                        count: '42',
-                      ),
-                      const SizedBox(height: 14),
-                      _buildInventoryLegendItem(
-                        color: const Color(0xFFEF4444),
-                        label: 'Out of Stock',
-                        count: '20',
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+                    ),
+                  ],
+                );
+              },
             ),
           ),
         ],
@@ -1632,7 +1696,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
   // 4. QUICK ACTIONS SECTION
   // ==========================================
 
-  Widget _buildQuickActions(double screenWidth) {
+  Widget _buildQuickActions(double contentWidth) {
     final actions = [
       _ActionItem(
         title: 'Create Invoice',
@@ -1699,39 +1763,42 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
         const SizedBox(height: 12),
 
         // Action Buttons Row or Wrap
-        LayoutBuilder(
-          builder: (context, constraints) {
-            final w = constraints.maxWidth;
-            if (w >= 1050) {
-              return Row(
+        if (contentWidth >= 1100)
+          Row(
+            children: actions
+                .map(
+                  (item) => Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 5),
+                      child: _buildActionButton(item),
+                    ),
+                  ),
+                )
+                .toList(),
+          )
+        else
+          Builder(
+            builder: (context) {
+              final int cols =
+                  contentWidth >= 750 ? 4 : (contentWidth >= 480 ? 3 : 2);
+              final double spacing = 10.0;
+              final double itemWidth =
+                  (contentWidth - (cols - 1) * spacing - 0.5) / cols;
+
+              return Wrap(
+                spacing: spacing,
+                runSpacing: 10,
                 children: actions
                     .map(
-                      (item) => Expanded(
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 5),
-                          child: _buildActionButton(item),
-                        ),
+                      (item) => SizedBox(
+                        width: itemWidth,
+                        child: _buildActionButton(item),
                       ),
                     )
                     .toList(),
               );
-            }
-
-            final itemWidth = (w - (w >= 600 ? 30 : 10)) / (w >= 600 ? 4 : 2);
-            return Wrap(
-              spacing: 10,
-              runSpacing: 10,
-              children: actions
-                  .map(
-                    (item) => SizedBox(
-                      width: itemWidth,
-                      child: _buildActionButton(item),
-                    ),
-                  )
-                  .toList(),
-            );
-          },
-        ),
+            },
+          ),
       ],
     );
   }
@@ -1755,18 +1822,20 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
           children: [
             Icon(item.icon, color: item.color, size: 22),
             const SizedBox(height: 8),
-            Text(
-              item.title,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-                color: _isDark
-                    ? Colors.white.withValues(alpha: 0.9)
-                    : const Color(0xFF1E293B),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                item.title,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: _isDark
+                      ? Colors.white.withValues(alpha: 0.9)
+                      : const Color(0xFF1E293B),
+                ),
+                maxLines: 1,
               ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
             ),
           ],
         ),
@@ -1778,7 +1847,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
   // 5. BOTTOM SECTION (TABLES + REMINDERS & INSIGHTS)
   // ==========================================
 
-  Widget _buildBottomSection(double screenWidth, BillingState billingState) {
+  Widget _buildBottomSection(double contentWidth, BillingState billingState) {
     final recentSales = _buildRecentSalesCard(billingState);
     final recentPurchases = _buildRecentPurchasesCard(billingState);
     final remindersAndInsights = Column(
@@ -1789,7 +1858,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
       ],
     );
 
-    if (screenWidth >= 1250) {
+    if (contentWidth >= 1250) {
       return Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1802,7 +1871,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
       );
     }
 
-    if (screenWidth >= 768) {
+    if (contentWidth >= 768) {
       return Column(
         children: [
           Row(
@@ -1888,24 +1957,31 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: [
-                  const Icon(
-                    Icons.receipt_long_outlined,
-                    size: 18,
-                    color: Color(0xFF10B981),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Recent Sales',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w800,
-                      color: _textPrimary,
+              Expanded(
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.receipt_long_outlined,
+                      size: 18,
+                      color: Color(0xFF10B981),
                     ),
-                  ),
-                ],
+                    const SizedBox(width: 8),
+                    Flexible(
+                      child: Text(
+                        'Recent Sales',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w800,
+                          color: _textPrimary,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
               ),
+              const SizedBox(width: 8),
               InkWell(
                 onTap: () => context.push('/sales'),
                 child: const Text(
@@ -2009,24 +2085,31 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: [
-                  const Icon(
-                    Icons.shopping_cart_outlined,
-                    size: 18,
-                    color: Color(0xFF0EA5E9),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Recent Purchases',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w800,
-                      color: _textPrimary,
+              Expanded(
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.shopping_cart_outlined,
+                      size: 18,
+                      color: Color(0xFF0EA5E9),
                     ),
-                  ),
-                ],
+                    const SizedBox(width: 8),
+                    Flexible(
+                      child: Text(
+                        'Recent Purchases',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w800,
+                          color: _textPrimary,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
               ),
+              const SizedBox(width: 8),
               InkWell(
                 onTap: () => context.push('/purchase'),
                 child: const Text(
@@ -2235,31 +2318,38 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(6),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF59E0B).withValues(alpha: 0.15),
-                      shape: BoxShape.circle,
+              Expanded(
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF59E0B).withValues(alpha: 0.15),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.notifications_active_outlined,
+                        size: 16,
+                        color: Color(0xFFF59E0B),
+                      ),
                     ),
-                    child: const Icon(
-                      Icons.notifications_active_outlined,
-                      size: 16,
-                      color: Color(0xFFF59E0B),
+                    const SizedBox(width: 8),
+                    Flexible(
+                      child: Text(
+                        'Upcoming Reminders',
+                        style: TextStyle(
+                          fontSize: 13.5,
+                          fontWeight: FontWeight.w800,
+                          color: _textPrimary,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Upcoming Reminders',
-                    style: TextStyle(
-                      fontSize: 13.5,
-                      fontWeight: FontWeight.w800,
-                      color: _textPrimary,
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
+              const SizedBox(width: 8),
               InkWell(
                 onTap: () => context.push('/outstanding'),
                 child: const Text(
@@ -2338,6 +2428,8 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                       fontWeight: FontWeight.w700,
                       color: _textPrimary,
                     ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 2),
                   Text(
@@ -2346,6 +2438,8 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                       fontSize: 11,
                       color: _textMuted,
                     ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ],
               ),

@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_spacing.dart';
 import '../../../../core/constants/app_typography.dart';
 import '../../../../core/models/billing_models.dart';
+import '../../../../core/responsive/responsive.dart';
 import '../../../../core/services/invoice_pdf_service.dart';
 import '../../../../shared/widgets/app_button.dart';
 import '../../../../shared/widgets/app_cards.dart';
@@ -25,7 +27,7 @@ class _InvoiceDetailPageState extends ConsumerState<InvoiceDetailPage> {
   final _amountReceivedController = TextEditingController();
   final _refNoController = TextEditingController();
   String _paymentMode = 'Bank';
-  DateTime _paymentDate = DateTime.now();
+  final DateTime _paymentDate = DateTime.now();
 
   @override
   void dispose() {
@@ -45,34 +47,36 @@ class _InvoiceDetailPageState extends ConsumerState<InvoiceDetailPage> {
           builder: (context, setDialogState) {
             return AlertDialog(
               title: const Text('Record Payment Receipt'),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text('Invoice Remaining Balance: ₹${invoice.balanceAmount}'),
-                  const SizedBox(height: AppSpacing.md),
-                  AppTextField(
-                    label: 'Amount Received (₹) *',
-                    controller: _amountReceivedController,
-                    keyboardType: TextInputType.number,
-                  ),
-                  const SizedBox(height: AppSpacing.md),
-                  AppTextField(
-                    label: 'Payment Reference / Transaction ID *',
-                    controller: _refNoController,
-                  ),
-                  const SizedBox(height: AppSpacing.md),
-                  AppDropdownField<String>(
-                    label: 'Payment Mode',
-                    value: _paymentMode,
-                    items: const [
-                      DropdownMenuItem(value: 'Cash', child: Text('Cash')),
-                      DropdownMenuItem(value: 'Bank', child: Text('Bank Transfer')),
-                      DropdownMenuItem(value: 'UPI', child: Text('UPI / QR')),
-                      DropdownMenuItem(value: 'Card', child: Text('Card')),
-                    ],
-                    onChanged: (val) => setDialogState(() => _paymentMode = val ?? 'Bank'),
-                  ),
-                ],
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text('Invoice Remaining Balance: ₹${invoice.balanceAmount}'),
+                    const SizedBox(height: AppSpacing.md),
+                    AppTextField(
+                      label: 'Amount Received (₹) *',
+                      controller: _amountReceivedController,
+                      keyboardType: TextInputType.number,
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    AppTextField(
+                      label: 'Payment Reference / Transaction ID *',
+                      controller: _refNoController,
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    AppDropdownField<String>(
+                      label: 'Payment Mode',
+                      value: _paymentMode,
+                      items: const [
+                        DropdownMenuItem(value: 'Cash', child: Text('Cash')),
+                        DropdownMenuItem(value: 'Bank', child: Text('Bank Transfer')),
+                        DropdownMenuItem(value: 'UPI', child: Text('UPI / QR')),
+                        DropdownMenuItem(value: 'Card', child: Text('Card')),
+                      ],
+                      onChanged: (val) => setDialogState(() => _paymentMode = val ?? 'Bank'),
+                    ),
+                  ],
+                ),
               ),
               actions: [
                 TextButton(
@@ -164,7 +168,8 @@ class _InvoiceDetailPageState extends ConsumerState<InvoiceDetailPage> {
         title: Text(invoice.invoiceNumber),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(AppSpacing.lg),
+        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+        padding: Responsive.pagePadding(context),
         child: Center(
           child: Container(
             constraints: const BoxConstraints(maxWidth: 900),
@@ -284,11 +289,20 @@ class _InvoiceDetailPageState extends ConsumerState<InvoiceDetailPage> {
                       TableColumnSpec<InvoiceItem>(
                         label: 'Item Name / Details',
                         flex: 2,
-                        cellBuilder: (it) => Text(it.name, style: const TextStyle(fontWeight: FontWeight.bold)),
+                        cellBuilder: (it) => Text(
+                          it.name,
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
                       TableColumnSpec<InvoiceItem>(
                         label: 'HSN/SAC',
-                        cellBuilder: (it) => Text(it.hsnSac),
+                        cellBuilder: (it) => Text(
+                          it.hsnSac.isEmpty ? '-' : it.hsnSac,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
                       TableColumnSpec<InvoiceItem>(
                         label: 'Quantity',
@@ -320,6 +334,97 @@ class _InvoiceDetailPageState extends ConsumerState<InvoiceDetailPage> {
                         cellBuilder: (it) => Text('₹${(it.cgst + it.sgst + it.igst).toStringAsFixed(2)}'),
                       ),
                     ],
+                    mobileCardBuilder: (it) {
+                      final gstAmt = it.cgst + it.sgst + it.igst;
+                      final totalVal = it.taxableValue + gstAmt;
+                      final isDark = Theme.of(context).brightness == Brightness.dark;
+                      return Container(
+                        padding: const EdgeInsets.all(AppSpacing.md),
+                        decoration: BoxDecoration(
+                          border: Border(
+                            bottom: BorderSide(
+                              color: isDark
+                                  ? AppColors.borderDark
+                                  : AppColors.borderLight,
+                            ),
+                          ),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    it.name,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 14,
+                                    ),
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  '₹${totalVal.toStringAsFixed(2)}',
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 6),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  '${it.quantity} ${it.unit} @ ₹${it.rate.toStringAsFixed(2)}',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.grey.shade600,
+                                  ),
+                                ),
+                                if (it.discountPercentage > 0)
+                                  Text(
+                                    'Disc: ${it.discountPercentage.toStringAsFixed(0)}%',
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.orange,
+                                    ),
+                                  ),
+                              ],
+                            ),
+                            const SizedBox(height: 4),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                if (it.hsnSac.isNotEmpty)
+                                  Text(
+                                    'HSN: ${it.hsnSac}',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: Colors.grey.shade500,
+                                    ),
+                                  )
+                                else
+                                  const SizedBox.shrink(),
+                                Text(
+                                  'Taxable: ₹${it.taxableValue.toStringAsFixed(2)} + GST: ₹${gstAmt.toStringAsFixed(2)}',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: Colors.grey.shade500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      );
+                    },
                   ),
                 ),
 
@@ -399,8 +504,8 @@ class _InvoiceDetailPageState extends ConsumerState<InvoiceDetailPage> {
 
                 // Cancel Document Action
                 if (invoice.status != InvoiceStatus.cancelled) ...[
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
+                  Wrap(
+                    alignment: WrapAlignment.end,
                     children: [
                       AppButton(
                         label: 'Cancel & Reverse Invoice',
