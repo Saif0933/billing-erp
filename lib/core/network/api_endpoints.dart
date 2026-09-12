@@ -38,6 +38,7 @@ class ApiEndpoints {
   // Subscription & Plans
   static const String plans = '/api/v1/subscriptions/plans';
   static const String activeSubscription = '/api/v1/subscriptions/active';
+  static const String subscribePlan = '/api/v1/subscriptions/subscribe';
 
   // Onboarding endpoints
   static const String onboardOrganization = '/api/v1/onboarding/organization';
@@ -99,4 +100,15 @@ class ApiEndpoints {
   static const String expenses = '/api/v1/expenses';
   static const String expenseSummary = '/api/v1/expenses/summary';
   static const String expenseCategories = '/api/v1/expenses/categories';
+
+  // Report Center (backend: module/report&center)
+  static const String reports = '/api/v1/reports';
+  static const String reportSalesRegister = '/api/v1/reports/sales-register';
+  static const String reportPurchaseRegister = '/api/v1/reports/purchase-register';
+  static const String reportGstSummary = '/api/v1/reports/gst-summary';
+  static const String reportStockValuation = '/api/v1/reports/stock-valuation';
+  static const String reportExport = '/api/v1/reports/export';
+  static const String reportExportsHistory = '/api/v1/reports/exports';
+  static const String reportCatalog = '/api/v1/reports/catalog';
+  static const String reportSaved = '/api/v1/reports/saved';
 }

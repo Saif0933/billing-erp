@@ -61,7 +61,7 @@ class BusinessSelectionPage extends ConsumerWidget {
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
                   itemCount: businessState.businesses.length,
-                  separatorBuilder: (_, __) =>
+                  separatorBuilder: (_, _) =>
                       const SizedBox(height: AppSpacing.md),
                   itemBuilder: (context, index) {
                     final biz = businessState.businesses[index];
@@ -70,8 +70,8 @@ class BusinessSelectionPage extends ConsumerWidget {
                     return AppCard(
                       backgroundColor: isActive
                           ? (isDark
-                                ? AppColors.accent.withOpacity(0.1)
-                                : AppColors.primary.withOpacity(0.05))
+                                ? AppColors.accent.withValues(alpha: 0.1)
+                                : AppColors.primary.withValues(alpha: 0.05))
                           : null,
                       border: Border.all(
                         color: isActive

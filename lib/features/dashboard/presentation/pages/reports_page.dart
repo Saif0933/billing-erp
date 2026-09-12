@@ -13,6 +13,9 @@ import '../../../../shared/widgets/app_table.dart';
 import '../../../../shared/widgets/feedback.dart';
 import '../../../dashboard/presentation/providers/billing_repository.dart';
 import '../../../subscription/domain/services/feature_access_service.dart';
+import '../../../reports/presentation/providers/report_providers.dart';
+import '../../../reports/data/models/report_models.dart';
+import '../../../reports/data/services/report_export_helper.dart';
 
 class ReportsPage extends ConsumerStatefulWidget {
   const ReportsPage({super.key});
@@ -22,115 +25,112 @@ class ReportsPage extends ConsumerStatefulWidget {
 }
 
 class _ReportsPageState extends ConsumerState<ReportsPage> {
-  DateTimeRange? _selectedDateRange;
-  String _selectedWarehouseId = 'all';
-
-  @override
-  void initState() {
-    super.initState();
-    _selectedDateRange = DateTimeRange(
-      start: DateTime.now().subtract(const Duration(days: 30)),
-      end: DateTime.now().add(const Duration(days: 1)),
-    );
-  }
-
   String _formatDate(DateTime date) =>
-      '${date.day}/${date.month}/${date.year}';
+      '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
 
-  void _triggerExport(String format, String reportName) {
-    final isMobile = Responsive.isMobile(context);
+  Future<void> _handleExport({
+    required String format,
+    required String reportName,
+    required String reportType,
+    required List<String> pdfHeaders,
+    required List<List<String>> pdfRows,
+    required Map<String, String> pdfSummary,
+  }) async {
+    final notifier = ref.read(reportsStateProvider.notifier);
+    final reportsState = ref.read(reportsStateProvider);
+    final dateLabel =
+        '${_formatDate(reportsState.dateRange.start)} - ${_formatDate(reportsState.dateRange.end)}';
+    final warehouseLabel = reportsState.warehouseId == 'all'
+        ? 'All Locations / Warehouses'
+        : 'Warehouse ID: ${reportsState.warehouseId}';
 
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        insetPadding: EdgeInsets.symmetric(
-          horizontal: isMobile ? AppSpacing.md : AppSpacing.xl,
-          vertical: AppSpacing.lg,
-        ),
-        title: Row(
-          children: [
-            Icon(
-              format == 'Excel' ? Icons.table_view : Icons.picture_as_pdf,
-              color: const Color(0xFF2E7D32),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                'Export Report ($format)',
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          ],
-        ),
-        content: ConstrainedBox(
-          constraints: BoxConstraints(maxWidth: isMobile ? 360 : 420),
-          child: Text(
-            'Your request to export "$reportName" in $format format has been processed. Click Download to save the document.',
-          ),
-        ),
-        actionsAlignment:
-            isMobile ? MainAxisAlignment.center : MainAxisAlignment.end,
-        actions: [
-          if (isMobile)
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                AppButton(
-                  label: 'Download File',
-                  onPressed: () {
-                    Navigator.pop(ctx);
-                    if (context.mounted) {
-                      AppFeedback.showSnackbar(
-                        context,
-                        message: '$reportName downloaded successfully!',
-                      );
-                    }
-                  },
-                ),
-                const SizedBox(height: 8),
-                TextButton(
-                  onPressed: () => Navigator.pop(ctx),
-                  child: const Text('Cancel'),
-                ),
-              ],
-            )
-          else ...[
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('Cancel'),
-            ),
-            AppButton(
-              label: 'Download File',
-              onPressed: () {
-                Navigator.pop(ctx);
-                if (context.mounted) {
-                  AppFeedback.showSnackbar(
-                    context,
-                    message: '$reportName downloaded successfully!',
-                  );
-                }
-              },
-            ),
-          ],
-        ],
-      ),
+    AppFeedback.showSnackbar(
+      context,
+      message: 'Opening $reportName in $format...',
     );
+
+    // 1. Call backend to record export in audit log & retrieve server formatted CSV
+    final res = await notifier.exportReport(
+      reportType: reportType,
+      format: format,
+      reportName: reportName,
+    );
+
+    if (!mounted) return;
+
+    try {
+      if (format.toUpperCase() == 'EXCEL') {
+        // Open directly in Excel / Spreadsheet
+        String csv = res?.csvContent ?? '';
+        if (csv.isEmpty) {
+          final buffer = StringBuffer();
+          buffer.writeln(pdfHeaders.map((h) => '"$h"').join(','));
+          for (final row in pdfRows) {
+            buffer.writeln(
+              row.map((cell) => '"${cell.replaceAll('"', '""')}"').join(','),
+            );
+          }
+          csv = buffer.toString();
+        }
+
+        final fileName =
+            res?.fileName ?? '${reportType.toLowerCase()}_export.csv';
+        await ReportExportHelper.openExcelReport(
+          fileName: fileName,
+          csvContent: csv,
+          reportTitle: reportName,
+        );
+
+        if (mounted) {
+          AppFeedback.showSnackbar(
+            context,
+            message: '$reportName opened in Excel successfully!',
+          );
+        }
+      } else {
+        // Open directly in PDF viewer
+        await ReportExportHelper.openPdfReport(
+          title: reportName,
+          dateRange: dateLabel,
+          warehouse: warehouseLabel,
+          headers: pdfHeaders,
+          rows: pdfRows,
+          summaryMetrics: pdfSummary,
+        );
+
+        if (mounted) {
+          AppFeedback.showSnackbar(
+            context,
+            message: '$reportName opened in PDF viewer successfully!',
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        AppFeedback.showSnackbar(
+          context,
+          message: 'Could not open file: $e',
+          isError: true,
+        );
+      }
+    }
   }
 
-  Future<void> _pickDateRange() async {
+  Future<void> _pickDateRange(DateTimeRange currentRange) async {
     final picked = await showDateRangePicker(
       context: context,
       firstDate: DateTime(2020),
       lastDate: DateTime(2030),
-      initialDateRange: _selectedDateRange,
+      initialDateRange: currentRange,
     );
     if (picked != null) {
-      setState(() => _selectedDateRange = picked);
+      ref.read(reportsStateProvider.notifier).updateDateRange(picked);
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final reportsState = ref.watch(reportsStateProvider);
     final billingState = ref.watch(billingRepositoryProvider);
     final featureAccess = ref.watch(featureAccessServiceProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -187,32 +187,12 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
       );
     }
 
-    final filteredInvoices = billingState.invoices.where((inv) {
-      final dateMatch =
-          inv.invoiceDate.isAfter(_selectedDateRange!.start) &&
-          inv.invoiceDate.isBefore(_selectedDateRange!.end);
-      final whMatch =
-          _selectedWarehouseId == 'all' ||
-          inv.warehouseId == _selectedWarehouseId;
-      return dateMatch && whMatch;
-    }).toList();
-
-    final filteredPurchases = billingState.purchases.where((p) {
-      final dateMatch =
-          p.purchaseDate.isAfter(_selectedDateRange!.start) &&
-          p.purchaseDate.isBefore(_selectedDateRange!.end);
-      final whMatch =
-          _selectedWarehouseId == 'all' ||
-          p.warehouseId == _selectedWarehouseId;
-      return dateMatch && whMatch;
-    }).toList();
-
     final dateLabel =
-        '${_formatDate(_selectedDateRange!.start)} - ${_formatDate(_selectedDateRange!.end)}';
+        '${_formatDate(reportsState.dateRange.start)} - ${_formatDate(reportsState.dateRange.end)}';
 
     final warehouseDropdown = AppDropdownField<String>(
       label: 'Filter by Warehouse',
-      value: _selectedWarehouseId,
+      value: reportsState.warehouseId,
       items: [
         const DropdownMenuItem(
           value: 'all',
@@ -223,7 +203,9 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
         ),
       ],
       onChanged: (val) {
-        if (val != null) setState(() => _selectedWarehouseId = val);
+        if (val != null) {
+          ref.read(reportsStateProvider.notifier).updateWarehouse(val);
+        }
       },
     );
 
@@ -246,7 +228,7 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
           borderRadius: BorderRadius.circular(10),
         ),
       ),
-      onPressed: _pickDateRange,
+      onPressed: () => _pickDateRange(reportsState.dateRange),
     );
 
     final filterBarContent = isMobile
@@ -335,26 +317,58 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
               ),
               child: filterBarContent,
             ),
+            if (reportsState.isLoading)
+              const LinearProgressIndicator(
+                color: Color(0xFF2E7D32),
+                minHeight: 2.5,
+              ),
+            if (reportsState.error != null)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                color: AppColors.error.withValues(alpha: 0.1),
+                child: Row(
+                  children: [
+                    const Icon(Icons.error_outline, size: 18, color: AppColors.error),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Failed to load reports from server: ${reportsState.error}',
+                        style: const TextStyle(color: AppColors.error, fontSize: 12),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () => ref.read(reportsStateProvider.notifier).loadAllReports(),
+                      child: const Text('Retry', style: TextStyle(fontSize: 12)),
+                    ),
+                  ],
+                ),
+              ),
             Expanded(
               child: TabBarView(
                 children: [
                   _buildSalesTab(
-                    filteredInvoices: filteredInvoices,
+                    salesData: reportsState.salesData,
+                    isLoading: reportsState.isLoading,
                     isMobile: isMobile,
                     pagePadding: pagePadding,
                   ),
                   _buildPurchasesTab(
-                    filteredPurchases: filteredPurchases,
+                    purchaseData: reportsState.purchaseData,
+                    isLoading: reportsState.isLoading,
                     isMobile: isMobile,
                     pagePadding: pagePadding,
                   ),
                   _buildGstTab(
-                    filteredInvoices: filteredInvoices,
+                    gstData: reportsState.gstData,
+                    isLoading: reportsState.isLoading,
                     isMobile: isMobile,
                     pagePadding: pagePadding,
                   ),
                   _buildStockTab(
-                    products: billingState.products,
+                    stockData: reportsState.stockData,
+                    isLoading: reportsState.isLoading,
                     isMobile: isMobile,
                     pagePadding: pagePadding,
                   ),
@@ -368,22 +382,40 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
   }
 
   Widget _buildSalesTab({
-    required List<Invoice> filteredInvoices,
+    required SalesRegisterData? salesData,
+    required bool isLoading,
     required bool isMobile,
     required EdgeInsets pagePadding,
   }) {
-    final totalSales = filteredInvoices.fold<double>(
-      0.0,
-      (sum, inv) => sum + inv.grandTotal,
-    );
-    final totalGst = filteredInvoices.fold<double>(
-      0.0,
-      (sum, inv) => sum + inv.cgst + inv.sgst + inv.igst,
-    );
-    final taxable = filteredInvoices.fold<double>(
-      0.0,
-      (sum, inv) => sum + inv.taxableAmount,
-    );
+    final invoices = salesData?.invoices ?? [];
+    final summary = salesData?.summary ?? const SalesRegisterSummary();
+
+    final pdfHeaders = [
+      'Invoice No',
+      'Date',
+      'Customer',
+      'Taxable (₹)',
+      'GST (₹)',
+      'Grand Total (₹)',
+      'Status'
+    ];
+    final pdfRows = invoices
+        .map((inv) => [
+              inv.invoiceNumber,
+              _formatDate(inv.invoiceDate),
+              inv.customerName,
+              '₹${inv.taxableAmount.toStringAsFixed(2)}',
+              '₹${(inv.cgst + inv.sgst + inv.igst).toStringAsFixed(2)}',
+              '₹${inv.grandTotal.toStringAsFixed(2)}',
+              inv.status.name.toUpperCase(),
+            ])
+        .toList();
+    final pdfSummary = {
+      'Invoices': '${summary.totalInvoices}',
+      'Taxable': '₹${summary.taxableAmount.toStringAsFixed(2)}',
+      'Output GST': '₹${summary.totalGst.toStringAsFixed(2)}',
+      'Net Sales': '₹${summary.totalSales.toStringAsFixed(2)}',
+    };
 
     return SingleChildScrollView(
       padding: pagePadding,
@@ -392,7 +424,7 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
         children: [
           _buildSectionHeader(
             title: isMobile ? 'Sales Register' : 'Sales Register Log',
-            subtitle: 'Invoice-wise sales for the selected period',
+            subtitle: 'Live invoice-wise sales for the selected period',
             isMobile: isMobile,
             accent: const Color(0xFF2E7D32),
             icon: Icons.receipt_long_rounded,
@@ -401,12 +433,26 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
                 label: 'Excel',
                 icon: Icons.table_view,
                 type: AppButtonType.secondary,
-                onPressed: () => _triggerExport('Excel', 'Sales Register'),
+                onPressed: () => _handleExport(
+                  format: 'Excel',
+                  reportName: 'Sales Register Log',
+                  reportType: 'SALES_REGISTER',
+                  pdfHeaders: pdfHeaders,
+                  pdfRows: pdfRows,
+                  pdfSummary: pdfSummary,
+                ),
               ),
               AppButton(
                 label: 'PDF',
                 icon: Icons.picture_as_pdf,
-                onPressed: () => _triggerExport('PDF', 'Sales Register'),
+                onPressed: () => _handleExport(
+                  format: 'PDF',
+                  reportName: 'Sales Register Log',
+                  reportType: 'SALES_REGISTER',
+                  pdfHeaders: pdfHeaders,
+                  pdfRows: pdfRows,
+                  pdfSummary: pdfSummary,
+                ),
               ),
             ],
           ),
@@ -416,25 +462,25 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
             metrics: [
               _SummaryMetric(
                 label: 'Invoices',
-                value: '${filteredInvoices.length}',
+                value: '${summary.totalInvoices}',
                 icon: Icons.description_outlined,
                 color: const Color(0xFF1565C0),
               ),
               _SummaryMetric(
                 label: 'Taxable',
-                value: '₹${taxable.toStringAsFixed(2)}',
+                value: '₹${summary.taxableAmount.toStringAsFixed(2)}',
                 icon: Icons.calculate_outlined,
                 color: const Color(0xFF6A1B9A),
               ),
               _SummaryMetric(
                 label: 'GST',
-                value: '₹${totalGst.toStringAsFixed(2)}',
+                value: '₹${summary.totalGst.toStringAsFixed(2)}',
                 icon: Icons.percent,
                 color: const Color(0xFFEF6C00),
               ),
               _SummaryMetric(
                 label: 'Net Sales',
-                value: '₹${totalSales.toStringAsFixed(2)}',
+                value: '₹${summary.totalSales.toStringAsFixed(2)}',
                 icon: Icons.trending_up_rounded,
                 color: const Color(0xFF2E7D32),
               ),
@@ -444,8 +490,10 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
           AppCard(
             padding: EdgeInsets.zero,
             child: AppTable<Invoice>(
-              items: filteredInvoices,
-              emptyMessage: 'No sales recorded for the selected period.',
+              items: invoices,
+              emptyMessage: isLoading
+                  ? 'Loading sales records from server...'
+                  : 'No sales recorded for the selected period.',
               mobileCardBuilder: _buildInvoiceCard,
               columns: [
                 TableColumnSpec<Invoice>(
@@ -497,22 +545,40 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
   }
 
   Widget _buildPurchasesTab({
-    required List<Purchase> filteredPurchases,
+    required PurchaseRegisterData? purchaseData,
+    required bool isLoading,
     required bool isMobile,
     required EdgeInsets pagePadding,
   }) {
-    final totalPurchase = filteredPurchases.fold<double>(
-      0.0,
-      (sum, p) => sum + p.grandTotal,
-    );
-    final totalGst = filteredPurchases.fold<double>(
-      0.0,
-      (sum, p) => sum + p.cgst + p.sgst + p.igst,
-    );
-    final taxable = filteredPurchases.fold<double>(
-      0.0,
-      (sum, p) => sum + p.taxableAmount,
-    );
+    final purchases = purchaseData?.purchases ?? [];
+    final summary = purchaseData?.summary ?? const PurchaseRegisterSummary();
+
+    final pdfHeaders = [
+      'Bill No',
+      'Date',
+      'Supplier',
+      'Taxable Value (₹)',
+      'GST Input (₹)',
+      'Total Value (₹)',
+      'Status'
+    ];
+    final pdfRows = purchases
+        .map((p) => [
+              p.purchaseNumber,
+              _formatDate(p.purchaseDate),
+              p.supplierName,
+              '₹${p.taxableAmount.toStringAsFixed(2)}',
+              '₹${(p.cgst + p.sgst + p.igst).toStringAsFixed(2)}',
+              '₹${p.grandTotal.toStringAsFixed(2)}',
+              p.status.name.toUpperCase(),
+            ])
+        .toList();
+    final pdfSummary = {
+      'Bills': '${summary.totalBills}',
+      'Taxable': '₹${summary.taxableValue.toStringAsFixed(2)}',
+      'GST Input': '₹${summary.totalGst.toStringAsFixed(2)}',
+      'Total Value': '₹${summary.totalPurchase.toStringAsFixed(2)}',
+    };
 
     return SingleChildScrollView(
       padding: pagePadding,
@@ -530,12 +596,26 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
                 label: 'Excel',
                 icon: Icons.table_view,
                 type: AppButtonType.secondary,
-                onPressed: () => _triggerExport('Excel', 'Purchase Register'),
+                onPressed: () => _handleExport(
+                  format: 'Excel',
+                  reportName: 'Purchase Register Log',
+                  reportType: 'PURCHASE_REGISTER',
+                  pdfHeaders: pdfHeaders,
+                  pdfRows: pdfRows,
+                  pdfSummary: pdfSummary,
+                ),
               ),
               AppButton(
                 label: 'PDF',
                 icon: Icons.picture_as_pdf,
-                onPressed: () => _triggerExport('PDF', 'Purchase Register'),
+                onPressed: () => _handleExport(
+                  format: 'PDF',
+                  reportName: 'Purchase Register Log',
+                  reportType: 'PURCHASE_REGISTER',
+                  pdfHeaders: pdfHeaders,
+                  pdfRows: pdfRows,
+                  pdfSummary: pdfSummary,
+                ),
               ),
             ],
           ),
@@ -545,25 +625,25 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
             metrics: [
               _SummaryMetric(
                 label: 'Bills',
-                value: '${filteredPurchases.length}',
+                value: '${summary.totalBills}',
                 icon: Icons.receipt_outlined,
                 color: const Color(0xFF1565C0),
               ),
               _SummaryMetric(
                 label: 'Taxable',
-                value: '₹${taxable.toStringAsFixed(2)}',
+                value: '₹${summary.taxableValue.toStringAsFixed(2)}',
                 icon: Icons.calculate_outlined,
                 color: const Color(0xFF6A1B9A),
               ),
               _SummaryMetric(
                 label: 'GST Input',
-                value: '₹${totalGst.toStringAsFixed(2)}',
+                value: '₹${summary.totalGst.toStringAsFixed(2)}',
                 icon: Icons.percent,
                 color: const Color(0xFFEF6C00),
               ),
               _SummaryMetric(
                 label: 'Total Value',
-                value: '₹${totalPurchase.toStringAsFixed(2)}',
+                value: '₹${summary.totalPurchase.toStringAsFixed(2)}',
                 icon: Icons.payments_outlined,
                 color: const Color(0xFF2E7D32),
               ),
@@ -573,9 +653,10 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
           AppCard(
             padding: EdgeInsets.zero,
             child: AppTable<Purchase>(
-              items: filteredPurchases,
-              emptyMessage:
-                  'No purchase bills logged for the selected period.',
+              items: purchases,
+              emptyMessage: isLoading
+                  ? 'Loading purchase records from server...'
+                  : 'No purchase bills logged for the selected period.',
               mobileCardBuilder: _buildPurchaseCard,
               columns: [
                 TableColumnSpec<Purchase>(
@@ -627,27 +708,58 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
   }
 
   Widget _buildGstTab({
-    required List<Invoice> filteredInvoices,
+    required GstLiabilitySummary? gstData,
+    required bool isLoading,
     required bool isMobile,
     required EdgeInsets pagePadding,
   }) {
-    final gst5 = filteredInvoices.fold(
-      0.0,
-      (sum, inv) => sum + inv.cgst + inv.sgst,
-    );
-    final gst12 = filteredInvoices.fold(
-      0.0,
-      (sum, inv) => sum + (inv.cgst * 1.2),
-    );
-    final gst18 = filteredInvoices.fold(
-      0.0,
-      (sum, inv) => sum + (inv.cgst * 1.8),
-    );
-    final totalLiability = gst5 + gst12 + gst18;
-    final taxable = filteredInvoices.fold<double>(
-      0.0,
-      (sum, inv) => sum + inv.taxableAmount,
-    );
+    final summary = gstData ?? const GstLiabilitySummary();
+
+    final pdfHeaders = [
+      'Tax Slab',
+      'Rate (%)',
+      'Taxable Base (₹)',
+      'GST Liability (₹)'
+    ];
+    final pdfRows = [
+      [
+        'GST 0% (Nil / Exempt)',
+        '0%',
+        '₹${summary.gst0.taxable.toStringAsFixed(2)}',
+        '₹${summary.gst0.tax.toStringAsFixed(2)}'
+      ],
+      [
+        'GST 5%',
+        '5%',
+        '₹${summary.gst5.taxable.toStringAsFixed(2)}',
+        '₹${summary.gst5.tax.toStringAsFixed(2)}'
+      ],
+      [
+        'GST 12%',
+        '12%',
+        '₹${summary.gst12.taxable.toStringAsFixed(2)}',
+        '₹${summary.gst12.tax.toStringAsFixed(2)}'
+      ],
+      [
+        'GST 18%',
+        '18%',
+        '₹${summary.gst18.taxable.toStringAsFixed(2)}',
+        '₹${summary.gst18.tax.toStringAsFixed(2)}'
+      ],
+      [
+        'GST 28%',
+        '28%',
+        '₹${summary.gst28.taxable.toStringAsFixed(2)}',
+        '₹${summary.gst28.tax.toStringAsFixed(2)}'
+      ],
+    ];
+    final pdfSummary = {
+      'Invoices': '${summary.totalInvoices}',
+      'Taxable Base': '₹${summary.taxableBase.toStringAsFixed(2)}',
+      'Output CGST': '₹${summary.cgst.toStringAsFixed(2)}',
+      'Output SGST': '₹${summary.sgst.toStringAsFixed(2)}',
+      'Total Liability': '₹${summary.totalLiability.toStringAsFixed(2)}',
+    };
 
     return SingleChildScrollView(
       padding: pagePadding,
@@ -664,10 +776,29 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
             icon: Icons.percent,
             actions: [
               AppButton(
-                label: isMobile ? 'Export GSTR-1' : 'Export GSTR-1',
+                label: 'Excel (GSTR-1)',
                 icon: Icons.upload_file,
-                onPressed: () =>
-                    _triggerExport('Excel', 'GST Liability Summary'),
+                onPressed: () => _handleExport(
+                  format: 'Excel',
+                  reportName: 'GST Liability Summary',
+                  reportType: 'GST_SUMMARY',
+                  pdfHeaders: pdfHeaders,
+                  pdfRows: pdfRows,
+                  pdfSummary: pdfSummary,
+                ),
+              ),
+              AppButton(
+                label: 'PDF',
+                icon: Icons.picture_as_pdf,
+                type: AppButtonType.secondary,
+                onPressed: () => _handleExport(
+                  format: 'PDF',
+                  reportName: 'GST Liability Summary',
+                  reportType: 'GST_SUMMARY',
+                  pdfHeaders: pdfHeaders,
+                  pdfRows: pdfRows,
+                  pdfSummary: pdfSummary,
+                ),
               ),
             ],
           ),
@@ -677,19 +808,19 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
             metrics: [
               _SummaryMetric(
                 label: 'Invoices',
-                value: '${filteredInvoices.length}',
+                value: '${summary.totalInvoices}',
                 icon: Icons.receipt_long_outlined,
                 color: const Color(0xFF1565C0),
               ),
               _SummaryMetric(
                 label: 'Taxable Base',
-                value: '₹${taxable.toStringAsFixed(2)}',
+                value: '₹${summary.taxableBase.toStringAsFixed(2)}',
                 icon: Icons.account_balance_wallet_outlined,
                 color: const Color(0xFFEF6C00),
               ),
               _SummaryMetric(
                 label: 'Total Liability',
-                value: '₹${totalLiability.toStringAsFixed(2)}',
+                value: '₹${summary.totalLiability.toStringAsFixed(2)}',
                 icon: Icons.account_balance,
                 color: const Color(0xFF6A1B9A),
               ),
@@ -723,7 +854,7 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
                       _buildGSTRateCard(
                         title: 'GST 5%',
                         subtitle: 'Output tax @ 5%',
-                        value: gst5,
+                        value: summary.gst5.tax,
                         bgLight: const Color(0xFFE8F5E9),
                         textCol: const Color(0xFF2E7D32),
                         icon: Icons.looks_5_outlined,
@@ -731,7 +862,7 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
                       _buildGSTRateCard(
                         title: 'GST 12%',
                         subtitle: 'Output tax @ 12%',
-                        value: gst12,
+                        value: summary.gst12.tax,
                         bgLight: const Color(0xFFE3F2FD),
                         textCol: const Color(0xFF1976D2),
                         icon: Icons.looks_one_outlined,
@@ -739,7 +870,7 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
                       _buildGSTRateCard(
                         title: 'GST 18%',
                         subtitle: 'Output tax @ 18%',
-                        value: gst18,
+                        value: summary.gst18.tax,
                         bgLight: const Color(0xFFEDE7F6),
                         textCol: const Color(0xFF673AB7),
                         icon: Icons.looks_two_outlined,
@@ -778,19 +909,38 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
   }
 
   Widget _buildStockTab({
-    required List<Product> products,
+    required StockValuationData? stockData,
+    required bool isLoading,
     required bool isMobile,
     required EdgeInsets pagePadding,
   }) {
-    final totalUnits = products.fold<double>(
-      0.0,
-      (sum, p) => sum + _stockQty(p),
-    );
-    final totalAssetValue = products.fold<double>(
-      0.0,
-      (sum, p) => sum + (_stockQty(p) * p.purchasePrice),
-    );
-    final activeSkus = products.where((p) => _stockQty(p) > 0).length;
+    final products = stockData?.products ?? [];
+    final summary = stockData?.summary ?? const StockValuationSummary();
+
+    final pdfHeaders = [
+      'Product Name',
+      'SKU',
+      'Category',
+      'Stock Qty',
+      'Cost Price (₹)',
+      'Asset Value (₹)'
+    ];
+    final pdfRows = products
+        .map((p) => [
+              p.name,
+              p.sku,
+              p.category,
+              '${p.currentStock.toInt()} ${p.primaryUnit}',
+              '₹${p.purchasePrice.toStringAsFixed(2)}',
+              '₹${(p.currentStock * p.purchasePrice).toStringAsFixed(2)}',
+            ])
+        .toList();
+    final pdfSummary = {
+      'Total SKUs': '${summary.totalSkus}',
+      'In Stock': '${summary.inStockSkus}',
+      'Total Units': '${summary.totalUnits.toInt()}',
+      'Asset Value': '₹${summary.totalAssetValue.toStringAsFixed(2)}',
+    };
 
     return SingleChildScrollView(
       padding: pagePadding,
@@ -801,16 +951,35 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
             title: isMobile
                 ? 'Stock Valuation'
                 : 'Stock Asset Summary & Valuation',
-            subtitle: 'Inventory cost valuation by warehouse filter',
+            subtitle: 'Live inventory cost valuation by warehouse filter',
             isMobile: isMobile,
             accent: const Color(0xFF00838F),
             icon: Icons.inventory_2_outlined,
             actions: [
               AppButton(
-                label: isMobile ? 'Export Valuation' : 'Export Asset Valuation',
-                icon: Icons.assessment,
-                onPressed: () =>
-                    _triggerExport('Excel', 'Inventory Valuation'),
+                label: isMobile ? 'Excel' : 'Export Valuation (Excel)',
+                icon: Icons.table_view,
+                type: AppButtonType.secondary,
+                onPressed: () => _handleExport(
+                  format: 'Excel',
+                  reportName: 'Stock Asset Valuation',
+                  reportType: 'STOCK_VALUATION',
+                  pdfHeaders: pdfHeaders,
+                  pdfRows: pdfRows,
+                  pdfSummary: pdfSummary,
+                ),
+              ),
+              AppButton(
+                label: isMobile ? 'PDF' : 'Export Asset Valuation (PDF)',
+                icon: Icons.picture_as_pdf,
+                onPressed: () => _handleExport(
+                  format: 'PDF',
+                  reportName: 'Stock Asset Valuation',
+                  reportType: 'STOCK_VALUATION',
+                  pdfHeaders: pdfHeaders,
+                  pdfRows: pdfRows,
+                  pdfSummary: pdfSummary,
+                ),
               ),
             ],
           ),
@@ -820,25 +989,25 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
             metrics: [
               _SummaryMetric(
                 label: 'SKUs',
-                value: '${products.length}',
+                value: '${summary.totalSkus}',
                 icon: Icons.category_outlined,
                 color: const Color(0xFF1565C0),
               ),
               _SummaryMetric(
                 label: 'In Stock',
-                value: '$activeSkus',
+                value: '${summary.inStockSkus}',
                 icon: Icons.check_circle_outline,
                 color: const Color(0xFF2E7D32),
               ),
               _SummaryMetric(
                 label: 'Total Units',
-                value: totalUnits.toInt().toString(),
+                value: summary.totalUnits.toInt().toString(),
                 icon: Icons.inventory_outlined,
                 color: const Color(0xFFEF6C00),
               ),
               _SummaryMetric(
                 label: 'Asset Value',
-                value: '₹${totalAssetValue.toStringAsFixed(2)}',
+                value: '₹${summary.totalAssetValue.toStringAsFixed(2)}',
                 icon: Icons.account_balance_wallet_outlined,
                 color: const Color(0xFF00838F),
               ),
@@ -849,7 +1018,9 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
             padding: EdgeInsets.zero,
             child: AppTable<Product>(
               items: products,
-              emptyMessage: 'No products catalogued.',
+              emptyMessage: isLoading
+                  ? 'Calculating stock asset valuation from server...'
+                  : 'No products catalogued in selected warehouse.',
               mobileCardBuilder: _buildProductCard,
               columns: [
                 TableColumnSpec<Product>(
@@ -901,9 +1072,7 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
   }
 
   double _stockQty(Product p) {
-    return _selectedWarehouseId == 'all'
-        ? p.currentStock
-        : (p.warehouseStocks[_selectedWarehouseId] ?? 0.0);
+    return p.currentStock;
   }
 
   Widget _buildSectionHeader({

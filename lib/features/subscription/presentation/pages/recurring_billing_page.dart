@@ -338,7 +338,7 @@ class _RecurringBillingPageState extends ConsumerState<RecurringBillingPage> {
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               itemCount: _scheduleItems.length,
-              separatorBuilder: (_, __) => const Divider(height: 1),
+              separatorBuilder: (_, _) => const Divider(height: 1),
               itemBuilder: (context, idx) {
                 final item = _scheduleItems[idx];
                 return ListTile(
@@ -503,7 +503,7 @@ class _RecurringBillingPageState extends ConsumerState<RecurringBillingPage> {
               await ref
                   .read(billingRepositoryProvider.notifier)
                   .triggerRecurringBillingRun();
-              if (mounted) {
+              if (context.mounted) {
                 AppFeedback.showSnackbar(context,
                     message:
                         'Billing scheduler evaluated! Active invoices generated.');

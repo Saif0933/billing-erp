@@ -12,11 +12,24 @@ import '../../../../shared/widgets/app_cards.dart';
 import '../providers/subscription_provider.dart';
 import '../../domain/entities/subscription_models.dart';
 
-class SubscriptionPage extends ConsumerWidget {
+class SubscriptionPage extends ConsumerStatefulWidget {
   const SubscriptionPage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<SubscriptionPage> createState() => _SubscriptionPageState();
+}
+
+class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(subscriptionProvider.notifier).loadSubscription();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final sub = ref.watch(subscriptionProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isMobile = Responsive.isMobile(context);
@@ -95,17 +108,22 @@ class SubscriptionPage extends ConsumerWidget {
                         'Settings',
                         'Subscription',
                       ],
-                      actions: isMobile
-                          ? const []
-                          : [
-                              AppButton(
-                                label: 'Change Plan',
-                                icon: Icons.upgrade_outlined,
-                                onPressed: () =>
-                                    context.push('/upgrade'),
-                                type: AppButtonType.primary,
-                              ),
-                            ],
+                      actions: [
+                        IconButton(
+                          icon: const Icon(Icons.refresh),
+                          tooltip: 'Refresh Subscription',
+                          onPressed: () =>
+                              ref.read(subscriptionProvider.notifier).loadSubscription(),
+                        ),
+                        if (!isMobile)
+                          AppButton(
+                            label: 'Change Plan',
+                            icon: Icons.upgrade_outlined,
+                            onPressed: () =>
+                                context.push('/upgrade'),
+                            type: AppButtonType.primary,
+                          ),
+                      ],
                     ),
                     _PlanHeroCard(
                       sub: sub,
@@ -170,7 +188,7 @@ class SubscriptionPage extends ConsumerWidget {
                     ),
                     const SizedBox(height: AppSpacing.xs),
                     Text(
-                      'Features included in ${sub.plan.displayName}. Locked items require a higher plan.',
+                      'Features included in ${sub.displayName}. Locked items require a higher plan.',
                       style: AppTypography.bodyMedium.copyWith(
                         color: isDark
                             ? AppColors.textDarkSecondary
@@ -318,7 +336,7 @@ class _PlanHeroCard extends StatelessWidget {
                             ),
                             const SizedBox(height: 2),
                             Text(
-                              sub.plan.displayName,
+                              sub.displayName,
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                               style: AppTypography.headlineSmall.copyWith(

@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/models/business_model.dart';
 import '../../../../core/storage/storage_service.dart';
+import '../../../auth/data/models/user_model.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 
 class BusinessState {
@@ -30,39 +31,115 @@ class BusinessState {
 
 class BusinessNotifier extends StateNotifier<BusinessState> {
   final StorageService _storage;
+  final UserModel? _user;
 
-  BusinessNotifier(this._storage) : super(const BusinessState()) {
+  BusinessNotifier(this._storage, this._user) : super(const BusinessState()) {
     loadBusinesses();
   }
 
-  static final List<BusinessModel> mockBusinesses = [
-    const BusinessModel(id: 'biz_01', name: 'Tax Bunny Retail Store', type: 'Retail', gstNumber: '27AADCA1234F1Z5'),
-    const BusinessModel(id: 'biz_02', name: 'Bunny Wholesale Agency', type: 'Wholesale', gstNumber: '27AADCA5678F1Z9'),
+  static List<BusinessModel> extractBusinesses(UserModel? user) {
+    final list = <BusinessModel>[];
+    if (user == null) return list;
+
+    if (user.ownedBusinesses != null) {
+      for (final item in user.ownedBusinesses!) {
+        if (item is Map<String, dynamic>) {
+          final id = item['id']?.toString() ?? '';
+          if (id.isNotEmpty && !list.any((b) => b.id == id)) {
+            list.add(BusinessModel(
+              id: id,
+              name: item['businessName']?.toString() ??
+                  item['name']?.toString() ??
+                  'My Business',
+              type: item['tradeName']?.toString() ?? 'Retail',
+              gstNumber: item['gstin']?.toString() ?? '',
+              legalName: item['legalName']?.toString() ?? '',
+              email: item['email']?.toString() ?? '',
+              mobile: item['mobileNumber']?.toString() ?? '',
+              state: item['state']?.toString() ?? 'Maharashtra',
+            ));
+          }
+        }
+      }
+    }
+
+    if (user.businessMemberships != null) {
+      for (final item in user.businessMemberships!) {
+        if (item is Map<String, dynamic>) {
+          final biz = item['business'] is Map<String, dynamic>
+              ? item['business'] as Map<String, dynamic>
+              : null;
+          final id = biz?['id']?.toString() ?? item['businessId']?.toString() ?? '';
+          if (id.isNotEmpty && !list.any((b) => b.id == id)) {
+            list.add(BusinessModel(
+              id: id,
+              name: biz?['businessName']?.toString() ??
+                  biz?['name']?.toString() ??
+                  'My Business',
+              type: biz?['tradeName']?.toString() ?? 'Retail',
+              gstNumber: biz?['gstin']?.toString() ?? '',
+              legalName: biz?['legalName']?.toString() ?? '',
+              email: biz?['email']?.toString() ?? '',
+              mobile: biz?['mobileNumber']?.toString() ?? '',
+              state: biz?['state']?.toString() ?? 'Maharashtra',
+            ));
+          }
+        }
+      }
+    }
+
+    return list;
+  }
+
+  static final List<BusinessModel> fallbackBusinesses = [
+    const BusinessModel(
+      id: 'biz_default',
+      name: 'My Retail Store',
+      type: 'Retail',
+      gstNumber: '27AADCA1234F1Z5',
+    ),
   ];
 
   Future<void> loadBusinesses() async {
     state = state.copyWith(isLoading: true);
-    await Future.delayed(const Duration(milliseconds: 300));
-    
+
+    final realBusinesses = extractBusinesses(_user);
+    final available =
+        realBusinesses.isNotEmpty ? realBusinesses : fallbackBusinesses;
+
     final activeId = _storage.getActiveBusinessId();
     BusinessModel? active;
-    if (activeId != null) {
-      active = mockBusinesses.firstWhere((b) => b.id == activeId, orElse: () => mockBusinesses.first);
-    } else if (mockBusinesses.isNotEmpty) {
-      active = mockBusinesses.first;
+
+    if (activeId != null && activeId.isNotEmpty && !activeId.startsWith('biz_')) {
+      final match = available.where((b) => b.id == activeId);
+      if (match.isNotEmpty) {
+        active = match.first;
+      } else if (realBusinesses.isNotEmpty) {
+        active = realBusinesses.first;
+        await _storage.setActiveBusinessId(active.id);
+      }
+    } else if (realBusinesses.isNotEmpty) {
+      active = realBusinesses.first;
       await _storage.setActiveBusinessId(active.id);
+    } else if (available.isNotEmpty) {
+      active = available.first;
     }
 
     state = BusinessState(
-      businesses: mockBusinesses,
+      businesses: available,
       activeBusiness: active,
       isLoading: false,
     );
   }
 
   Future<void> switchBusiness(String id) async {
-    final active = state.businesses.firstWhere((b) => b.id == id, orElse: () => state.businesses.first);
-    await _storage.setActiveBusinessId(active.id);
+    final active = state.businesses.firstWhere(
+      (b) => b.id == id,
+      orElse: () => state.businesses.first,
+    );
+    if (!active.id.startsWith('biz_')) {
+      await _storage.setActiveBusinessId(active.id);
+    }
     state = state.copyWith(activeBusiness: active);
   }
 
@@ -72,8 +149,7 @@ class BusinessNotifier extends StateNotifier<BusinessState> {
     required String gstNumber,
   }) async {
     state = state.copyWith(isLoading: true);
-    await Future.delayed(const Duration(milliseconds: 300));
-    
+
     final newBiz = BusinessModel(
       id: 'biz_${state.businesses.length + 1}',
       name: name,
@@ -81,7 +157,6 @@ class BusinessNotifier extends StateNotifier<BusinessState> {
       gstNumber: gstNumber,
     );
     final updated = [...state.businesses, newBiz];
-    await _storage.setActiveBusinessId(newBiz.id);
     state = BusinessState(
       businesses: updated,
       activeBusiness: newBiz,
@@ -90,7 +165,9 @@ class BusinessNotifier extends StateNotifier<BusinessState> {
   }
 }
 
-final businessProvider = StateNotifierProvider<BusinessNotifier, BusinessState>((ref) {
+final businessProvider =
+    StateNotifierProvider<BusinessNotifier, BusinessState>((ref) {
   final storage = ref.watch(storageServiceProvider);
-  return BusinessNotifier(storage);
+  final auth = ref.watch(authProvider);
+  return BusinessNotifier(storage, auth.user);
 });

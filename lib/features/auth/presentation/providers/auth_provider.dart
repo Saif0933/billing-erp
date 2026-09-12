@@ -75,6 +75,15 @@ class AuthNotifier extends StateNotifier<AuthState> {
         try {
           final user = await _apiService.getMe();
           state = AuthState.authenticated(user);
+
+          // Ensure active business ID is set to real business (clean up any legacy mock biz_ IDs)
+          final activeId = _storage.getActiveBusinessId();
+          if (activeId == null || activeId.startsWith('biz_')) {
+            final realId = _resolveRealBusinessId(user);
+            if (realId != null) {
+              await _storage.setActiveBusinessId(realId);
+            }
+          }
           return;
         } catch (_) {
           // Fallback to local cache if network/token verification fails temporarily
@@ -96,6 +105,25 @@ class AuthNotifier extends StateNotifier<AuthState> {
     } catch (_) {
       state = const AuthState.unauthenticated();
     }
+  }
+
+  String? _resolveRealBusinessId(UserModel user) {
+    if (user.ownedBusinesses != null && user.ownedBusinesses!.isNotEmpty) {
+      final first = user.ownedBusinesses!.first;
+      if (first is Map<String, dynamic>) {
+        final id = first['id']?.toString();
+        if (id != null && id.isNotEmpty) return id;
+      }
+    }
+    if (user.businessMemberships != null && user.businessMemberships!.isNotEmpty) {
+      final first = user.businessMemberships!.first;
+      if (first is Map<String, dynamic>) {
+        final id = first['businessId']?.toString() ??
+            (first['business'] is Map ? first['business']['id']?.toString() : null);
+        if (id != null && id.isNotEmpty) return id;
+      }
+    }
+    return null;
   }
 
   Future<bool> login(
@@ -130,14 +158,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
       await _secureStorage.setRefreshToken(response.refreshToken);
       await _storage.setCachedUserEmail(response.user.email);
 
-      // Set active business if available in memberships
-      if (response.user.businessMemberships != null &&
-          response.user.businessMemberships!.isNotEmpty) {
-        final firstMembership = response.user.businessMemberships!.first;
-        final businessId = firstMembership['businessId']?.toString();
-        if (businessId != null) {
-          await _storage.setActiveBusinessId(businessId);
-        }
+      // Set real active business if available in owned businesses or memberships
+      final realId = _resolveRealBusinessId(response.user);
+      if (realId != null) {
+        await _storage.setActiveBusinessId(realId);
       }
 
       state = AuthState.authenticated(response.user);
