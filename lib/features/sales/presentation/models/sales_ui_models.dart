@@ -25,6 +25,8 @@ class SalesProductItem {
   final bool isLowStock;
   final String barcode;
   final String sku;
+  final double gstRate;
+  final String hsnCode;
   final String? imageUrl;
   final IconData placeholderIcon;
   final Color themeColor;
@@ -40,6 +42,8 @@ class SalesProductItem {
     this.isLowStock = false,
     required this.barcode,
     required this.sku,
+    this.gstRate = 5.0,
+    this.hsnCode = '',
     this.imageUrl,
     this.placeholderIcon = Icons.inventory_2_outlined,
     this.themeColor = const Color(0xFF10B981),
@@ -53,12 +57,14 @@ class SalesCartItem {
   final SalesProductItem product;
   int quantity;
   double rate;
+  double gstRate;
 
   SalesCartItem({
     required this.product,
     this.quantity = 1,
     required this.rate,
-  });
+    double? gstRate,
+  }) : gstRate = gstRate ?? product.gstRate;
 
   double get amount => quantity * rate;
 }

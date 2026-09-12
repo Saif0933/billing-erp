@@ -5,12 +5,14 @@ class SalesCustomerDialog extends StatefulWidget {
   final String currentCustomer;
   final List<String> customers;
   final ValueChanged<String> onSelect;
+  final Function(String name, String phone)? onCustomerCreated;
 
   const SalesCustomerDialog({
     super.key,
     required this.currentCustomer,
     required this.customers,
     required this.onSelect,
+    this.onCustomerCreated,
   });
 
   @override
@@ -86,8 +88,13 @@ class _SalesCustomerDialogState extends State<SalesCustomerDialog> {
             ),
             onPressed: () {
               final name = _newCustomerController.text.trim();
+              final phone = _phoneController.text.trim();
               if (name.isNotEmpty) {
-                widget.onSelect(name);
+                if (widget.onCustomerCreated != null) {
+                  widget.onCustomerCreated!(name, phone);
+                } else {
+                  widget.onSelect(name);
+                }
                 Navigator.pop(context);
               }
             },

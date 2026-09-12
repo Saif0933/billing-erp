@@ -4,25 +4,31 @@ import '../models/sales_ui_models.dart';
 class SalesCategoryBar extends StatelessWidget {
   final String selectedCategoryId;
   final ValueChanged<String> onCategorySelected;
+  final List<SalesCategory>? categories;
 
   const SalesCategoryBar({
     super.key,
     required this.selectedCategoryId,
     required this.onCategorySelected,
+    this.categories,
   });
 
   @override
   Widget build(BuildContext context) {
+    final categoryList = (categories != null && categories!.isNotEmpty)
+        ? categories!
+        : kSalesCategories;
+
     return Container(
       height: 48,
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         physics: const BouncingScrollPhysics(),
-        itemCount: kSalesCategories.length,
+        itemCount: categoryList.length,
         separatorBuilder: (context, index) => const SizedBox(width: 8),
         itemBuilder: (context, index) {
-          final category = kSalesCategories[index];
+          final category = categoryList[index];
           final isSelected = selectedCategoryId == category.id;
 
           return InkWell(

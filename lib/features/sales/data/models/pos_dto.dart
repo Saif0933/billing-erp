@@ -195,11 +195,13 @@ class PosThermalReceiptDto {
 /// POS Fast Billing Checkout Response
 class PosCheckoutResponse {
   final Invoice invoice;
+  final PosSaleDto? sale;
   final PosThermalReceiptDto? thermalReceipt;
   final String message;
 
   const PosCheckoutResponse({
     required this.invoice,
+    this.sale,
     this.thermalReceipt,
     this.message = 'Checkout completed successfully',
   });
@@ -283,16 +285,95 @@ class PosCheckoutResponse {
     );
 
     PosThermalReceiptDto? receipt;
-    if (json['thermalReceipt'] != null) {
-      receipt = PosThermalReceiptDto.fromJson(
-        json['thermalReceipt'] as Map<String, dynamic>,
-      );
+    final receiptMap = json['thermalReceipt'] ?? json['receipt'];
+    if (receiptMap != null && receiptMap is Map<String, dynamic>) {
+      receipt = PosThermalReceiptDto.fromJson(receiptMap);
+    }
+
+    PosSaleDto? sale;
+    if (json['sale'] != null && json['sale'] is Map<String, dynamic>) {
+      sale = PosSaleDto.fromJson(json['sale'] as Map<String, dynamic>);
     }
 
     return PosCheckoutResponse(
       invoice: invoice,
+      sale: sale,
       thermalReceipt: receipt,
       message: json['message']?.toString() ?? 'Sale completed successfully',
+    );
+  }
+}
+
+/// POS Sale DTO directly representing records from `sales` table
+class PosSaleDto {
+  final String id;
+  final String saleNumber;
+  final DateTime saleDate;
+  final String? customerId;
+  final String customerName;
+  final String? customerPhone;
+  final double subtotal;
+  final double discountAmount;
+  final double taxableValue;
+  final double cgstAmount;
+  final double sgstAmount;
+  final double igstAmount;
+  final double grandTotal;
+  final double paidAmount;
+  final String paymentMode;
+  final String status;
+  final String? invoiceId;
+  final List<Map<String, dynamic>> items;
+
+  const PosSaleDto({
+    required this.id,
+    required this.saleNumber,
+    required this.saleDate,
+    this.customerId,
+    this.customerName = 'Walk-in Customer',
+    this.customerPhone,
+    required this.subtotal,
+    this.discountAmount = 0.0,
+    required this.taxableValue,
+    this.cgstAmount = 0.0,
+    this.sgstAmount = 0.0,
+    this.igstAmount = 0.0,
+    required this.grandTotal,
+    this.paidAmount = 0.0,
+    this.paymentMode = 'Cash',
+    this.status = 'COMPLETED',
+    this.invoiceId,
+    this.items = const [],
+  });
+
+  factory PosSaleDto.fromJson(Map<String, dynamic> json) {
+    return PosSaleDto(
+      id: json['id']?.toString() ?? '',
+      saleNumber: json['saleNumber']?.toString() ?? '',
+      saleDate: json['saleDate'] != null
+          ? DateTime.tryParse(json['saleDate'].toString()) ?? DateTime.now()
+          : DateTime.now(),
+      customerId: json['customerId']?.toString(),
+      customerName: json['customerName']?.toString() ??
+          json['customer']?['name']?.toString() ??
+          'Walk-in Customer',
+      customerPhone: json['customerPhone']?.toString() ??
+          json['customer']?['mobileNumber']?.toString(),
+      subtotal: (json['subtotal'] as num?)?.toDouble() ?? 0.0,
+      discountAmount: (json['discountAmount'] as num?)?.toDouble() ?? 0.0,
+      taxableValue: (json['taxableValue'] as num?)?.toDouble() ?? 0.0,
+      cgstAmount: (json['cgstAmount'] as num?)?.toDouble() ?? 0.0,
+      sgstAmount: (json['sgstAmount'] as num?)?.toDouble() ?? 0.0,
+      igstAmount: (json['igstAmount'] as num?)?.toDouble() ?? 0.0,
+      grandTotal: (json['grandTotal'] as num?)?.toDouble() ?? 0.0,
+      paidAmount: (json['paidAmount'] as num?)?.toDouble() ?? 0.0,
+      paymentMode: json['paymentMode']?.toString() ?? 'Cash',
+      status: json['status']?.toString() ?? 'COMPLETED',
+      invoiceId: json['invoiceId']?.toString(),
+      items: (json['items'] as List<dynamic>?)
+              ?.map((it) => it as Map<String, dynamic>)
+              .toList() ??
+          const [],
     );
   }
 }

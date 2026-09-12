@@ -313,4 +313,40 @@ class PosApiService {
 
     return PosDashboardSummaryDto.fromJson(payload);
   }
+
+  /// 15. Fetch Sales List from `sales` table
+  Future<List<PosSaleDto>> getSalesList({
+    String? search,
+    String? customerId,
+    String? status,
+    int page = 1,
+    int limit = 50,
+  }) async {
+    final queryParams = <String, dynamic>{
+      'page': page,
+      'limit': limit,
+    };
+    if (search != null && search.trim().isNotEmpty) {
+      queryParams['q'] = search.trim();
+    }
+    if (customerId != null && customerId.trim().isNotEmpty) {
+      queryParams['customerId'] = customerId.trim();
+    }
+    if (status != null && status.trim().isNotEmpty) {
+      queryParams['status'] = status.trim();
+    }
+
+    final response = await _apiClient.get(
+      ApiEndpoints.posSales,
+      queryParameters: queryParams,
+    );
+
+    final data = response.data as Map<String, dynamic>;
+    final payload = (data['data'] as Map<String, dynamic>?) ?? data;
+    final salesRaw = payload['sales'] as List<dynamic>? ?? [];
+
+    return salesRaw
+        .map((s) => PosSaleDto.fromJson(s as Map<String, dynamic>))
+        .toList();
+  }
 }

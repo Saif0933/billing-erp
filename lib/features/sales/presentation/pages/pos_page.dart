@@ -10,12 +10,14 @@ import '../../../product-listing/domain/utils/listed_catalog.dart';
 import '../../../product-listing/presentation/providers/product_listing_provider.dart';
 import '../models/sales_ui_models.dart';
 import '../providers/pos_provider.dart';
+import '../providers/sales_invoice_provider.dart';
 import '../widgets/sales_category_bar.dart';
 import '../widgets/sales_current_bill_panel.dart';
 import '../widgets/sales_dialogs.dart';
 import '../widgets/sales_product_card.dart';
 import '../widgets/sales_top_header.dart';
-import '../providers/sales_invoice_provider.dart';
+import '../../data/models/pos_dto.dart';
+import '../../../dashboard/presentation/providers/billing_repository.dart';
 
 class POSPage extends ConsumerStatefulWidget {
   final List<SalesProductItem>? initialProducts;
@@ -37,10 +39,12 @@ class _POSPageState extends ConsumerState<POSPage> {
 
   String _selectedCategoryId = 'all';
   String _selectedCustomer = 'Walk-in Customer';
+  String? _selectedCustomerId;
   String _billNumber = 'TB/25-26/000123';
   String? _transactionNote;
   double _discountPercent = 0.0;
   double _discountAmount = 0.0;
+  bool _isSubmittingSale = false;
 
   // Cart items in current bill
   late List<SalesCartItem> _cartItems;
@@ -155,18 +159,46 @@ class _POSPageState extends ConsumerState<POSPage> {
     return SalesProductItem(
       id: p.id,
       name: p.name,
-      weight: p.primaryUnit.isNotEmpty ? p.primaryUnit : '1 unit',
-      category: p.category.isNotEmpty ? p.category.toLowerCase() : 'others',
+      weight: p.primaryUnit.isNotEmpty ? p.primaryUnit : 'PCS',
+      category: p.category.isNotEmpty ? p.category : 'General',
       price: p.sellingPrice,
       mrp: p.mrp > 0 ? p.mrp : p.sellingPrice,
       stock: p.currentStock.toInt(),
       isLowStock: p.currentStock <= 5,
       barcode: p.barcode,
       sku: p.sku,
+      gstRate: p.gstRate,
+      hsnCode: p.hsnCode,
       imageUrl: p.imageUrl,
       placeholderIcon: _getIconForCategory(p.category),
       themeColor: _getColorForCategory(p.category),
     );
+  }
+
+  List<SalesCategory> get _dynamicCategories {
+    final Map<String, int> catCounts = {};
+    for (final p in _products) {
+      final rawCat = p.category.trim();
+      if (rawCat.isNotEmpty) {
+        final key = rawCat.toLowerCase();
+        catCounts[key] = (catCounts[key] ?? 0) + 1;
+      }
+    }
+
+    final list = <SalesCategory>[
+      const SalesCategory(id: 'all', name: 'All', icon: Icons.grid_view_rounded),
+    ];
+
+    for (final entry in catCounts.entries) {
+      final cat = entry.key;
+      list.add(SalesCategory(
+        id: cat,
+        name: '${cat[0].toUpperCase()}${cat.substring(1)} (${entry.value})',
+        icon: _getIconForCategory(cat),
+      ));
+    }
+
+    return list;
   }
 
   IconData _getIconForCategory(String category) {
@@ -321,20 +353,24 @@ class _POSPageState extends ConsumerState<POSPage> {
       _addProductToCart(match);
       _searchController.clear();
       setState(() {});
-      AppFeedback.showSnackbar(
-        context,
-        message: 'Scanned & added: ${match.name}',
-      );
+      if (mounted) {
+        AppFeedback.showSnackbar(
+          context,
+          message: 'Scanned & added: ${match.name}',
+        );
+      }
       return;
     }
 
     _searchController.clear();
     setState(() {});
-    AppFeedback.showSnackbar(
-      context,
-      message: productNotListedScanMessage(trimmed),
-      isError: true,
-    );
+    if (mounted) {
+      AppFeedback.showSnackbar(
+        context,
+        message: productNotListedScanMessage(trimmed),
+        isError: true,
+      );
+    }
   }
 
   void _addProductToCart(SalesProductItem product) {
@@ -499,14 +535,11 @@ class _POSPageState extends ConsumerState<POSPage> {
 
   void _showCustomerSelectionDialog() {
     final customerState = ref.read(customerProvider);
-    final customerList = {
+    final customers = customerState.customers;
+    final customerList = [
       'Walk-in Customer',
-      ...customerState.customers.map((c) => c.name),
-      'Sharma Supermarket',
-      'Patel General Store',
-      'Amit Kumar (Loyalty)',
-      'Pooja Verma',
-    }.toList();
+      ...customers.map((c) => c.name),
+    ];
 
     showDialog(
       context: context,
@@ -514,8 +547,36 @@ class _POSPageState extends ConsumerState<POSPage> {
         currentCustomer: _selectedCustomer,
         customers: customerList,
         onSelect: (selected) {
-          setState(() => _selectedCustomer = selected);
+          final matched = customers.where((c) => c.name.toLowerCase() == selected.toLowerCase());
+          setState(() {
+            _selectedCustomer = selected;
+            _selectedCustomerId = matched.isNotEmpty ? matched.first.id : null;
+          });
           AppFeedback.showSnackbar(context, message: 'Customer set: $selected');
+        },
+        onCustomerCreated: (name, phone) async {
+          setState(() {
+            _selectedCustomer = name;
+          });
+          try {
+            final newCust = await ref.read(posApiServiceProvider).quickCreateCustomer(
+              name: name,
+              phone: phone.isNotEmpty ? phone : '9999999999',
+            );
+            if (mounted) {
+              setState(() {
+                _selectedCustomerId = newCust.id;
+              });
+              ref.read(customerProvider.notifier).loadCustomers();
+            }
+            if (mounted) {
+              AppFeedback.showSnackbar(context, message: 'Customer "$name" added & selected');
+            }
+          } catch (e) {
+            if (mounted) {
+              AppFeedback.showSnackbar(context, message: 'Customer set: $name');
+            }
+          }
         },
       ),
     );
@@ -534,53 +595,117 @@ class _POSPageState extends ConsumerState<POSPage> {
     );
   }
 
-  Future<void> _saveInvoiceToBackend({
+  Future<PosCheckoutResponse?> _saveSaleToBackend({
     required String status,
     required double subtotal,
     required double cgst,
     required double sgst,
     required double grandTotal,
   }) async {
+    setState(() => _isSubmittingSale = true);
     try {
+      final discAmount = _discountAmount > 0
+          ? _discountAmount
+          : (subtotal * _discountPercent) / 100.0;
+      final taxableSubtotal = (subtotal - discAmount).clamp(0.0, double.infinity);
+      final discountRatio = subtotal > 0 ? (taxableSubtotal / subtotal) : 1.0;
+
       final itemsPayload = _cartItems.map((it) {
-        final lineTaxable = it.amount;
-        final lineCgst = ((lineTaxable * 0.025 * 100).round()) / 100.0;
-        final lineSgst = ((lineTaxable * 0.025 * 100).round()) / 100.0;
+        final lineTaxable = it.amount * discountRatio;
+        final gstRate = it.gstRate;
+        final lineCgst = ((lineTaxable * (gstRate / 200.0) * 100).round()) / 100.0;
+        final lineSgst = ((lineTaxable * (gstRate / 200.0) * 100).round()) / 100.0;
         return {
           'productId': it.product.id.startsWith('sp_') ? null : it.product.id,
-          'productName': it.product.displayNameWithWeight,
+          'name': it.product.displayNameWithWeight,
+          'hsnSac': it.product.hsnCode.isNotEmpty ? it.product.hsnCode : '8544',
           'quantity': it.quantity,
           'unit': it.product.weight.isNotEmpty ? it.product.weight : 'PCS',
           'rate': it.rate,
           'mrp': it.product.mrp,
+          'discountPercentage': 0.0,
+          'discountAmount': 0.0,
           'taxableValue': lineTaxable,
-          'gstRatePercent': 5.0,
-          'cgstAmount': lineCgst,
-          'sgstAmount': lineSgst,
-          'lineTotal': lineTaxable + lineCgst + lineSgst,
+          'gstRate': gstRate,
+          'cgst': lineCgst,
+          'sgst': lineSgst,
+          'igst': 0.0,
+          'cess': 0.0,
+          'warehouseId': 'main',
         };
       }).toList();
 
       final payload = {
-        'invoiceNumber': _billNumber,
+        'customerId': _selectedCustomerId,
         'customerName': _selectedCustomer,
+        'warehouseId': 'main',
+        'cartDiscountPercent': _discountPercent,
+        'cartDiscountAmount': discAmount,
         'subtotal': subtotal,
-        'discountPercent': _discountPercent,
-        'discountAmount': _discountAmount,
-        'taxableValue': subtotal - _discountAmount,
-        'cgstAmount': cgst,
-        'sgstAmount': sgst,
+        'tax': cgst + sgst,
+        'roundOff': 0.0,
         'grandTotal': grandTotal,
-        'paidAmount': grandTotal,
-        'paymentMode': 'CASH',
-        'status': status,
-        'notes': _transactionNote,
+        'paymentMode': 'Cash',
+        'tenderedCash': grandTotal,
+        'changeDue': 0.0,
+        'notes': _transactionNote ?? 'POS Fast Billing Sale',
+        'termsConditions': 'Goods once sold are not returnable.',
         'items': itemsPayload,
       };
 
-      await ref.read(salesInvoiceNotifierProvider.notifier).createInvoice(payload);
+      // 1. Save directly to `sales` and `sale_items` tables via POS Checkout API
+      final res = await ref.read(posApiServiceProvider).checkout(payload);
+
+      // 2. Cache in billing repository
+      await ref.read(billingRepositoryProvider.notifier).addInvoice(res.invoice);
+
+      if (mounted) {
+        setState(() {
+          _billNumber = res.invoice.invoiceNumber;
+          _isSubmittingSale = false;
+        });
+        // Refresh product catalog to show updated stock
+        _syncSalesBackend();
+      }
+
+      return res;
     } catch (e) {
-      debugPrint('[POSPage] Invoice backend sync notice: $e');
+      debugPrint('[POSPage] Sale checkout notice: $e');
+      if (mounted) setState(() => _isSubmittingSale = false);
+
+      // Fallback to invoice creation if offline
+      try {
+        final fallbackPayload = {
+          'invoiceNumber': _billNumber,
+          'customerName': _selectedCustomer,
+          'subtotal': subtotal,
+          'discountPercent': _discountPercent,
+          'discountAmount': _discountAmount,
+          'taxableValue': subtotal - _discountAmount,
+          'cgstAmount': cgst,
+          'sgstAmount': sgst,
+          'grandTotal': grandTotal,
+          'paidAmount': grandTotal,
+          'paymentMode': 'CASH',
+          'status': status,
+          'notes': _transactionNote,
+          'items': _cartItems.map((it) => {
+            'productId': it.product.id.startsWith('sp_') ? null : it.product.id,
+            'productName': it.product.displayNameWithWeight,
+            'quantity': it.quantity,
+            'unit': it.product.weight,
+            'rate': it.rate,
+            'mrp': it.product.mrp,
+            'taxableValue': it.amount,
+            'gstRatePercent': it.gstRate,
+            'cgstAmount': it.amount * (it.gstRate / 200.0),
+            'sgstAmount': it.amount * (it.gstRate / 200.0),
+            'lineTotal': it.amount + (it.amount * (it.gstRate / 100.0)),
+          }).toList(),
+        };
+        await ref.read(salesInvoiceNotifierProvider.notifier).createInvoice(fallbackPayload);
+      } catch (_) {}
+      return null;
     }
   }
 
@@ -588,11 +713,24 @@ class _POSPageState extends ConsumerState<POSPage> {
     if (_cartItems.isEmpty) return;
 
     final subtotal = _cartItems.fold(0.0, (s, it) => s + it.amount);
-    final cgst = ((subtotal * 0.025 * 100).round()) / 100.0;
-    final sgst = ((subtotal * 0.025 * 100).round()) / 100.0;
-    final grandTotal = subtotal + cgst + sgst;
+    final discAmount = _discountAmount > 0
+        ? _discountAmount
+        : (subtotal * _discountPercent) / 100.0;
+    final taxableSubtotal = (subtotal - discAmount).clamp(0.0, double.infinity);
+    final discountRatio = subtotal > 0 ? (taxableSubtotal / subtotal) : 1.0;
 
-    _saveInvoiceToBackend(
+    double cgst = 0.0;
+    double sgst = 0.0;
+    for (final it in _cartItems) {
+      final lineTaxable = it.amount * discountRatio;
+      cgst += (lineTaxable * (it.gstRate / 200.0));
+      sgst += (lineTaxable * (it.gstRate / 200.0));
+    }
+    cgst = ((cgst * 100).round()) / 100.0;
+    sgst = ((sgst * 100).round()) / 100.0;
+    final grandTotal = taxableSubtotal + cgst + sgst;
+
+    _saveSaleToBackend(
       status: 'DRAFT',
       subtotal: subtotal,
       cgst: cgst,
@@ -606,15 +744,31 @@ class _POSPageState extends ConsumerState<POSPage> {
     );
   }
 
-  void _generateBill() {
+  Future<void> _generateBill() async {
     if (_cartItems.isEmpty) return;
 
     final subtotal = _cartItems.fold(0.0, (s, it) => s + it.amount);
-    final cgst = ((subtotal * 0.025 * 100).round()) / 100.0;
-    final sgst = ((subtotal * 0.025 * 100).round()) / 100.0;
-    final grandTotal = subtotal + cgst + sgst;
+    final discAmount = _discountAmount > 0
+        ? _discountAmount
+        : (subtotal * _discountPercent) / 100.0;
+    final taxableSubtotal = (subtotal - discAmount).clamp(0.0, double.infinity);
+    final discountRatio = subtotal > 0 ? (taxableSubtotal / subtotal) : 1.0;
 
-    _saveInvoiceToBackend(
+    double cgst = 0.0;
+    double sgst = 0.0;
+    for (final it in _cartItems) {
+      final lineTaxable = it.amount * discountRatio;
+      cgst += (lineTaxable * (it.gstRate / 200.0));
+      sgst += (lineTaxable * (it.gstRate / 200.0));
+    }
+    cgst = ((cgst * 100).round()) / 100.0;
+    sgst = ((sgst * 100).round()) / 100.0;
+    final grandTotal = taxableSubtotal + cgst + sgst;
+
+    final itemsCopy = List<SalesCartItem>.from(_cartItems);
+    final customerCopy = _selectedCustomer;
+
+    final res = await _saveSaleToBackend(
       status: 'PRINTED',
       subtotal: subtotal,
       cgst: cgst,
@@ -622,14 +776,18 @@ class _POSPageState extends ConsumerState<POSPage> {
       grandTotal: grandTotal,
     );
 
+    if (!mounted) return;
+
+    final currentBillNo = res?.invoice.invoiceNumber ?? _billNumber;
+
     showDialog(
       context: context,
       builder: (ctx) => SalesBillSuccessDialog(
-        billNumber: _billNumber,
-        customerName: _selectedCustomer,
-        items: _cartItems,
+        billNumber: currentBillNo,
+        customerName: customerCopy,
+        items: itemsCopy,
         subtotal: subtotal,
-        discount: _discountAmount,
+        discount: discAmount,
         cgst: cgst,
         sgst: sgst,
         grandTotal: grandTotal,
@@ -648,11 +806,10 @@ class _POSPageState extends ConsumerState<POSPage> {
     setState(() {
       _cartItems.clear();
       _selectedCustomer = 'Walk-in Customer';
+      _selectedCustomerId = null;
       _transactionNote = null;
       _discountPercent = 0.0;
       _discountAmount = 0.0;
-      final nextNum = int.tryParse(_billNumber.replaceAll(RegExp(r'[^0-9]'), '')) ?? 123;
-      _billNumber = 'TB/25-26/000${nextNum + 1}';
     });
 
     ref.read(salesInvoiceNotifierProvider.notifier).fetchNextNumber().then((newNum) {
@@ -793,6 +950,7 @@ class _POSPageState extends ConsumerState<POSPage> {
                 // Category Filter Pills
                 SalesCategoryBar(
                   selectedCategoryId: _selectedCategoryId,
+                  categories: _dynamicCategories,
                   onCategorySelected: (catId) {
                     setState(() => _selectedCategoryId = catId);
                   },
@@ -844,7 +1002,7 @@ class _POSPageState extends ConsumerState<POSPage> {
               onAddNote: _showAddNoteDialog,
               onClearCart: _clearCart,
               onSaveDraft: _saveAsDraft,
-              onGenerateBill: _generateBill,
+              onGenerateBill: _isSubmittingSale ? () {} : _generateBill,
               onSettingsTap: () {
                 AppFeedback.showSnackbar(
                   context,
@@ -868,6 +1026,7 @@ class _POSPageState extends ConsumerState<POSPage> {
         children: [
           SalesCategoryBar(
             selectedCategoryId: _selectedCategoryId,
+            categories: _dynamicCategories,
             onCategorySelected: (catId) {
               setState(() => _selectedCategoryId = catId);
             },

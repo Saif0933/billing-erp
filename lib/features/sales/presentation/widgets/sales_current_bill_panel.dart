@@ -65,9 +65,26 @@ class _SalesCurrentBillPanelState extends State<SalesCurrentBillPanel> {
   double get taxableSubtotal =>
       (subtotal - effectiveDiscount).clamp(0.0, double.infinity);
 
-  // 2.5% CGST and 2.5% SGST rounded to 2 decimals as shown in reference design
-  double get cgst => ((taxableSubtotal * 0.025 * 100).round()) / 100.0;
-  double get sgst => ((taxableSubtotal * 0.025 * 100).round()) / 100.0;
+  // Dynamic CGST and SGST calculated from items' actual GST rates
+  double get cgst {
+    if (subtotal <= 0) return 0.0;
+    final discountRatio = taxableSubtotal / subtotal;
+    final totalTax = widget.cartItems.fold(0.0, (sum, it) {
+      final taxable = it.amount * discountRatio;
+      return sum + (taxable * (it.gstRate / 200.0));
+    });
+    return ((totalTax * 100).round()) / 100.0;
+  }
+
+  double get sgst {
+    if (subtotal <= 0) return 0.0;
+    final discountRatio = taxableSubtotal / subtotal;
+    final totalTax = widget.cartItems.fold(0.0, (sum, it) {
+      final taxable = it.amount * discountRatio;
+      return sum + (taxable * (it.gstRate / 200.0));
+    });
+    return ((totalTax * 100).round()) / 100.0;
+  }
 
   double get grandTotal => taxableSubtotal + cgst + sgst;
 
@@ -635,7 +652,7 @@ class _SalesCurrentBillPanelState extends State<SalesCurrentBillPanel> {
           ),
           const SizedBox(height: 3),
           _buildSummaryRow(
-            label: 'CGST (2.5%)',
+            label: 'CGST',
             value: '₹ ${cgst.toStringAsFixed(2)}',
             icon: Icons.receipt_outlined,
             iconColor: const Color(0xFF6B7280),
@@ -643,7 +660,7 @@ class _SalesCurrentBillPanelState extends State<SalesCurrentBillPanel> {
           ),
           const SizedBox(height: 3),
           _buildSummaryRow(
-            label: 'SGST (2.5%)',
+            label: 'SGST',
             value: '₹ ${sgst.toStringAsFixed(2)}',
             icon: Icons.receipt_outlined,
             iconColor: const Color(0xFF6B7280),
