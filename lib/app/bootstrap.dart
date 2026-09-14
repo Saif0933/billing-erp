@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../core/services/firebase_api_service.dart';
 import '../features/auth/presentation/providers/auth_provider.dart';
 
 Future<ProviderContainer> bootstrap() async {
@@ -25,6 +26,13 @@ Future<ProviderContainer> bootstrap() async {
       sharedPreferencesProvider.overrideWithValue(sharedPrefs),
     ],
   );
+
+  // Initialize Firebase Cloud Messaging & Core
+  try {
+    await container.read(firebaseApiServiceProvider).initialize();
+  } catch (e) {
+    debugPrint('Firebase initialization notice: $e');
+  }
 
   // Probe and lock onto active backend URL at startup
   try {

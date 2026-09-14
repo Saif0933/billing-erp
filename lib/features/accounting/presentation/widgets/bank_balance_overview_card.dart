@@ -6,18 +6,37 @@ import '../providers/bank_accounts_provider.dart';
 class BankBalanceOverviewCard extends ConsumerWidget {
   const BankBalanceOverviewCard({super.key});
 
+  Color _parseHexColor(String hex) {
+    final clean = hex.replaceAll('#', '');
+    if (clean.length == 6) {
+      final val = int.tryParse('FF$clean', radix: 16);
+      if (val != null) return Color(val);
+    }
+    return const Color(0xFF2563EB);
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final summary = ref.watch(bankDataProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    final segments = [
-      _BankShare('State Bank of India', 745320.50, 39.7, const Color(0xFF2563EB)),
-      _BankShare('HDFC Bank', 580450.00, 30.9, const Color(0xFF0284C7)),
-      _BankShare('ICICI Bank', 325680.00, 17.3, const Color(0xFFEA580C)),
-      _BankShare('Axis Bank', 215430.00, 11.5, const Color(0xFF9333EA)),
-      _BankShare('Bank of Baroda', 108550.00, 5.8, const Color(0xFF16A34A)),
-    ];
+    final List<_BankShare> segments = summary.balanceOverview.isNotEmpty
+        ? summary.balanceOverview.map((b) {
+            return _BankShare(
+              b.name,
+              b.amount,
+              b.percentage,
+              _parseHexColor(b.color),
+            );
+          }).toList()
+        : [
+            _BankShare(
+              'No Accounts',
+              0,
+              100,
+              isDark ? Colors.white12 : const Color(0xFFE2E8F0),
+            ),
+          ];
 
     return Container(
       padding: const EdgeInsets.all(16),

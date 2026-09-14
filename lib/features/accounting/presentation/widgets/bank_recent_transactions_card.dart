@@ -60,20 +60,41 @@ class BankRecentTransactionsCard extends ConsumerWidget {
           ),
           const SizedBox(height: 12),
 
-          // Transaction Items List
-          ListView.separated(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: summary.recentTransactions.length,
-            separatorBuilder: (context, index) => Divider(
-              height: 16,
-              color: isDark ? Colors.white12 : const Color(0xFFF1F5F9),
+          // Transaction Items List or Empty State
+          if (summary.isLoading)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 24),
+              child: Center(
+                child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF15803D)),
+              ),
+            )
+          else if (summary.recentTransactions.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 24),
+              child: Center(
+                child: Text(
+                  'No recent transactions recorded',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: isDark ? Colors.white38 : const Color(0xFF94A3B8),
+                  ),
+                ),
+              ),
+            )
+          else
+            ListView.separated(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: summary.recentTransactions.length,
+              separatorBuilder: (context, index) => Divider(
+                height: 16,
+                color: isDark ? Colors.white12 : const Color(0xFFF1F5F9),
+              ),
+              itemBuilder: (context, index) {
+                final tx = summary.recentTransactions[index];
+                return _buildTransactionRow(tx, isDark);
+              },
             ),
-            itemBuilder: (context, index) {
-              final tx = summary.recentTransactions[index];
-              return _buildTransactionRow(tx, isDark);
-            },
-          ),
         ],
       ),
     );

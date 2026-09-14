@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:share_plus/share_plus.dart';
+import '../../../../shared/widgets/feedback.dart';
+import '../providers/bank_accounts_provider.dart';
 import 'add_bank_account_dialog.dart';
 
 class BankQuickActionsCard extends ConsumerWidget {
@@ -71,15 +74,26 @@ class BankQuickActionsCard extends ConsumerWidget {
                     ),
                   ),
 
-                  // 3. Import Statement
+                  // 3. Export Accounts CSV
                   SizedBox(
                     width: tileWidth,
                     child: _buildActionTile(
-                      icon: Icons.file_upload_outlined,
+                      icon: Icons.file_download_outlined,
                       iconColor: const Color(0xFF0284C7),
-                      title: 'Import Statement',
-                      subtitle: 'Upload bank statement',
-                      onTap: () {},
+                      title: 'Export Accounts',
+                      subtitle: 'Download CSV file',
+                      onTap: () async {
+                        AppFeedback.showSnackbar(context, message: 'Exporting bank accounts...');
+                        final exportData =
+                            await ref.read(bankAccountsNotifierProvider.notifier).exportBankAccounts();
+                        if (context.mounted) {
+                          final csv = exportData['csv']?.toString() ?? '';
+                          if (csv.isNotEmpty) {
+                            Share.share(csv);
+                            AppFeedback.showSnackbar(context, message: 'Bank accounts exported successfully!');
+                          }
+                        }
+                      },
                       isDark: isDark,
                     ),
                   ),

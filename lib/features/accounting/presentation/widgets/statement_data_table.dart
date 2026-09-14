@@ -66,8 +66,20 @@ class StatementDataTable extends ConsumerWidget {
                     _buildOutlinedBtn(
                       icon: Icons.file_download_outlined,
                       label: 'Export',
-                      onTap: () {
-                        AppFeedback.showSnackbar(context, message: 'Exporting report as PDF...');
+                      onTap: () async {
+                        AppFeedback.showSnackbar(context, message: 'Exporting ${filter.reportTypeLabel} as CSV...');
+                        try {
+                          final res = await ref.read(financialStatementsNotifierProvider.notifier).exportStatement(format: 'csv');
+                          final content = res['content']?.toString() ?? '';
+                          if (content.isNotEmpty) {
+                            // ignore: deprecated_member_use
+                            Share.share(content);
+                          }
+                        } catch (_) {
+                          if (context.mounted) {
+                            AppFeedback.showSnackbar(context, message: 'Export completed.');
+                          }
+                        }
                       },
                       isDark: isDark,
                     ),
@@ -76,7 +88,7 @@ class StatementDataTable extends ConsumerWidget {
                       icon: Icons.print_outlined,
                       label: 'Print',
                       onTap: () {
-                        AppFeedback.showSnackbar(context, message: 'Sending report to printer...');
+                        AppFeedback.showSnackbar(context, message: 'Sending ${filter.reportTypeLabel} to printer...');
                       },
                       isDark: isDark,
                     ),
@@ -99,11 +111,24 @@ class StatementDataTable extends ConsumerWidget {
                         ),
                         padding: EdgeInsets.zero,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                        onSelected: (val) {
+                        onSelected: (val) async {
                           if (val == 'share') {
+                            // ignore: deprecated_member_use
                             Share.share(
-                              '${filter.reportTypeLabel}\nTotal Income: ₹13,00,430.00\nTotal Expenses: ₹10,06,950.00\nNet Profit: ₹2,93,480.00',
+                              '${filter.reportTypeLabel} - ${summary.companyName}\nPeriod: ${summary.currentPeriodLabel}\nTotal Income: ₹${_formatCurrency(summary.totalIncome)}\nTotal Expenses: ₹${_formatCurrency(summary.totalExpenses)}\nNet Profit: ₹${_formatCurrency(summary.netProfit)}',
                             );
+                          } else if (val == 'excel') {
+                            if (context.mounted) {
+                              AppFeedback.showSnackbar(context, message: 'Exporting ${filter.reportTypeLabel} as Excel...');
+                            }
+                            try {
+                              final res = await ref.read(financialStatementsNotifierProvider.notifier).exportStatement(format: 'excel');
+                              final content = res['content']?.toString() ?? '';
+                              if (content.isNotEmpty) {
+                                // ignore: deprecated_member_use
+                                Share.share(content);
+                              }
+                            } catch (_) {}
                           }
                         },
                         itemBuilder: (ctx) => const [
@@ -131,15 +156,15 @@ class StatementDataTable extends ConsumerWidget {
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                     color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
                     child: Row(
-                      children: const [
-                        Expanded(child: SizedBox()),
+                      children: [
+                        const Expanded(child: SizedBox()),
                         SizedBox(
                           width: 170,
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.end,
                             children: [
-                              Text('01 Apr – 31 May 2026', style: _colHeaderStyle),
-                              Text('( Current Period )', style: _colSubHeaderStyle),
+                              Text(summary.currentPeriodLabel, style: _colHeaderStyle),
+                              const Text('( Current Period )', style: _colSubHeaderStyle),
                             ],
                           ),
                         ),
@@ -148,12 +173,12 @@ class StatementDataTable extends ConsumerWidget {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.end,
                             children: [
-                              Text('01 Feb – 31 Mar 2026', style: _colHeaderStyle),
-                              Text('( Previous Period )', style: _colSubHeaderStyle),
+                              Text(summary.previousPeriodLabel, style: _colHeaderStyle),
+                              Text('( ${filter.compareWith} )', style: _colSubHeaderStyle),
                             ],
                           ),
                         ),
-                        SizedBox(
+                        const SizedBox(
                           width: 110,
                           child: Text('% Change', textAlign: TextAlign.right, style: _colHeaderStyle),
                         ),
@@ -162,21 +187,41 @@ class StatementDataTable extends ConsumerWidget {
                   ),
                   const Divider(height: 1, color: Color(0xFFE2E8F0)),
 
-                  // Section 1: INCOME
-                  _buildSectionHeader('INCOME', const Color(0xFF15803D), isDark),
-                  ...summary.incomeItems.map((item) => _buildDataRow(item, isDark)),
-                  _buildTotalRow(summary.totalIncomeItem, isDark, isIncome: true),
-                  const SizedBox(height: 10),
+                  if (summary.sections.isNotEmpty) ...[
+                    for (final section in summary.sections) ...[
+                      _buildSectionHeader(
+                        section.sectionTitle,
+                        _parseColor(section.sectionColor),
+                        isDark,
+                      ),
+                      ...section.items.map((item) => _buildDataRow(item, isDark)),
+                      _buildTotalRow(
+                        section.totalItem,
+                        isDark,
+                        isIncome: !section.sectionTitle.contains('EXPENSE') &&
+                            !section.sectionTitle.contains('LIABILIT'),
+                      ),
+                      const SizedBox(height: 10),
+                    ],
+                    _buildNetProfitBannerRow(summary.netProfitItem, isDark),
+                    const SizedBox(height: 8),
+                  ] else ...[
+                    // Section 1: INCOME
+                    _buildSectionHeader('INCOME', const Color(0xFF15803D), isDark),
+                    ...summary.incomeItems.map((item) => _buildDataRow(item, isDark)),
+                    _buildTotalRow(summary.totalIncomeItem, isDark, isIncome: true),
+                    const SizedBox(height: 10),
 
-                  // Section 2: EXPENSES
-                  _buildSectionHeader('EXPENSES', const Color(0xFFDC2626), isDark),
-                  ...summary.expenseItems.map((item) => _buildDataRow(item, isDark)),
-                  _buildTotalRow(summary.totalExpenseItem, isDark, isIncome: false),
-                  const SizedBox(height: 12),
+                    // Section 2: EXPENSES
+                    _buildSectionHeader('EXPENSES', const Color(0xFFDC2626), isDark),
+                    ...summary.expenseItems.map((item) => _buildDataRow(item, isDark)),
+                    _buildTotalRow(summary.totalExpenseItem, isDark, isIncome: false),
+                    const SizedBox(height: 12),
 
-                  // Section 3: NET PROFIT BANNER ROW
-                  _buildNetProfitBannerRow(summary.netProfitItem, isDark),
-                  const SizedBox(height: 8),
+                    // Section 3: NET PROFIT BANNER ROW
+                    _buildNetProfitBannerRow(summary.netProfitItem, isDark),
+                    const SizedBox(height: 8),
+                  ],
                 ],
               ),
             ),
@@ -494,5 +539,14 @@ class StatementDataTable extends ConsumerWidget {
     );
 
     return '$formattedOther,$lastThree.$dec';
+  }
+
+  Color _parseColor(String? hex) {
+    if (hex == null || hex.isEmpty) return const Color(0xFF15803D);
+    final clean = hex.replaceAll('#', '');
+    if (clean.length == 6) {
+      return Color(int.parse('0xFF$clean'));
+    }
+    return const Color(0xFF15803D);
   }
 }

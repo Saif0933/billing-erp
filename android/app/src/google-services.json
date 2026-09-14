@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1069729124626",
+    "project_id": "taxbunny-26082",
+    "storage_bucket": "taxbunny-26082.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1069729124626:android:512c536786f5f01000e3cb",
+        "android_client_info": {
+          "package_name": "com.example.frontend"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAGThLq43mo2El5RWjDACo0wXkbL4rmNd0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

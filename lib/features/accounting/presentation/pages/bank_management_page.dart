@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../subscription/domain/entities/subscription_models.dart';
 import '../../../subscription/presentation/pages/locked_feature_page.dart';
 import '../../../subscription/presentation/providers/subscription_provider.dart';
+import '../providers/bank_accounts_provider.dart';
 import '../widgets/add_bank_account_dialog.dart';
 import '../widgets/bank_accounts_table.dart';
 import '../widgets/bank_balance_overview_card.dart';
@@ -29,10 +30,16 @@ class BankManagementPage extends ConsumerWidget {
     return Scaffold(
       backgroundColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+        child: RefreshIndicator(
+          color: const Color(0xFF15803D),
+          onRefresh: () async {
+            await ref.read(bankAccountsNotifierProvider.notifier).refresh();
+          },
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               // Page Header: Bank Accounts + [ + Add Bank Account ▾ ] Button
               _buildPageHeader(context, isDark),
@@ -88,7 +95,8 @@ class BankManagementPage extends ConsumerWidget {
           ),
         ),
       ),
-    );
+    ),
+  );
   }
 
   Widget _buildPageHeader(BuildContext context, bool isDark) {

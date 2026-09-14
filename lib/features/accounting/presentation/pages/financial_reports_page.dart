@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../subscription/domain/entities/subscription_models.dart';
 import '../../../subscription/presentation/pages/locked_feature_page.dart';
 import '../../../subscription/presentation/providers/subscription_provider.dart';
+import '../providers/financial_statements_provider.dart';
 import '../widgets/statement_data_table.dart';
 import '../widgets/statement_filter_bar.dart';
 import '../widgets/statement_profit_trend_card.dart';
@@ -27,14 +28,17 @@ class FinancialReportsPage extends ConsumerWidget {
     return Scaffold(
       backgroundColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // Page Header: Financial Statements + [ Generate Report ▾ ]
-              _buildPageHeader(context, isDark),
-              const SizedBox(height: 16),
+        child: RefreshIndicator(
+          onRefresh: () => ref.read(financialStatementsNotifierProvider.notifier).refresh(),
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Page Header: Financial Statements + [ Generate Report ▾ ]
+                _buildPageHeader(context, ref, isDark),
+                const SizedBox(height: 16),
 
               // 4 Report Cards (Profit & Loss, Balance Sheet, Cash Flow, Equity Changes)
               const StatementReportCards(),
@@ -94,10 +98,11 @@ class FinancialReportsPage extends ConsumerWidget {
           ),
         ),
       ),
+    ),
     );
   }
 
-  Widget _buildPageHeader(BuildContext context, bool isDark) {
+  Widget _buildPageHeader(BuildContext context, WidgetRef ref, bool isDark) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -159,7 +164,16 @@ class FinancialReportsPage extends ConsumerWidget {
             ),
           ),
           child: PopupMenuButton<String>(
-            onSelected: (val) {},
+            onSelected: (val) {
+              final notifier = ref.read(financialStatementFilterProvider.notifier);
+              if (val == 'pnl') {
+                notifier.setReportType(FinancialReportType.profitAndLoss, 'Profit & Loss Statement');
+              } else if (val == 'bs') {
+                notifier.setReportType(FinancialReportType.balanceSheet, 'Balance Sheet');
+              } else if (val == 'cf') {
+                notifier.setReportType(FinancialReportType.cashFlow, 'Cash Flow Statement');
+              }
+            },
             itemBuilder: (ctx) => const [
               PopupMenuItem(
                 value: 'pnl',

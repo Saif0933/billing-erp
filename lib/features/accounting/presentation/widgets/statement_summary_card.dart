@@ -56,7 +56,11 @@ class StatementSummaryCard extends ConsumerWidget {
                 width: 95,
                 height: 95,
                 child: CustomPaint(
-                  painter: _FinancialSummaryDonutPainter(),
+                  painter: _FinancialSummaryDonutPainter(
+                    income: summary.totalIncome,
+                    expenses: summary.totalExpenses,
+                    profit: summary.netProfit,
+                  ),
                 ),
               ),
               const SizedBox(width: 16),
@@ -79,7 +83,7 @@ class StatementSummaryCard extends ConsumerWidget {
           ),
           const SizedBox(height: 16),
 
-          // Bottom Banner: ✔ Your profit increased by 28.91% compared to previous period
+          // Bottom Banner: ✔ Your profit increased by ... compared to previous period
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
             decoration: BoxDecoration(
@@ -99,7 +103,9 @@ class StatementSummaryCard extends ConsumerWidget {
                 const SizedBox(width: 6),
                 Expanded(
                   child: Text(
-                    'Your profit increased by ${summary.profitGrowthPercent}% compared to previous period',
+                    summary.profitGrowthPercent >= 0
+                        ? 'Your profit increased by ${summary.profitGrowthPercent.toStringAsFixed(2)}% compared to previous period'
+                        : 'Your profit decreased by ${summary.profitGrowthPercent.abs().toStringAsFixed(2)}% compared to previous period',
                     style: TextStyle(
                       fontSize: 11.5,
                       fontWeight: FontWeight.bold,
@@ -172,6 +178,16 @@ class StatementSummaryCard extends ConsumerWidget {
 }
 
 class _FinancialSummaryDonutPainter extends CustomPainter {
+  final double income;
+  final double expenses;
+  final double profit;
+
+  _FinancialSummaryDonutPainter({
+    required this.income,
+    required this.expenses,
+    required this.profit,
+  });
+
   @override
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
@@ -179,33 +195,47 @@ class _FinancialSummaryDonutPainter extends CustomPainter {
     const strokeWidth = 14.0;
     final rect = Rect.fromCircle(center: center, radius: radius);
 
-    // Total Income segment (Green - 50%)
+    final safeProfit = profit > 0 ? profit : 0.0;
+    final total = income + expenses + safeProfit;
+
+    if (total <= 0) return;
+
+    final incomeAngle = (income / total) * 2 * math.pi;
+    final expenseAngle = (expenses / total) * 2 * math.pi;
+    final profitAngle = (safeProfit / total) * 2 * math.pi;
+
     final greenPaint = Paint()
       ..color = const Color(0xFF16A34A)
       ..style = PaintingStyle.stroke
       ..strokeWidth = strokeWidth
       ..strokeCap = StrokeCap.butt;
 
-    // Total Expenses segment (Red - 35%)
     final redPaint = Paint()
       ..color = const Color(0xFFDC2626)
       ..style = PaintingStyle.stroke
       ..strokeWidth = strokeWidth
       ..strokeCap = StrokeCap.butt;
 
-    // Net Profit segment (Blue - 15%)
     final bluePaint = Paint()
       ..color = const Color(0xFF2563EB)
       ..style = PaintingStyle.stroke
       ..strokeWidth = strokeWidth
       ..strokeCap = StrokeCap.butt;
 
-    // Draw arcs
-    canvas.drawArc(rect, -math.pi / 2, math.pi, false, greenPaint); // 50%
-    canvas.drawArc(rect, math.pi / 2, math.pi * 0.7, false, redPaint); // 35%
-    canvas.drawArc(rect, math.pi * 1.2, math.pi * 0.3, false, bluePaint); // 15%
+    double startAngle = -math.pi / 2;
+    canvas.drawArc(rect, startAngle, incomeAngle, false, greenPaint);
+    startAngle += incomeAngle;
+    canvas.drawArc(rect, startAngle, expenseAngle, false, redPaint);
+    startAngle += expenseAngle;
+    if (profitAngle > 0) {
+      canvas.drawArc(rect, startAngle, profitAngle, false, bluePaint);
+    }
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+  bool shouldRepaint(covariant _FinancialSummaryDonutPainter oldDelegate) =>
+      oldDelegate.income != income ||
+      oldDelegate.expenses != expenses ||
+      oldDelegate.profit != profit;
 }
+

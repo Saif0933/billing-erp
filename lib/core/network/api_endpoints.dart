@@ -129,4 +129,20 @@ class ApiEndpoints {
   static const String journalEntriesSummary = '/api/v1/accounting/journal-entries/summary';
   static const String journalEntriesAccounts = '/api/v1/accounting/journal-entries/accounts';
   static const String journalEntriesExport = '/api/v1/accounting/journal-entries/export';
+
+  // Double-Entry Accounting / Bank Accounts (backend: module/double-entry-accounting/bank-account)
+  static const String bankAccounts = '/api/v1/accounting/bank-accounts';
+  static const String bankAccountsSummary = '/api/v1/accounting/bank-accounts/summary';
+  static const String bankAccountsTransactions = '/api/v1/accounting/bank-accounts/recent-transactions';
+  static const String bankAccountsExport = '/api/v1/accounting/bank-accounts/export';
+
+  // Double-Entry Accounting / Financial Statements (backend: module/double-entry-accounting/financial-statements)
+  static const String financialStatements = '/api/v1/accounting/financial-statements';
+  static const String financialStatementsSummary = '/api/v1/accounting/financial-statements/summary';
+  static const String financialStatementsTrend = '/api/v1/accounting/financial-statements/trend';
+  static const String financialStatementsReportTypes = '/api/v1/accounting/financial-statements/report-types';
+  static const String financialStatementsCustomReport = '/api/v1/accounting/financial-statements/custom-report';
+  static const String financialStatementsSchedule = '/api/v1/accounting/financial-statements/schedule';
+  static const String financialStatementsSaveLayout = '/api/v1/accounting/financial-statements/save-layout';
+  static const String financialStatementsExport = '/api/v1/accounting/financial-statements/export';
 }

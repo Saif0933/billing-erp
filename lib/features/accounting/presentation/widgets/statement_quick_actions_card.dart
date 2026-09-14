@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:share_plus/share_plus.dart';
 import '../../../../shared/widgets/feedback.dart';
+import '../providers/financial_statements_provider.dart';
 
 class StatementQuickActionsCard extends ConsumerWidget {
   const StatementQuickActionsCard({super.key});
@@ -8,6 +10,8 @@ class StatementQuickActionsCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final filter = ref.watch(financialStatementFilterProvider);
+    final notifier = ref.read(financialStatementsNotifierProvider.notifier);
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -53,8 +57,11 @@ class StatementQuickActionsCard extends ConsumerWidget {
                       iconColor: const Color(0xFF16A34A),
                       title: 'Custom Report',
                       subtitle: 'Create custom statement',
-                      onTap: () {
-                        AppFeedback.showSnackbar(context, message: 'Custom Statement Designer opened!');
+                      onTap: () async {
+                        AppFeedback.showSnackbar(context, message: 'Custom Statement Report generated!');
+                        await notifier.createCustomReport(
+                          reportName: 'Custom ${filter.reportTypeLabel}',
+                        );
                       },
                       isDark: isDark,
                     ),
@@ -68,8 +75,13 @@ class StatementQuickActionsCard extends ConsumerWidget {
                       iconColor: const Color(0xFF9333EA),
                       title: 'Schedule Report',
                       subtitle: 'Automate report delivery',
-                      onTap: () {
-                        AppFeedback.showSnackbar(context, message: 'Schedule report modal opened!');
+                      onTap: () async {
+                        AppFeedback.showSnackbar(context, message: 'Report scheduled for monthly email delivery!');
+                        await notifier.scheduleReport(
+                          frequency: 'monthly',
+                          recipients: ['finance@taxbunny.in'],
+                          format: 'pdf',
+                        );
                       },
                       isDark: isDark,
                     ),
@@ -83,8 +95,16 @@ class StatementQuickActionsCard extends ConsumerWidget {
                       iconColor: const Color(0xFF16A34A),
                       title: 'Export to Excel',
                       subtitle: 'Download in Excel',
-                      onTap: () {
+                      onTap: () async {
                         AppFeedback.showSnackbar(context, message: 'Exporting Excel workbook...');
+                        try {
+                          final res = await notifier.exportStatement(format: 'excel');
+                          final content = res['content']?.toString() ?? '';
+                          if (content.isNotEmpty) {
+                            // ignore: deprecated_member_use
+                            Share.share(content);
+                          }
+                        } catch (_) {}
                       },
                       isDark: isDark,
                     ),
@@ -99,7 +119,7 @@ class StatementQuickActionsCard extends ConsumerWidget {
                       title: 'Print Report',
                       subtitle: 'Print current report',
                       onTap: () {
-                        AppFeedback.showSnackbar(context, message: 'Printing current report...');
+                        AppFeedback.showSnackbar(context, message: 'Printing current ${filter.reportTypeLabel}...');
                       },
                       isDark: isDark,
                     ),
@@ -113,8 +133,9 @@ class StatementQuickActionsCard extends ConsumerWidget {
                       iconColor: const Color(0xFFEA580C),
                       title: 'Save Layout',
                       subtitle: 'Save current settings',
-                      onTap: () {
+                      onTap: () async {
                         AppFeedback.showSnackbar(context, message: 'Current report layout saved as preset!');
+                        await notifier.saveLayout('Default Layout');
                       },
                       isDark: isDark,
                     ),

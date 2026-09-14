@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/constants/app_radius.dart';
 import '../../../../core/constants/app_spacing.dart';
 import '../../../../shared/widgets/feedback.dart';
+import '../providers/bank_accounts_provider.dart';
 
 class AddBankAccountDialog extends ConsumerStatefulWidget {
   const AddBankAccountDialog({super.key});
@@ -27,6 +28,7 @@ class _AddBankAccountDialogState extends ConsumerState<AddBankAccountDialog> {
   final _openingBalanceController = TextEditingController(text: '0.00');
 
   String _selectedType = 'Current Account';
+  bool _isSubmitting = false;
 
   final _accountTypes = [
     'Current Account',
@@ -43,6 +45,45 @@ class _AddBankAccountDialogState extends ConsumerState<AddBankAccountDialog> {
     _branchController.dispose();
     _openingBalanceController.dispose();
     super.dispose();
+  }
+
+  Future<void> _submitForm() async {
+    if (!(_formKey.currentState?.validate() ?? false)) return;
+    setState(() => _isSubmitting = true);
+
+    try {
+      final openingBalance = double.tryParse(_openingBalanceController.text.trim()) ?? 0.0;
+      final dto = CreateBankAccountDto(
+        bankName: _bankNameController.text.trim(),
+        accountType: _selectedType,
+        accountNumber: _accountNumberController.text.trim(),
+        ifsc: _ifscController.text.trim().toUpperCase(),
+        branch: _branchController.text.trim(),
+        openingBalance: openingBalance,
+      );
+
+      await ref.read(bankAccountsNotifierProvider.notifier).createAccount(dto);
+
+      if (mounted) {
+        Navigator.pop(context);
+        AppFeedback.showSnackbar(
+          context,
+          message: 'Bank Account "${dto.bankName}" created successfully!',
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        AppFeedback.showSnackbar(
+          context,
+          message: 'Failed to create bank account: $e',
+          isError: true,
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isSubmitting = false);
+      }
+    }
   }
 
   @override
@@ -210,7 +251,7 @@ class _AddBankAccountDialogState extends ConsumerState<AddBankAccountDialog> {
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
                   TextButton(
-                    onPressed: () => Navigator.pop(context),
+                    onPressed: _isSubmitting ? null : () => Navigator.pop(context),
                     child: const Text('Cancel'),
                   ),
                   const SizedBox(width: 8),
@@ -221,21 +262,19 @@ class _AddBankAccountDialogState extends ConsumerState<AddBankAccountDialog> {
                         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                       ),
-                      icon: const Icon(Icons.check, size: 16, color: Colors.white),
-                      label: const Text(
-                        'Save Account',
-                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                      icon: _isSubmitting
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                            )
+                          : const Icon(Icons.check, size: 16, color: Colors.white),
+                      label: Text(
+                        _isSubmitting ? 'Saving...' : 'Save Account',
+                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                         overflow: TextOverflow.ellipsis,
                       ),
-                      onPressed: () {
-                        if (_formKey.currentState?.validate() ?? false) {
-                          Navigator.pop(context);
-                          AppFeedback.showSnackbar(
-                            context,
-                            message: 'Bank Account "${_bankNameController.text}" created successfully!',
-                          );
-                        }
-                      },
+                      onPressed: _isSubmitting ? null : _submitForm,
                     ),
                   ),
                 ],

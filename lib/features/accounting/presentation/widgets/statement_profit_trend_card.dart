@@ -86,46 +86,54 @@ class StatementProfitTrendCard extends ConsumerWidget {
                 ),
               ),
 
-              // Tooltip on top right (over May 2026)
-              Positioned(
-                right: 8,
-                top: 4,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
-                  decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF0F172A) : Colors.white,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: isDark ? Colors.white24 : const Color(0xFFE2E8F0),
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.08),
-                        blurRadius: 6,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: const [
-                      Text(
-                        'May 2026',
-                        style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold),
-                      ),
-                      SizedBox(height: 2),
-                      Text(
-                        '• Net Profit: ₹2,93,480.00',
-                        style: TextStyle(
-                          fontSize: 9.5,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF16A34A),
+              // Dynamic tooltip over latest point
+              Builder(
+                builder: (context) {
+                  final lastPoint = summary.trendPoints.isNotEmpty ? summary.trendPoints.last : null;
+                  final latestMonth = lastPoint?.month ?? 'May 2026';
+                  final latestAmountStr = lastPoint != null ? '₹${_formatCurrency(lastPoint.amount)}' : '₹2,93,480.00';
+
+                  return Positioned(
+                    right: 8,
+                    top: 4,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+                      decoration: BoxDecoration(
+                        color: isDark ? const Color(0xFF0F172A) : Colors.white,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: isDark ? Colors.white24 : const Color(0xFFE2E8F0),
                         ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.08),
+                            blurRadius: 6,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            latestMonth,
+                            style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            '• Net Profit: $latestAmountStr',
+                            style: const TextStyle(
+                              fontSize: 9.5,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF16A34A),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
               ),
             ],
           ),
@@ -157,6 +165,26 @@ class StatementProfitTrendCard extends ConsumerWidget {
         ],
       ),
     );
+  }
+
+  String _formatCurrency(double amount) {
+    final parts = amount.toStringAsFixed(2).split('.');
+    final whole = parts[0];
+    final dec = parts[1];
+
+    if (whole.length <= 3) {
+      return '$whole.$dec';
+    }
+
+    final lastThree = whole.substring(whole.length - 3);
+    final otherNumbers = whole.substring(0, whole.length - 3);
+
+    final formattedOther = otherNumbers.replaceAllMapped(
+      RegExp(r'(\d)(?=(\d{2})+(?!\d))'),
+      (Match m) => '${m[1]},',
+    );
+
+    return '$formattedOther,$lastThree.$dec';
   }
 }
 
