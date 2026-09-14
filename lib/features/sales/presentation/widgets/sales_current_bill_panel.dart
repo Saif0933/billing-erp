@@ -17,6 +17,7 @@ class SalesCurrentBillPanel extends StatefulWidget {
   final VoidCallback onClearCart;
   final VoidCallback onSaveDraft;
   final VoidCallback onGenerateBill;
+  final bool isSubmitting;
   final VoidCallback? onSettingsTap;
 
   const SalesCurrentBillPanel({
@@ -27,6 +28,7 @@ class SalesCurrentBillPanel extends StatefulWidget {
     this.discountPercent = 0.0,
     this.discountAmount = 0.0,
     this.note,
+    this.isSubmitting = false,
     required this.onIncrementQty,
     required this.onDecrementQty,
     required this.onRemoveItem,
@@ -780,9 +782,14 @@ class _SalesCurrentBillPanelState extends State<SalesCurrentBillPanel> {
         // Save as Draft Button
         Expanded(
           flex: 4,
-          child: InkWell(
-            onTap: widget.cartItems.isEmpty ? null : widget.onSaveDraft,
-            borderRadius: BorderRadius.circular(10),
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: widget.cartItems.isEmpty || widget.isSubmitting
+                ? null
+                : () {
+                    FocusScope.of(context).unfocus();
+                    widget.onSaveDraft();
+                  },
             child: Container(
               height: 42,
               padding: const EdgeInsets.symmetric(horizontal: 6),
@@ -821,44 +828,76 @@ class _SalesCurrentBillPanelState extends State<SalesCurrentBillPanel> {
         // Generate Bill (F8) Button
         Expanded(
           flex: 6,
-          child: InkWell(
-            onTap: widget.cartItems.isEmpty ? null : widget.onGenerateBill,
-            borderRadius: BorderRadius.circular(10),
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: widget.cartItems.isEmpty || widget.isSubmitting
+                ? null
+                : () {
+                    FocusScope.of(context).unfocus();
+                    widget.onGenerateBill();
+                  },
             child: Container(
               height: 42,
               padding: const EdgeInsets.symmetric(horizontal: 6),
               decoration: BoxDecoration(
-                color: const Color(0xFF059669), // Solid green matching screenshot
+                color: widget.cartItems.isEmpty
+                    ? const Color(0xFF9CA3AF)
+                    : (widget.isSubmitting ? const Color(0xFF047857) : const Color(0xFF059669)),
                 borderRadius: BorderRadius.circular(10),
-                boxShadow: const [
-                  BoxShadow(
-                    color: Color(0x33059669),
-                    blurRadius: 6,
-                    offset: Offset(0, 3),
-                  ),
-                ],
+                boxShadow: widget.cartItems.isEmpty
+                    ? null
+                    : const [
+                        BoxShadow(
+                          color: Color(0x33059669),
+                          blurRadius: 6,
+                          offset: Offset(0, 3),
+                        ),
+                      ],
               ),
               child: FittedBox(
                 fit: BoxFit.scaleDown,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: const [
-                    Icon(
-                      Icons.print_outlined,
-                      size: 18,
-                      color: Colors.white,
-                    ),
-                    SizedBox(width: 8),
-                    Text(
-                      'Generate Bill (F8)',
-                      style: TextStyle(
-                        fontSize: 13.5,
-                        fontWeight: FontWeight.w800,
-                        color: Colors.white,
+                child: widget.isSubmitting
+                    ? Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: const [
+                          SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          ),
+                          SizedBox(width: 8),
+                          Text(
+                            'Generating Bill...',
+                            style: TextStyle(
+                              fontSize: 13.5,
+                              fontWeight: FontWeight.w800,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
+                      )
+                    : Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: const [
+                          Icon(
+                            Icons.print_outlined,
+                            size: 18,
+                            color: Colors.white,
+                          ),
+                          SizedBox(width: 8),
+                          Text(
+                            'Generate Bill (F8)',
+                            style: TextStyle(
+                              fontSize: 13.5,
+                              fontWeight: FontWeight.w800,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
-                  ],
-                ),
               ),
             ),
           ),

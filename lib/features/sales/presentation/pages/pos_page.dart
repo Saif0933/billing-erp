@@ -698,7 +698,6 @@ class _POSPageState extends ConsumerState<POSPage> {
     required double sgst,
     required double grandTotal,
   }) async {
-    setState(() => _isSubmittingSale = true);
     try {
       final discAmount = _discountAmount > 0
           ? _discountAmount
@@ -712,7 +711,7 @@ class _POSPageState extends ConsumerState<POSPage> {
         final lineCgst = ((lineTaxable * (gstRate / 200.0) * 100).round()) / 100.0;
         final lineSgst = ((lineTaxable * (gstRate / 200.0) * 100).round()) / 100.0;
         return {
-          'productId': it.product.id.startsWith('sp_') ? null : it.product.id,
+          'productId': it.product.id,
           'name': it.product.displayNameWithWeight,
           'hsnSac': it.product.hsnCode.isNotEmpty ? it.product.hsnCode : '8544',
           'quantity': it.quantity,
@@ -749,8 +748,10 @@ class _POSPageState extends ConsumerState<POSPage> {
         'items': itemsPayload,
       };
 
-      // 1. Save directly to `sales` and `sale_items` tables via POS Checkout API
-      final res = await ref.read(posApiServiceProvider).checkout(payload);
+      // 1. Save directly to `sales` and `sale_items` tables via POS Checkout API with timeout
+      final res = await ref.read(posApiServiceProvider).checkout(payload).timeout(
+        const Duration(milliseconds: 2500),
+      );
 
       // 2. Cache in billing repository
       await ref.read(billingRepositoryProvider.notifier).addInvoice(res.invoice);
@@ -758,7 +759,6 @@ class _POSPageState extends ConsumerState<POSPage> {
       if (mounted) {
         setState(() {
           _billNumber = res.invoice.invoiceNumber;
-          _isSubmittingSale = false;
         });
         // Refresh product catalog to show updated stock
         _syncSalesBackend();
@@ -767,9 +767,8 @@ class _POSPageState extends ConsumerState<POSPage> {
       return res;
     } catch (e) {
       debugPrint('[POSPage] Sale checkout notice: $e');
-      if (mounted) setState(() => _isSubmittingSale = false);
 
-      // Fallback to invoice creation if offline
+      // Fallback to invoice creation if offline or sample product
       try {
         final fallbackPayload = {
           'invoiceNumber': _billNumber,
@@ -786,7 +785,7 @@ class _POSPageState extends ConsumerState<POSPage> {
           'status': status,
           'notes': _transactionNote,
           'items': _cartItems.map((it) => {
-            'productId': it.product.id.startsWith('sp_') ? null : it.product.id,
+            'productId': it.product.id,
             'productName': it.product.displayNameWithWeight,
             'quantity': it.quantity,
             'unit': it.product.weight,
@@ -799,7 +798,9 @@ class _POSPageState extends ConsumerState<POSPage> {
             'lineTotal': it.amount + (it.amount * (it.gstRate / 100.0)),
           }).toList(),
         };
-        await ref.read(salesInvoiceNotifierProvider.notifier).createInvoice(fallbackPayload);
+        await ref.read(salesInvoiceNotifierProvider.notifier).createInvoice(fallbackPayload).timeout(
+          const Duration(milliseconds: 2000),
+        );
       } catch (_) {}
       return null;
     }
@@ -841,64 +842,73 @@ class _POSPageState extends ConsumerState<POSPage> {
   }
 
   Future<void> _generateBill() async {
-    if (_cartItems.isEmpty) return;
+    if (_cartItems.isEmpty || _isSubmittingSale) return;
 
-    final subtotal = _cartItems.fold(0.0, (s, it) => s + it.amount);
-    final discAmount = _discountAmount > 0
-        ? _discountAmount
-        : (subtotal * _discountPercent) / 100.0;
-    final taxableSubtotal = (subtotal - discAmount).clamp(0.0, double.infinity);
-    final discountRatio = subtotal > 0 ? (taxableSubtotal / subtotal) : 1.0;
+    setState(() => _isSubmittingSale = true);
 
-    double cgst = 0.0;
-    double sgst = 0.0;
-    for (final it in _cartItems) {
-      final lineTaxable = it.amount * discountRatio;
-      cgst += (lineTaxable * (it.gstRate / 200.0));
-      sgst += (lineTaxable * (it.gstRate / 200.0));
-    }
-    cgst = ((cgst * 100).round()) / 100.0;
-    sgst = ((sgst * 100).round()) / 100.0;
-    final grandTotal = taxableSubtotal + cgst + sgst;
+    try {
+      final subtotal = _cartItems.fold(0.0, (s, it) => s + it.amount);
+      final discAmount = _discountAmount > 0
+          ? _discountAmount
+          : (subtotal * _discountPercent) / 100.0;
+      final taxableSubtotal = (subtotal - discAmount).clamp(0.0, double.infinity);
+      final discountRatio = subtotal > 0 ? (taxableSubtotal / subtotal) : 1.0;
 
-    final itemsCopy = List<SalesCartItem>.from(_cartItems);
-    final customerCopy = _selectedCustomer;
+      double cgst = 0.0;
+      double sgst = 0.0;
+      for (final it in _cartItems) {
+        final lineTaxable = it.amount * discountRatio;
+        cgst += (lineTaxable * (it.gstRate / 200.0));
+        sgst += (lineTaxable * (it.gstRate / 200.0));
+      }
+      cgst = ((cgst * 100).round()) / 100.0;
+      sgst = ((sgst * 100).round()) / 100.0;
+      final grandTotal = taxableSubtotal + cgst + sgst;
 
-    final res = await _saveSaleToBackend(
-      status: 'PRINTED',
-      subtotal: subtotal,
-      cgst: cgst,
-      sgst: sgst,
-      grandTotal: grandTotal,
-    );
+      final itemsCopy = List<SalesCartItem>.from(_cartItems);
+      final customerCopy = _selectedCustomer;
 
-    if (!mounted) return;
-
-    final currentBillNo = res?.invoice.invoiceNumber ?? _billNumber;
-
-    await showDialog(
-      context: context,
-      builder: (ctx) => SalesBillSuccessDialog(
-        billNumber: currentBillNo,
-        customerName: customerCopy,
-        items: itemsCopy,
+      final res = await _saveSaleToBackend(
+        status: 'PRINTED',
         subtotal: subtotal,
-        discount: discAmount,
         cgst: cgst,
         sgst: sgst,
         grandTotal: grandTotal,
-        onPrint: () {
-          AppFeedback.showSnackbar(
-            context,
-            message: 'Sending to Thermal Receipt Printer Queue (80mm)...',
-          );
-          _completeSaleAndReset();
-        },
-      ),
-    );
+      );
 
-    if (mounted) {
-      _completeSaleAndReset();
+      if (!mounted) return;
+
+      final currentBillNo = res?.invoice.invoiceNumber ?? _billNumber;
+
+      await showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (ctx) => SalesBillSuccessDialog(
+          billNumber: currentBillNo,
+          customerName: customerCopy,
+          items: itemsCopy,
+          subtotal: subtotal,
+          discount: discAmount,
+          cgst: cgst,
+          sgst: sgst,
+          grandTotal: grandTotal,
+          onPrint: () {
+            AppFeedback.showSnackbar(
+              context,
+              message: 'Sending to Thermal Receipt Printer Queue (80mm)...',
+            );
+            _completeSaleAndReset();
+          },
+        ),
+      );
+
+      if (mounted) {
+        _completeSaleAndReset();
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isSubmittingSale = false);
+      }
     }
   }
 
@@ -1109,9 +1119,10 @@ class _POSPageState extends ConsumerState<POSPage> {
               onSelectCustomer: _showCustomerSelectionDialog,
               onAddCustomer: _showCustomerSelectionDialog,
               onAddNote: _showAddNoteDialog,
+              isSubmitting: _isSubmittingSale,
               onClearCart: _clearCart,
               onSaveDraft: _saveAsDraft,
-              onGenerateBill: _isSubmittingSale ? () {} : _generateBill,
+              onGenerateBill: _generateBill,
               onSettingsTap: () {
                 AppFeedback.showSnackbar(
                   context,
@@ -1365,6 +1376,7 @@ class _POSPageState extends ConsumerState<POSPage> {
                       Navigator.pop(ctx);
                       _clearCart();
                     },
+                    isSubmitting: _isSubmittingSale,
                     onSaveDraft: () {
                       Navigator.pop(ctx);
                       _saveAsDraft();
