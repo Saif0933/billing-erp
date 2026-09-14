@@ -16,6 +16,7 @@ import '../widgets/sales_current_bill_panel.dart';
 import '../widgets/sales_dialogs.dart';
 import '../widgets/sales_product_card.dart';
 import '../widgets/sales_top_header.dart';
+import '../widgets/pos_camera_scanner_dialog.dart';
 import '../../data/models/pos_dto.dart';
 import '../../../dashboard/presentation/providers/billing_repository.dart';
 
@@ -350,6 +351,22 @@ class _POSPageState extends ConsumerState<POSPage> {
     }
 
     if (match != null) {
+      final isAlreadyScanned = _cartItems.any((it) =>
+          it.product.id == match!.id ||
+          (it.product.barcode.isNotEmpty &&
+              it.product.barcode.trim().toUpperCase() == trimmed.toUpperCase()));
+      if (isAlreadyScanned) {
+        _searchController.clear();
+        setState(() {});
+        if (mounted) {
+          AppFeedback.showSnackbar(
+            context,
+            message: '${match.name} is already scanned in current bill',
+          );
+        }
+        return;
+      }
+
       _addProductToCart(match);
       _searchController.clear();
       setState(() {});
@@ -370,6 +387,85 @@ class _POSPageState extends ConsumerState<POSPage> {
         message: productNotListedScanMessage(trimmed),
         isError: true,
       );
+    }
+  }
+
+  Future<CameraScanStatus> _handleCameraBarcodeScanned(String barcode) async {
+    final trimmed = barcode.trim();
+    if (trimmed.isEmpty) return CameraScanStatus.notFound;
+
+    SalesProductItem? match;
+    for (final p in _products) {
+      if (p.barcode.trim().toUpperCase() == trimmed.toUpperCase() ||
+          p.sku.trim().toUpperCase() == trimmed.toUpperCase() ||
+          p.id.trim().toUpperCase() == trimmed.toUpperCase()) {
+        match = p;
+        break;
+      }
+    }
+
+    if (match == null) {
+      try {
+        final product = await ref.read(posApiServiceProvider).scanBarcode(trimmed);
+        if (product != null && isListedSellableProduct(product)) {
+          match = _mapToSalesProductItem(product);
+          if (!_products.any((p) => p.id == match!.id)) {
+            _products.add(match);
+          }
+        }
+      } catch (_) {
+        match = null;
+      }
+    }
+
+    if (match == null && !looksLikeBarcode(trimmed)) {
+      final query = trimmed.toLowerCase();
+      for (final p in _products) {
+        if (p.name.toLowerCase().contains(query)) {
+          match = p;
+          break;
+        }
+      }
+    }
+
+    if (match != null) {
+      final isAlreadyScanned = _cartItems.any((it) =>
+          it.product.id == match!.id ||
+          (it.product.barcode.isNotEmpty &&
+              it.product.barcode.trim().toUpperCase() == trimmed.toUpperCase()));
+      if (isAlreadyScanned) {
+        return CameraScanStatus.alreadyScanned;
+      }
+
+      _addProductToCart(match);
+      return CameraScanStatus.added;
+    }
+    return CameraScanStatus.notFound;
+  }
+
+  Future<void> _openCameraScanner() async {
+    final shouldViewBill = await POSCameraScannerDialog.show(
+      context,
+      onBarcodeScanned: _handleCameraBarcodeScanned,
+      getCartItemCount: () => _cartItems.fold(0, (sum, i) => sum + i.quantity),
+      getCartTotal: () {
+        final subtotal = _cartItems.fold(0.0, (s, it) => s + it.amount);
+        final discAmount = _discountAmount > 0
+            ? _discountAmount
+            : (subtotal * _discountPercent) / 100.0;
+        final taxableSubtotal = (subtotal - discAmount).clamp(0.0, double.infinity);
+        final discountRatio = subtotal > 0 ? (taxableSubtotal / subtotal) : 1.0;
+        double tax = 0.0;
+        for (final it in _cartItems) {
+          final lineTaxable = it.amount * discountRatio;
+          tax += (lineTaxable * (it.gstRate / 100.0));
+        }
+        return taxableSubtotal + tax;
+      },
+    );
+
+    if (shouldViewBill == true && mounted) {
+      _showMobileBillSheet();
     }
   }
 
@@ -780,7 +876,7 @@ class _POSPageState extends ConsumerState<POSPage> {
 
     final currentBillNo = res?.invoice.invoiceNumber ?? _billNumber;
 
-    showDialog(
+    await showDialog(
       context: context,
       builder: (ctx) => SalesBillSuccessDialog(
         billNumber: currentBillNo,
@@ -800,6 +896,10 @@ class _POSPageState extends ConsumerState<POSPage> {
         },
       ),
     );
+
+    if (mounted) {
+      _completeSaleAndReset();
+    }
   }
 
   void _completeSaleAndReset() {
@@ -891,15 +991,12 @@ class _POSPageState extends ConsumerState<POSPage> {
       body: SafeArea(
         child: Column(
           children: [
-            // Top Bar matching reference image (Logo, Search with F2 Scanner, Customer F4, Hold Bill, Recent Bills, More, Bell, Profile)
+            // Top Bar matching reference image (Logo, Search with Camera/F2 Scanner, Customer F4, Hold Bill, Recent Bills, More, Bell, Profile)
             SalesTopHeader(
               searchController: _searchController,
               searchFocusNode: _searchFocusNode,
               onSearchChanged: (_) => setState(() {}),
-              onBarcodeScan: () {
-                _searchFocusNode.requestFocus();
-                AppFeedback.showSnackbar(context, message: 'Scan barcode or enter SKU/Name');
-              },
+              onBarcodeScan: _openCameraScanner,
               onSelectCustomer: _showCustomerSelectionDialog,
               onHoldBill: _holdCurrentBill,
               onRecentBills: () => context.push('/sales'),
@@ -923,6 +1020,18 @@ class _POSPageState extends ConsumerState<POSPage> {
           ],
         ),
       ),
+      floatingActionButton: isMobile && _cartItems.isEmpty
+          ? FloatingActionButton.extended(
+              backgroundColor: const Color(0xFF059669),
+              foregroundColor: Colors.white,
+              icon: const Icon(Icons.camera_alt_outlined),
+              label: const Text(
+                'Scan Product',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              onPressed: _openCameraScanner,
+            )
+          : null,
       bottomNavigationBar: isMobile && _cartItems.isNotEmpty
           ? _buildMobileFloatingCartBar()
           : null,
@@ -1019,54 +1128,75 @@ class _POSPageState extends ConsumerState<POSPage> {
   Widget _buildMobileContent() {
     final filtered = _filteredProducts;
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          SalesCategoryBar(
-            selectedCategoryId: _selectedCategoryId,
-            categories: _dynamicCategories,
-            onCategorySelected: (catId) {
-              setState(() => _selectedCategoryId = catId);
-            },
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final screenWidth = constraints.maxWidth;
+        final crossAxisCount = screenWidth < 280 ? 1 : 2;
+        final spacing = 10.0;
+        final totalHorizontalPadding = 24.0;
+        final availableWidth = screenWidth - totalHorizontalPadding;
+        final itemWidth = (availableWidth - (spacing * (crossAxisCount - 1))) / crossAxisCount;
+        final itemHeight = crossAxisCount == 1 ? 140.0 : 210.0;
+        final childAspectRatio = (itemWidth / itemHeight).clamp(0.55, 2.5);
+
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              SalesCategoryBar(
+                selectedCategoryId: _selectedCategoryId,
+                categories: _dynamicCategories,
+                onCategorySelected: (catId) {
+                  setState(() => _selectedCategoryId = catId);
+                },
+              ),
+              const SizedBox(height: 10),
+              Expanded(
+                child: filtered.isEmpty
+                    ? _buildEmptyProductsView()
+                    : GridView.builder(
+                        physics: const BouncingScrollPhysics(),
+                        itemCount: filtered.length,
+                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: crossAxisCount,
+                          childAspectRatio: childAspectRatio,
+                          crossAxisSpacing: spacing,
+                          mainAxisSpacing: spacing,
+                        ),
+                        itemBuilder: (context, index) {
+                          final product = filtered[index];
+                          return SalesProductCard(
+                            product: product,
+                            onAdd: () => _addProductToCart(product),
+                          );
+                        },
+                      ),
+              ),
+            ],
           ),
-          const SizedBox(height: 10),
-          Expanded(
-            child: filtered.isEmpty
-                ? _buildEmptyProductsView()
-                : GridView.builder(
-                    physics: const BouncingScrollPhysics(),
-                    itemCount: filtered.length,
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      childAspectRatio: 190 / 208,
-                      crossAxisSpacing: 10,
-                      mainAxisSpacing: 10,
-                    ),
-                    itemBuilder: (context, index) {
-                      final product = filtered[index];
-                      return SalesProductCard(
-                        product: product,
-                        onAdd: () => _addProductToCart(product),
-                      );
-                    },
-                  ),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 
   Widget _buildMobileFloatingCartBar() {
     final totalItems = _cartItems.fold(0, (s, it) => s + it.quantity);
     final subtotal = _cartItems.fold(0.0, (s, it) => s + it.amount);
-    final cgst = ((subtotal * 0.025 * 100).round()) / 100.0;
-    final sgst = ((subtotal * 0.025 * 100).round()) / 100.0;
-    final grandTotal = subtotal + cgst + sgst;
+    final discAmount = _discountAmount > 0
+        ? _discountAmount
+        : (subtotal * _discountPercent) / 100.0;
+    final taxableSubtotal = (subtotal - discAmount).clamp(0.0, double.infinity);
+    final discountRatio = subtotal > 0 ? (taxableSubtotal / subtotal) : 1.0;
+    double tax = 0.0;
+    for (final it in _cartItems) {
+      final lineTaxable = it.amount * discountRatio;
+      tax += (lineTaxable * (it.gstRate / 100.0));
+    }
+    final grandTotal = taxableSubtotal + tax;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
         color: Colors.white,
         border: Border(top: BorderSide(color: Colors.grey.shade200)),
@@ -1080,37 +1210,58 @@ class _POSPageState extends ConsumerState<POSPage> {
       ),
       child: SafeArea(
         child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '$totalItems Items in Bill',
-                  style: const TextStyle(fontSize: 12, color: Color(0xFF6B7280)),
-                ),
-                Text(
-                  '₹ ${grandTotal.toStringAsFixed(2)}',
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w900,
-                    color: Color(0xFF059669),
+            Expanded(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '$totalItems Items in Bill',
+                    style: const TextStyle(fontSize: 11.5, color: Color(0xFF6B7280)),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                ),
-              ],
+                  Text(
+                    '₹ ${grandTotal.toStringAsFixed(2)}',
+                    style: const TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w900,
+                      color: Color(0xFF059669),
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
             ),
+            const SizedBox(width: 8),
+            OutlinedButton.icon(
+              style: OutlinedButton.styleFrom(
+                foregroundColor: const Color(0xFF059669),
+                side: const BorderSide(color: Color(0xFF059669)),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+              icon: const Icon(Icons.camera_alt_outlined, size: 18),
+              label: const Text(
+                'Scan',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+              ),
+              onPressed: _openCameraScanner,
+            ),
+            const SizedBox(width: 8),
             ElevatedButton.icon(
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF059669),
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
               ),
               icon: const Icon(Icons.receipt_long, size: 18),
               label: const Text(
-                'View Current Bill',
-                style: TextStyle(fontWeight: FontWeight.bold),
+                'View Bill',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
               ),
               onPressed: _showMobileBillSheet,
             ),
@@ -1142,6 +1293,37 @@ class _POSPageState extends ConsumerState<POSPage> {
                   decoration: BoxDecoration(
                     color: Colors.grey.shade300,
                     borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        '${_cartItems.length} Products in Current Bill',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF6B7280),
+                        ),
+                      ),
+                      TextButton.icon(
+                        style: TextButton.styleFrom(
+                          foregroundColor: const Color(0xFF059669),
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        ),
+                        icon: const Icon(Icons.camera_alt_outlined, size: 16),
+                        label: const Text(
+                          '+ Scan More',
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                        ),
+                        onPressed: () {
+                          Navigator.pop(ctx);
+                          _openCameraScanner();
+                        },
+                      ),
+                    ],
                   ),
                 ),
                 Expanded(

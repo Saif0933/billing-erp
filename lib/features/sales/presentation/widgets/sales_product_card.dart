@@ -77,8 +77,8 @@ class _SalesProductCardState extends State<SalesProductCard> {
             // Centered Product Image
             Expanded(
               child: Center(
-                child: SizedBox(
-                  height: 80,
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxHeight: 75),
                   child: p.imageUrl != null
                       ? ClipRRect(
                           borderRadius: BorderRadius.circular(8),
@@ -181,8 +181,8 @@ class _SalesProductCardState extends State<SalesProductCard> {
 
   Widget _buildFallbackIcon(SalesProductItem p) {
     return Container(
-      width: 76,
-      height: 76,
+      width: 64,
+      height: 64,
       decoration: BoxDecoration(
         color: p.themeColor.withValues(alpha: 0.1),
         shape: BoxShape.circle,
@@ -190,7 +190,7 @@ class _SalesProductCardState extends State<SalesProductCard> {
       child: Icon(
         p.placeholderIcon,
         color: p.themeColor,
-        size: 38,
+        size: 32,
       ),
     );
   }

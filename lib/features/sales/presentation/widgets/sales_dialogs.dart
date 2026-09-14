@@ -65,9 +65,12 @@ class _SalesCustomerDialogState extends State<SalesCustomerDialog> {
           ),
         ],
       ),
-      content: SizedBox(
-        width: 380,
-        child: _isCreatingNew ? _buildCreateForm() : _buildSelectionList(),
+      content: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 380),
+        child: SizedBox(
+          width: double.maxFinite,
+          child: _isCreatingNew ? _buildCreateForm() : _buildSelectionList(),
+        ),
       ),
       actions: [
         if (!_isCreatingNew)
@@ -222,14 +225,17 @@ class _SalesAddNoteDialogState extends State<SalesAddNoteDialog> {
     return AlertDialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       title: const Text('Add Transaction Note', style: TextStyle(fontWeight: FontWeight.bold)),
-      content: SizedBox(
-        width: 360,
-        child: TextField(
-          controller: _controller,
-          maxLines: 3,
-          decoration: InputDecoration(
-            hintText: 'e.g. Delivery instructions, packaging notes...',
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+      content: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 360),
+        child: SizedBox(
+          width: double.maxFinite,
+          child: TextField(
+            controller: _controller,
+            maxLines: 3,
+            decoration: InputDecoration(
+              hintText: 'e.g. Delivery instructions, packaging notes...',
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+            ),
           ),
         ),
       ),
@@ -280,10 +286,12 @@ class SalesHoldBillsDialog extends StatelessWidget {
           ),
         ],
       ),
-      content: SizedBox(
-        width: 420,
-        height: 280,
-        child: heldBills.isEmpty
+      content: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 420),
+        child: SizedBox(
+          width: double.maxFinite,
+          height: 280,
+          child: heldBills.isEmpty
             ? const Center(
                 child: Text('No held bills at the moment.', style: TextStyle(color: Colors.grey)),
               )
@@ -328,6 +336,7 @@ class SalesHoldBillsDialog extends StatelessWidget {
                   );
                 },
               ),
+        ),
       ),
       actions: [
         TextButton(
@@ -386,9 +395,11 @@ class SalesBillSuccessDialog extends StatelessWidget {
           ),
         ],
       ),
-      content: SizedBox(
-        width: 350,
-        child: Theme(
+      content: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 350),
+        child: SizedBox(
+          width: double.maxFinite,
+          child: Theme(
           data: ThemeData.light(),
           child: Container(
             padding: const EdgeInsets.all(14),
@@ -649,7 +660,8 @@ class SalesBillSuccessDialog extends StatelessWidget {
           ),
         ),
       ),
-      actions: [
+    ),
+    actions: [
         TextButton(
           style: TextButton.styleFrom(
             foregroundColor: const Color(0xFF10B981),

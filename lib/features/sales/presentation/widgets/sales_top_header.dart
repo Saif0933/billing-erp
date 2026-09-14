@@ -87,7 +87,7 @@ class SalesTopHeader extends StatelessWidget {
     );
   }
 
-  Widget _buildSearchBar(BuildContext context) {
+  Widget _buildSearchBar(BuildContext context, {bool isMobile = false}) {
     return Container(
       height: 44,
       decoration: BoxDecoration(
@@ -111,21 +111,21 @@ class SalesTopHeader extends StatelessWidget {
               controller: searchController,
               onChanged: onSearchChanged,
               style: const TextStyle(fontSize: 14, color: Color(0xFF1F2937)),
-              decoration: const InputDecoration(
-                hintText: 'Search product by name, barcode or SKU...',
-                hintStyle: TextStyle(
+              decoration: InputDecoration(
+                hintText: isMobile ? 'Search or scan...' : 'Search product by name, barcode or SKU...',
+                hintStyle: const TextStyle(
                   color: Color(0xFF9CA3AF),
                   fontSize: 13,
                   fontWeight: FontWeight.normal,
                 ),
                 border: InputBorder.none,
                 isDense: true,
-                contentPadding: EdgeInsets.symmetric(vertical: 12),
+                contentPadding: const EdgeInsets.symmetric(vertical: 12),
               ),
             ),
           ),
           Tooltip(
-            message: 'Scan Barcode (F2)',
+            message: isMobile ? 'Scan with Camera' : 'Scan Barcode (F2)',
             child: InkWell(
               onTap: onBarcodeScan,
               borderRadius: BorderRadius.circular(8),
@@ -133,22 +133,24 @@ class SalesTopHeader extends StatelessWidget {
                 margin: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: isMobile ? const Color(0xFFECFDF5) : Colors.white,
                   borderRadius: BorderRadius.circular(6),
-                  border: Border.all(color: const Color(0xFFD1D5DB)),
+                  border: Border.all(
+                    color: isMobile ? const Color(0xFFA7F3D0) : const Color(0xFFD1D5DB),
+                  ),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
-                  children: const [
+                  children: [
                     Icon(
-                      Icons.qr_code_scanner,
-                      color: Color(0xFF059669),
+                      isMobile ? Icons.camera_alt_outlined : Icons.qr_code_scanner,
+                      color: const Color(0xFF059669),
                       size: 18,
                     ),
-                    SizedBox(width: 4),
+                    const SizedBox(width: 4),
                     Text(
-                      'F2',
-                      style: TextStyle(
+                      isMobile ? 'Scan' : 'F2',
+                      style: const TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.bold,
                         color: Color(0xFF059669),
@@ -242,26 +244,32 @@ class SalesTopHeader extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 8),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: const [
-            Text(
-              'Tax Bunny',
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w700,
-                color: Color(0xFF111827),
+        Flexible(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: const [
+              Text(
+                'Tax Bunny',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF111827),
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
-            ),
-            Text(
-              'Main Branch',
-              style: TextStyle(
-                fontSize: 11,
-                color: Color(0xFF6B7280),
+              Text(
+                'Main Branch',
+                style: TextStyle(
+                  fontSize: 11,
+                  color: Color(0xFF6B7280),
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
-            ),
-          ],
+            ],
+          ),
         ),
         const SizedBox(width: 4),
         const Icon(
@@ -368,24 +376,28 @@ class SalesTopHeader extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             _buildBackButton(context),
-            Row(
-              children: [
-                _buildNotificationBell(),
-                const SizedBox(width: 8),
-                _buildUserProfile(),
-              ],
+            const SizedBox(width: 8),
+            Flexible(
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _buildNotificationBell(),
+                  const SizedBox(width: 8),
+                  Flexible(child: _buildUserProfile()),
+                ],
+              ),
             ),
           ],
         ),
         const SizedBox(height: 10),
         Row(
           children: [
-            Expanded(child: _buildSearchBar(context)),
+            Expanded(child: _buildSearchBar(context, isMobile: true)),
             const SizedBox(width: 8),
             _buildTopActionButton(
               icon: Icons.person_outline,
               label: '',
-              badge: 'F4',
+              badge: null,
               onTap: onSelectCustomer,
             ),
             const SizedBox(width: 6),

@@ -288,245 +288,262 @@ class _SalesCurrentBillPanelState extends State<SalesCurrentBillPanel> {
   }
 
   Widget _buildCartTableHeader() {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      decoration: const BoxDecoration(
-        border: Border(
-          bottom: BorderSide(color: Color(0xFFF3F4F6), width: 1.5),
-        ),
-      ),
-      child: Row(
-        children: const [
-          SizedBox(
-            width: 18,
-            child: Text(
-              '#',
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
-                color: Color(0xFF6B7280),
-              ),
-            ),
-          ),
-          SizedBox(width: 4),
-          Expanded(
-            child: Text(
-              'Product',
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
-                color: Color(0xFF6B7280),
-              ),
-            ),
-          ),
-          SizedBox(
-            width: 76,
-            child: Text(
-              'Qty',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
-                color: Color(0xFF6B7280),
-              ),
-            ),
-          ),
-          SizedBox(
-            width: 52,
-            child: Text(
-              'Rate (₹)',
-              textAlign: TextAlign.right,
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
-                color: Color(0xFF6B7280),
-              ),
-            ),
-          ),
-          SizedBox(
-            width: 60,
-            child: Text(
-              'Amount (₹)',
-              textAlign: TextAlign.right,
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
-                color: Color(0xFF6B7280),
-              ),
-            ),
-          ),
-          SizedBox(width: 24),
-        ],
-      ),
-    );
-  }
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isNarrow = constraints.maxWidth < 350;
 
-  Widget _buildCartItemsList() {
-    return Scrollbar(
-      controller: _scrollController,
-      thumbVisibility: widget.cartItems.length > 2,
-      thickness: 4,
-      radius: const Radius.circular(4),
-      child: ListView.separated(
-        controller: _scrollController,
-        padding: const EdgeInsets.symmetric(vertical: 2),
-        physics: const AlwaysScrollableScrollPhysics(),
-        itemCount: widget.cartItems.length,
-        separatorBuilder: (context, index) => const Divider(
-          color: Color(0xFFF3F4F6),
-          height: 1,
-        ),
-        itemBuilder: (context, index) {
-          final item = widget.cartItems[index];
-
-          return Padding(
-            padding: const EdgeInsets.symmetric(vertical: 4),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                // # Index
-                SizedBox(
-                  width: 18,
+        return Container(
+          padding: const EdgeInsets.symmetric(vertical: 4),
+          decoration: const BoxDecoration(
+            border: Border(
+              bottom: BorderSide(color: Color(0xFFF3F4F6), width: 1.5),
+            ),
+          ),
+          child: Row(
+            children: [
+              const SizedBox(
+                width: 18,
+                child: Text(
+                  '#',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF6B7280),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 4),
+              const Expanded(
+                child: Text(
+                  'Product',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF6B7280),
+                  ),
+                ),
+              ),
+              SizedBox(
+                width: isNarrow ? 64 : 76,
+                child: const Text(
+                  'Qty',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF6B7280),
+                  ),
+                ),
+              ),
+              if (!isNarrow) ...[
+                const SizedBox(
+                  width: 52,
                   child: Text(
-                    '${index + 1}',
-                    style: const TextStyle(
-                      fontSize: 11.5,
-                      fontWeight: FontWeight.w500,
+                    'Rate (₹)',
+                    textAlign: TextAlign.right,
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
                       color: Color(0xFF6B7280),
                     ),
                   ),
                 ),
-                const SizedBox(width: 4),
-
-                // Product Name & Weight
-                Expanded(
-                  child: RichText(
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    text: TextSpan(
-                      text: item.product.name,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF1F2937),
-                      ),
-                      children: [
-                        TextSpan(
-                          text: ' ${item.product.weight}',
-                          style: const TextStyle(
-                            fontSize: 10.5,
-                            fontWeight: FontWeight.w400,
-                            color: Color(0xFF9CA3AF),
-                          ),
-                        ),
-                      ],
-                    ),
+              ],
+              SizedBox(
+                width: isNarrow ? 54 : 60,
+                child: const Text(
+                  'Amount',
+                  textAlign: TextAlign.right,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF6B7280),
                   ),
                 ),
+              ),
+              const SizedBox(width: 24),
+            ],
+          ),
+        );
+      },
+    );
+  }
 
-                // Quantity Stepper: [-  Qty  +]
-                Container(
-                  width: 76,
-                  height: 24,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF3F4F6),
-                    borderRadius: BorderRadius.circular(5),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      InkWell(
-                        onTap: () => widget.onDecrementQty(index),
-                        borderRadius: BorderRadius.circular(4),
-                        child: const SizedBox(
-                          width: 22,
-                          height: 24,
-                          child: Center(
-                            child: Icon(
-                              Icons.remove,
-                              size: 12,
-                              color: Color(0xFF4B5563),
+  Widget _buildCartItemsList() {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isNarrow = constraints.maxWidth < 350;
+
+        return Scrollbar(
+          controller: _scrollController,
+          thumbVisibility: widget.cartItems.length > 2,
+          thickness: 4,
+          radius: const Radius.circular(4),
+          child: ListView.separated(
+            controller: _scrollController,
+            padding: const EdgeInsets.symmetric(vertical: 2),
+            physics: const AlwaysScrollableScrollPhysics(),
+            itemCount: widget.cartItems.length,
+            separatorBuilder: (context, index) => const Divider(
+              color: Color(0xFFF3F4F6),
+              height: 1,
+            ),
+            itemBuilder: (context, index) {
+              final item = widget.cartItems[index];
+
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    // # Index
+                    SizedBox(
+                      width: 18,
+                      child: Text(
+                        '${index + 1}',
+                        style: const TextStyle(
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w500,
+                          color: Color(0xFF6B7280),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+
+                    // Product Name & Weight
+                    Expanded(
+                      child: RichText(
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        text: TextSpan(
+                          text: item.product.name,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF1F2937),
+                          ),
+                          children: [
+                            TextSpan(
+                              text: ' ${item.product.weight}',
+                              style: const TextStyle(
+                                fontSize: 10.5,
+                                fontWeight: FontWeight.w400,
+                                color: Color(0xFF9CA3AF),
+                              ),
                             ),
+                          ],
+                        ),
+                      ),
+                    ),
+
+                    // Quantity Stepper: [-  Qty  +]
+                    Container(
+                      width: isNarrow ? 64 : 76,
+                      height: 24,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF3F4F6),
+                        borderRadius: BorderRadius.circular(5),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          InkWell(
+                            onTap: () => widget.onDecrementQty(index),
+                            borderRadius: BorderRadius.circular(4),
+                            child: SizedBox(
+                              width: isNarrow ? 18 : 22,
+                              height: 24,
+                              child: const Center(
+                                child: Icon(
+                                  Icons.remove,
+                                  size: 12,
+                                  color: Color(0xFF4B5563),
+                                ),
+                              ),
+                            ),
+                          ),
+                          Text(
+                            '${item.quantity}',
+                            style: const TextStyle(
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF111827),
+                            ),
+                          ),
+                          InkWell(
+                            onTap: () => widget.onIncrementQty(index),
+                            borderRadius: BorderRadius.circular(4),
+                            child: SizedBox(
+                              width: isNarrow ? 18 : 22,
+                              height: 24,
+                              child: const Center(
+                                child: Icon(
+                                  Icons.add,
+                                  size: 12,
+                                  color: Color(0xFF4B5563),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+
+                    // Rate (omitted on narrow screens)
+                    if (!isNarrow) ...[
+                      SizedBox(
+                        width: 52,
+                        child: Text(
+                          item.rate.toStringAsFixed(2),
+                          textAlign: TextAlign.right,
+                          style: const TextStyle(
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w500,
+                            color: Color(0xFF374151),
                           ),
                         ),
                       ),
-                      Text(
-                        '${item.quantity}',
+                      const SizedBox(width: 4),
+                    ],
+
+                    // Amount
+                    SizedBox(
+                      width: isNarrow ? 54 : 60,
+                      child: Text(
+                        item.amount.toStringAsFixed(2),
+                        textAlign: TextAlign.right,
                         style: const TextStyle(
-                          fontSize: 11.5,
+                          fontSize: 12,
                           fontWeight: FontWeight.w700,
                           color: Color(0xFF111827),
                         ),
                       ),
-                      InkWell(
-                        onTap: () => widget.onIncrementQty(index),
-                        borderRadius: BorderRadius.circular(4),
-                        child: const SizedBox(
-                          width: 22,
-                          height: 24,
-                          child: Center(
-                            child: Icon(
-                              Icons.add,
-                              size: 12,
-                              color: Color(0xFF4B5563),
-                            ),
-                          ),
+                    ),
+
+                    // Delete button
+                    SizedBox(
+                      width: 24,
+                      child: IconButton(
+                        icon: const Icon(
+                          Icons.delete_outline,
+                          size: 15,
+                          color: Color(0xFF9CA3AF),
                         ),
+                        splashRadius: 12,
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                        hoverColor: const Color(0xFFFEE2E2),
+                        onPressed: () => widget.onRemoveItem(index),
                       ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 6),
-
-                // Rate
-                SizedBox(
-                  width: 52,
-                  child: Text(
-                    item.rate.toStringAsFixed(2),
-                    textAlign: TextAlign.right,
-                    style: const TextStyle(
-                      fontSize: 11.5,
-                      fontWeight: FontWeight.w500,
-                      color: Color(0xFF374151),
                     ),
-                  ),
+                  ],
                 ),
-
-                // Amount
-                SizedBox(
-                  width: 60,
-                  child: Text(
-                    item.amount.toStringAsFixed(2),
-                    textAlign: TextAlign.right,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                      color: Color(0xFF111827),
-                    ),
-                  ),
-                ),
-
-                // Delete button
-                SizedBox(
-                  width: 24,
-                  child: IconButton(
-                    icon: const Icon(
-                      Icons.delete_outline,
-                      size: 15,
-                      color: Color(0xFF9CA3AF),
-                    ),
-                    splashRadius: 12,
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(),
-                    hoverColor: const Color(0xFFFEE2E2),
-                    onPressed: () => widget.onRemoveItem(index),
-                  ),
-                ),
-              ],
-            ),
-          );
-        },
-      ),
+              );
+            },
+          ),
+        );
+      },
     );
   }
 
@@ -672,20 +689,28 @@ class _SalesCurrentBillPanelState extends State<SalesCurrentBillPanel> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-                'Total Amount',
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w800,
-                  color: Color(0xFF111827),
+              const Flexible(
+                child: Text(
+                  'Total Amount',
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF111827),
+                  ),
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
-              Text(
-                '₹ ${grandTotal.toStringAsFixed(2)}',
-                style: const TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w900,
-                  color: Color(0xFF059669),
+              const SizedBox(width: 8),
+              Flexible(
+                child: Text(
+                  '₹ ${grandTotal.toStringAsFixed(2)}',
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w900,
+                    color: Color(0xFF059669),
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.right,
                 ),
               ),
             ],
