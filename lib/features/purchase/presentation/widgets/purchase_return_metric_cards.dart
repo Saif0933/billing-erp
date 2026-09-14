@@ -12,10 +12,13 @@ class PurchaseReturnMetricCards extends ConsumerWidget {
 
     return LayoutBuilder(
       builder: (context, constraints) {
+        final isVerySmall = constraints.maxWidth < 360;
         final isSmall = constraints.maxWidth < 650;
-        final cardWidth = isSmall
-            ? (constraints.maxWidth - 8) / 2
-            : (constraints.maxWidth - 24) / 4;
+        final cardWidth = isVerySmall
+            ? constraints.maxWidth
+            : (isSmall
+                ? (constraints.maxWidth - 8) / 2
+                : (constraints.maxWidth - 24) / 4);
 
         return Wrap(
           spacing: 8,

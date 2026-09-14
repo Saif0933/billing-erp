@@ -34,7 +34,7 @@ class _PurchaseCreatePageState extends ConsumerState<PurchaseCreatePage> {
   DateTime _purchaseDate = DateTime.now();
   Supplier? _selectedSupplier;
   final List<PurchaseItem> _items = [];
-  String _paymentMode = 'Bank';
+  final String _paymentMode = 'Bank';
   bool _isDebitNote = false;
   String _originalPurchaseId = '';
   bool _isSaving = false;
@@ -456,6 +456,7 @@ class _PurchaseCreatePageState extends ConsumerState<PurchaseCreatePage> {
         elevation: 0.5,
       ),
       body: SingleChildScrollView(
+        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
         padding: Responsive.pagePadding(context),
         child: Form(
           key: _formKey,
@@ -508,7 +509,7 @@ class _PurchaseCreatePageState extends ConsumerState<PurchaseCreatePage> {
                             boxShadow: !_isDebitNote
                                 ? [
                                     BoxShadow(
-                                      color: Colors.black.withOpacity(0.04),
+                                      color: Colors.black.withValues(alpha: 0.04),
                                       blurRadius: 4,
                                       offset: const Offset(0, 2),
                                     ),
@@ -516,14 +517,17 @@ class _PurchaseCreatePageState extends ConsumerState<PurchaseCreatePage> {
                                 : null,
                           ),
                           alignment: Alignment.center,
-                          child: Text(
-                            'Purchase Bill',
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.bold,
-                              color: !_isDebitNote
-                                  ? const Color(0xFF2E7D32)
-                                  : Colors.grey.shade600,
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text(
+                              'Purchase Bill',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                                color: !_isDebitNote
+                                    ? const Color(0xFF2E7D32)
+                                    : Colors.grey.shade600,
+                              ),
                             ),
                           ),
                         ),
@@ -549,7 +553,7 @@ class _PurchaseCreatePageState extends ConsumerState<PurchaseCreatePage> {
                             boxShadow: _isDebitNote
                                 ? [
                                     BoxShadow(
-                                      color: Colors.black.withOpacity(0.04),
+                                      color: Colors.black.withValues(alpha: 0.04),
                                       blurRadius: 4,
                                       offset: const Offset(0, 2),
                                     ),
@@ -557,14 +561,17 @@ class _PurchaseCreatePageState extends ConsumerState<PurchaseCreatePage> {
                                 : null,
                           ),
                           alignment: Alignment.center,
-                          child: Text(
-                            'Debit Note (Purchase Return)',
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.bold,
-                              color: _isDebitNote
-                                  ? const Color(0xFF2E7D32)
-                                  : Colors.grey.shade600,
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text(
+                              'Debit Note (Purchase Return)',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                                color: _isDebitNote
+                                    ? const Color(0xFF2E7D32)
+                                    : Colors.grey.shade600,
+                              ),
                             ),
                           ),
                         ),
@@ -627,140 +634,197 @@ class _PurchaseCreatePageState extends ConsumerState<PurchaseCreatePage> {
                                       crossAxisAlignment:
                                           CrossAxisAlignment.stretch,
                                       children: [
-                                        Row(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.end,
-                                          children: [
-                                            Expanded(
-                                              child: supplierState.isLoading &&
-                                                      availableSuppliers
-                                                          .isEmpty
-                                                  ? const Padding(
-                                                      padding:
-                                                          EdgeInsets.symmetric(
-                                                        vertical: 18,
-                                                      ),
-                                                      child: Center(
-                                                        child: SizedBox(
-                                                          width: 22,
-                                                          height: 22,
-                                                          child:
-                                                              CircularProgressIndicator(
-                                                            strokeWidth: 2,
-                                                          ),
-                                                        ),
-                                                      ),
-                                                    )
-                                                  : availableSuppliers.isEmpty
-                                                      ? Container(
+                                        LayoutBuilder(
+                                          builder: (context, supplierConstraints) {
+                                            final isNarrowSupplier =
+                                                supplierConstraints.maxWidth < 360;
+                                            return Row(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.end,
+                                              children: [
+                                                Expanded(
+                                                  child: supplierState.isLoading &&
+                                                          availableSuppliers
+                                                              .isEmpty
+                                                      ? const Padding(
                                                           padding:
-                                                              const EdgeInsets
-                                                                  .symmetric(
-                                                            horizontal: 12,
-                                                            vertical: 14,
+                                                              EdgeInsets.symmetric(
+                                                            vertical: 18,
                                                           ),
-                                                          decoration:
-                                                              BoxDecoration(
-                                                            color: const Color(
-                                                              0xFFF1F5F9,
-                                                            ),
-                                                            borderRadius:
-                                                                BorderRadius
-                                                                    .circular(
-                                                              8,
-                                                            ),
-                                                            border: Border.all(
-                                                              color:
-                                                                  const Color(
-                                                                0xFFCBD5E1,
-                                                              ),
-                                                            ),
-                                                          ),
-                                                          child: const Text(
-                                                            'No suppliers yet. Tap + New Supplier to add one.',
-                                                            style: TextStyle(
-                                                              fontSize: 12,
-                                                              color: Color(
-                                                                0xFF475569,
+                                                          child: Center(
+                                                            child: SizedBox(
+                                                              width: 22,
+                                                              height: 22,
+                                                              child:
+                                                                  CircularProgressIndicator(
+                                                                strokeWidth: 2,
                                                               ),
                                                             ),
                                                           ),
                                                         )
-                                                      : AppDropdownField<
-                                                          Supplier>(
-                                                          label:
-                                                              'Select Supplier *',
-                                                          value:
-                                                              matchedSupplier,
-                                                          items:
-                                                              availableSuppliers
-                                                                  .map((s) {
-                                                            return DropdownMenuItem(
-                                                              value: s,
-                                                              child:
-                                                                  Text(s.name),
+                                                      : availableSuppliers.isEmpty
+                                                          ? Container(
+                                                              padding:
+                                                                  const EdgeInsets
+                                                                      .symmetric(
+                                                                horizontal: 12,
+                                                                vertical: 14,
+                                                              ),
+                                                              decoration:
+                                                                  BoxDecoration(
+                                                                color: const Color(
+                                                                  0xFFF1F5F9,
+                                                                ),
+                                                                borderRadius:
+                                                                    BorderRadius
+                                                                        .circular(
+                                                                  8,
+                                                                ),
+                                                                border: Border.all(
+                                                                  color:
+                                                                      const Color(
+                                                                    0xFFCBD5E1,
+                                                                  ),
+                                                                ),
+                                                              ),
+                                                              child: const Text(
+                                                                'No suppliers yet. Tap + New Supplier to add one.',
+                                                                style: TextStyle(
+                                                                  fontSize: 12,
+                                                                  color: Color(
+                                                                    0xFF475569,
+                                                                  ),
+                                                                ),
+                                                              ),
+                                                            )
+                                                          : AppDropdownField<
+                                                              Supplier>(
+                                                              label:
+                                                                  'Select Supplier *',
+                                                              value:
+                                                                  matchedSupplier,
+                                                              items:
+                                                                  availableSuppliers
+                                                                      .map((s) {
+                                                                return DropdownMenuItem(
+                                                                  value: s,
+                                                                  child:
+                                                                      Text(s.name),
+                                                                );
+                                                              }).toList(),
+                                                              onChanged:
+                                                                  _onSupplierSelected,
+                                                            ),
+                                                ),
+                                                const SizedBox(width: 8),
+                                                Padding(
+                                                  padding: EdgeInsets.only(
+                                                    bottom:
+                                                        availableSuppliers.isEmpty &&
+                                                                !supplierState
+                                                                    .isLoading
+                                                            ? 0
+                                                            : 2,
+                                                  ),
+                                                  child: isNarrowSupplier
+                                                      ? OutlinedButton(
+                                                          style:
+                                                              OutlinedButton.styleFrom(
+                                                            foregroundColor:
+                                                                const Color(
+                                                              0xFF2E7D32,
+                                                            ),
+                                                            side:
+                                                                const BorderSide(
+                                                              color: Color(
+                                                                0xFF2E7D32,
+                                                              ),
+                                                            ),
+                                                            padding:
+                                                                const EdgeInsets.symmetric(
+                                                              horizontal: 10,
+                                                              vertical: 14,
+                                                            ),
+                                                            shape:
+                                                                RoundedRectangleBorder(
+                                                              borderRadius:
+                                                                  BorderRadius.circular(
+                                                                10,
+                                                              ),
+                                                            ),
+                                                          ),
+                                                          onPressed: () async {
+                                                            await context.push(
+                                                              '/suppliers/new',
                                                             );
-                                                          }).toList(),
-                                                          onChanged:
-                                                              _onSupplierSelected,
+                                                            if (!mounted) return;
+                                                            await ref
+                                                                .read(
+                                                                  supplierProvider
+                                                                      .notifier,
+                                                                )
+                                                                .loadSuppliers();
+                                                          },
+                                                          child: const Icon(
+                                                            Icons.add_business_outlined,
+                                                            size: 16,
+                                                          ),
+                                                        )
+                                                      : OutlinedButton.icon(
+                                                          style:
+                                                              OutlinedButton.styleFrom(
+                                                            foregroundColor:
+                                                                const Color(
+                                                              0xFF2E7D32,
+                                                            ),
+                                                            side:
+                                                                const BorderSide(
+                                                              color: Color(
+                                                                0xFF2E7D32,
+                                                              ),
+                                                            ),
+                                                            padding:
+                                                                const EdgeInsets.symmetric(
+                                                              horizontal: 12,
+                                                              vertical: 14,
+                                                            ),
+                                                            shape:
+                                                                RoundedRectangleBorder(
+                                                              borderRadius:
+                                                                  BorderRadius.circular(
+                                                                10,
+                                                              ),
+                                                            ),
+                                                          ),
+                                                          icon: const Icon(
+                                                            Icons.add_business_outlined,
+                                                            size: 16,
+                                                          ),
+                                                          label: const Text(
+                                                            'New Supplier',
+                                                            style: TextStyle(
+                                                              fontSize: 12,
+                                                              fontWeight:
+                                                                  FontWeight.w600,
+                                                            ),
+                                                          ),
+                                                          onPressed: () async {
+                                                            await context.push(
+                                                              '/suppliers/new',
+                                                            );
+                                                            if (!mounted) return;
+                                                            await ref
+                                                                .read(
+                                                                  supplierProvider
+                                                                      .notifier,
+                                                                )
+                                                                .loadSuppliers();
+                                                          },
                                                         ),
-                                            ),
-                                            const SizedBox(width: 8),
-                                            Padding(
-                                              padding: EdgeInsets.only(
-                                                bottom:
-                                                    availableSuppliers.isEmpty &&
-                                                            !supplierState
-                                                                .isLoading
-                                                        ? 0
-                                                        : 2,
-                                              ),
-                                              child: OutlinedButton.icon(
-                                                style: OutlinedButton.styleFrom(
-                                                  foregroundColor: const Color(
-                                                    0xFF2E7D32,
-                                                  ),
-                                                  side: const BorderSide(
-                                                    color: Color(0xFF2E7D32),
-                                                  ),
-                                                  padding:
-                                                      const EdgeInsets.symmetric(
-                                                    horizontal: 12,
-                                                    vertical: 14,
-                                                  ),
-                                                  shape: RoundedRectangleBorder(
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                      10,
-                                                    ),
-                                                  ),
                                                 ),
-                                                icon: const Icon(
-                                                  Icons.add_business_outlined,
-                                                  size: 16,
-                                                ),
-                                                label: const Text(
-                                                  'New Supplier',
-                                                  style: TextStyle(
-                                                    fontSize: 12,
-                                                    fontWeight: FontWeight.w600,
-                                                  ),
-                                                ),
-                                                onPressed: () async {
-                                                  await context.push(
-                                                    '/suppliers/new',
-                                                  );
-                                                  if (!mounted) return;
-                                                  await ref
-                                                      .read(
-                                                        supplierProvider
-                                                            .notifier,
-                                                      )
-                                                      .loadSuppliers();
-                                                },
-                                              ),
-                                            ),
-                                          ],
+                                              ],
+                                            );
+                                          },
                                         ),
                                       ],
                                     ),
@@ -1020,6 +1084,8 @@ class _PurchaseCreatePageState extends ConsumerState<PurchaseCreatePage> {
                                                   fontWeight: FontWeight.bold,
                                                   fontSize: 14,
                                                 ),
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
                                               ),
                                             ),
                                             IconButton(
@@ -1110,6 +1176,8 @@ class _PurchaseCreatePageState extends ConsumerState<PurchaseCreatePage> {
                                       style: const TextStyle(
                                         fontWeight: FontWeight.bold,
                                       ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
                                     ),
                                   ),
                                   TableColumnSpec<PurchaseItem>(

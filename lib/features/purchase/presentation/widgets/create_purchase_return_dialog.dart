@@ -814,7 +814,7 @@ class _CreatePurchaseReturnDialogState
         padding: const EdgeInsets.symmetric(vertical: 4),
         shrinkWrap: true,
         itemCount: _eligiblePurchases.length,
-        separatorBuilder: (_, __) => Divider(
+        separatorBuilder: (context, index) => Divider(
           height: 1,
           color: isDark ? Colors.white10 : const Color(0xFFF1F5F9),
         ),
@@ -1043,7 +1043,7 @@ class _CreatePurchaseReturnDialogState
               padding: const EdgeInsets.symmetric(vertical: 4),
               shrinkWrap: true,
               itemCount: lines.length,
-              separatorBuilder: (_, __) => Divider(
+              separatorBuilder: (context, index) => Divider(
                 height: 1,
                 color: isDark ? Colors.white10 : const Color(0xFFF1F5F9),
               ),
@@ -1437,93 +1437,98 @@ class _ReturnProductPickerDialogState extends State<_ReturnProductPickerDialog> 
           ),
         ],
       ),
-      content: SizedBox(
-        width: 420,
-        height: 420,
-        child: Column(
-          children: [
-            TextField(
-              controller: _searchController,
-              autofocus: true,
-              onChanged: (_) => setState(() {}),
-              style: TextStyle(
-                fontSize: 13,
-                color: isDark ? Colors.white : _slate,
-              ),
-              decoration: InputDecoration(
-                hintText: 'Search product / bill / supplier',
-                prefixIcon: const Icon(Icons.search_rounded, size: 18),
-                filled: true,
-                fillColor:
-                    isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
-                contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
+      content: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxWidth: 420,
+          maxHeight: MediaQuery.sizeOf(context).height * 0.65,
+        ),
+        child: SizedBox(
+          width: double.maxFinite,
+          child: Column(
+            children: [
+              TextField(
+                controller: _searchController,
+                autofocus: true,
+                onChanged: (_) => setState(() {}),
+                style: TextStyle(
+                  fontSize: 13,
+                  color: isDark ? Colors.white : _slate,
+                ),
+                decoration: InputDecoration(
+                  hintText: 'Search product / bill / supplier',
+                  prefixIcon: const Icon(Icons.search_rounded, size: 18),
+                  filled: true,
+                  fillColor:
+                      isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 10),
-            Expanded(
-              child: filtered.isEmpty
-                  ? Center(
-                      child: Text(
-                        'No matching products',
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: isDark ? Colors.white60 : _muted,
+              const SizedBox(height: 10),
+              Expanded(
+                child: filtered.isEmpty
+                    ? Center(
+                        child: Text(
+                          'No matching products',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: isDark ? Colors.white60 : _muted,
+                          ),
                         ),
-                      ),
-                    )
-                  : ListView.separated(
-                      itemCount: filtered.length,
-                      separatorBuilder: (_, __) => Divider(
-                        height: 1,
-                        color: isDark ? Colors.white10 : const Color(0xFFF1F5F9),
-                      ),
-                      itemBuilder: (context, index) {
-                        final line = filtered[index];
-                        final selected =
-                            line.item.selectionKey == widget.selectedKey;
-                        return ListTile(
-                          dense: true,
-                          selected: selected,
-                          selectedTileColor: isDark
-                              ? _green.withValues(alpha: 0.18)
-                              : _greenSoft,
-                          leading: Icon(
-                            selected
-                                ? Icons.check_circle_rounded
-                                : Icons.inventory_2_outlined,
-                            color: selected
-                                ? (isDark ? const Color(0xFF34D399) : _green)
-                                : (isDark ? Colors.white54 : _muted),
-                          ),
-                          title: Text(
-                            line.item.label,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              fontWeight: FontWeight.w700,
-                              fontSize: 13,
-                              color: isDark ? Colors.white : _slate,
+                      )
+                    : ListView.separated(
+                        itemCount: filtered.length,
+                        separatorBuilder: (context, index) => Divider(
+                          height: 1,
+                          color: isDark ? Colors.white10 : const Color(0xFFF1F5F9),
+                        ),
+                        itemBuilder: (context, index) {
+                          final line = filtered[index];
+                          final selected =
+                              line.item.selectionKey == widget.selectedKey;
+                          return ListTile(
+                            dense: true,
+                            selected: selected,
+                            selectedTileColor: isDark
+                                ? _green.withValues(alpha: 0.18)
+                                : _greenSoft,
+                            leading: Icon(
+                              selected
+                                  ? Icons.check_circle_rounded
+                                  : Icons.inventory_2_outlined,
+                              color: selected
+                                  ? (isDark ? const Color(0xFF34D399) : _green)
+                                  : (isDark ? Colors.white54 : _muted),
                             ),
-                          ),
-                          subtitle: Text(
-                            '${line.purchase.displayBillNumber} · Rem ${line.item.remainingQty} ${line.item.unit} · ₹${line.item.rate.toStringAsFixed(2)}',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              fontSize: 11.5,
-                              color: isDark ? Colors.white54 : _muted,
+                            title: Text(
+                              line.item.label,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontWeight: FontWeight.w700,
+                                fontSize: 13,
+                                color: isDark ? Colors.white : _slate,
+                              ),
                             ),
-                          ),
-                          onTap: () => Navigator.pop(context, line),
-                        );
-                      },
-                    ),
-            ),
-          ],
+                            subtitle: Text(
+                              '${line.purchase.displayBillNumber} · Rem ${line.item.remainingQty} ${line.item.unit} · ₹${line.item.rate.toStringAsFixed(2)}',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: 11.5,
+                                color: isDark ? Colors.white54 : _muted,
+                              ),
+                            ),
+                            onTap: () => Navigator.pop(context, line),
+                          );
+                        },
+                      ),
+              ),
+            ],
+          ),
         ),
       ),
     );

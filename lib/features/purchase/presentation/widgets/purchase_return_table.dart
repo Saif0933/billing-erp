@@ -25,68 +25,75 @@ class PurchaseReturnTable extends ConsumerWidget {
           width: 1,
         ),
       ),
-      child: Column(
-        children: [
-          // Horizontally Scrollable Table
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: SizedBox(
-              width: 900,
-              child: Column(
-                children: [
-                  // Table Header
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                    decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
-                      borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-                    ),
-                    child: Row(
-                      children: const [
-                        SizedBox(width: 130, child: Text('Debit Note #', style: _headerStyle)),
-                        SizedBox(width: 100, child: Text('Return Date', style: _headerStyle)),
-                        SizedBox(width: 180, child: Text('Supplier Name', style: _headerStyle)),
-                        SizedBox(width: 130, child: Text('Original Bill #', style: _headerStyle)),
-                        Expanded(child: Text('Return Reason', style: _headerStyle)),
-                        SizedBox(width: 110, child: Text('Total (₹)', textAlign: TextAlign.right, style: _headerStyle)),
-                        SizedBox(width: 95, child: Text('Status', textAlign: TextAlign.center, style: _headerStyle)),
-                        SizedBox(width: 40, child: Text('Actions', textAlign: TextAlign.center, style: _headerStyle)),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final isCompact = constraints.maxWidth < 650;
+
+          return Column(
+            children: [
+              if (isCompact)
+                _buildMobileCards(context, metrics.filteredItems, ref, isDark)
+              else
+                // Horizontally Scrollable Table
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: SizedBox(
+                    width: 900,
+                    child: Column(
+                      children: [
+                        // Table Header
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                          decoration: BoxDecoration(
+                            color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+                            borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                          ),
+                          child: Row(
+                            children: const [
+                              SizedBox(width: 130, child: Text('Debit Note #', style: _headerStyle)),
+                              SizedBox(width: 100, child: Text('Return Date', style: _headerStyle)),
+                              SizedBox(width: 180, child: Text('Supplier Name', style: _headerStyle)),
+                              SizedBox(width: 130, child: Text('Original Bill #', style: _headerStyle)),
+                              Expanded(child: Text('Return Reason', style: _headerStyle)),
+                              SizedBox(width: 110, child: Text('Total (₹)', textAlign: TextAlign.right, style: _headerStyle)),
+                              SizedBox(width: 95, child: Text('Status', textAlign: TextAlign.center, style: _headerStyle)),
+                              SizedBox(width: 40, child: Text('Actions', textAlign: TextAlign.center, style: _headerStyle)),
+                            ],
+                          ),
+                        ),
+                        const Divider(height: 1, color: Color(0xFFE2E8F0)),
+
+                        // Data Rows
+                        if (metrics.filteredItems.isEmpty)
+                          Container(
+                            padding: const EdgeInsets.all(40),
+                            alignment: Alignment.center,
+                            child: Text(
+                              'No purchase returns found matching the search criteria.',
+                              style: TextStyle(
+                                color: isDark ? Colors.white60 : const Color(0xFF64748B),
+                              ),
+                            ),
+                          )
+                        else
+                          ListView.separated(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            itemCount: metrics.filteredItems.length,
+                            separatorBuilder: (context, index) => Divider(
+                              height: 1,
+                              color: isDark ? Colors.white12 : const Color(0xFFF1F5F9),
+                            ),
+                            itemBuilder: (context, index) {
+                              final item = metrics.filteredItems[index];
+                              return _buildTableRow(context, item, ref, isDark);
+                            },
+                          ),
                       ],
                     ),
                   ),
-                  const Divider(height: 1, color: Color(0xFFE2E8F0)),
-
-                  // Data Rows
-                  if (metrics.filteredItems.isEmpty)
-                    Container(
-                      padding: const EdgeInsets.all(40),
-                      alignment: Alignment.center,
-                      child: Text(
-                        'No purchase returns found matching the search criteria.',
-                        style: TextStyle(
-                          color: isDark ? Colors.white60 : const Color(0xFF64748B),
-                        ),
-                      ),
-                    )
-                  else
-                    ListView.separated(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: metrics.filteredItems.length,
-                      separatorBuilder: (context, index) => Divider(
-                        height: 1,
-                        color: isDark ? Colors.white12 : const Color(0xFFF1F5F9),
-                      ),
-                      itemBuilder: (context, index) {
-                        final item = metrics.filteredItems[index];
-                        return _buildTableRow(context, item, ref, isDark);
-                      },
-                    ),
-                ],
-              ),
-            ),
-          ),
-          const Divider(height: 1, color: Color(0xFFE2E8F0)),
+                ),
+              const Divider(height: 1, color: Color(0xFFE2E8F0)),
 
           // Pagination Footer Row
           LayoutBuilder(
@@ -173,9 +180,11 @@ class PurchaseReturnTable extends ConsumerWidget {
             },
           ),
         ],
-      ),
-    );
-  }
+      );
+    },
+  ),
+);
+}
 
   static const _headerStyle = TextStyle(
     fontSize: 11.5,
@@ -565,5 +574,151 @@ class PurchaseReturnTable extends ConsumerWidget {
   String _monthName(int month) {
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     return months[month - 1];
+  }
+
+  Widget _buildMobileCards(
+    BuildContext context,
+    List<PurchaseReturn> items,
+    WidgetRef ref,
+    bool isDark,
+  ) {
+    if (items.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.all(40),
+        alignment: Alignment.center,
+        child: Text(
+          'No purchase returns found matching the search criteria.',
+          style: TextStyle(
+            color: isDark ? Colors.white60 : const Color(0xFF64748B),
+          ),
+        ),
+      );
+    }
+
+    return ListView.separated(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: items.length,
+      separatorBuilder: (context, index) => Divider(
+        height: 1,
+        color: isDark ? Colors.white12 : const Color(0xFFF1F5F9),
+      ),
+      itemBuilder: (context, index) {
+        final item = items[index];
+        return InkWell(
+          onTap: () => PurchaseReturnDetailDialog.show(context, item),
+          child: Padding(
+            padding: const EdgeInsets.all(14),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        Text(
+                          item.debitNoteNumber,
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF15803D),
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        InkWell(
+                          onTap: () {
+                            Clipboard.setData(ClipboardData(text: item.debitNoteNumber));
+                            AppFeedback.showSnackbar(context, message: '${item.debitNoteNumber} copied!');
+                          },
+                          child: Icon(
+                            Icons.copy_rounded,
+                            size: 13,
+                            color: isDark ? Colors.white38 : const Color(0xFF94A3B8),
+                          ),
+                        ),
+                      ],
+                    ),
+                    _buildStatusBadge(item.status, isDark),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            item.supplierName,
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: isDark ? Colors.white : const Color(0xFF0F172A),
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          if (item.originalPurchaseBillNumber.isNotEmpty) ...[
+                            const SizedBox(height: 2),
+                            Text(
+                              'Bill: ${item.originalPurchaseBillNumber}',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: isDark ? Colors.white60 : const Color(0xFF64748B),
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Text(
+                      '₹${_formatCurrency(item.totalAmount)}',
+                      style: const TextStyle(
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF16A34A),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      '${item.returnDate.day.toString().padLeft(2, '0')} ${_monthName(item.returnDate.month)} ${item.returnDate.year}',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: isDark ? Colors.white54 : const Color(0xFF94A3B8),
+                      ),
+                    ),
+                    if (item.returnReason.isNotEmpty)
+                      Expanded(
+                        child: Text(
+                          item.returnReason,
+                          textAlign: TextAlign.right,
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontStyle: FontStyle.italic,
+                            color: isDark ? Colors.white60 : const Color(0xFF64748B),
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 }

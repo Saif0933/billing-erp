@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/responsive/responsive.dart';
 import '../../../subscription/domain/entities/subscription_models.dart';
 import '../../../subscription/presentation/pages/locked_feature_page.dart';
 import '../../../subscription/presentation/providers/subscription_provider.dart';
@@ -25,7 +26,8 @@ class PurchaseReturnPage extends ConsumerWidget {
       backgroundColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+          padding: Responsive.pagePadding(context),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -52,63 +54,65 @@ class PurchaseReturnPage extends ConsumerWidget {
   }
 
   Widget _buildPageHeader(BuildContext context, bool isDark) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        // Left: Green Return Icon + Title + Subtitle
-        Expanded(
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF064E3B) : const Color(0xFFDCFCE7),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(
-                  Icons.assignment_return_outlined,
-                  size: 24,
-                  color: isDark ? const Color(0xFF34D399) : const Color(0xFF15803D),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      'Purchase Returns',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: isDark ? Colors.white : const Color(0xFF0F172A),
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      'Issue debit notes and track supplier deductions',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: isDark ? Colors.white60 : const Color(0xFF64748B),
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(width: 8),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isCompact = constraints.maxWidth < 480;
 
-        // Right: [ + Record Return ] Filled Green Button
-        ElevatedButton.icon(
+        final titleWidget = Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: isDark
+                    ? const Color(0xFF064E3B)
+                    : const Color(0xFFDCFCE7),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(
+                Icons.assignment_return_outlined,
+                size: 24,
+                color: isDark
+                    ? const Color(0xFF34D399)
+                    : const Color(0xFF15803D),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Purchase Returns',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: isDark ? Colors.white : const Color(0xFF0F172A),
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'Issue debit notes and track supplier deductions',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color:
+                          isDark ? Colors.white60 : const Color(0xFF64748B),
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        );
+
+        final buttonWidget = ElevatedButton.icon(
           style: ElevatedButton.styleFrom(
             backgroundColor: const Color(0xFF15803D),
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             elevation: 1,
           ),
           icon: const Icon(Icons.add, size: 16, color: Colors.white),
@@ -121,8 +125,28 @@ class PurchaseReturnPage extends ConsumerWidget {
             ),
           ),
           onPressed: () => CreatePurchaseReturnDialog.show(context),
-        ),
-      ],
+        );
+
+        if (isCompact) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              titleWidget,
+              const SizedBox(height: 12),
+              buttonWidget,
+            ],
+          );
+        }
+
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Expanded(child: titleWidget),
+            const SizedBox(width: 8),
+            buttonWidget,
+          ],
+        );
+      },
     );
   }
 }

@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_spacing.dart';
 import '../../../../core/constants/app_typography.dart';
 import '../../../../core/models/billing_models.dart';
+import '../../../../core/responsive/responsive.dart';
 import '../../../../shared/widgets/app_button.dart';
 import '../../../../shared/widgets/app_cards.dart';
 import '../../../../shared/widgets/app_input_fields.dart';
@@ -44,41 +46,43 @@ class _PurchaseDetailPageState extends ConsumerState<PurchaseDetailPage> {
           builder: (context, setDialogState) {
             return AlertDialog(
               title: const Text('Record Outward Payment'),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    'Purchase Remaining Payable: ₹${purchase.balanceAmount}',
-                  ),
-                  const SizedBox(height: AppSpacing.md),
-                  AppTextField(
-                    label: 'Amount Paid (₹) *',
-                    controller: _amountPaidController,
-                    keyboardType: TextInputType.number,
-                  ),
-                  const SizedBox(height: AppSpacing.md),
-                  AppTextField(
-                    label: 'Reference / Transaction ID *',
-                    controller: _refNoController,
-                  ),
-                  const SizedBox(height: AppSpacing.md),
-                  AppDropdownField<String>(
-                    label: 'Payment Mode',
-                    value: _paymentMode,
-                    items: const [
-                      DropdownMenuItem(value: 'Cash', child: Text('Cash')),
-                      DropdownMenuItem(
-                        value: 'Bank',
-                        child: Text('Bank Transfer'),
-                      ),
-                      DropdownMenuItem(value: 'UPI', child: Text('UPI')),
-                      DropdownMenuItem(value: 'Card', child: Text('Card')),
-                      DropdownMenuItem(value: 'Cheque', child: Text('Cheque')),
-                    ],
-                    onChanged: (val) =>
-                        setDialogState(() => _paymentMode = val ?? 'Bank'),
-                  ),
-                ],
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'Purchase Remaining Payable: ₹${purchase.balanceAmount}',
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    AppTextField(
+                      label: 'Amount Paid (₹) *',
+                      controller: _amountPaidController,
+                      keyboardType: TextInputType.number,
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    AppTextField(
+                      label: 'Reference / Transaction ID *',
+                      controller: _refNoController,
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    AppDropdownField<String>(
+                      label: 'Payment Mode',
+                      value: _paymentMode,
+                      items: const [
+                        DropdownMenuItem(value: 'Cash', child: Text('Cash')),
+                        DropdownMenuItem(
+                          value: 'Bank',
+                          child: Text('Bank Transfer'),
+                        ),
+                        DropdownMenuItem(value: 'UPI', child: Text('UPI')),
+                        DropdownMenuItem(value: 'Card', child: Text('Card')),
+                        DropdownMenuItem(value: 'Cheque', child: Text('Cheque')),
+                      ],
+                      onChanged: (val) =>
+                          setDialogState(() => _paymentMode = val ?? 'Bank'),
+                    ),
+                  ],
+                ),
               ),
               actions: [
                 TextButton(
@@ -120,7 +124,7 @@ class _PurchaseDetailPageState extends ConsumerState<PurchaseDetailPage> {
                         .read(billingRepositoryProvider.notifier)
                         .addPayment(payment);
 
-                    if (mounted) {
+                    if (context.mounted && ctx.mounted) {
                       Navigator.pop(ctx);
                       ref.invalidate(
                         purchaseDetailProvider(widget.purchaseId),
@@ -190,7 +194,8 @@ class _PurchaseDetailPageState extends ConsumerState<PurchaseDetailPage> {
         title: Text(purchase.purchaseNumber),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(AppSpacing.lg),
+        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+        padding: Responsive.pagePadding(context),
         child: Center(
           child: Container(
             constraints: const BoxConstraints(maxWidth: 900),
@@ -221,7 +226,7 @@ class _PurchaseDetailPageState extends ConsumerState<PurchaseDetailPage> {
                             ref.invalidate(
                               purchaseDetailProvider(widget.purchaseId),
                             );
-                            if (mounted) {
+                            if (context.mounted) {
                               AppFeedback.showSnackbar(
                                 context,
                                 message:
@@ -229,7 +234,7 @@ class _PurchaseDetailPageState extends ConsumerState<PurchaseDetailPage> {
                               );
                             }
                           } catch (e) {
-                            if (mounted) {
+                            if (context.mounted) {
                               AppFeedback.showSnackbar(
                                 context,
                                 message: e
@@ -342,29 +347,43 @@ class _PurchaseDetailPageState extends ConsumerState<PurchaseDetailPage> {
                         cellBuilder: (it) => Text(
                           it.name,
                           style: const TextStyle(fontWeight: FontWeight.bold),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                       TableColumnSpec<PurchaseItem>(
                         label: 'HSN Code',
-                        cellBuilder: (it) => Text(it.hsnCode),
+                        cellBuilder: (it) => Text(
+                          it.hsnCode.isEmpty ? '-' : it.hsnCode,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
                       TableColumnSpec<PurchaseItem>(
                         label: 'Quantity',
                         isNumeric: true,
-                        cellBuilder: (it) =>
-                            Text('${it.quantity} ${it.unit}'),
+                        cellBuilder: (it) => Text(
+                          '${it.quantity} ${it.unit}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
                       TableColumnSpec<PurchaseItem>(
                         label: 'Rate',
                         isNumeric: true,
-                        cellBuilder: (it) =>
-                            Text('₹${it.rate.toStringAsFixed(2)}'),
+                        cellBuilder: (it) => Text(
+                          '₹${it.rate.toStringAsFixed(2)}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
                       TableColumnSpec<PurchaseItem>(
                         label: 'Discount',
                         isNumeric: true,
                         cellBuilder: (it) => Text(
                           '${it.discountPercentage.toStringAsFixed(0)}%',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                       TableColumnSpec<PurchaseItem>(
@@ -372,21 +391,120 @@ class _PurchaseDetailPageState extends ConsumerState<PurchaseDetailPage> {
                         isNumeric: true,
                         cellBuilder: (it) => Text(
                           '₹${it.taxableValue.toStringAsFixed(2)}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                       TableColumnSpec<PurchaseItem>(
                         label: 'GST Rate',
-                        cellBuilder: (it) =>
-                            Text('${it.gstRate.toStringAsFixed(0)}%'),
+                        cellBuilder: (it) => Text(
+                          '${it.gstRate.toStringAsFixed(0)}%',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
                       TableColumnSpec<PurchaseItem>(
                         label: 'GST Amt',
                         isNumeric: true,
                         cellBuilder: (it) => Text(
                           '₹${(it.cgst + it.sgst + it.igst).toStringAsFixed(2)}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                     ],
+                    mobileCardBuilder: (it) {
+                      final gstAmt = it.cgst + it.sgst + it.igst;
+                      final totalVal = it.taxableValue + gstAmt;
+                      final isDark =
+                          Theme.of(context).brightness == Brightness.dark;
+                      return Container(
+                        padding: const EdgeInsets.all(AppSpacing.md),
+                        decoration: BoxDecoration(
+                          border: Border(
+                            bottom: BorderSide(
+                              color: isDark
+                                  ? AppColors.borderDark
+                                  : AppColors.borderLight,
+                            ),
+                          ),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    it.name,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 14,
+                                    ),
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  '₹${totalVal.toStringAsFixed(2)}',
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 6),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  '${it.quantity} ${it.unit} @ ₹${it.rate.toStringAsFixed(2)}',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.grey.shade600,
+                                  ),
+                                ),
+                                if (it.discountPercentage > 0)
+                                  Text(
+                                    'Disc: ${it.discountPercentage.toStringAsFixed(0)}%',
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.orange,
+                                    ),
+                                  ),
+                              ],
+                            ),
+                            const SizedBox(height: 4),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                if (it.hsnCode.isNotEmpty)
+                                  Text(
+                                    'HSN: ${it.hsnCode}',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: Colors.grey.shade500,
+                                    ),
+                                  )
+                                else
+                                  const SizedBox.shrink(),
+                                Text(
+                                  'Taxable: ₹${it.taxableValue.toStringAsFixed(2)} + GST: ₹${gstAmt.toStringAsFixed(2)}',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: Colors.grey.shade500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      );
+                    },
                   ),
                 ),
                 const SizedBox(height: AppSpacing.md),
@@ -500,8 +618,8 @@ class _PurchaseDetailPageState extends ConsumerState<PurchaseDetailPage> {
                 ),
                 const SizedBox(height: AppSpacing.lg),
                 if (purchase.status != PurchaseStatus.cancelled) ...[
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
+                  Wrap(
+                    alignment: WrapAlignment.end,
                     children: [
                       AppButton(
                         label: 'Cancel & Reverse Bill',
@@ -533,7 +651,7 @@ class _PurchaseDetailPageState extends ConsumerState<PurchaseDetailPage> {
                                           widget.purchaseId,
                                         ),
                                       );
-                                      if (mounted) {
+                                      if (context.mounted && ctx.mounted) {
                                         Navigator.pop(ctx);
                                         AppFeedback.showSnackbar(
                                           context,
@@ -542,7 +660,7 @@ class _PurchaseDetailPageState extends ConsumerState<PurchaseDetailPage> {
                                         );
                                       }
                                     } catch (e) {
-                                      if (mounted) {
+                                      if (context.mounted && ctx.mounted) {
                                         Navigator.pop(ctx);
                                         AppFeedback.showSnackbar(
                                           context,

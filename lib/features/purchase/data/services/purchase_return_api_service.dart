@@ -166,8 +166,8 @@ class PurchaseReturnApiService {
       '${ApiEndpoints.purchaseReturns}/$id/status',
       data: {
         'status': statusToApi(status),
-        if (amountAdjusted != null) 'amountAdjusted': amountAdjusted,
-        if (notes != null) 'notes': notes,
+        'amountAdjusted': ?amountAdjusted,
+        'notes': ?notes,
       },
     );
     return PurchaseReturnDto.fromJson(_unwrap(response.data)).toDomain();

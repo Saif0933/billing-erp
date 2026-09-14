@@ -150,11 +150,15 @@ class PurchaseReturnDetailDialog extends StatelessWidget {
                               ),
                               if (item.supplierGstin.isNotEmpty) ...[
                                 const SizedBox(width: 8),
-                                Text(
-                                  'GSTIN: ${item.supplierGstin}',
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    color: isDark ? Colors.white60 : const Color(0xFF64748B),
+                                Flexible(
+                                  child: Text(
+                                    'GSTIN: ${item.supplierGstin}',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: isDark ? Colors.white60 : const Color(0xFF64748B),
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                    textAlign: TextAlign.right,
                                   ),
                                 ),
                               ],
@@ -272,7 +276,14 @@ class PurchaseReturnDetailDialog extends StatelessWidget {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              const Text('Total Debit Note Amount:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                              const Expanded(
+                                child: Text(
+                                  'Total Debit Note Amount:',
+                                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
                               Text(
                                 '₹${_formatCurrency(item.totalAmount)}',
                                 style: const TextStyle(
@@ -293,19 +304,21 @@ class PurchaseReturnDetailDialog extends StatelessWidget {
             const SizedBox(height: 14),
 
             // Action Buttons (Print / Share / Close)
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
+            Wrap(
+              alignment: WrapAlignment.end,
+              spacing: 8,
+              runSpacing: 8,
               children: [
                 OutlinedButton.icon(
                   icon: const Icon(Icons.share, size: 14),
                   label: const Text('Share', style: TextStyle(fontSize: 12)),
                   onPressed: () {
+                    // ignore: deprecated_member_use
                     Share.share(
                       'Debit Note: ${item.debitNoteNumber}\nSupplier: ${item.supplierName}\nOriginal Bill: ${item.originalPurchaseBillNumber}\nTotal Amount: ₹${item.totalAmount}\nReason: ${item.returnReason}',
                     );
                   },
                 ),
-                const SizedBox(width: 8),
                 ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF15803D),
