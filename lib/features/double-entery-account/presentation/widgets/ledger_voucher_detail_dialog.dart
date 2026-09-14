@@ -125,38 +125,107 @@ class LedgerVoucherDetailDialog extends StatelessWidget {
                     ),
                   ),
                   const Divider(height: 1),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    child: Row(
-                      children: [
-                        Expanded(flex: 3, child: Text(item.account, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600))),
-                        Expanded(
-                          flex: 2,
-                          child: Text(
-                            item.debit > 0 ? '₹${item.debit.toStringAsFixed(2)}' : '-',
-                            textAlign: TextAlign.right,
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: item.debit > 0 ? FontWeight.bold : FontWeight.normal,
-                              color: item.debit > 0 ? const Color(0xFF16A34A) : null,
+                  if (item.legs.isNotEmpty)
+                    ...item.legs.map((leg) {
+                      return Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        decoration: BoxDecoration(
+                          border: Border(
+                            bottom: BorderSide(
+                              color: isDark ? Colors.white10 : Colors.grey.shade200,
+                              width: 0.5,
                             ),
                           ),
                         ),
-                        Expanded(
-                          flex: 2,
-                          child: Text(
-                            item.credit > 0 ? '₹${item.credit.toStringAsFixed(2)}' : '-',
-                            textAlign: TextAlign.right,
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: item.credit > 0 ? FontWeight.bold : FontWeight.normal,
-                              color: item.credit > 0 ? const Color(0xFFDC2626) : null,
+                        child: Row(
+                          children: [
+                            Expanded(
+                              flex: 3,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    leg.accountName,
+                                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                                  ),
+                                  if (leg.narration != null && leg.narration!.isNotEmpty)
+                                    Text(
+                                      leg.narration!,
+                                      style: TextStyle(
+                                        fontSize: 10.5,
+                                        color: isDark ? Colors.white54 : const Color(0xFF64748B),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ),
+                            Expanded(
+                              flex: 2,
+                              child: Text(
+                                leg.debit > 0 ? '₹${leg.debit.toStringAsFixed(2)}' : '-',
+                                textAlign: TextAlign.right,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: leg.debit > 0 ? FontWeight.bold : FontWeight.normal,
+                                  color: leg.debit > 0 ? const Color(0xFF16A34A) : null,
+                                ),
+                              ),
+                            ),
+                            Expanded(
+                              flex: 2,
+                              child: Text(
+                                leg.credit > 0 ? '₹${leg.credit.toStringAsFixed(2)}' : '-',
+                                textAlign: TextAlign.right,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: leg.credit > 0 ? FontWeight.bold : FontWeight.normal,
+                                  color: leg.credit > 0 ? const Color(0xFFDC2626) : null,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    })
+                  else
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            flex: 3,
+                            child: Text(
+                              item.account,
+                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
                             ),
                           ),
-                        ),
-                      ],
+                          Expanded(
+                            flex: 2,
+                            child: Text(
+                              item.debit > 0 ? '₹${item.debit.toStringAsFixed(2)}' : '-',
+                              textAlign: TextAlign.right,
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: item.debit > 0 ? FontWeight.bold : FontWeight.normal,
+                                color: item.debit > 0 ? const Color(0xFF16A34A) : null,
+                              ),
+                            ),
+                          ),
+                          Expanded(
+                            flex: 2,
+                            child: Text(
+                              item.credit > 0 ? '₹${item.credit.toStringAsFixed(2)}' : '-',
+                              textAlign: TextAlign.right,
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: item.credit > 0 ? FontWeight.bold : FontWeight.normal,
+                                color: item.credit > 0 ? const Color(0xFFDC2626) : null,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
                 ],
               ),
             ),

@@ -183,43 +183,8 @@ class MobileDrawer extends ConsumerWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(
-                          children: [
-                            const Icon(
-                              Icons.bolt,
-                              color: Color(0xFF10B981),
-                              size: 28,
-                            ),
-                            const SizedBox(width: 8),
-                            RichText(
-                              text: TextSpan(
-                                children: [
-                                  TextSpan(
-                                    text: 'TAX ',
-                                    style: TextStyle(
-                                      color: isDark
-                                          ? Colors.white
-                                          : AppColors.textLightPrimary,
-                                      fontWeight: FontWeight.w900,
-                                      fontSize: 20,
-                                    ),
-                                  ),
-                                  const TextSpan(
-                                    text: 'BUNNY',
-                                    style: TextStyle(
-                                      color: Color(0xFF10B981),
-                                      fontWeight: FontWeight.w900,
-                                      fontSize: 20,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
                         Text(
-                          activeBiz?.name ?? 'Tax Bunny Retail Store',
+                          activeBiz?.name ?? 'Retail Store',
                           style: TextStyle(
                             color: isDark
                                 ? Colors.white70

@@ -55,7 +55,7 @@ class LedgerTableSection extends ConsumerWidget {
                   const SizedBox(height: 6),
                   Align(
                     alignment: Alignment.centerRight,
-                    child: _buildSortDropdown(context, filter, notifier, isDark),
+                    child: _buildSortDropdown(context, filter.sortBy, notifier, isDark),
                   ),
                 ],
               );
@@ -93,7 +93,7 @@ class LedgerTableSection extends ConsumerWidget {
                     ),
                   ],
                 ),
-                _buildSortDropdown(context, filter, notifier, isDark),
+                _buildSortDropdown(context, filter.sortBy, notifier, isDark),
               ],
             );
           },
@@ -141,15 +141,76 @@ class LedgerTableSection extends ConsumerWidget {
                       const Divider(height: 1, color: Color(0xFFE2E8F0)),
 
                       // Data Rows
-                      if (summary.pagedItems.isEmpty)
+                      if (summary.isLoading)
                         Container(
                           padding: const EdgeInsets.all(40),
                           alignment: Alignment.center,
-                          child: Text(
-                            'No transactions match your search/filter.',
-                            style: TextStyle(
-                              color: isDark ? Colors.white60 : const Color(0xFF64748B),
-                            ),
+                          child: const Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              CircularProgressIndicator(color: Color(0xFF15803D)),
+                              SizedBox(height: 12),
+                              Text(
+                                'Loading general ledger entries...',
+                                style: TextStyle(fontSize: 13, color: Color(0xFF64748B)),
+                              ),
+                            ],
+                          ),
+                        )
+                      else if (summary.error != null && summary.pagedItems.isEmpty)
+                        Container(
+                          padding: const EdgeInsets.all(32),
+                          alignment: Alignment.center,
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.error_outline, color: Color(0xFFDC2626), size: 36),
+                              const SizedBox(height: 8),
+                              Text(
+                                'Unable to load ledger entries',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                  color: isDark ? Colors.white : const Color(0xFF0F172A),
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                summary.error!,
+                                style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                                textAlign: TextAlign.center,
+                              ),
+                              const SizedBox(height: 12),
+                              ElevatedButton.icon(
+                                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF15803D)),
+                                icon: const Icon(Icons.refresh, size: 16, color: Colors.white),
+                                label: const Text('Retry', style: TextStyle(color: Colors.white)),
+                                onPressed: () => notifier.refresh(),
+                              ),
+                            ],
+                          ),
+                        )
+                      else if (summary.pagedItems.isEmpty)
+                        Container(
+                          padding: const EdgeInsets.all(40),
+                          alignment: Alignment.center,
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.inbox_outlined,
+                                size: 40,
+                                color: isDark ? Colors.white38 : const Color(0xFF94A3B8),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'No transactions match your search/filter.',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: isDark ? Colors.white60 : const Color(0xFF64748B),
+                                ),
+                              ),
+                            ],
                           ),
                         )
                       else
@@ -230,7 +291,7 @@ class LedgerTableSection extends ConsumerWidget {
                           ),
                           const SizedBox(width: 16),
 
-                          // Page Indicator: Page 1 of 13
+                          // Page Indicator: Page 1 of N
                           Text(
                             'Page ${summary.currentPage} of ${summary.totalPages}',
                             style: TextStyle(
@@ -251,30 +312,36 @@ class LedgerTableSection extends ConsumerWidget {
                                 isDark: isDark,
                               ),
                               const SizedBox(width: 4),
-                              _buildPageNumberBtn(
-                                page: 1,
-                                isActive: summary.currentPage == 1,
-                                onTap: () => notifier.setPage(1),
-                                isDark: isDark,
+                              ...List.generate(
+                                summary.totalPages,
+                                (index) {
+                                  final page = index + 1;
+                                  if (page == 1 ||
+                                      page == summary.totalPages ||
+                                      (page >= summary.currentPage - 1 &&
+                                          page <= summary.currentPage + 1)) {
+                                    return Padding(
+                                      padding: const EdgeInsets.symmetric(horizontal: 2),
+                                      child: _buildPageNumberBtn(
+                                        page: page,
+                                        isActive: summary.currentPage == page,
+                                        onTap: () => notifier.setPage(page),
+                                        isDark: isDark,
+                                      ),
+                                    );
+                                  } else if (page == summary.currentPage - 2 ||
+                                      page == summary.currentPage + 2) {
+                                    return const Padding(
+                                      padding: EdgeInsets.symmetric(horizontal: 2),
+                                      child: Text(
+                                        '...',
+                                        style: TextStyle(color: Color(0xFF94A3B8), fontSize: 11),
+                                      ),
+                                    );
+                                  }
+                                  return const SizedBox.shrink();
+                                },
                               ),
-                              if (summary.totalPages >= 2) ...[
-                                const SizedBox(width: 4),
-                                _buildPageNumberBtn(
-                                  page: 2,
-                                  isActive: summary.currentPage == 2,
-                                  onTap: () => notifier.setPage(2),
-                                  isDark: isDark,
-                                ),
-                              ],
-                              if (summary.totalPages >= 3) ...[
-                                const SizedBox(width: 4),
-                                _buildPageNumberBtn(
-                                  page: 3,
-                                  isActive: summary.currentPage == 3,
-                                  onTap: () => notifier.setPage(3),
-                                  isDark: isDark,
-                                ),
-                              ],
                               const SizedBox(width: 4),
                               _buildPageNavBtn(
                                 icon: Icons.chevron_right,
@@ -474,7 +541,7 @@ class LedgerTableSection extends ConsumerWidget {
 
   Widget _buildSortDropdown(
     BuildContext context,
-    GeneralLedgerFilterState filter,
+    String sortBy,
     GeneralLedgerNotifier notifier,
     bool isDark,
   ) {
@@ -489,7 +556,7 @@ class LedgerTableSection extends ConsumerWidget {
         const SizedBox(width: 2),
         DropdownButtonHideUnderline(
           child: DropdownButton<String>(
-            value: filter.sortBy,
+            value: sortBy,
             isDense: true,
             icon: Icon(
               Icons.keyboard_arrow_down,

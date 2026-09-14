@@ -111,4 +111,11 @@ class ApiEndpoints {
   static const String reportExportsHistory = '/api/v1/reports/exports';
   static const String reportCatalog = '/api/v1/reports/catalog';
   static const String reportSaved = '/api/v1/reports/saved';
+
+  // Double-Entry Accounting / General Ledger (backend: module/double-entry-accounting/general-ledger)
+  static const String generalLedger = '/api/v1/accounting/general-ledger';
+  static const String generalLedgerSummary = '/api/v1/accounting/general-ledger/summary';
+  static const String generalLedgerAccounts = '/api/v1/accounting/general-ledger/accounts';
+  static const String generalLedgerExport = '/api/v1/accounting/general-ledger/export';
+  static const String generalLedgerVoucher = '/api/v1/accounting/general-ledger/voucher';
 }

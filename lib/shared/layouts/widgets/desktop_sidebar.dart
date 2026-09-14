@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_spacing.dart';
-import '../../../../core/constants/app_typography.dart';
 import '../../../../core/navigation/navigation_config.dart';
 import '../../../../core/navigation/navigation_service.dart';
 import '../../../../core/permissions/permission_service.dart';
@@ -72,31 +71,7 @@ class _DesktopSidebarState extends ConsumerState<DesktopSidebar> {
       color: isDark ? AppColors.primaryDark : AppColors.primary,
       child: Column(
         children: [
-          // Sidebar header title
-          Container(
-            height: 60,
-            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-            alignment: Alignment.center,
-            child: isCollapsed
-                ? const Icon(Icons.bolt, color: AppColors.accent, size: 28)
-                : Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(Icons.bolt, color: AppColors.accent, size: 24),
-                      const SizedBox(width: 8),
-                      Text(
-                        'TAX BUNNY',
-                        style: AppTypography.titleLarge.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: 1.2,
-                        ),
-                      ),
-                    ],
-                  ),
-          ),
-
-          const Divider(color: Colors.white24, height: 1),
+          const SizedBox(height: AppSpacing.xs),
 
           // Scrollable Menu List
           Expanded(

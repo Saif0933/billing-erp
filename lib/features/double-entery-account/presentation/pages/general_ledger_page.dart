@@ -20,31 +20,36 @@ class GeneralLedgerPage extends ConsumerWidget {
     return Scaffold(
       backgroundColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // Top Page Title Header matching Screenshot
-              _buildPageHeader(context, summary, isDark),
-              const SizedBox(height: 16),
+        child: RefreshIndicator(
+          color: const Color(0xFF15803D),
+          onRefresh: () => ref.read(generalLedgerNotifierProvider.notifier).refresh(),
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Top Page Title Header matching Screenshot
+                _buildPageHeader(context, ref, summary, isDark),
+                const SizedBox(height: 16),
 
-              // Summary & 4 KPI Cards Section
-              const LedgerSummarySection(),
-              const SizedBox(height: 16),
+                // Summary & 4 KPI Cards Section
+                const LedgerSummarySection(),
+                const SizedBox(height: 16),
 
-              // Search & 4 Filter Dropdowns Section
-              const LedgerFilterSection(),
-              const SizedBox(height: 16),
+                // Search & 4 Filter Dropdowns Section
+                const LedgerFilterSection(),
+                const SizedBox(height: 16),
 
-              // Ledger Entries Data Table & Pagination Section
-              const LedgerTableSection(),
-              const SizedBox(height: 16),
+                // Ledger Entries Data Table & Pagination Section
+                const LedgerTableSection(),
+                const SizedBox(height: 16),
 
-              // Bottom Smart Insights Card
-              const LedgerInsightsCard(),
-              const SizedBox(height: 24),
-            ],
+                // Bottom Smart Insights Card
+                const LedgerInsightsCard(),
+                const SizedBox(height: 24),
+              ],
+            ),
           ),
         ),
       ),
@@ -53,6 +58,7 @@ class GeneralLedgerPage extends ConsumerWidget {
 
   Widget _buildPageHeader(
     BuildContext context,
+    WidgetRef ref,
     GeneralLedgerSummaryData summary,
     bool isDark,
   ) {
@@ -145,13 +151,31 @@ class GeneralLedgerPage extends ConsumerWidget {
               color: isDark ? Colors.white : const Color(0xFF0F172A),
             ),
           ),
-          onPressed: () => _exportLedger(context, summary),
+          onPressed: () => _exportLedger(context, ref, summary),
         ),
       ],
     );
   }
 
-  void _exportLedger(BuildContext context, GeneralLedgerSummaryData summary) {
+  Future<void> _exportLedger(
+    BuildContext context,
+    WidgetRef ref,
+    GeneralLedgerSummaryData summary,
+  ) async {
+    try {
+      final exportResult =
+          await ref.read(generalLedgerNotifierProvider.notifier).exportLedger(format: 'csv');
+      if (exportResult != null && exportResult['csv'] != null) {
+        final csvContent = exportResult['csv'].toString();
+        await Share.share(
+          csvContent,
+          subject: exportResult['filename']?.toString() ?? 'general_ledger.csv',
+        );
+        return;
+      }
+    } catch (_) {}
+
+    // Fallback: formatted ledger statement summary
     final buffer = StringBuffer();
     buffer.writeln('========================================');
     buffer.writeln('GENERAL LEDGER STATEMENT');

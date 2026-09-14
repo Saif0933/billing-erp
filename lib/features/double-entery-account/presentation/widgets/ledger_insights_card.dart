@@ -11,6 +11,11 @@ class LedgerInsightsCard extends ConsumerWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final isBalanced = summary.isBalanced;
+    final insightMessage = summary.smartInsights.message.isNotEmpty
+        ? summary.smartInsights.message
+        : (isBalanced
+            ? 'Your total transactions are balanced.\nKeep up the good work!'
+            : 'Difference of ₹${summary.closingBalance.toStringAsFixed(2)} detected between debits and credits.');
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -57,9 +62,7 @@ class LedgerInsightsCard extends ConsumerWidget {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  isBalanced
-                      ? 'Your total transactions are balanced.\nKeep up the good work!'
-                      : 'Difference of ₹${summary.closingBalance.toStringAsFixed(2)} detected between debits and credits.',
+                  insightMessage,
                   style: TextStyle(
                     fontSize: 11.5,
                     height: 1.3,
@@ -104,9 +107,7 @@ class LedgerInsightsCard extends ConsumerWidget {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      isBalanced
-                          ? 'Your total transactions are balanced.\nKeep up the good work!'
-                          : 'Difference of ₹${summary.closingBalance.toStringAsFixed(2)} detected between debits and credits.',
+                      insightMessage,
                       style: TextStyle(
                         fontSize: 11.5,
                         height: 1.3,

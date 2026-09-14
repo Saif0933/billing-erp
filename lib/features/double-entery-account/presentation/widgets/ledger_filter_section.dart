@@ -32,32 +32,15 @@ class _LedgerFilterSectionState extends ConsumerState<LedgerFilterSection> {
     final notifier = ref.read(generalLedgerFilterProvider.notifier);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    final accounts = [
-      'All Accounts',
-      'Cash in Hand',
-      'Bank Account',
-      'Ramesh Traders',
-      'Apex Raw Materials Ltd',
-      'Salary Expenses',
-      'Acme Enterprises',
-      'Global Packaging Ltd',
-      'Electricity Board',
-      'Krishna Traders',
-      'Logistics Express',
-      'Depreciation Account',
-    ];
+    final accounts = filter.availableAccounts.isNotEmpty
+        ? filter.availableAccounts
+        : const ['All Accounts'];
 
-    final vouchers = [
-      'All Vouchers',
-      'Journal Voucher',
-      'Sales Invoice',
-      'Purchase Invoice',
-      'Receipt',
-      'Payment',
-      'Credit Note',
-    ];
+    final vouchers = filter.availableVouchers.isNotEmpty
+        ? filter.availableVouchers
+        : const ['All Vouchers'];
 
-    final types = [
+    final types = const [
       'All Types',
       'Debit Only',
       'Credit Only',
