@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../subscription/domain/entities/subscription_models.dart';
 import '../../../subscription/presentation/pages/locked_feature_page.dart';
 import '../../../subscription/presentation/providers/subscription_provider.dart';
+import '../providers/general_journal_provider.dart';
 import '../widgets/journal_balance_summary_card.dart';
 import '../widgets/journal_category_tabs.dart';
 import '../widgets/journal_entries_table.dart';
@@ -28,9 +29,15 @@ class JournalEntriesPage extends ConsumerWidget {
     return Scaffold(
       backgroundColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-          child: Column(
+        child: RefreshIndicator(
+          color: const Color(0xFF15803D),
+          onRefresh: () => ref
+              .read(generalJournalNotifierProvider.notifier)
+              .fetchJournalEntries(isRefresh: true),
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               // Page Header: General Journal + [ + New Journal ▾ ] Button
@@ -95,8 +102,9 @@ class JournalEntriesPage extends ConsumerWidget {
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildPageHeader(BuildContext context, bool isDark) {
     return Row(

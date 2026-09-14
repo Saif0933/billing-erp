@@ -10,9 +10,9 @@ class JournalEntriesTable extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final summary = ref.watch(generalJournalDataProvider);
-    final filter = ref.watch(journalFilterProvider);
-    final notifier = ref.read(journalFilterProvider.notifier);
+    final state = ref.watch(generalJournalNotifierProvider);
+    final summary = state.data;
+    final notifier = ref.read(generalJournalNotifierProvider.notifier);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
@@ -64,18 +64,108 @@ class JournalEntriesTable extends ConsumerWidget {
                   ),
                   const Divider(height: 1, color: Color(0xFFE2E8F0)),
 
-                  // Data Rows
-                  if (summary.pagedItems.isEmpty)
+                  // Loading State
+                  if (state.isLoading && summary.pagedItems.isEmpty)
                     Container(
-                      padding: const EdgeInsets.all(40),
+                      padding: const EdgeInsets.symmetric(vertical: 48),
                       alignment: Alignment.center,
-                      child: Text(
-                        'No journal entries match the filter criteria.',
-                        style: TextStyle(
-                          color: isDark ? Colors.white60 : const Color(0xFF64748B),
-                        ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const SizedBox(
+                            width: 28,
+                            height: 28,
+                            child: CircularProgressIndicator(strokeWidth: 2.5, color: Color(0xFF15803D)),
+                          ),
+                          const SizedBox(height: 14),
+                          Text(
+                            'Loading journal entries...',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: isDark ? Colors.white70 : const Color(0xFF64748B),
+                            ),
+                          ),
+                        ],
                       ),
                     )
+                  // Error State
+                  else if (state.error != null && summary.pagedItems.isEmpty)
+                    Container(
+                      padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
+                      alignment: Alignment.center,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.error_outline_rounded, color: Colors.redAccent, size: 36),
+                          const SizedBox(height: 10),
+                          Text(
+                            'Failed to load journal entries',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              color: isDark ? Colors.white : const Color(0xFF0F172A),
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            state.error!,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: isDark ? Colors.white60 : const Color(0xFF64748B),
+                            ),
+                          ),
+                          const SizedBox(height: 14),
+                          ElevatedButton.icon(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF15803D),
+                            ),
+                            icon: const Icon(Icons.refresh, size: 16, color: Colors.white),
+                            label: const Text('Retry', style: TextStyle(color: Colors.white)),
+                            onPressed: () => notifier.fetchJournalEntries(isRefresh: true),
+                          ),
+                        ],
+                      ),
+                    )
+                  // Empty State
+                  else if (summary.pagedItems.isEmpty)
+                    Container(
+                      padding: const EdgeInsets.symmetric(vertical: 48, horizontal: 20),
+                      alignment: Alignment.center,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.receipt_long_outlined,
+                            size: 44,
+                            color: isDark ? Colors.white30 : const Color(0xFF94A3B8),
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            'No journal entries match the filter criteria.',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: isDark ? Colors.white : const Color(0xFF0F172A),
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            'Try clearing search filters or changing the date range',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: isDark ? Colors.white60 : const Color(0xFF64748B),
+                            ),
+                          ),
+                          const SizedBox(height: 14),
+                          OutlinedButton(
+                            onPressed: () => notifier.reset(),
+                            child: const Text('Reset All Filters'),
+                          ),
+                        ],
+                      ),
+                    )
+                  // Data Rows
                   else
                     ListView.separated(
                       shrinkWrap: true,
@@ -87,7 +177,7 @@ class JournalEntriesTable extends ConsumerWidget {
                       ),
                       itemBuilder: (context, index) {
                         final item = summary.pagedItems[index];
-                        return _buildTableRow(context, item, isDark);
+                        return _buildTableRow(context, ref, item, isDark);
                       },
                     ),
                 ],
@@ -129,7 +219,7 @@ class JournalEntriesTable extends ConsumerWidget {
                             ),
                             child: DropdownButtonHideUnderline(
                               child: DropdownButton<int>(
-                                value: filter.rowsPerPage,
+                                value: state.rowsPerPage,
                                 isDense: true,
                                 icon: const Icon(Icons.keyboard_arrow_down, size: 14),
                                 dropdownColor: isDark ? const Color(0xFF1E293B) : Colors.white,
@@ -153,9 +243,9 @@ class JournalEntriesTable extends ConsumerWidget {
                       ),
                       const SizedBox(width: 16),
 
-                      // Page Indicator: Showing 1 to 10 of 84 entries
+                      // Page Indicator
                       Text(
-                        'Showing 1 to ${summary.pagedItems.length} of ${summary.totalCount} entries',
+                        'Showing ${summary.pagedItems.isNotEmpty ? ((summary.currentPage - 1) * state.rowsPerPage + 1) : 0} to ${((summary.currentPage - 1) * state.rowsPerPage + summary.pagedItems.length)} of ${summary.totalCount} entries',
                         style: TextStyle(
                           fontSize: 12,
                           color: isDark ? Colors.white60 : const Color(0xFF64748B),
@@ -163,7 +253,7 @@ class JournalEntriesTable extends ConsumerWidget {
                       ),
                       const SizedBox(width: 16),
 
-                      // Pagination buttons: |<< < [ 1 ] 2 3 ... 9 > >>|
+                      // Pagination Navigation buttons
                       Row(
                         children: [
                           _buildPageNavBtn(
@@ -180,35 +270,7 @@ class JournalEntriesTable extends ConsumerWidget {
                             isDark: isDark,
                           ),
                           const SizedBox(width: 4),
-                          _buildPageNumberBtn(
-                            page: '1',
-                            isActive: summary.currentPage == 1,
-                            onTap: () => notifier.setPage(1),
-                            isDark: isDark,
-                          ),
-                          const SizedBox(width: 4),
-                          _buildPageNumberBtn(
-                            page: '2',
-                            isActive: summary.currentPage == 2,
-                            onTap: () => notifier.setPage(2),
-                            isDark: isDark,
-                          ),
-                          const SizedBox(width: 4),
-                          _buildPageNumberBtn(
-                            page: '3',
-                            isActive: summary.currentPage == 3,
-                            onTap: () => notifier.setPage(3),
-                            isDark: isDark,
-                          ),
-                          const SizedBox(width: 4),
-                          Text('...', style: TextStyle(color: isDark ? Colors.white54 : Colors.grey.shade500)),
-                          const SizedBox(width: 4),
-                          _buildPageNumberBtn(
-                            page: '9',
-                            isActive: summary.currentPage == 9,
-                            onTap: () => notifier.setPage(9),
-                            isDark: isDark,
-                          ),
+                          ..._buildDynamicPageButtons(summary.currentPage, summary.totalPages, notifier, isDark),
                           const SizedBox(width: 4),
                           _buildPageNavBtn(
                             icon: Icons.chevron_right,
@@ -244,7 +306,52 @@ class JournalEntriesTable extends ConsumerWidget {
     color: Color(0xFF64748B),
   );
 
-  Widget _buildTableRow(BuildContext context, JournalEntryRowItem item, bool isDark) {
+  List<Widget> _buildDynamicPageButtons(
+    int currentPage,
+    int totalPages,
+    GeneralJournalNotifier notifier,
+    bool isDark,
+  ) {
+    final widgets = <Widget>[];
+    final maxPagesToShow = 5;
+
+    int start = (currentPage - (maxPagesToShow ~/ 2)).clamp(1, totalPages);
+    int end = (start + maxPagesToShow - 1).clamp(1, totalPages);
+    if (end - start < maxPagesToShow - 1) {
+      start = (end - maxPagesToShow + 1).clamp(1, totalPages);
+    }
+
+    if (start > 1) {
+      widgets.add(_buildPageNumberBtn(page: '1', isActive: currentPage == 1, onTap: () => notifier.setPage(1), isDark: isDark));
+      if (start > 2) {
+        widgets.add(Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 2),
+          child: Text('...', style: TextStyle(color: isDark ? Colors.white38 : Colors.grey.shade500)),
+        ));
+      }
+    }
+
+    for (int p = start; p <= end; p++) {
+      widgets.add(Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 2),
+        child: _buildPageNumberBtn(page: '$p', isActive: currentPage == p, onTap: () => notifier.setPage(p), isDark: isDark),
+      ));
+    }
+
+    if (end < totalPages) {
+      if (end < totalPages - 1) {
+        widgets.add(Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 2),
+          child: Text('...', style: TextStyle(color: isDark ? Colors.white38 : Colors.grey.shade500)),
+        ));
+      }
+      widgets.add(_buildPageNumberBtn(page: '$totalPages', isActive: currentPage == totalPages, onTap: () => notifier.setPage(totalPages), isDark: isDark));
+    }
+
+    return widgets;
+  }
+
+  Widget _buildTableRow(BuildContext context, WidgetRef ref, JournalEntryItemDto item, bool isDark) {
     return InkWell(
       onTap: () => _showJournalDetailDialog(context, item, isDark),
       hoverColor: isDark ? Colors.white.withValues(alpha: 0.03) : const Color(0xFFF8FAFC),
@@ -289,7 +396,7 @@ class JournalEntriesTable extends ConsumerWidget {
                     style: const TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF15803D), // Green bold like screenshot
+                      color: Color(0xFF15803D),
                     ),
                   ),
                   const SizedBox(height: 2),
@@ -356,7 +463,7 @@ class JournalEntriesTable extends ConsumerWidget {
               ),
             ),
 
-            // Status Badge (Posted / Draft)
+            // Status Badge (Posted / Draft / Voided)
             SizedBox(
               width: 80,
               child: Center(
@@ -365,17 +472,25 @@ class JournalEntriesTable extends ConsumerWidget {
                   decoration: BoxDecoration(
                     color: item.status == JournalEntryStatus.posted
                         ? (isDark ? const Color(0xFF064E3B) : const Color(0xFFDCFCE7))
-                        : (isDark ? const Color(0xFF0C4A6E) : const Color(0xFFE0F2FE)),
+                        : item.status == JournalEntryStatus.draft
+                            ? (isDark ? const Color(0xFF0C4A6E) : const Color(0xFFE0F2FE))
+                            : (isDark ? const Color(0xFF7F1D1D) : const Color(0xFFFEE2E2)),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
-                    item.status == JournalEntryStatus.posted ? 'Posted' : 'Draft',
+                    item.status == JournalEntryStatus.posted
+                        ? 'Posted'
+                        : item.status == JournalEntryStatus.draft
+                            ? 'Draft'
+                            : 'Voided',
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.bold,
                       color: item.status == JournalEntryStatus.posted
                           ? (isDark ? const Color(0xFF34D399) : const Color(0xFF15803D))
-                          : (isDark ? const Color(0xFF38BDF8) : const Color(0xFF0284C7)),
+                          : item.status == JournalEntryStatus.draft
+                              ? (isDark ? const Color(0xFF38BDF8) : const Color(0xFF0284C7))
+                              : (isDark ? const Color(0xFFF87171) : const Color(0xFFDC2626)),
                     ),
                   ),
                 ),
@@ -401,6 +516,12 @@ class JournalEntriesTable extends ConsumerWidget {
                       Share.share(
                         'Journal Entry: ${item.journalNo}\nDate: ${item.date}\nNarration: ${item.narration}\nDebit: ₹${item.debit}\nCredit: ₹${item.credit}',
                       );
+                    } else if (val == 'view') {
+                      _showJournalDetailDialog(context, item, isDark);
+                    } else if (val == 'void') {
+                      _confirmVoid(context, ref, item);
+                    } else if (val == 'delete') {
+                      _confirmDelete(context, ref, item);
                     }
                   },
                   itemBuilder: (ctx) => [
@@ -434,6 +555,27 @@ class JournalEntriesTable extends ConsumerWidget {
                         ],
                       ),
                     ),
+                    if (item.status != JournalEntryStatus.voided)
+                      const PopupMenuItem(
+                        value: 'void',
+                        child: Row(
+                          children: [
+                            Icon(Icons.block, size: 15, color: Colors.orange),
+                            SizedBox(width: 8),
+                            Text('Void Entry', style: TextStyle(fontSize: 12.5, color: Colors.orange)),
+                          ],
+                        ),
+                      ),
+                    const PopupMenuItem(
+                      value: 'delete',
+                      child: Row(
+                        children: [
+                          Icon(Icons.delete_outline, size: 15, color: Colors.redAccent),
+                          SizedBox(width: 8),
+                          Text('Delete Entry', style: TextStyle(fontSize: 12.5, color: Colors.redAccent)),
+                        ],
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -444,7 +586,67 @@ class JournalEntriesTable extends ConsumerWidget {
     );
   }
 
-  void _showJournalDetailDialog(BuildContext context, JournalEntryRowItem item, bool isDark) {
+  Future<void> _confirmVoid(BuildContext context, WidgetRef ref, JournalEntryItemDto item) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Void Journal Entry'),
+        content: Text('Are you sure you want to void journal "${item.journalNo}"?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.orange),
+            child: const Text('Void Entry'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && context.mounted) {
+      final ok = await ref.read(generalJournalNotifierProvider.notifier).voidJournalEntry(item.id);
+      if (context.mounted) {
+        if (ok) {
+          AppFeedback.showSnackbar(context, message: 'Journal entry voided successfully.');
+        } else {
+          final err = ref.read(generalJournalNotifierProvider).error ?? 'Failed to void journal entry';
+          AppFeedback.showSnackbar(context, message: err, isError: true);
+        }
+      }
+    }
+  }
+
+  Future<void> _confirmDelete(BuildContext context, WidgetRef ref, JournalEntryItemDto item) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete Journal Entry'),
+        content: Text('Are you sure you want to delete journal "${item.journalNo}"? This action cannot be undone.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && context.mounted) {
+      final ok = await ref.read(generalJournalNotifierProvider.notifier).deleteJournalEntry(item.id);
+      if (context.mounted) {
+        if (ok) {
+          AppFeedback.showSnackbar(context, message: 'Journal entry deleted successfully.');
+        } else {
+          final err = ref.read(generalJournalNotifierProvider).error ?? 'Failed to delete journal entry';
+          AppFeedback.showSnackbar(context, message: err, isError: true);
+        }
+      }
+    }
+  }
+
+  void _showJournalDetailDialog(BuildContext context, JournalEntryItemDto item, bool isDark) {
     showDialog(
       context: context,
       builder: (ctx) => Dialog(
@@ -473,14 +675,54 @@ class JournalEntriesTable extends ConsumerWidget {
               Text('Narration: ${item.narration}', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
               const SizedBox(height: 8),
               Text('Date: ${item.date} • ${item.time}', style: const TextStyle(fontSize: 12, color: Colors.grey)),
-              const SizedBox(height: 8),
-              Text('Type: ${item.journalTypeLabel}', style: const TextStyle(fontSize: 12, color: Colors.grey)),
-              const SizedBox(height: 16),
+              const SizedBox(height: 4),
+              Text('Type: ${item.journalTypeLabel} • Ref: ${item.reference}', style: const TextStyle(fontSize: 12, color: Colors.grey)),
+              const SizedBox(height: 12),
+
+              // Legs breakdown if available
+              if (item.lines.isNotEmpty) ...[
+                const Text('Double-Entry Distribution:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 6),
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: isDark ? Colors.black26 : const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Column(
+                    children: item.lines.map((l) {
+                      final isDebit = l.debitAmount > 0;
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 3),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              l.accountName,
+                              style: TextStyle(fontSize: 12, color: isDark ? Colors.white70 : const Color(0xFF334155)),
+                            ),
+                            Text(
+                              isDebit ? 'Dr ₹${_formatCurrency(l.debitAmount)}' : 'Cr ₹${_formatCurrency(l.creditAmount)}',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: isDebit ? const Color(0xFF16A34A) : const Color(0xFFDC2626),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ),
+                const SizedBox(height: 12),
+              ],
+
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('Debit: ₹${_formatCurrency(item.debit)}', style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF16A34A))),
-                  Text('Credit: ₹${_formatCurrency(item.credit)}', style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFFDC2626))),
+                  Text('Total Debit: ₹${_formatCurrency(item.debit)}', style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF16A34A))),
+                  Text('Total Credit: ₹${_formatCurrency(item.credit)}', style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFFDC2626))),
                 ],
               ),
             ],

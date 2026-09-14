@@ -123,4 +123,10 @@ class ApiEndpoints {
   static const String chartOfAccounts = '/api/v1/accounting/chart-of-accounts';
   static const String chartOfAccountsFlat = '/api/v1/accounting/chart-of-accounts/flat';
   static const String chartOfAccountsGroups = '/api/v1/accounting/chart-of-accounts/groups';
+
+  // Double-Entry Accounting / Journal Entries (backend: module/double-entry-accounting/journal-entries)
+  static const String journalEntries = '/api/v1/accounting/journal-entries';
+  static const String journalEntriesSummary = '/api/v1/accounting/journal-entries/summary';
+  static const String journalEntriesAccounts = '/api/v1/accounting/journal-entries/accounts';
+  static const String journalEntriesExport = '/api/v1/accounting/journal-entries/export';
 }

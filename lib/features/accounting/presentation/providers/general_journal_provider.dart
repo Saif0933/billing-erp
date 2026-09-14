@@ -1,50 +1,21 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../data/models/journal_entries_dto.dart';
+import '../../data/services/journal_entries_api_service.dart';
 
-enum JournalType {
-  standard,
-  adjustment,
-  recurring,
-  template,
-}
+// Re-export models for convenience across all UI widgets
+export '../../data/models/journal_entries_dto.dart';
 
-enum JournalEntryStatus {
-  posted,
-  draft,
-  voided,
-}
+// Backward compatibility typedefs
+typedef JournalEntryRowItem = JournalEntryItemDto;
+typedef GeneralJournalSummaryData = GeneralJournalSummaryResponseDto;
 
-class JournalEntryRowItem {
-  final String id;
-  final String date;
-  final String time;
-  final DateTime dateTime;
-  final String journalNo;
-  final String journalTypeLabel;
-  final JournalType type;
-  final String reference;
-  final String narration;
-  final double debit;
-  final double credit;
-  final JournalEntryStatus status;
-
-  const JournalEntryRowItem({
-    required this.id,
-    required this.date,
-    required this.time,
-    required this.dateTime,
-    required this.journalNo,
-    required this.journalTypeLabel,
-    required this.type,
-    required this.reference,
-    required this.narration,
-    required this.debit,
-    required this.credit,
-    required this.status,
-  });
-}
-
-class JournalFilterState {
+/// State for General Journal feature
+class GeneralJournalState {
+  final bool isLoading;
+  final String? error;
+  final GeneralJournalSummaryResponseDto data;
   final String searchQuery;
   final String selectedTab; // 'Journal List', 'Drafts', 'Recurring Journals', 'Journal Templates'
   final String dateRangeLabel;
@@ -54,272 +25,262 @@ class JournalFilterState {
   final String sortBy;
   final int rowsPerPage;
   final int currentPage;
+  final List<AccountDropdownItemDto> availableAccounts;
 
-  const JournalFilterState({
+  const GeneralJournalState({
+    this.isLoading = false,
+    this.error,
+    this.data = const GeneralJournalSummaryResponseDto(),
     this.searchQuery = '',
     this.selectedTab = 'Journal List',
-    this.dateRangeLabel = '01 May – 31 May 2026',
+    this.dateRangeLabel = 'All Time',
     this.customDateRange,
     this.selectedType = 'All Types',
     this.selectedStatus = 'All Status',
     this.sortBy = 'Date (Newest)',
     this.rowsPerPage = 10,
     this.currentPage = 1,
+    this.availableAccounts = const [],
   });
 
-  JournalFilterState copyWith({
+  GeneralJournalState copyWith({
+    bool? isLoading,
+    String? error,
+    bool clearError = false,
+    GeneralJournalSummaryResponseDto? data,
     String? searchQuery,
     String? selectedTab,
     String? dateRangeLabel,
     DateTimeRange? customDateRange,
+    bool clearDateRange = false,
     String? selectedType,
     String? selectedStatus,
     String? sortBy,
     int? rowsPerPage,
     int? currentPage,
+    List<AccountDropdownItemDto>? availableAccounts,
   }) {
-    return JournalFilterState(
+    return GeneralJournalState(
+      isLoading: isLoading ?? this.isLoading,
+      error: clearError ? null : (error ?? this.error),
+      data: data ?? this.data,
       searchQuery: searchQuery ?? this.searchQuery,
       selectedTab: selectedTab ?? this.selectedTab,
       dateRangeLabel: dateRangeLabel ?? this.dateRangeLabel,
-      customDateRange: customDateRange ?? this.customDateRange,
+      customDateRange: clearDateRange ? null : (customDateRange ?? this.customDateRange),
       selectedType: selectedType ?? this.selectedType,
       selectedStatus: selectedStatus ?? this.selectedStatus,
       sortBy: sortBy ?? this.sortBy,
       rowsPerPage: rowsPerPage ?? this.rowsPerPage,
       currentPage: currentPage ?? this.currentPage,
+      availableAccounts: availableAccounts ?? this.availableAccounts,
     );
   }
 }
 
-class JournalFilterNotifier extends StateNotifier<JournalFilterState> {
-  JournalFilterNotifier() : super(const JournalFilterState());
+/// StateNotifier managing General Journal state & API queries
+class GeneralJournalNotifier extends StateNotifier<GeneralJournalState> {
+  final JournalEntriesApiService _apiService;
+  Timer? _debounceTimer;
 
-  void setSearchQuery(String q) => state = state.copyWith(searchQuery: q, currentPage: 1);
-  void setSelectedTab(String tab) => state = state.copyWith(selectedTab: tab, currentPage: 1);
-  void setDateRange(String label, DateTimeRange? range) =>
-      state = state.copyWith(dateRangeLabel: label, customDateRange: range, currentPage: 1);
-  void setSelectedType(String t) => state = state.copyWith(selectedType: t, currentPage: 1);
-  void setSelectedStatus(String s) => state = state.copyWith(selectedStatus: s, currentPage: 1);
-  void setSortBy(String sort) => state = state.copyWith(sortBy: sort);
-  void setRowsPerPage(int count) => state = state.copyWith(rowsPerPage: count, currentPage: 1);
-  void setPage(int page) => state = state.copyWith(currentPage: page);
-  void reset() => state = const JournalFilterState();
+  GeneralJournalNotifier(this._apiService) : super(const GeneralJournalState()) {
+    fetchJournalEntries();
+    fetchAccounts();
+  }
+
+  @override
+  void dispose() {
+    _debounceTimer?.cancel();
+    super.dispose();
+  }
+
+  /// 1. Fetch Journal entries & 4 KPI metrics from backend API
+  Future<void> fetchJournalEntries({bool isRefresh = false}) async {
+    if (!isRefresh && state.isLoading) return;
+
+    state = state.copyWith(isLoading: true, clearError: true);
+
+    try {
+      final response = await _apiService.getJournalEntries(
+        tab: state.selectedTab,
+        search: state.searchQuery.isNotEmpty ? state.searchQuery : null,
+        type: state.selectedType,
+        status: state.selectedStatus,
+        startDate: state.customDateRange?.start,
+        endDate: state.customDateRange?.end,
+        sortBy: state.sortBy,
+        page: state.currentPage,
+        limit: state.rowsPerPage,
+      );
+
+      state = state.copyWith(
+        isLoading: false,
+        data: response,
+        clearError: true,
+      );
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        error: e.toString(),
+      );
+    }
+  }
+
+  /// 2. Fetch Chart of Accounts for dropdown selection
+  Future<void> fetchAccounts() async {
+    try {
+      final accounts = await _apiService.getAccounts();
+      state = state.copyWith(availableAccounts: accounts);
+    } catch (_) {
+      // Fallback is handled gracefully
+    }
+  }
+
+  /// 3. Debounced Search (350ms)
+  void setSearchQuery(String q) {
+    state = state.copyWith(searchQuery: q, currentPage: 1);
+    _debounceTimer?.cancel();
+    _debounceTimer = Timer(const Duration(milliseconds: 350), () {
+      fetchJournalEntries();
+    });
+  }
+
+  /// 4. Category Tab filter
+  void setSelectedTab(String tab) {
+    if (state.selectedTab == tab) return;
+    state = state.copyWith(selectedTab: tab, currentPage: 1);
+    fetchJournalEntries();
+  }
+
+  /// 5. Date Range filter
+  void setDateRange(String label, DateTimeRange? range) {
+    state = state.copyWith(
+      dateRangeLabel: label,
+      customDateRange: range,
+      clearDateRange: range == null,
+      currentPage: 1,
+    );
+    fetchJournalEntries();
+  }
+
+  /// 6. Journal Type filter
+  void setSelectedType(String t) {
+    if (state.selectedType == t) return;
+    state = state.copyWith(selectedType: t, currentPage: 1);
+    fetchJournalEntries();
+  }
+
+  /// 7. Journal Status filter
+  void setSelectedStatus(String s) {
+    if (state.selectedStatus == s) return;
+    state = state.copyWith(selectedStatus: s, currentPage: 1);
+    fetchJournalEntries();
+  }
+
+  /// 8. Sorting
+  void setSortBy(String sort) {
+    if (state.sortBy == sort) return;
+    state = state.copyWith(sortBy: sort);
+    fetchJournalEntries();
+  }
+
+  /// 9. Rows per page
+  void setRowsPerPage(int count) {
+    if (state.rowsPerPage == count) return;
+    state = state.copyWith(rowsPerPage: count, currentPage: 1);
+    fetchJournalEntries();
+  }
+
+  /// 10. Page change
+  void setPage(int page) {
+    if (state.currentPage == page) return;
+    state = state.copyWith(currentPage: page);
+    fetchJournalEntries();
+  }
+
+  /// 11. Reset all filters
+  void reset() {
+    state = state.copyWith(
+      searchQuery: '',
+      selectedTab: 'Journal List',
+      dateRangeLabel: 'All Time',
+      clearDateRange: true,
+      selectedType: 'All Types',
+      selectedStatus: 'All Status',
+      sortBy: 'Date (Newest)',
+      rowsPerPage: 10,
+      currentPage: 1,
+    );
+    fetchJournalEntries();
+  }
+
+  /// 12. Create Journal Entry
+  Future<bool> createJournalEntry(CreateJournalEntryDto dto) async {
+    try {
+      await _apiService.createJournalEntry(dto);
+      await fetchJournalEntries(isRefresh: true);
+      return true;
+    } catch (e) {
+      state = state.copyWith(error: e.toString());
+      return false;
+    }
+  }
+
+  /// 13. Void Journal Entry
+  Future<bool> voidJournalEntry(String id) async {
+    try {
+      final success = await _apiService.voidJournalEntry(id);
+      if (success) {
+        await fetchJournalEntries(isRefresh: true);
+      }
+      return success;
+    } catch (e) {
+      state = state.copyWith(error: e.toString());
+      return false;
+    }
+  }
+
+  /// 14. Delete Journal Entry
+  Future<bool> deleteJournalEntry(String id) async {
+    try {
+      final success = await _apiService.deleteJournalEntry(id);
+      if (success) {
+        await fetchJournalEntries(isRefresh: true);
+      }
+      return success;
+    } catch (e) {
+      state = state.copyWith(error: e.toString());
+      return false;
+    }
+  }
+
+  /// 15. Export Journal Book
+  Future<Map<String, dynamic>> exportJournals({String format = 'csv'}) async {
+    return await _apiService.exportJournals(
+      format: format,
+      tab: state.selectedTab,
+      search: state.searchQuery.isNotEmpty ? state.searchQuery : null,
+      type: state.selectedType,
+      status: state.selectedStatus,
+      startDate: state.customDateRange?.start,
+      endDate: state.customDateRange?.end,
+      sortBy: state.sortBy,
+    );
+  }
 }
 
-final journalFilterProvider =
-    StateNotifierProvider<JournalFilterNotifier, JournalFilterState>((ref) {
-  return JournalFilterNotifier();
+/// Primary StateNotifierProvider for General Journal
+final generalJournalNotifierProvider =
+    StateNotifierProvider<GeneralJournalNotifier, GeneralJournalState>((ref) {
+  final apiService = ref.watch(journalEntriesApiServiceProvider);
+  return GeneralJournalNotifier(apiService);
 });
 
-// Master mock list matching screenshot exactly
-final masterJournalEntriesProvider = Provider<List<JournalEntryRowItem>>((ref) {
-  return [
-    JournalEntryRowItem(
-      id: 'gj_0056',
-      date: '24 May 2026',
-      time: '03:42 PM',
-      dateTime: DateTime(2026, 5, 24, 15, 42),
-      journalNo: 'GJ/26-27/0056',
-      journalTypeLabel: 'Standard',
-      type: JournalType.standard,
-      reference: 'JV-56',
-      narration: 'Rent paid for Office May 2026',
-      debit: 25000.00,
-      credit: 25000.00,
-      status: JournalEntryStatus.posted,
-    ),
-    JournalEntryRowItem(
-      id: 'gj_0055',
-      date: '24 May 2026',
-      time: '02:15 PM',
-      dateTime: DateTime(2026, 5, 24, 14, 15),
-      journalNo: 'GJ/26-27/0055',
-      journalTypeLabel: 'Standard',
-      type: JournalType.standard,
-      reference: '-',
-      narration: 'Office stationery purchase',
-      debit: 5650.00,
-      credit: 5650.00,
-      status: JournalEntryStatus.posted,
-    ),
-    JournalEntryRowItem(
-      id: 'gj_0054',
-      date: '23 May 2026',
-      time: '06:30 PM',
-      dateTime: DateTime(2026, 5, 23, 18, 30),
-      journalNo: 'GJ/26-27/0054',
-      journalTypeLabel: 'Standard',
-      type: JournalType.standard,
-      reference: '-',
-      narration: 'Bank charges',
-      debit: 850.00,
-      credit: 850.00,
-      status: JournalEntryStatus.posted,
-    ),
-    JournalEntryRowItem(
-      id: 'gj_0053',
-      date: '23 May 2026',
-      time: '05:10 PM',
-      dateTime: DateTime(2026, 5, 23, 17, 10),
-      journalNo: 'GJ/26-27/0053',
-      journalTypeLabel: 'Adjustment',
-      type: JournalType.adjustment,
-      reference: 'ADJ-12',
-      narration: 'Salary payable adjustment',
-      debit: 15000.00,
-      credit: 15000.00,
-      status: JournalEntryStatus.posted,
-    ),
-    JournalEntryRowItem(
-      id: 'gj_0052',
-      date: '22 May 2026',
-      time: '04:20 PM',
-      dateTime: DateTime(2026, 5, 22, 16, 20),
-      journalNo: 'GJ/26-27/0052',
-      journalTypeLabel: 'Standard',
-      type: JournalType.standard,
-      reference: '-',
-      narration: 'Prepaid insurance adjustment',
-      debit: 4200.00,
-      credit: 4200.00,
-      status: JournalEntryStatus.draft,
-    ),
-    JournalEntryRowItem(
-      id: 'gj_0051',
-      date: '22 May 2026',
-      time: '11:05 AM',
-      dateTime: DateTime(2026, 5, 22, 11, 5),
-      journalNo: 'GJ/26-27/0051',
-      journalTypeLabel: 'Standard',
-      type: JournalType.standard,
-      reference: '-',
-      narration: 'Interest income accrued',
-      debit: 2750.00,
-      credit: 2750.00,
-      status: JournalEntryStatus.posted,
-    ),
-    JournalEntryRowItem(
-      id: 'gj_0050',
-      date: '21 May 2026',
-      time: '09:35 AM',
-      dateTime: DateTime(2026, 5, 21, 9, 35),
-      journalNo: 'GJ/26-27/0050',
-      journalTypeLabel: 'Standard',
-      type: JournalType.standard,
-      reference: '-',
-      narration: 'Depreciation for May 2026',
-      debit: 18600.00,
-      credit: 18600.00,
-      status: JournalEntryStatus.posted,
-    ),
-    JournalEntryRowItem(
-      id: 'gj_0049',
-      date: '21 May 2026',
-      time: '10:20 AM',
-      dateTime: DateTime(2026, 5, 21, 10, 20),
-      journalNo: 'GJ/26-27/0049',
-      journalTypeLabel: 'Standard',
-      type: JournalType.standard,
-      reference: '-',
-      narration: 'Electricity expense',
-      debit: 3450.00,
-      credit: 3450.00,
-      status: JournalEntryStatus.posted,
-    ),
-  ];
-});
+/// Alias filter provider for seamless backward compatibility with existing toolbar/tabs/table widgets
+final journalFilterProvider = generalJournalNotifierProvider;
 
-class GeneralJournalSummaryData {
-  final int totalJournals;
-  final double totalDebit;
-  final double totalCredit;
-  final int outOfBalanceCount;
-  final double difference;
-  final bool isBalanced;
-  final List<JournalEntryRowItem> pagedItems;
-  final int totalCount;
-  final int totalPages;
-  final int currentPage;
-
-  const GeneralJournalSummaryData({
-    required this.totalJournals,
-    required this.totalDebit,
-    required this.totalCredit,
-    required this.outOfBalanceCount,
-    required this.difference,
-    required this.isBalanced,
-    required this.pagedItems,
-    required this.totalCount,
-    required this.totalPages,
-    required this.currentPage,
-  });
-}
-
-final generalJournalDataProvider = Provider<GeneralJournalSummaryData>((ref) {
-  final master = ref.watch(masterJournalEntriesProvider);
-  final filter = ref.watch(journalFilterProvider);
-
-  var list = List<JournalEntryRowItem>.from(master);
-
-  // Filter by Tab
-  if (filter.selectedTab == 'Drafts') {
-    list = list.where((e) => e.status == JournalEntryStatus.draft).toList();
-  } else if (filter.selectedTab == 'Recurring Journals') {
-    list = list.where((e) => e.type == JournalType.recurring).toList();
-  } else if (filter.selectedTab == 'Journal Templates') {
-    list = list.where((e) => e.type == JournalType.template).toList();
-  }
-
-  // Filter by Search Query
-  if (filter.searchQuery.isNotEmpty) {
-    final q = filter.searchQuery.toLowerCase();
-    list = list.where((e) {
-      return e.journalNo.toLowerCase().contains(q) ||
-          e.narration.toLowerCase().contains(q) ||
-          e.reference.toLowerCase().contains(q) ||
-          e.journalTypeLabel.toLowerCase().contains(q);
-    }).toList();
-  }
-
-  // Filter by Type
-  if (filter.selectedType != 'All Types') {
-    list = list.where((e) => e.journalTypeLabel.toLowerCase() == filter.selectedType.toLowerCase()).toList();
-  }
-
-  // Filter by Status
-  if (filter.selectedStatus != 'All Status') {
-    list = list.where((e) => e.status.name.toLowerCase() == filter.selectedStatus.toLowerCase()).toList();
-  }
-
-  // Sorting
-  if (filter.sortBy == 'Date (Newest)') {
-    list.sort((a, b) => b.dateTime.compareTo(a.dateTime));
-  } else if (filter.sortBy == 'Date (Oldest)') {
-    list.sort((a, b) => a.dateTime.compareTo(b.dateTime));
-  } else if (filter.sortBy == 'Amount (High to Low)') {
-    list.sort((a, b) => b.debit.compareTo(a.debit));
-  } else if (filter.sortBy == 'Amount (Low to High)') {
-    list.sort((a, b) => a.debit.compareTo(b.debit));
-  }
-
-  // Pagination
-  final pageSize = filter.rowsPerPage;
-  final totalPages = (84 / pageSize).ceil();
-  final currentPage = filter.currentPage.clamp(1, totalPages);
-  final startIndex = ((currentPage - 1) * pageSize).clamp(0, list.length);
-  final pagedItems = list.skip(startIndex).take(pageSize).toList();
-
-  return GeneralJournalSummaryData(
-    totalJournals: 84, // Matching screenshot
-    totalDebit: 1245300.00, // Matching screenshot
-    totalCredit: 1245300.00, // Matching screenshot
-    outOfBalanceCount: 0, // Matching screenshot
-    difference: 0.00,
-    isBalanced: true,
-    pagedItems: pagedItems.isNotEmpty ? pagedItems : list,
-    totalCount: 84,
-    totalPages: totalPages,
-    currentPage: currentPage,
-  );
+/// Data provider delivering dynamic summary metrics and table items
+final generalJournalDataProvider = Provider<GeneralJournalSummaryResponseDto>((ref) {
+  final state = ref.watch(generalJournalNotifierProvider);
+  return state.data;
 });

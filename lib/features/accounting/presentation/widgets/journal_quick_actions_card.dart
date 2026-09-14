@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:share_plus/share_plus.dart';
+import '../../../../shared/widgets/feedback.dart';
+import '../providers/general_journal_provider.dart';
 import 'new_journal_dialog.dart';
 
 class JournalQuickActionsCard extends ConsumerWidget {
@@ -7,6 +10,7 @@ class JournalQuickActionsCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final notifier = ref.read(generalJournalNotifierProvider.notifier);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
@@ -65,21 +69,31 @@ class JournalQuickActionsCard extends ConsumerWidget {
                       icon: Icons.description_outlined,
                       iconColor: const Color(0xFF0284C7),
                       title: 'Journal Templates',
-                      subtitle: 'Manage templates',
-                      onTap: () {},
+                      subtitle: 'Filter templates',
+                      onTap: () => notifier.setSelectedTab('Journal Templates'),
                       isDark: isDark,
                     ),
                   ),
 
-                  // 3. Import Journals
+                  // 3. Export Day Book
                   SizedBox(
                     width: tileWidth,
                     child: _buildActionTile(
-                      icon: Icons.file_upload_outlined,
+                      icon: Icons.file_download_outlined,
                       iconColor: const Color(0xFF9333EA),
-                      title: 'Import Journals',
-                      subtitle: 'Import from files',
-                      onTap: () {},
+                      title: 'Export Day Book',
+                      subtitle: 'Download CSV file',
+                      onTap: () async {
+                        AppFeedback.showSnackbar(context, message: 'Exporting journal entries...');
+                        final exportData = await notifier.exportJournals(format: 'csv');
+                        if (context.mounted) {
+                          final csv = exportData['csv']?.toString() ?? '';
+                          if (csv.isNotEmpty) {
+                            Share.share(csv);
+                            AppFeedback.showSnackbar(context, message: 'Journal Book exported successfully!');
+                          }
+                        }
+                      },
                       isDark: isDark,
                     ),
                   ),
@@ -91,21 +105,8 @@ class JournalQuickActionsCard extends ConsumerWidget {
                       icon: Icons.sync,
                       iconColor: const Color(0xFFEA580C),
                       title: 'Recurring Journals',
-                      subtitle: 'Automated entries',
-                      onTap: () {},
-                      isDark: isDark,
-                    ),
-                  ),
-
-                  // 5. Bulk Actions
-                  SizedBox(
-                    width: tileWidth,
-                    child: _buildActionTile(
-                      icon: Icons.assignment_outlined,
-                      iconColor: const Color(0xFF0D9488),
-                      title: 'Bulk Actions',
-                      subtitle: 'Update multiple entries',
-                      onTap: () {},
+                      subtitle: 'Filter recurring entries',
+                      onTap: () => notifier.setSelectedTab('Recurring Journals'),
                       isDark: isDark,
                     ),
                   ),
