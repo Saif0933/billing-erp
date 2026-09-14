@@ -26,17 +26,19 @@ class _CoaAddAccountDialogState extends ConsumerState<CoaAddAccountDialog> {
   final _balanceController = TextEditingController(text: '0.00');
   final _descController = TextEditingController();
 
-  String _selectedParent = '1000 - 1. Assets';
+  String _selectedParentCode = '1000';
   CoaAccountType _selectedType = CoaAccountType.asset;
+  bool _isGroup = false;
+  bool _isSubmitting = false;
 
-  final _parentGroups = [
-    '1000 - 1. Assets',
-    '2000 - 2. Liabilities',
-    '3000 - 3. Equity',
-    '4000 - 4. Income',
-    '5000 - 5. Expenses',
-    '6000 - 6. Other Income',
-  ];
+  @override
+  void initState() {
+    super.initState();
+    // Ensure parent groups are loaded
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(chartOfAccountsNotifierProvider.notifier).fetchAccountGroups();
+    });
+  }
 
   @override
   void dispose() {
@@ -47,9 +49,84 @@ class _CoaAddAccountDialogState extends ConsumerState<CoaAddAccountDialog> {
     super.dispose();
   }
 
+  void _onParentChanged(String? code, List<Map<String, dynamic>> groups) {
+    if (code == null) return;
+    setState(() {
+      _selectedParentCode = code;
+      final matched = groups.firstWhere(
+        (g) => g['code']?.toString() == code,
+        orElse: () => <String, dynamic>{},
+      );
+      if (matched.isNotEmpty && matched['type'] != null) {
+        _selectedType = parseCoaType(matched['type']);
+      } else {
+        if (code.startsWith('1')) _selectedType = CoaAccountType.asset;
+        if (code.startsWith('2')) _selectedType = CoaAccountType.liability;
+        if (code.startsWith('3')) _selectedType = CoaAccountType.equity;
+        if (code.startsWith('4') || code.startsWith('6')) _selectedType = CoaAccountType.income;
+        if (code.startsWith('5')) _selectedType = CoaAccountType.expense;
+      }
+    });
+  }
+
+  Future<void> _submitForm() async {
+    if (!(_formKey.currentState?.validate() ?? false)) return;
+
+    setState(() => _isSubmitting = true);
+
+    final rawBalance = double.tryParse(_balanceController.text.trim()) ?? 0.0;
+    final dto = CreateCoaAccountDto(
+      name: _nameController.text.trim(),
+      code: _codeController.text.trim(),
+      type: _selectedType,
+      parentCode: _selectedParentCode.isNotEmpty ? _selectedParentCode : null,
+      openingBalance: rawBalance,
+      description: _descController.text.trim(),
+      isGroup: _isGroup,
+    );
+
+    final success = await ref.read(chartOfAccountsNotifierProvider.notifier).createAccount(dto);
+
+    if (!mounted) return;
+    setState(() => _isSubmitting = false);
+
+    if (success) {
+      Navigator.pop(context);
+      AppFeedback.showSnackbar(
+        context,
+        message: 'Account "${dto.name}" created successfully!',
+      );
+    } else {
+      final errorMsg = ref.read(chartOfAccountsNotifierProvider).error ?? 'Failed to create account';
+      AppFeedback.showSnackbar(
+        context,
+        message: errorMsg,
+        isError: true,
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final state = ref.watch(chartOfAccountsNotifierProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    // Fallback parent groups if backend returned empty list
+    final defaultGroups = <Map<String, dynamic>>[
+      {'code': '1000', 'name': '1. Assets', 'type': 'asset'},
+      {'code': '2000', 'name': '2. Liabilities', 'type': 'liability'},
+      {'code': '3000', 'name': '3. Equity', 'type': 'equity'},
+      {'code': '4000', 'name': '4. Income', 'type': 'income'},
+      {'code': '5000', 'name': '5. Expenses', 'type': 'expense'},
+      {'code': '6000', 'name': '6. Other Income', 'type': 'income'},
+    ];
+
+    final availableGroups = state.parentGroups.isNotEmpty ? state.parentGroups : defaultGroups;
+
+    // Ensure selected parent code is in available groups
+    final selectedCode = availableGroups.any((g) => g['code']?.toString() == _selectedParentCode)
+        ? _selectedParentCode
+        : availableGroups.first['code']?.toString() ?? '1000';
 
     return Dialog(
       insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
@@ -64,7 +141,7 @@ class _CoaAddAccountDialogState extends ConsumerState<CoaAddAccountDialog> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Header with Expanded to prevent overflow
+              // Header
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -98,7 +175,7 @@ class _CoaAddAccountDialogState extends ConsumerState<CoaAddAccountDialog> {
                     icon: const Icon(Icons.close, size: 20),
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),
-                    onPressed: () => Navigator.pop(context),
+                    onPressed: _isSubmitting ? null : () => Navigator.pop(context),
                   ),
                 ],
               ),
@@ -108,30 +185,26 @@ class _CoaAddAccountDialogState extends ConsumerState<CoaAddAccountDialog> {
               Flexible(
                 child: SingleChildScrollView(
                   child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // Parent Group Dropdown
                       DropdownButtonFormField<String>(
-                        initialValue: _selectedParent,
+                        initialValue: selectedCode,
                         decoration: const InputDecoration(
-                          labelText: 'Parent Group',
+                          labelText: 'Parent Group *',
                           border: OutlineInputBorder(),
                           contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                         ),
-                        items: _parentGroups.map((grp) {
-                          return DropdownMenuItem(value: grp, child: Text(grp, style: const TextStyle(fontSize: 13)));
+                        items: availableGroups.map((grp) {
+                          final code = grp['code']?.toString() ?? '';
+                          final name = grp['name']?.toString() ?? '';
+                          final label = name.startsWith(code) ? name : '$code - $name';
+                          return DropdownMenuItem(
+                            value: code,
+                            child: Text(label, style: const TextStyle(fontSize: 13)),
+                          );
                         }).toList(),
-                        onChanged: (val) {
-                          if (val != null) {
-                            setState(() {
-                              _selectedParent = val;
-                              if (val.startsWith('1')) _selectedType = CoaAccountType.asset;
-                              if (val.startsWith('2')) _selectedType = CoaAccountType.liability;
-                              if (val.startsWith('3')) _selectedType = CoaAccountType.equity;
-                              if (val.startsWith('4') || val.startsWith('6')) _selectedType = CoaAccountType.income;
-                              if (val.startsWith('5')) _selectedType = CoaAccountType.expense;
-                            });
-                          }
-                        },
+                        onChanged: _isSubmitting ? null : (val) => _onParentChanged(val, availableGroups),
                       ),
                       const SizedBox(height: 12),
 
@@ -142,6 +215,7 @@ class _CoaAddAccountDialogState extends ConsumerState<CoaAddAccountDialog> {
                             flex: 3,
                             child: TextFormField(
                               controller: _nameController,
+                              enabled: !_isSubmitting,
                               style: const TextStyle(fontSize: 13),
                               decoration: const InputDecoration(
                                 labelText: 'Account Name *',
@@ -157,6 +231,7 @@ class _CoaAddAccountDialogState extends ConsumerState<CoaAddAccountDialog> {
                             flex: 2,
                             child: TextFormField(
                               controller: _codeController,
+                              enabled: !_isSubmitting,
                               style: const TextStyle(fontSize: 13),
                               decoration: const InputDecoration(
                                 labelText: 'Code *',
@@ -171,23 +246,44 @@ class _CoaAddAccountDialogState extends ConsumerState<CoaAddAccountDialog> {
                       ),
                       const SizedBox(height: 12),
 
-                      // Opening Balance
-                      TextFormField(
-                        controller: _balanceController,
-                        keyboardType: TextInputType.number,
-                        style: const TextStyle(fontSize: 13),
-                        decoration: const InputDecoration(
-                          labelText: 'Opening Balance (₹)',
-                          prefixText: '₹ ',
-                          border: OutlineInputBorder(),
-                          contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                        ),
+                      // Opening Balance & IsGroup Checkbox Row
+                      Row(
+                        children: [
+                          Expanded(
+                            child: TextFormField(
+                              controller: _balanceController,
+                              enabled: !_isSubmitting,
+                              keyboardType: TextInputType.number,
+                              style: const TextStyle(fontSize: 13),
+                              decoration: const InputDecoration(
+                                labelText: 'Opening Balance (₹)',
+                                prefixText: '₹ ',
+                                border: OutlineInputBorder(),
+                                contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Checkbox(
+                                value: _isGroup,
+                                onChanged: _isSubmitting
+                                    ? null
+                                    : (val) => setState(() => _isGroup = val ?? false),
+                              ),
+                              const Text('Is Group', style: TextStyle(fontSize: 12.5)),
+                            ],
+                          ),
+                        ],
                       ),
                       const SizedBox(height: 12),
 
                       // Description
                       TextFormField(
                         controller: _descController,
+                        enabled: !_isSubmitting,
                         maxLines: 2,
                         style: const TextStyle(fontSize: 13),
                         decoration: const InputDecoration(
@@ -208,33 +304,28 @@ class _CoaAddAccountDialogState extends ConsumerState<CoaAddAccountDialog> {
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
                   TextButton(
-                    onPressed: () => Navigator.pop(context),
+                    onPressed: _isSubmitting ? null : () => Navigator.pop(context),
                     child: const Text('Cancel'),
                   ),
                   const SizedBox(width: 8),
-                  Flexible(
-                    child: ElevatedButton.icon(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF15803D),
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                      ),
-                      icon: const Icon(Icons.check, size: 16, color: Colors.white),
-                      label: const Text(
-                        'Save Account',
-                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      onPressed: () {
-                        if (_formKey.currentState?.validate() ?? false) {
-                          Navigator.pop(context);
-                          AppFeedback.showSnackbar(
-                            context,
-                            message: 'Account "${_nameController.text}" (${_selectedType.name.toUpperCase()}) created successfully!',
-                          );
-                        }
-                      },
+                  ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF15803D),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                     ),
+                    icon: _isSubmitting
+                        ? const SizedBox(
+                            width: 14,
+                            height: 14,
+                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                          )
+                        : const Icon(Icons.check, size: 16, color: Colors.white),
+                    label: Text(
+                      _isSubmitting ? 'Saving...' : 'Save Account',
+                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                    ),
+                    onPressed: _isSubmitting ? null : _submitForm,
                   ),
                 ],
               ),

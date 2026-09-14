@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../subscription/domain/entities/subscription_models.dart';
 import '../../../subscription/presentation/pages/locked_feature_page.dart';
 import '../../../subscription/presentation/providers/subscription_provider.dart';
+import '../providers/chart_of_accounts_provider.dart';
 import '../widgets/coa_add_account_dialog.dart';
 import '../widgets/coa_category_tabs.dart';
 import '../widgets/coa_metric_cards.dart';
@@ -27,35 +28,42 @@ class ChartOfAccountsPage extends ConsumerWidget {
     return Scaffold(
       backgroundColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // Page Header (Matching exact screenshot top)
-              _buildPageHeader(context, isDark),
-              const SizedBox(height: 16),
+        child: RefreshIndicator(
+          color: const Color(0xFF15803D),
+          onRefresh: () => ref
+              .read(chartOfAccountsNotifierProvider.notifier)
+              .fetchChartOfAccounts(isRefresh: true),
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Page Header
+                _buildPageHeader(context, isDark),
+                const SizedBox(height: 16),
 
-              // 4 KPI Metric Cards (156 Total Accounts, 78 Groups, 96 Ledger Accounts, ₹12,45,300.00)
-              const CoaMetricCards(),
-              const SizedBox(height: 16),
+                // 4 KPI Metric Cards (Total Accounts, Groups, Ledger Accounts, Total Balance)
+                const CoaMetricCards(),
+                const SizedBox(height: 16),
 
-              // Search Input & Filters Toolbar
-              const CoaSearchToolbar(),
-              const SizedBox(height: 12),
+                // Search Input & Filters Toolbar
+                const CoaSearchToolbar(),
+                const SizedBox(height: 12),
 
-              // Category Tabs (All Accounts, Assets, Liabilities, Equity, Income, Expenses)
-              const CoaCategoryTabs(),
-              const SizedBox(height: 12),
+                // Category Tabs (All Accounts, Assets, Liabilities, Equity, Income, Expenses)
+                const CoaCategoryTabs(),
+                const SizedBox(height: 12),
 
-              // Hierarchical Tree Table
-              const CoaTreeTable(),
-              const SizedBox(height: 16),
+                // Hierarchical Tree Table
+                const CoaTreeTable(),
+                const SizedBox(height: 16),
 
-              // Bottom Account Summary Card
-              const CoaSummaryCard(),
-              const SizedBox(height: 24),
-            ],
+                // Bottom Account Summary Card
+                const CoaSummaryCard(),
+                const SizedBox(height: 24),
+              ],
+            ),
           ),
         ),
       ),

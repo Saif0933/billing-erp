@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../shared/widgets/feedback.dart';
 import '../providers/chart_of_accounts_provider.dart';
 
 class CoaTreeTable extends ConsumerWidget {
@@ -8,9 +9,9 @@ class CoaTreeTable extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final summary = ref.watch(coaDataProvider);
-    final filter = ref.watch(coaFilterProvider);
-    final notifier = ref.read(coaFilterProvider.notifier);
+    final state = ref.watch(chartOfAccountsNotifierProvider);
+    final summary = state.data;
+    final notifier = ref.read(chartOfAccountsNotifierProvider.notifier);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
@@ -28,10 +29,10 @@ class CoaTreeTable extends ConsumerWidget {
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: SizedBox(
-              width: 680, // Clean tabular width for mobile & desktop
+              width: 720, // Tabular width for comfortable display
               child: Column(
                 children: [
-                  // Table Header Row: Account Name | Account Code | Account Type ▾ | Balance (₹)
+                  // Table Header Row: Account Name | Account Code | Account Type ▾ | Balance (₹) | Actions
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                     child: Row(
@@ -89,24 +90,112 @@ class CoaTreeTable extends ConsumerWidget {
                             ),
                           ),
                         ),
-                        const SizedBox(width: 32), // Space for chevron / action menu
+                        const SizedBox(width: 36), // Space for chevron / action menu
                       ],
                     ),
                   ),
                   const Divider(height: 1, color: Color(0xFFE2E8F0)),
 
-                  // Accounts List
-                  if (summary.displayedGroups.isEmpty)
+                  // Loading state
+                  if (state.isLoading && summary.displayedGroups.isEmpty)
                     Container(
-                      padding: const EdgeInsets.all(40),
+                      padding: const EdgeInsets.symmetric(vertical: 48),
                       alignment: Alignment.center,
-                      child: Text(
-                        'No accounts found.',
-                        style: TextStyle(
-                          color: isDark ? Colors.white60 : const Color(0xFF64748B),
-                        ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const SizedBox(
+                            width: 28,
+                            height: 28,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2.5,
+                              color: Color(0xFF15803D),
+                            ),
+                          ),
+                          const SizedBox(height: 14),
+                          Text(
+                            'Loading Chart of Accounts...',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: isDark ? Colors.white70 : const Color(0xFF64748B),
+                            ),
+                          ),
+                        ],
                       ),
                     )
+                  // Error state
+                  else if (state.error != null && summary.displayedGroups.isEmpty)
+                    Container(
+                      padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
+                      alignment: Alignment.center,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.error_outline_rounded, color: Colors.redAccent, size: 36),
+                          const SizedBox(height: 10),
+                          Text(
+                            'Failed to load accounts',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              color: isDark ? Colors.white : const Color(0xFF0F172A),
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            state.error!,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: isDark ? Colors.white60 : const Color(0xFF64748B),
+                            ),
+                          ),
+                          const SizedBox(height: 14),
+                          ElevatedButton.icon(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF15803D),
+                            ),
+                            icon: const Icon(Icons.refresh, size: 16, color: Colors.white),
+                            label: const Text('Retry', style: TextStyle(color: Colors.white)),
+                            onPressed: () => notifier.fetchChartOfAccounts(isRefresh: true),
+                          ),
+                        ],
+                      ),
+                    )
+                  // Empty state
+                  else if (summary.displayedGroups.isEmpty)
+                    Container(
+                      padding: const EdgeInsets.symmetric(vertical: 48, horizontal: 20),
+                      alignment: Alignment.center,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.folder_open_rounded,
+                            size: 44,
+                            color: isDark ? Colors.white30 : const Color(0xFF94A3B8),
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            'No accounts found.',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: isDark ? Colors.white : const Color(0xFF0F172A),
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            'Try changing search keyword or filter category',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: isDark ? Colors.white60 : const Color(0xFF64748B),
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  // Accounts List
                   else
                     ListView.builder(
                       shrinkWrap: true,
@@ -114,10 +203,11 @@ class CoaTreeTable extends ConsumerWidget {
                       itemCount: summary.displayedGroups.length,
                       itemBuilder: (context, index) {
                         final group = summary.displayedGroups[index];
-                        final isExpanded = filter.expandedGroupCodes.contains(group.code);
+                        final isExpanded = state.expandedGroupCodes.contains(group.code);
 
                         return _buildGroupRow(
                           context: context,
+                          ref: ref,
                           group: group,
                           isExpanded: isExpanded,
                           onToggle: () => notifier.toggleGroupExpansion(group.code),
@@ -136,6 +226,7 @@ class CoaTreeTable extends ConsumerWidget {
 
   Widget _buildGroupRow({
     required BuildContext context,
+    required WidgetRef ref,
     required CoaAccountItem group,
     required bool isExpanded,
     required VoidCallback onToggle,
@@ -181,15 +272,17 @@ class CoaTreeTable extends ConsumerWidget {
                                 color: isDark ? Colors.white : const Color(0xFF0F172A),
                               ),
                             ),
-                            const SizedBox(height: 2),
-                            Text(
-                              group.description,
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: isDark ? Colors.white54 : const Color(0xFF64748B),
+                            if (group.description.isNotEmpty) ...[
+                              const SizedBox(height: 2),
+                              Text(
+                                group.description,
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: isDark ? Colors.white54 : const Color(0xFF64748B),
+                                ),
+                                overflow: TextOverflow.ellipsis,
                               ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
+                            ],
                           ],
                         ),
                       ),
@@ -235,7 +328,7 @@ class CoaTreeTable extends ConsumerWidget {
 
                 // Expand/Collapse Chevron
                 SizedBox(
-                  width: 32,
+                  width: 36,
                   child: Center(
                     child: AnimatedRotation(
                       turns: isExpanded ? 0.5 : 0.0,
@@ -261,7 +354,7 @@ class CoaTreeTable extends ConsumerWidget {
             final child = entry.value;
             final isLast = idx == group.children.length - 1;
 
-            return _buildChildRow(context, child, isLast, isDark);
+            return _buildChildRow(context, ref, child, isLast, isDark);
           }),
       ],
     );
@@ -269,13 +362,14 @@ class CoaTreeTable extends ConsumerWidget {
 
   Widget _buildChildRow(
     BuildContext context,
+    WidgetRef ref,
     CoaAccountItem child,
     bool isLast,
     bool isDark,
   ) {
     return InkWell(
       onTap: () {
-        // Option to view general ledger filtered by this account
+        // Navigate directly to General Ledger
         context.push('/ledger');
       },
       hoverColor: isDark ? Colors.white.withValues(alpha: 0.02) : const Color(0xFFF8FAFC),
@@ -300,13 +394,29 @@ class CoaTreeTable extends ConsumerWidget {
                   ),
                   const SizedBox(width: 14),
                   Expanded(
-                    child: Text(
-                      child.name,
-                      style: TextStyle(
-                        fontSize: 12.5,
-                        fontWeight: FontWeight.w600,
-                        color: isDark ? Colors.white : const Color(0xFF1E293B),
-                      ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          child.name,
+                          style: TextStyle(
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w600,
+                            color: isDark ? Colors.white : const Color(0xFF1E293B),
+                          ),
+                        ),
+                        if (child.description.isNotEmpty) ...[
+                          const SizedBox(height: 1),
+                          Text(
+                            child.description,
+                            style: TextStyle(
+                              fontSize: 10.5,
+                              color: isDark ? Colors.white38 : const Color(0xFF94A3B8),
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ],
                     ),
                   ),
                 ],
@@ -350,7 +460,7 @@ class CoaTreeTable extends ConsumerWidget {
 
             // Row Action More Button (⋮)
             SizedBox(
-              width: 32,
+              width: 36,
               child: PopupMenuButton<String>(
                 padding: EdgeInsets.zero,
                 icon: Icon(
@@ -362,6 +472,8 @@ class CoaTreeTable extends ConsumerWidget {
                 onSelected: (val) {
                   if (val == 'view_ledger') {
                     context.push('/ledger');
+                  } else if (val == 'delete') {
+                    _confirmDelete(context, ref, child);
                   }
                 },
                 itemBuilder: (ctx) => [
@@ -376,22 +488,12 @@ class CoaTreeTable extends ConsumerWidget {
                     ),
                   ),
                   const PopupMenuItem(
-                    value: 'edit',
+                    value: 'delete',
                     child: Row(
                       children: [
-                        Icon(Icons.edit_outlined, size: 15),
+                        Icon(Icons.delete_outline, size: 15, color: Colors.redAccent),
                         SizedBox(width: 8),
-                        Text('Edit Account', style: TextStyle(fontSize: 12.5)),
-                      ],
-                    ),
-                  ),
-                  const PopupMenuItem(
-                    value: 'add_sub',
-                    child: Row(
-                      children: [
-                        Icon(Icons.add_circle_outline, size: 15),
-                        SizedBox(width: 8),
-                        Text('Add Sub-Account', style: TextStyle(fontSize: 12.5)),
+                        Text('Delete Account', style: TextStyle(fontSize: 12.5, color: Colors.redAccent)),
                       ],
                     ),
                   ),
@@ -402,6 +504,36 @@ class CoaTreeTable extends ConsumerWidget {
         ),
       ),
     );
+  }
+
+  Future<void> _confirmDelete(BuildContext context, WidgetRef ref, CoaAccountItem item) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete Account'),
+        content: Text('Are you sure you want to delete "${item.name}" (${item.code})? This action cannot be undone.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && context.mounted) {
+      final ok = await ref.read(chartOfAccountsNotifierProvider.notifier).deleteAccount(item.id);
+      if (context.mounted) {
+        if (ok) {
+          AppFeedback.showSnackbar(context, message: 'Account "${item.name}" deleted successfully.');
+        } else {
+          final err = ref.read(chartOfAccountsNotifierProvider).error ?? 'Failed to delete account';
+          AppFeedback.showSnackbar(context, message: err, isError: true);
+        }
+      }
+    }
   }
 
   Widget _buildTypeBadge(CoaAccountType type, bool isDark) {

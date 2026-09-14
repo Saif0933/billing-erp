@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../providers/chart_of_accounts_provider.dart';
 
 class CoaSummaryCard extends ConsumerWidget {
   const CoaSummaryCard({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final summary = ref.watch(coaDataProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
@@ -22,6 +24,10 @@ class CoaSummaryCard extends ConsumerWidget {
       child: LayoutBuilder(
         builder: (context, constraints) {
           final isNarrow = constraints.maxWidth < 420;
+
+          final subtitleText = summary.totalAccounts > 0
+              ? 'Tracking ${summary.totalAccounts} accounts (${summary.groups} groups, ${summary.ledgerAccounts} ledgers)'
+              : 'Your chart of accounts is organized into standard double-entry groups';
 
           if (isNarrow) {
             return Column(
@@ -56,7 +62,7 @@ class CoaSummaryCard extends ConsumerWidget {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Your chart of accounts is well organized.',
+                  subtitleText,
                   style: TextStyle(
                     fontSize: 12,
                     color: isDark ? Colors.white70 : const Color(0xFF64748B),
@@ -64,7 +70,7 @@ class CoaSummaryCard extends ConsumerWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  'Last updated on 24 May 2026, 03:30 PM',
+                  'Synchronized in real-time with double-entry general ledger',
                   style: TextStyle(
                     fontSize: 11,
                     color: isDark ? Colors.white38 : const Color(0xFF94A3B8),
@@ -132,7 +138,7 @@ class CoaSummaryCard extends ConsumerWidget {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      'Your chart of accounts is well organized.',
+                      subtitleText,
                       style: TextStyle(
                         fontSize: 12,
                         color: isDark ? Colors.white70 : const Color(0xFF64748B),
@@ -140,7 +146,7 @@ class CoaSummaryCard extends ConsumerWidget {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      'Last updated on 24 May 2026, 03:30 PM',
+                      'Synchronized in real-time with double-entry general ledger',
                       style: TextStyle(
                         fontSize: 11,
                         color: isDark ? Colors.white38 : const Color(0xFF94A3B8),

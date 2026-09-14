@@ -118,4 +118,9 @@ class ApiEndpoints {
   static const String generalLedgerAccounts = '/api/v1/accounting/general-ledger/accounts';
   static const String generalLedgerExport = '/api/v1/accounting/general-ledger/export';
   static const String generalLedgerVoucher = '/api/v1/accounting/general-ledger/voucher';
+
+  // Double-Entry Accounting / Chart of Accounts (backend: module/double-entry-accounting/chart-account)
+  static const String chartOfAccounts = '/api/v1/accounting/chart-of-accounts';
+  static const String chartOfAccountsFlat = '/api/v1/accounting/chart-of-accounts/flat';
+  static const String chartOfAccountsGroups = '/api/v1/accounting/chart-of-accounts/groups';
 }
