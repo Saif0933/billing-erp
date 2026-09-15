@@ -73,6 +73,7 @@ import '../../features/accounting/presentation/pages/bank_management_page.dart';
 import '../../features/gstIn/presentation/pages/gst_portal_page.dart';
 import '../../features/platform-admin/presentation/pages/platform_admin_login_page.dart';
 import '../../features/platform-admin/presentation/pages/platform_admin_shell_page.dart';
+import '../../core/navigation/navigation_keys.dart';
 
 import '../../shared/widgets/app_states.dart';
 
@@ -80,6 +81,7 @@ final routerProvider = Provider<GoRouter>((ref) {
   final listenable = RefListenable(ref);
 
   return GoRouter(
+    navigatorKey: rootNavigatorKey,
     initialLocation: '/splash',
     refreshListenable: listenable,
     routes: [

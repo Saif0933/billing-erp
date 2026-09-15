@@ -145,4 +145,13 @@ class ApiEndpoints {
   static const String financialStatementsSchedule = '/api/v1/accounting/financial-statements/schedule';
   static const String financialStatementsSaveLayout = '/api/v1/accounting/financial-statements/save-layout';
   static const String financialStatementsExport = '/api/v1/accounting/financial-statements/export';
+
+  // Notifications (backend: module/notification)
+  static const String notifications = '/api/v1/notifications';
+  static const String notificationsToken = '/api/v1/notifications/token';
+  static const String notificationsUnreadCount = '/api/v1/notifications/unread-count';
+  static const String notificationsMarkAllRead = '/api/v1/notifications/mark-all-read';
+  static String notificationMarkRead(String id) => '/api/v1/notifications/$id/read';
+  static const String notificationsTestSend = '/api/v1/notifications/test-send';
 }
+

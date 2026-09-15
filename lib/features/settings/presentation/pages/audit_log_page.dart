@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/constants/app_colors.dart';
-import '../../../../core/constants/app_spacing.dart';
 import '../../../../core/constants/app_typography.dart';
 import '../../../../core/models/billing_models.dart';
 import '../../../dashboard/presentation/providers/billing_repository.dart';
@@ -27,12 +26,15 @@ class _AuditLogPageState extends ConsumerState<AuditLogPage> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primaryText =
-        isDark ? AppColors.textDarkPrimary : AppColors.textLightPrimary;
-    final secondaryText =
-        isDark ? AppColors.textDarkSecondary : AppColors.textLightSecondary;
-    final mutedText =
-        isDark ? AppColors.textDarkMuted : AppColors.textLightMuted;
+    final primaryText = isDark
+        ? AppColors.textDarkPrimary
+        : AppColors.textLightPrimary;
+    final secondaryText = isDark
+        ? AppColors.textDarkSecondary
+        : AppColors.textLightSecondary;
+    final mutedText = isDark
+        ? AppColors.textDarkMuted
+        : AppColors.textLightMuted;
     final billingState = ref.watch(billingRepositoryProvider);
 
     final query = _searchController.text.toLowerCase();
@@ -51,8 +53,9 @@ class _AuditLogPageState extends ConsumerState<AuditLogPage> {
     final border = isDark ? Colors.white12 : const Color(0xFFE2E8F0);
 
     return Scaffold(
-      backgroundColor:
-          isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+      backgroundColor: isDark
+          ? const Color(0xFF0F172A)
+          : const Color(0xFFF8FAFC),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
@@ -98,8 +101,9 @@ class _AuditLogPageState extends ConsumerState<AuditLogPage> {
                           label: 'Latest activity',
                           value: filteredLogs.isEmpty
                               ? '—'
-                              : DateFormat('dd MMM, HH:mm')
-                                  .format(filteredLogs.first.timestamp),
+                              : DateFormat(
+                                  'dd MMM, HH:mm',
+                                ).format(filteredLogs.first.timestamp),
                           hint: 'Most recent change',
                           isDark: isDark,
                           surface: surface,
@@ -121,8 +125,7 @@ class _AuditLogPageState extends ConsumerState<AuditLogPage> {
                         children: [
                           for (var i = 0; i < tiles.length; i++) ...[
                             Expanded(child: tiles[i]),
-                            if (i < tiles.length - 1)
-                              const SizedBox(width: 12),
+                            if (i < tiles.length - 1) const SizedBox(width: 12),
                           ],
                         ],
                       );
@@ -138,17 +141,26 @@ class _AuditLogPageState extends ConsumerState<AuditLogPage> {
                     child: TextField(
                       controller: _searchController,
                       onChanged: (_) => setState(() {}),
-                      style:
-                          AppTypography.bodyMedium.copyWith(color: primaryText),
+                      style: AppTypography.bodyMedium.copyWith(
+                        color: primaryText,
+                      ),
                       decoration: InputDecoration(
                         hintText: 'Search by user, action, or entity',
-                        hintStyle: AppTypography.bodyMedium
-                            .copyWith(color: mutedText),
-                        prefixIcon: Icon(Icons.search_rounded, color: mutedText),
+                        hintStyle: AppTypography.bodyMedium.copyWith(
+                          color: mutedText,
+                        ),
+                        prefixIcon: Icon(
+                          Icons.search_rounded,
+                          color: mutedText,
+                        ),
                         suffixIcon: _searchController.text.isEmpty
                             ? null
                             : IconButton(
-                                icon: Icon(Icons.close, color: mutedText, size: 18),
+                                icon: Icon(
+                                  Icons.close,
+                                  color: mutedText,
+                                  size: 18,
+                                ),
                                 onPressed: () {
                                   _searchController.clear();
                                   setState(() {});
@@ -185,7 +197,9 @@ class _AuditLogPageState extends ConsumerState<AuditLogPage> {
                       const Spacer(),
                       Text(
                         '${filteredLogs.length} records',
-                        style: AppTypography.bodySmall.copyWith(color: mutedText),
+                        style: AppTypography.bodySmall.copyWith(
+                          color: mutedText,
+                        ),
                       ),
                     ],
                   ),
@@ -247,8 +261,9 @@ class _AuditLogPageState extends ConsumerState<AuditLogPage> {
                           for (var i = 0; i < filteredLogs.length; i++)
                             _AuditRow(
                               log: filteredLogs[i],
-                              dateLabel:
-                                  dateFormat.format(filteredLogs[i].timestamp),
+                              dateLabel: dateFormat.format(
+                                filteredLogs[i].timestamp,
+                              ),
                               primaryText: primaryText,
                               mutedText: mutedText,
                               isDark: isDark,
@@ -310,10 +325,7 @@ class _AuditLogPageState extends ConsumerState<AuditLogPage> {
               const SizedBox(height: 2),
               Text(
                 'Review operator actions across invoices, ledger, and configuration',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: secondaryText,
-                ),
+                style: TextStyle(fontSize: 12, color: secondaryText),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -483,9 +495,7 @@ class _AuditRow extends StatelessWidget {
                     child: Container(
                       width: 2,
                       margin: const EdgeInsets.symmetric(vertical: 4),
-                      color: isDark
-                          ? Colors.white12
-                          : const Color(0xFFE2E8F0),
+                      color: isDark ? Colors.white12 : const Color(0xFFE2E8F0),
                     ),
                   ),
               ],
@@ -639,9 +649,7 @@ class _ValuePill extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
         color: highlight
-            ? (isDark
-                ? const Color(0xFF064E3B)
-                : const Color(0xFFECFDF5))
+            ? (isDark ? const Color(0xFF064E3B) : const Color(0xFFECFDF5))
             : (isDark ? const Color(0xFF0F172A) : const Color(0xFFF1F5F9)),
         borderRadius: BorderRadius.circular(8),
       ),

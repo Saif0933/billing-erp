@@ -10,6 +10,7 @@ import '../../../../core/utils/global_search.dart';
 import '../../../../features/auth/presentation/providers/auth_provider.dart';
 import '../../../../features/business/presentation/providers/business_provider.dart';
 import '../../../../features/dashboard/presentation/providers/billing_repository.dart';
+import '../../../../features/notifications/presentation/providers/notifications_provider.dart';
 
 class ResponsiveTopHeader extends ConsumerStatefulWidget
     implements PreferredSizeWidget {
@@ -429,62 +430,69 @@ class _ResponsiveTopHeaderState extends ConsumerState<ResponsiveTopHeader> {
 
                 const SizedBox(width: actionGap),
 
-                // Notification Bell with Badge '3'
-                Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    InkWell(
-                      borderRadius: BorderRadius.circular(10),
-                      onTap: () => context.push('/notifications'),
-                      child: Container(
-                        width: buttonSize,
-                        height: buttonSize,
-                        decoration: BoxDecoration(
-                          color: isDark ? const Color(0xFF131D35) : const Color(0xFFF1F5F9),
+                // Notification Bell with dynamic unread badge
+                Builder(
+                  builder: (context) {
+                    final unreadCount = ref.watch(unreadNotificationsCountProvider);
+
+                    return Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        InkWell(
                           borderRadius: BorderRadius.circular(10),
-                          border: Border.all(
-                            color: isDark ? const Color(0xFF1E2E4A) : AppColors.borderLight,
-                          ),
-                        ),
-                        alignment: Alignment.center,
-                        child: Icon(
-                          Icons.notifications_outlined,
-                          size: isVeryCompact ? 17 : 19,
-                          color: isDark ? const Color(0xFF94A3B8) : Colors.black87,
-                        ),
-                      ),
-                    ),
-                    Positioned(
-                      right: -2,
-                      top: -2,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1.5),
-                        decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [Color(0xFFEF4444), Color(0xFFDC2626)],
-                          ),
-                          borderRadius: BorderRadius.circular(8),
-                          boxShadow: [
-                            BoxShadow(
-                              color: const Color(0xFFEF4444).withValues(alpha: 0.5),
-                              blurRadius: 4,
-                              offset: const Offset(0, 1),
+                          onTap: () => context.push('/notifications'),
+                          child: Container(
+                            width: buttonSize,
+                            height: buttonSize,
+                            decoration: BoxDecoration(
+                              color: isDark ? const Color(0xFF131D35) : const Color(0xFFF1F5F9),
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(
+                                color: isDark ? const Color(0xFF1E2E4A) : AppColors.borderLight,
+                              ),
                             ),
-                          ],
-                        ),
-                        constraints: const BoxConstraints(minWidth: 14, minHeight: 14),
-                        child: const Text(
-                          '3',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 8.5,
-                            fontWeight: FontWeight.w800,
+                            alignment: Alignment.center,
+                            child: Icon(
+                              Icons.notifications_outlined,
+                              size: isVeryCompact ? 17 : 19,
+                              color: isDark ? const Color(0xFF94A3B8) : Colors.black87,
+                            ),
                           ),
-                          textAlign: TextAlign.center,
                         ),
-                      ),
-                    ),
-                  ],
+                        if (unreadCount > 0)
+                          Positioned(
+                            right: -2,
+                            top: -2,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1.5),
+                              decoration: BoxDecoration(
+                                gradient: const LinearGradient(
+                                  colors: [Color(0xFFEF4444), Color(0xFFDC2626)],
+                                ),
+                                borderRadius: BorderRadius.circular(8),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: const Color(0xFFEF4444).withValues(alpha: 0.5),
+                                    blurRadius: 4,
+                                    offset: const Offset(0, 1),
+                                  ),
+                                ],
+                              ),
+                              constraints: const BoxConstraints(minWidth: 14, minHeight: 14),
+                              child: Text(
+                                unreadCount > 99 ? '99+' : '$unreadCount',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 8.5,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                          ),
+                      ],
+                    );
+                  },
                 ),
 
                 if (showHelpIcon) ...[
