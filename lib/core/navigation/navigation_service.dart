@@ -5,6 +5,7 @@ import '../../features/dashboard/presentation/providers/billing_repository.dart'
 
 final sidebarCollapsedProvider = StateProvider<bool>((ref) => false);
 final expandedGroupsProvider = StateProvider<Set<String>>((ref) => <String>{});
+final activeSidebarRouteProvider = StateProvider<String?>((ref) => null);
 
 final userRoleProvider = Provider<UserRole>((ref) {
   final authState = ref.watch(authProvider);
