@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../../../subscription/domain/entities/subscription_models.dart';
 import '../../../subscription/presentation/pages/locked_feature_page.dart';
@@ -251,73 +252,119 @@ class _ProductListingPageState extends ConsumerState<ProductListingPage> {
         final isNarrow = constraints.maxWidth < 720;
         final isVeryNarrow = constraints.maxWidth < 450;
 
-        final titleSection = Column(
+        final backButton = Tooltip(
+          message: 'Back',
+          child: InkWell(
+            onTap: () {
+              if (context.canPop()) {
+                context.pop();
+              } else {
+                context.go('/dashboard');
+              }
+            },
+            borderRadius: BorderRadius.circular(10),
+            child: Container(
+              width: 38,
+              height: 38,
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(
+                  color: isDark ? Colors.white12 : const Color(0xFFE2E8F0),
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.04),
+                    blurRadius: 4,
+                    offset: const Offset(0, 1),
+                  ),
+                ],
+              ),
+              child: Icon(
+                Icons.arrow_back,
+                size: 20,
+                color: isDark ? Colors.white : const Color(0xFF0F172A),
+              ),
+            ),
+          ),
+        );
+
+        final titleSection = Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Wrap(
-              crossAxisAlignment: WrapCrossAlignment.center,
-              spacing: 8,
-              runSpacing: 4,
-              children: [
-                Text(
-                  'Product Listing',
-                  style: TextStyle(
-                    fontSize: isNarrow ? 18 : 20,
-                    fontWeight: FontWeight.bold,
-                    color: isDark ? Colors.white : const Color(0xFF0F172A),
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF064E3B) : const Color(0xFFDCFCE7),
-                    borderRadius: BorderRadius.circular(6),
-                    border: Border.all(color: const Color(0xFF16A34A)),
-                  ),
-                  child: Text(
-                    cartState.invoiceNumber,
-                    style: const TextStyle(
-                      fontSize: 11.5,
-                      fontWeight: FontWeight.bold,
-                      fontFamily: 'monospace',
-                      color: Color(0xFF16A34A),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 3),
-            Wrap(
-              crossAxisAlignment: WrapCrossAlignment.center,
-              spacing: 6,
-              runSpacing: 2,
-              children: [
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.schedule,
-                      size: 13,
-                      color: isDark ? Colors.white54 : const Color(0xFF64748B),
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      dateStr,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: isDark ? Colors.white54 : const Color(0xFF64748B),
+            backButton,
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Wrap(
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    spacing: 8,
+                    runSpacing: 4,
+                    children: [
+                      Text(
+                        'Product Listing',
+                        style: TextStyle(
+                          fontSize: isNarrow ? 18 : 20,
+                          fontWeight: FontWeight.bold,
+                          color: isDark ? Colors.white : const Color(0xFF0F172A),
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-                Text(
-                  '• Scan EAN → enter price & GST → save to database',
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: isDark ? Colors.white38 : const Color(0xFF94A3B8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: isDark ? const Color(0xFF064E3B) : const Color(0xFFDCFCE7),
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(color: const Color(0xFF16A34A)),
+                        ),
+                        child: Text(
+                          cartState.invoiceNumber,
+                          style: const TextStyle(
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.bold,
+                            fontFamily: 'monospace',
+                            color: Color(0xFF16A34A),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-              ],
+                  const SizedBox(height: 3),
+                  Wrap(
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    spacing: 6,
+                    runSpacing: 2,
+                    children: [
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.schedule,
+                            size: 13,
+                            color: isDark ? Colors.white54 : const Color(0xFF64748B),
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            dateStr,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: isDark ? Colors.white54 : const Color(0xFF64748B),
+                            ),
+                          ),
+                        ],
+                      ),
+                      Text(
+                        '• Scan EAN → enter price & GST → save to database',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: isDark ? Colors.white38 : const Color(0xFF94A3B8),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ],
         );

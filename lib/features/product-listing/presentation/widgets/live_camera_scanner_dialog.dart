@@ -221,31 +221,42 @@ class _LiveCameraScannerDialogState
 
           // Header Controls
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Row(
-                  children: const [
-                    Icon(Icons.camera_alt_outlined, color: Color(0xFF22C55E), size: 22),
-                    SizedBox(width: 8),
-                    Text(
-                      'Live Barcode Scanner',
-                      style: TextStyle(
-                        fontSize: 17,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                Expanded(
+                  child: Row(
+                    children: const [
+                      Icon(Icons.camera_alt_outlined, color: Color(0xFF22C55E), size: 22),
+                      SizedBox(width: 8),
+                      Flexible(
+                        child: Text(
+                          'Live Barcode Scanner',
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
+                const SizedBox(width: 8),
                 Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     // Torch Toggle
                     IconButton(
+                      visualDensity: VisualDensity.compact,
+                      padding: const EdgeInsets.all(6),
+                      constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
                       icon: Icon(
                         _isTorchActive ? Icons.flash_on : Icons.flash_off_outlined,
                         color: _isTorchActive ? const Color(0xFFF59E0B) : Colors.white70,
+                        size: 20,
                       ),
                       tooltip: 'Toggle Flashlight',
                       onPressed: () {
@@ -253,15 +264,24 @@ class _LiveCameraScannerDialogState
                         setState(() => _isTorchActive = !_isTorchActive);
                       },
                     ),
+                    const SizedBox(width: 2),
                     // Switch Camera (Front/Back)
                     IconButton(
-                      icon: const Icon(Icons.flip_camera_ios_outlined, color: Colors.white70),
+                      visualDensity: VisualDensity.compact,
+                      padding: const EdgeInsets.all(6),
+                      constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+                      icon: const Icon(Icons.flip_camera_ios_outlined, color: Colors.white70, size: 20),
                       tooltip: 'Switch Camera',
                       onPressed: () => _scannerController.switchCamera(),
                     ),
+                    const SizedBox(width: 2),
                     // Close
                     IconButton(
-                      icon: const Icon(Icons.close, color: Colors.white),
+                      visualDensity: VisualDensity.compact,
+                      padding: const EdgeInsets.all(6),
+                      constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+                      icon: const Icon(Icons.close, color: Colors.white, size: 22),
+                      tooltip: 'Close',
                       onPressed: () => Navigator.pop(context),
                     ),
                   ],
@@ -529,23 +549,30 @@ class _LiveCameraScannerDialogState
                 if (_currentScannedProduct == null && _scanErrorMessage == null)
                   Positioned(
                     bottom: 20,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withValues(alpha: 0.75),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: Colors.white12),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: const [
-                          Icon(Icons.qr_code_scanner, size: 16, color: Color(0xFF22C55E)),
-                          SizedBox(width: 8),
-                          Text(
-                            'Align product barcode inside the green frame',
-                            style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w500),
-                          ),
-                        ],
+                    left: 20,
+                    right: 20,
+                    child: Center(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withValues(alpha: 0.75),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: Colors.white12),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: const [
+                            Icon(Icons.qr_code_scanner, size: 16, color: Color(0xFF22C55E)),
+                            SizedBox(width: 8),
+                            Flexible(
+                              child: Text(
+                                'Align product barcode inside the green frame',
+                                style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w500),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
@@ -555,7 +582,7 @@ class _LiveCameraScannerDialogState
 
           // Bottom Control Panel: [ Simulate Scan ] + [ Scan Done Button ]
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             decoration: const BoxDecoration(
               color: Color(0xFF18181B),
               border: Border(top: BorderSide(color: Colors.white12)),
@@ -574,7 +601,7 @@ class _LiveCameraScannerDialogState
                   label: const Text('Test Scan', style: TextStyle(fontSize: 12)),
                   onPressed: _triggerManualSimulatedScan,
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 10),
 
                 // Primary "Scan Done" Action Button
                 Expanded(
@@ -590,6 +617,8 @@ class _LiveCameraScannerDialogState
                       _scannedSessionList.isEmpty
                           ? 'Scan Done'
                           : 'Scan Done (${_scannedSessionList.length} Items)',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.bold,

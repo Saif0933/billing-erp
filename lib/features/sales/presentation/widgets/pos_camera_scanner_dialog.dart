@@ -184,28 +184,38 @@ class _POSCameraScannerDialogState extends State<POSCameraScannerDialog>
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Row(
-                  children: const [
-                    Icon(
-                      Icons.qr_code_scanner_rounded,
-                      color: Color(0xFF10B981),
-                      size: 22,
-                    ),
-                    SizedBox(width: 8),
-                    Text(
-                      'Camera Barcode Scanner',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                Expanded(
+                  child: Row(
+                    children: const [
+                      Icon(
+                        Icons.qr_code_scanner_rounded,
+                        color: Color(0xFF10B981),
+                        size: 22,
                       ),
-                    ),
-                  ],
+                      SizedBox(width: 8),
+                      Flexible(
+                        child: Text(
+                          'Camera Barcode Scanner',
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
+                const SizedBox(width: 8),
                 Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     // Flashlight Toggle
                     IconButton(
+                      visualDensity: VisualDensity.compact,
+                      padding: const EdgeInsets.all(6),
+                      constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
                       icon: Icon(
                         _isTorchActive
                             ? Icons.flash_on
@@ -221,8 +231,12 @@ class _POSCameraScannerDialogState extends State<POSCameraScannerDialog>
                         setState(() => _isTorchActive = !_isTorchActive);
                       },
                     ),
+                    const SizedBox(width: 2),
                     // Switch Camera
                     IconButton(
+                      visualDensity: VisualDensity.compact,
+                      padding: const EdgeInsets.all(6),
+                      constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
                       icon: const Icon(
                         Icons.flip_camera_ios_outlined,
                         color: Colors.white70,
@@ -231,9 +245,14 @@ class _POSCameraScannerDialogState extends State<POSCameraScannerDialog>
                       tooltip: 'Switch Camera',
                       onPressed: () => _scannerController.switchCamera(),
                     ),
+                    const SizedBox(width: 2),
                     // Close Dialog
                     IconButton(
+                      visualDensity: VisualDensity.compact,
+                      padding: const EdgeInsets.all(6),
+                      constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
                       icon: const Icon(Icons.close, color: Colors.white, size: 22),
+                      tooltip: 'Close',
                       onPressed: () => Navigator.pop(context),
                     ),
                   ],
@@ -373,32 +392,39 @@ class _POSCameraScannerDialogState extends State<POSCameraScannerDialog>
                 // Instruction Prompt
                 Positioned(
                   bottom: 20,
-                  child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.65),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: Colors.white12),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: const [
-                        Icon(
-                          Icons.fit_screen_rounded,
-                          size: 14,
-                          color: Color(0xFF10B981),
-                        ),
-                        SizedBox(width: 6),
-                        Text(
-                          'Align product barcode inside green frame',
-                          style: TextStyle(
-                            color: Colors.white70,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
+                  left: 20,
+                  right: 20,
+                  child: Center(
+                    child: Container(
+                      padding:
+                          const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.65),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: Colors.white12),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: const [
+                          Icon(
+                            Icons.fit_screen_rounded,
+                            size: 14,
+                            color: Color(0xFF10B981),
                           ),
-                        ),
-                      ],
+                          SizedBox(width: 6),
+                          Flexible(
+                            child: Text(
+                              'Align product barcode inside green frame',
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                color: Colors.white70,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -407,49 +433,56 @@ class _POSCameraScannerDialogState extends State<POSCameraScannerDialog>
                 if (_lastScanFeedback != null)
                   Positioned(
                     top: 16,
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 200),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 10,
-                      ),
-                      decoration: BoxDecoration(
-                        color: _lastScanFeedback == 'Added to bill!'
-                            ? const Color(0xFF065F46)
-                            : (_lastScanFeedback != null && _lastScanFeedback!.contains('Already')
-                                ? const Color(0xFFD97706)
-                                : const Color(0xFF991B1B)),
-                        borderRadius: BorderRadius.circular(12),
-                        boxShadow: const [
-                          BoxShadow(
-                            color: Colors.black38,
-                            blurRadius: 8,
-                            offset: Offset(0, 3),
-                          ),
-                        ],
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            _lastScanFeedback == 'Added to bill!'
-                                ? Icons.check_circle_rounded
-                                : (_lastScanFeedback != null && _lastScanFeedback!.contains('Already')
-                                    ? Icons.info_outline_rounded
-                                    : Icons.warning_amber_rounded),
-                            color: Colors.white,
-                            size: 18,
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            _lastScanFeedback!,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 13,
-                              fontWeight: FontWeight.bold,
+                    left: 20,
+                    right: 20,
+                    child: Center(
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 10,
+                        ),
+                        decoration: BoxDecoration(
+                          color: _lastScanFeedback == 'Added to bill!'
+                              ? const Color(0xFF065F46)
+                              : (_lastScanFeedback != null && _lastScanFeedback!.contains('Already')
+                                  ? const Color(0xFFD97706)
+                                  : const Color(0xFF991B1B)),
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: const [
+                            BoxShadow(
+                              color: Colors.black38,
+                              blurRadius: 8,
+                              offset: Offset(0, 3),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              _lastScanFeedback == 'Added to bill!'
+                                  ? Icons.check_circle_rounded
+                                  : (_lastScanFeedback != null && _lastScanFeedback!.contains('Already')
+                                      ? Icons.info_outline_rounded
+                                      : Icons.warning_amber_rounded),
+                              color: Colors.white,
+                              size: 18,
+                            ),
+                            const SizedBox(width: 8),
+                            Flexible(
+                              child: Text(
+                                _lastScanFeedback!,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
@@ -527,35 +560,46 @@ class _POSCameraScannerDialogState extends State<POSCameraScannerDialog>
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 // Cart Status
-                Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '$cartItemCount items in current bill',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: Colors.white60,
-                        fontWeight: FontWeight.w500,
+                Expanded(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '$cartItemCount items in current bill',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Colors.white60,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      '₹ ${cartTotal.toStringAsFixed(2)}',
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w900,
-                        color: Color(0xFF34D399),
+                      const SizedBox(height: 2),
+                      Text(
+                        '₹ ${cartTotal.toStringAsFixed(2)}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w900,
+                          color: Color(0xFF34D399),
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
+                const SizedBox(width: 8),
 
                 // Action Buttons
                 Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     // Manual Keyboard Toggle
                     IconButton(
+                      visualDensity: VisualDensity.compact,
+                      padding: const EdgeInsets.all(6),
+                      constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
                       tooltip: 'Type Barcode Manually',
                       icon: Icon(
                         _isManualInputVisible
@@ -578,8 +622,8 @@ class _POSCameraScannerDialogState extends State<POSCameraScannerDialog>
                         backgroundColor: const Color(0xFF059669),
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 12,
+                          horizontal: 14,
+                          vertical: 11,
                         ),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10),
