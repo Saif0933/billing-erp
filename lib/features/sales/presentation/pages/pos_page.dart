@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/constants/app_colors.dart';
 import '../../../../core/models/billing_models.dart';
 import '../../../../shared/widgets/feedback.dart';
 import '../../../customer/presentation/providers/customer_provider.dart';
@@ -19,6 +20,7 @@ import '../widgets/sales_top_header.dart';
 import '../widgets/pos_camera_scanner_dialog.dart';
 import '../../data/models/pos_dto.dart';
 import '../../../dashboard/presentation/providers/billing_repository.dart';
+import '../../../../app/theme/theme_provider.dart';
 
 class POSPage extends ConsumerStatefulWidget {
   final List<SalesProductItem>? initialProducts;
@@ -932,8 +934,10 @@ class _POSPageState extends ConsumerState<POSPage> {
   }
 
   void _showMoreMenu() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     showModalBottomSheet(
       context: context,
+      backgroundColor: isDark ? AppColors.surfaceDark : Colors.white,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
@@ -942,8 +946,11 @@ class _POSPageState extends ConsumerState<POSPage> {
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              leading: const Icon(Icons.history, color: Color(0xFF059669)),
-              title: const Text('Recent Invoices & Bills'),
+              leading: Icon(Icons.history, color: isDark ? AppColors.accent : const Color(0xFF059669)),
+              title: Text(
+                'Recent Invoices & Bills',
+                style: TextStyle(color: isDark ? AppColors.textDarkPrimary : const Color(0xFF1F2937)),
+              ),
               onTap: () {
                 Navigator.pop(ctx);
                 context.push('/sales');
@@ -951,10 +958,16 @@ class _POSPageState extends ConsumerState<POSPage> {
             ),
             ListTile(
               leading: const Icon(Icons.pause_circle_outline, color: Color(0xFF3B82F6)),
-              title: const Text('View Held Bills'),
+              title: Text(
+                'View Held Bills',
+                style: TextStyle(color: isDark ? AppColors.textDarkPrimary : const Color(0xFF1F2937)),
+              ),
               trailing: Text(
                 '${_heldBills.length}',
-                style: const TextStyle(fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: isDark ? AppColors.accentLight : const Color(0xFF111827),
+                ),
               ),
               onTap: () {
                 Navigator.pop(ctx);
@@ -962,8 +975,11 @@ class _POSPageState extends ConsumerState<POSPage> {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.dashboard_outlined, color: Color(0xFF6B7280)),
-              title: const Text('Return to Dashboard'),
+              leading: Icon(Icons.dashboard_outlined, color: isDark ? AppColors.textDarkMuted : const Color(0xFF6B7280)),
+              title: Text(
+                'Return to Dashboard',
+                style: TextStyle(color: isDark ? AppColors.textDarkPrimary : const Color(0xFF1F2937)),
+              ),
               onTap: () {
                 Navigator.pop(ctx);
                 context.go('/dashboard');
@@ -992,12 +1008,13 @@ class _POSPageState extends ConsumerState<POSPage> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final screenWidth = MediaQuery.of(context).size.width;
     final isMobile = screenWidth < 768;
     final isTablet = screenWidth >= 768 && screenWidth < 1100;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
       body: SafeArea(
         child: Column(
           children: [
@@ -1012,6 +1029,7 @@ class _POSPageState extends ConsumerState<POSPage> {
               onRecentBills: () => context.push('/sales'),
               onMoreOptions: _showMoreMenu,
               onNotificationTap: () => context.push('/notifications'),
+              onToggleTheme: () => ref.read(themeModeProvider.notifier).toggleTheme(context),
               onBackTap: () {
                 if (context.canPop()) {
                   context.pop();
@@ -1032,8 +1050,8 @@ class _POSPageState extends ConsumerState<POSPage> {
       ),
       floatingActionButton: isMobile && _cartItems.isEmpty
           ? FloatingActionButton.extended(
-              backgroundColor: const Color(0xFF059669),
-              foregroundColor: Colors.white,
+              backgroundColor: isDark ? AppColors.accent : const Color(0xFF059669),
+              foregroundColor: isDark ? AppColors.primary : Colors.white,
               icon: const Icon(Icons.camera_alt_outlined),
               label: const Text(
                 'Scan Product',
@@ -1192,6 +1210,7 @@ class _POSPageState extends ConsumerState<POSPage> {
   }
 
   Widget _buildMobileFloatingCartBar() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final totalItems = _cartItems.fold(0, (s, it) => s + it.quantity);
     final subtotal = _cartItems.fold(0.0, (s, it) => s + it.amount);
     final discAmount = _discountAmount > 0
@@ -1209,8 +1228,8 @@ class _POSPageState extends ConsumerState<POSPage> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border(top: BorderSide(color: Colors.grey.shade200)),
+        color: isDark ? AppColors.surfaceDark : Colors.white,
+        border: Border(top: BorderSide(color: isDark ? AppColors.borderDark : Colors.grey.shade200)),
         boxShadow: const [
           BoxShadow(
             color: Color(0x14000000),
@@ -1229,16 +1248,19 @@ class _POSPageState extends ConsumerState<POSPage> {
                 children: [
                   Text(
                     '$totalItems Items in Bill',
-                    style: const TextStyle(fontSize: 11.5, color: Color(0xFF6B7280)),
+                    style: TextStyle(
+                      fontSize: 11.5,
+                      color: isDark ? AppColors.textDarkMuted : const Color(0xFF6B7280),
+                    ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
                   Text(
                     '₹ ${grandTotal.toStringAsFixed(2)}',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 17,
                       fontWeight: FontWeight.w900,
-                      color: Color(0xFF059669),
+                      color: isDark ? AppColors.accent : const Color(0xFF059669),
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -1249,8 +1271,8 @@ class _POSPageState extends ConsumerState<POSPage> {
             const SizedBox(width: 8),
             OutlinedButton.icon(
               style: OutlinedButton.styleFrom(
-                foregroundColor: const Color(0xFF059669),
-                side: const BorderSide(color: Color(0xFF059669)),
+                foregroundColor: isDark ? AppColors.accent : const Color(0xFF059669),
+                side: BorderSide(color: isDark ? AppColors.accent : const Color(0xFF059669)),
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
               ),
@@ -1264,8 +1286,8 @@ class _POSPageState extends ConsumerState<POSPage> {
             const SizedBox(width: 8),
             ElevatedButton.icon(
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF059669),
-                foregroundColor: Colors.white,
+                backgroundColor: isDark ? AppColors.accent : const Color(0xFF059669),
+                foregroundColor: isDark ? AppColors.primary : Colors.white,
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
               ),
@@ -1283,6 +1305,7 @@ class _POSPageState extends ConsumerState<POSPage> {
   }
 
   void _showMobileBillSheet() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -1291,9 +1314,9 @@ class _POSPageState extends ConsumerState<POSPage> {
         builder: (context, setSheetState) {
           return Container(
             height: MediaQuery.of(context).size.height * 0.9,
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+            decoration: BoxDecoration(
+              color: isDark ? AppColors.surfaceDark : Colors.white,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
             ),
             child: Column(
               children: [
@@ -1302,7 +1325,7 @@ class _POSPageState extends ConsumerState<POSPage> {
                   height: 4,
                   margin: const EdgeInsets.symmetric(vertical: 10),
                   decoration: BoxDecoration(
-                    color: Colors.grey.shade300,
+                    color: isDark ? AppColors.borderDark : Colors.grey.shade300,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -1313,15 +1336,15 @@ class _POSPageState extends ConsumerState<POSPage> {
                     children: [
                       Text(
                         '${_cartItems.length} Products in Current Bill',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
-                          color: Color(0xFF6B7280),
+                          color: isDark ? AppColors.textDarkMuted : const Color(0xFF6B7280),
                         ),
                       ),
                       TextButton.icon(
                         style: TextButton.styleFrom(
-                          foregroundColor: const Color(0xFF059669),
+                          foregroundColor: isDark ? AppColors.accent : const Color(0xFF059669),
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         ),
                         icon: const Icon(Icons.camera_alt_outlined, size: 16),
@@ -1396,18 +1419,21 @@ class _POSPageState extends ConsumerState<POSPage> {
   }
 
   Widget _buildEmptyProductsView() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     if (_isLoadingProducts) {
-      return const Center(
+      return Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            CircularProgressIndicator(color: Color(0xFF10B981)),
-            SizedBox(height: 12),
+            CircularProgressIndicator(
+              color: isDark ? AppColors.accent : const Color(0xFF10B981),
+            ),
+            const SizedBox(height: 12),
             Text(
               'Loading products...',
               style: TextStyle(
                 fontSize: 14,
-                color: Color(0xFF6B7280),
+                color: isDark ? AppColors.textDarkSecondary : const Color(0xFF6B7280),
               ),
             ),
           ],
@@ -1424,15 +1450,15 @@ class _POSPageState extends ConsumerState<POSPage> {
           Icon(
             isFiltered ? Icons.search_off_outlined : Icons.inventory_2_outlined,
             size: 52,
-            color: const Color(0xFF9CA3AF),
+            color: isDark ? AppColors.textDarkMuted : const Color(0xFF9CA3AF),
           ),
           const SizedBox(height: 12),
           Text(
             isFiltered ? 'No matching products found' : 'No products in catalog',
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,
-              color: Color(0xFF374151),
+              color: isDark ? AppColors.textDarkPrimary : const Color(0xFF374151),
             ),
           ),
           const SizedBox(height: 6),
@@ -1440,11 +1466,18 @@ class _POSPageState extends ConsumerState<POSPage> {
             isFiltered
                 ? 'Try searching for another keyword or change category'
                 : 'List products in Product Listing to show them here for sale',
-            style: const TextStyle(fontSize: 13, color: Color(0xFF6B7280)),
+            style: TextStyle(
+              fontSize: 13,
+              color: isDark ? AppColors.textDarkMuted : const Color(0xFF6B7280),
+            ),
           ),
           if (isFiltered) ...[
             const SizedBox(height: 14),
             OutlinedButton(
+              style: OutlinedButton.styleFrom(
+                foregroundColor: isDark ? AppColors.accent : null,
+                side: isDark ? const BorderSide(color: AppColors.borderDark) : null,
+              ),
               onPressed: () {
                 setState(() {
                   _searchController.clear();

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/constants/app_colors.dart';
 import '../models/sales_ui_models.dart';
 
 class SalesCategoryBar extends StatelessWidget {
@@ -15,6 +16,7 @@ class SalesCategoryBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final categoryList = (categories != null && categories!.isNotEmpty)
         ? categories!
         : kSalesCategories;
@@ -31,6 +33,14 @@ class SalesCategoryBar extends StatelessWidget {
           final category = categoryList[index];
           final isSelected = selectedCategoryId == category.id;
 
+          final selectedBg = isDark ? AppColors.accent : const Color(0xFF064E3B);
+          final unselectedBg = isDark ? AppColors.surfaceDark : Colors.white;
+          final selectedBorder = isDark ? AppColors.accent : const Color(0xFF064E3B);
+          final unselectedBorder = isDark ? AppColors.borderDark : const Color(0xFFE5E7EB);
+          final selectedFg = isDark ? AppColors.primary : Colors.white;
+          final unselectedFg = isDark ? AppColors.textDarkSecondary : const Color(0xFF374151);
+          final unselectedIcon = isDark ? AppColors.textDarkMuted : const Color(0xFF4B5563);
+
           return InkWell(
             onTap: () => onCategorySelected(category.id),
             borderRadius: BorderRadius.circular(8),
@@ -38,19 +48,16 @@ class SalesCategoryBar extends StatelessWidget {
               duration: const Duration(milliseconds: 180),
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
               decoration: BoxDecoration(
-                color: isSelected
-                    ? const Color(0xFF064E3B) // Dark Forest Green matching the image
-                    : Colors.white,
+                color: isSelected ? selectedBg : unselectedBg,
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(
-                  color: isSelected
-                      ? const Color(0xFF064E3B)
-                      : const Color(0xFFE5E7EB),
+                  color: isSelected ? selectedBorder : unselectedBorder,
                 ),
                 boxShadow: isSelected
                     ? [
                         BoxShadow(
-                          color: const Color(0xFF064E3B).withValues(alpha: 0.2),
+                          color: (isDark ? AppColors.accent : const Color(0xFF064E3B))
+                              .withValues(alpha: isDark ? 0.3 : 0.2),
                           blurRadius: 4,
                           offset: const Offset(0, 2),
                         ),
@@ -64,7 +71,7 @@ class SalesCategoryBar extends StatelessWidget {
                     Icon(
                       category.icon,
                       size: 16,
-                      color: isSelected ? Colors.white : const Color(0xFF4B5563),
+                      color: isSelected ? selectedFg : unselectedIcon,
                     ),
                     const SizedBox(width: 6),
                   ],
@@ -73,7 +80,7 @@ class SalesCategoryBar extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                      color: isSelected ? Colors.white : const Color(0xFF374151),
+                      color: isSelected ? selectedFg : unselectedFg,
                     ),
                   ),
                 ],

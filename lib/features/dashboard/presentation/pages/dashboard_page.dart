@@ -88,39 +88,76 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
           final double bannerWidth =
               isDesktop ? ((contentWidth - 16) * 0.7) : contentWidth;
 
-          return RefreshIndicator(
-            color: const Color(0xFF10B981),
-            onRefresh: () => ref
-                .read(dashboardProvider.notifier)
-                .loadOverview(refresh: true),
-            child: SingleChildScrollView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              padding: EdgeInsets.all(hPadding),
+          if (dashboardState.isLoading && dashboardState.overview == null) {
+            return Center(
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  // 1. Top Banner Row: Greeting Banner + Live Clock Widget
-                  if (isDesktop)
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          flex: 7,
-                          child: _buildGreetingBanner(bizName, bannerWidth),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(flex: 3, child: _buildLiveClockCard()),
-                      ],
-                    )
-                  else
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        _buildGreetingBanner(bizName, bannerWidth),
-                        const SizedBox(height: 14),
-                        _buildLiveClockCard(),
-                      ],
+                  const SizedBox(
+                    width: 44,
+                    height: 44,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 3.5,
+                      valueColor:
+                          AlwaysStoppedAnimation<Color>(Color(0xFF10B981)),
                     ),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Loading Dashboard...',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: _textMuted,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }
+
+          return Stack(
+            children: [
+              RefreshIndicator(
+                color: const Color(0xFF10B981),
+                backgroundColor:
+                    _isDark ? const Color(0xFF131D35) : Colors.white,
+                onRefresh: () => ref
+                    .read(dashboardProvider.notifier)
+                    .loadOverview(refresh: true),
+                child: SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: EdgeInsets.all(hPadding),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      // 1. Top Banner Row: Greeting Banner + Live Clock Widget
+                      if (isDesktop)
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              flex: 7,
+                              child: _buildGreetingBanner(bizName, bannerWidth),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              flex: 3,
+                              child: _buildLiveClockCard(
+                                dashboardState.isRefreshing,
+                              ),
+                            ),
+                          ],
+                        )
+                      else
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            _buildGreetingBanner(bizName, bannerWidth),
+                            const SizedBox(height: 14),
+                            _buildLiveClockCard(dashboardState.isRefreshing),
+                          ],
+                        ),
 
                   const SizedBox(height: 18),
 
@@ -148,7 +185,21 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                 ],
               ),
             ),
-          );
+          ),
+          if (dashboardState.isRefreshing || dashboardState.isLoading)
+            const Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              child: LinearProgressIndicator(
+                minHeight: 3.5,
+                backgroundColor: Colors.transparent,
+                valueColor:
+                    AlwaysStoppedAnimation<Color>(Color(0xFF10B981)),
+              ),
+            ),
+        ],
+      );
         },
       ),
     );
@@ -574,7 +625,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
     );
   }
 
-  Widget _buildLiveClockCard() {
+  Widget _buildLiveClockCard([bool isRefreshing = false]) {
     final dateFormat = DateFormat('EEEE, dd MMMM yyyy');
     final timeFormat = DateFormat('hh:mm a');
 
@@ -593,7 +644,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // Date Row
+          // Date Row + Refresh Button
           Row(
             children: [
               Icon(
@@ -611,6 +662,36 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                     color: _textMuted,
                   ),
                   overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              Tooltip(
+                message: 'Refresh Dashboard',
+                child: InkWell(
+                  onTap: isRefreshing
+                      ? null
+                      : () => ref
+                          .read(dashboardProvider.notifier)
+                          .loadOverview(refresh: true),
+                  borderRadius: BorderRadius.circular(6),
+                  child: Padding(
+                    padding: const EdgeInsets.all(4),
+                    child: isRefreshing
+                        ? const SizedBox(
+                            width: 14,
+                            height: 14,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                Color(0xFF10B981),
+                              ),
+                            ),
+                          )
+                        : Icon(
+                            Icons.refresh_rounded,
+                            size: 16,
+                            color: _textMuted,
+                          ),
+                  ),
                 ),
               ),
             ],

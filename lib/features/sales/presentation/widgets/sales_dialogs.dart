@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/constants/app_colors.dart';
 import '../models/sales_ui_models.dart';
 
 class SalesCustomerDialog extends StatefulWidget {
@@ -50,17 +51,28 @@ class _SalesCustomerDialogState extends State<SalesCustomerDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return AlertDialog(
+      backgroundColor: isDark ? AppColors.surfaceDark : Colors.white,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       title: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(
             _isCreatingNew ? 'Add New Customer' : 'Select Customer (F4)',
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: isDark ? AppColors.textDarkPrimary : const Color(0xFF111827),
+            ),
           ),
           IconButton(
-            icon: const Icon(Icons.close, size: 20),
+            icon: Icon(
+              Icons.close,
+              size: 20,
+              color: isDark ? AppColors.textDarkSecondary : const Color(0xFF4B5563),
+            ),
             onPressed: () => Navigator.pop(context),
           ),
         ],
@@ -69,25 +81,31 @@ class _SalesCustomerDialogState extends State<SalesCustomerDialog> {
         constraints: const BoxConstraints(maxWidth: 380),
         child: SizedBox(
           width: double.maxFinite,
-          child: _isCreatingNew ? _buildCreateForm() : _buildSelectionList(),
+          child: _isCreatingNew ? _buildCreateForm(isDark) : _buildSelectionList(isDark),
         ),
       ),
       actions: [
         if (!_isCreatingNew)
           TextButton.icon(
+            style: TextButton.styleFrom(
+              foregroundColor: isDark ? AppColors.accent : const Color(0xFF059669),
+            ),
             icon: const Icon(Icons.person_add_outlined, size: 18),
             label: const Text('Add New Customer'),
             onPressed: () => setState(() => _isCreatingNew = true),
           ),
         if (_isCreatingNew) ...[
           TextButton(
+            style: TextButton.styleFrom(
+              foregroundColor: isDark ? AppColors.textDarkSecondary : const Color(0xFF4B5563),
+            ),
             onPressed: () => setState(() => _isCreatingNew = false),
             child: const Text('Back to List'),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF059669),
-              foregroundColor: Colors.white,
+              backgroundColor: isDark ? AppColors.accent : const Color(0xFF059669),
+              foregroundColor: isDark ? AppColors.primary : Colors.white,
             ),
             onPressed: () {
               final name = _newCustomerController.text.trim();
@@ -108,18 +126,41 @@ class _SalesCustomerDialogState extends State<SalesCustomerDialog> {
     );
   }
 
-  Widget _buildSelectionList() {
+  Widget _buildSelectionList(bool isDark) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         TextField(
           controller: _searchController,
           onChanged: _filter,
+          style: TextStyle(
+            color: isDark ? AppColors.textDarkPrimary : const Color(0xFF111827),
+          ),
           decoration: InputDecoration(
+            filled: true,
+            fillColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF9FAFB),
             hintText: 'Search customer name...',
-            prefixIcon: const Icon(Icons.search, size: 20),
+            hintStyle: TextStyle(
+              color: isDark ? AppColors.textDarkMuted : const Color(0xFF9CA3AF),
+            ),
+            prefixIcon: Icon(
+              Icons.search,
+              size: 20,
+              color: isDark ? AppColors.textDarkMuted : const Color(0xFF9CA3AF),
+            ),
             isDense: true,
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: BorderSide(
+                color: isDark ? AppColors.borderDark : const Color(0xFFE5E7EB),
+              ),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: BorderSide(
+                color: isDark ? AppColors.accent : const Color(0xFF059669),
+              ),
+            ),
           ),
         ),
         const SizedBox(height: 12),
@@ -134,10 +175,14 @@ class _SalesCustomerDialogState extends State<SalesCustomerDialog> {
               return ListTile(
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                 selected: isSelected,
-                selectedTileColor: const Color(0xFFDCFCE7),
+                selectedTileColor: isDark ? const Color(0xFF064E3B) : const Color(0xFFDCFCE7),
                 leading: CircleAvatar(
-                  backgroundColor: isSelected ? const Color(0xFF059669) : const Color(0xFFF3F4F6),
-                  foregroundColor: isSelected ? Colors.white : const Color(0xFF4B5563),
+                  backgroundColor: isSelected
+                      ? (isDark ? AppColors.accent : const Color(0xFF059669))
+                      : (isDark ? const Color(0xFF0F172A) : const Color(0xFFF3F4F6)),
+                  foregroundColor: isSelected
+                      ? (isDark ? AppColors.primary : Colors.white)
+                      : (isDark ? AppColors.textDarkSecondary : const Color(0xFF4B5563)),
                   child: Text(name.isNotEmpty ? name[0].toUpperCase() : 'C'),
                 ),
                 title: Text(
@@ -145,14 +190,12 @@ class _SalesCustomerDialogState extends State<SalesCustomerDialog> {
                   style: TextStyle(
                     fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
                     color: isSelected
-                        ? const Color(0xFF065F46)
-                        : (Theme.of(context).brightness == Brightness.dark
-                            ? Colors.white
-                            : const Color(0xFF1F2937)),
+                        ? (isDark ? AppColors.textDarkPrimary : const Color(0xFF065F46))
+                        : (isDark ? AppColors.textDarkPrimary : const Color(0xFF1F2937)),
                   ),
                 ),
                 trailing: isSelected
-                    ? const Icon(Icons.check, color: Color(0xFF059669))
+                    ? Icon(Icons.check, color: isDark ? AppColors.accent : const Color(0xFF059669))
                     : null,
                 onTap: () {
                   widget.onSelect(name);
@@ -166,24 +209,62 @@ class _SalesCustomerDialogState extends State<SalesCustomerDialog> {
     );
   }
 
-  Widget _buildCreateForm() {
+  Widget _buildCreateForm(bool isDark) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         TextField(
           controller: _newCustomerController,
+          style: TextStyle(
+            color: isDark ? AppColors.textDarkPrimary : const Color(0xFF111827),
+          ),
           decoration: InputDecoration(
+            filled: true,
+            fillColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF9FAFB),
             labelText: 'Customer Full Name *',
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+            labelStyle: TextStyle(
+              color: isDark ? AppColors.textDarkSecondary : const Color(0xFF6B7280),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: BorderSide(
+                color: isDark ? AppColors.borderDark : const Color(0xFFE5E7EB),
+              ),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: BorderSide(
+                color: isDark ? AppColors.accent : const Color(0xFF059669),
+              ),
+            ),
           ),
         ),
         const SizedBox(height: 12),
         TextField(
           controller: _phoneController,
           keyboardType: TextInputType.phone,
+          style: TextStyle(
+            color: isDark ? AppColors.textDarkPrimary : const Color(0xFF111827),
+          ),
           decoration: InputDecoration(
+            filled: true,
+            fillColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF9FAFB),
             labelText: 'Phone Number (Optional)',
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+            labelStyle: TextStyle(
+              color: isDark ? AppColors.textDarkSecondary : const Color(0xFF6B7280),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: BorderSide(
+                color: isDark ? AppColors.borderDark : const Color(0xFFE5E7EB),
+              ),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: BorderSide(
+                color: isDark ? AppColors.accent : const Color(0xFF059669),
+              ),
+            ),
           ),
         ),
       ],
@@ -222,9 +303,18 @@ class _SalesAddNoteDialogState extends State<SalesAddNoteDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return AlertDialog(
+      backgroundColor: isDark ? AppColors.surfaceDark : Colors.white,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      title: const Text('Add Transaction Note', style: TextStyle(fontWeight: FontWeight.bold)),
+      title: Text(
+        'Add Transaction Note',
+        style: TextStyle(
+          fontWeight: FontWeight.bold,
+          color: isDark ? AppColors.textDarkPrimary : const Color(0xFF111827),
+        ),
+      ),
       content: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 360),
         child: SizedBox(
@@ -232,22 +322,44 @@ class _SalesAddNoteDialogState extends State<SalesAddNoteDialog> {
           child: TextField(
             controller: _controller,
             maxLines: 3,
+            style: TextStyle(
+              color: isDark ? AppColors.textDarkPrimary : const Color(0xFF111827),
+            ),
             decoration: InputDecoration(
+              filled: true,
+              fillColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF9FAFB),
               hintText: 'e.g. Delivery instructions, packaging notes...',
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+              hintStyle: TextStyle(
+                color: isDark ? AppColors.textDarkMuted : const Color(0xFF9CA3AF),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: BorderSide(
+                  color: isDark ? AppColors.borderDark : const Color(0xFFE5E7EB),
+                ),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: BorderSide(
+                  color: isDark ? AppColors.accent : const Color(0xFF059669),
+                ),
+              ),
             ),
           ),
         ),
       ),
       actions: [
         TextButton(
+          style: TextButton.styleFrom(
+            foregroundColor: isDark ? AppColors.textDarkSecondary : const Color(0xFF4B5563),
+          ),
           onPressed: () => Navigator.pop(context),
           child: const Text('Cancel'),
         ),
         ElevatedButton(
           style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF059669),
-            foregroundColor: Colors.white,
+            backgroundColor: isDark ? AppColors.accent : const Color(0xFF059669),
+            foregroundColor: isDark ? AppColors.primary : Colors.white,
           ),
           onPressed: () {
             widget.onSave(_controller.text.trim());
@@ -274,14 +386,27 @@ class SalesHoldBillsDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return AlertDialog(
+      backgroundColor: isDark ? AppColors.surfaceDark : Colors.white,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       title: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          const Text('Held Bills', style: TextStyle(fontWeight: FontWeight.bold)),
+          Text(
+            'Held Bills',
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: isDark ? AppColors.textDarkPrimary : const Color(0xFF111827),
+            ),
+          ),
           IconButton(
-            icon: const Icon(Icons.close, size: 20),
+            icon: Icon(
+              Icons.close,
+              size: 20,
+              color: isDark ? AppColors.textDarkSecondary : const Color(0xFF4B5563),
+            ),
             onPressed: () => Navigator.pop(context),
           ),
         ],
@@ -292,54 +417,72 @@ class SalesHoldBillsDialog extends StatelessWidget {
           width: double.maxFinite,
           height: 280,
           child: heldBills.isEmpty
-            ? const Center(
-                child: Text('No held bills at the moment.', style: TextStyle(color: Colors.grey)),
-              )
-            : ListView.separated(
-                itemCount: heldBills.length,
-                separatorBuilder: (context, index) => const Divider(),
-                itemBuilder: (context, index) {
-                  final bill = heldBills[index];
-                  final customer = bill['customer'] as String? ?? 'Walk-in Customer';
-                  final items = bill['items'] as List<SalesCartItem>? ?? [];
-                  final amount = bill['amount'] as double? ?? 0.0;
-                  final time = bill['time'] as String? ?? 'Just now';
+              ? Center(
+                  child: Text(
+                    'No held bills at the moment.',
+                    style: TextStyle(
+                      color: isDark ? AppColors.textDarkMuted : Colors.grey,
+                    ),
+                  ),
+                )
+              : ListView.separated(
+                  itemCount: heldBills.length,
+                  separatorBuilder: (context, index) => Divider(
+                    color: isDark ? AppColors.borderDark : const Color(0xFFE5E7EB),
+                  ),
+                  itemBuilder: (context, index) {
+                    final bill = heldBills[index];
+                    final customer = bill['customer'] as String? ?? 'Walk-in Customer';
+                    final items = bill['items'] as List<SalesCartItem>? ?? [];
+                    final amount = bill['amount'] as double? ?? 0.0;
+                    final time = bill['time'] as String? ?? 'Just now';
 
-                  return ListTile(
-                    title: Text(
-                      customer,
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    subtitle: Text('${items.length} items • ₹${amount.toStringAsFixed(2)} • $time'),
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.delete_outline, color: Colors.red),
-                          onPressed: () => onDelete(index),
+                    return ListTile(
+                      title: Text(
+                        customer,
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: isDark ? AppColors.textDarkPrimary : const Color(0xFF111827),
                         ),
-                        ElevatedButton.icon(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF059669),
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      ),
+                      subtitle: Text(
+                        '${items.length} items • ₹${amount.toStringAsFixed(2)} • $time',
+                        style: TextStyle(
+                          color: isDark ? AppColors.textDarkMuted : const Color(0xFF6B7280),
+                        ),
+                      ),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.delete_outline, color: Colors.red),
+                            onPressed: () => onDelete(index),
                           ),
-                          icon: const Icon(Icons.play_arrow, size: 16),
-                          label: const Text('Resume'),
-                          onPressed: () {
-                            onResume(index);
-                            Navigator.pop(context);
-                          },
-                        ),
-                      ],
-                    ),
-                  );
-                },
-              ),
+                          ElevatedButton.icon(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: isDark ? AppColors.accent : const Color(0xFF059669),
+                              foregroundColor: isDark ? AppColors.primary : Colors.white,
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                            ),
+                            icon: const Icon(Icons.play_arrow, size: 16),
+                            label: const Text('Resume'),
+                            onPressed: () {
+                              onResume(index);
+                              Navigator.pop(context);
+                            },
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
         ),
       ),
       actions: [
         TextButton(
+          style: TextButton.styleFrom(
+            foregroundColor: isDark ? AppColors.textDarkSecondary : const Color(0xFF4B5563),
+          ),
           onPressed: () => Navigator.pop(context),
           child: const Text('Close'),
         ),
@@ -400,268 +543,268 @@ class SalesBillSuccessDialog extends StatelessWidget {
         child: SizedBox(
           width: double.maxFinite,
           child: Theme(
-          data: ThemeData.light(),
-          child: Container(
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: const Color(0xFFE5E7EB)),
-              boxShadow: const [
-                BoxShadow(
-                  color: Color(0x0A000000),
-                  blurRadius: 6,
-                  offset: Offset(0, 2),
-                ),
-              ],
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const Center(
-                  child: Text(
-                    'TAX BUNNY - RETAIL STORE',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w900,
-                      fontSize: 14,
-                      letterSpacing: 0.5,
-                      color: Color(0xFF111827),
-                    ),
+            data: ThemeData.light(),
+            child: Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: const Color(0xFFE5E7EB)),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Color(0x0A000000),
+                    blurRadius: 6,
+                    offset: Offset(0, 2),
                   ),
-                ),
-                const SizedBox(height: 2),
-                const Center(
-                  child: Text(
-                    'Main Branch Terminal',
-                    style: TextStyle(
-                      color: Color(0xFF6B7280),
-                      fontSize: 11,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                const Divider(color: Color(0xFFE5E7EB), height: 1),
-                const SizedBox(height: 8),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'Bill No:',
+                ],
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const Center(
+                    child: Text(
+                      'TAX BUNNY - RETAIL STORE',
                       style: TextStyle(
-                        fontSize: 12,
-                        color: Color(0xFF6B7280),
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    Text(
-                      billNumber,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w700,
-                        fontSize: 12,
+                        fontWeight: FontWeight.w900,
+                        fontSize: 14,
+                        letterSpacing: 0.5,
                         color: Color(0xFF111827),
                       ),
                     ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'Customer:',
+                  ),
+                  const SizedBox(height: 2),
+                  const Center(
+                    child: Text(
+                      'Main Branch Terminal',
                       style: TextStyle(
-                        fontSize: 12,
                         color: Color(0xFF6B7280),
+                        fontSize: 11,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
-                    Text(
-                      customerName,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w700,
-                        fontSize: 12,
-                        color: Color(0xFF111827),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                const Divider(color: Color(0xFFE5E7EB), height: 1),
-                const SizedBox(height: 8),
-                ConstrainedBox(
-                  constraints: const BoxConstraints(maxHeight: 180),
-                  child: SingleChildScrollView(
-                    child: Column(
-                      children: items.map(
-                        (it) => Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 3),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Expanded(
-                                child: RichText(
-                                  overflow: TextOverflow.ellipsis,
-                                  text: TextSpan(
-                                    text: it.product.name,
-                                    style: const TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w600,
-                                      color: Color(0xFF1F2937),
-                                    ),
-                                    children: [
-                                      TextSpan(
-                                        text: '  ×${it.quantity}',
-                                        style: const TextStyle(
-                                          fontSize: 11,
-                                          fontWeight: FontWeight.w700,
-                                          color: Color(0xFF6B7280),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                '₹${it.amount.toStringAsFixed(2)}',
-                                style: const TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w700,
-                                  color: Color(0xFF111827),
-                                ),
-                              ),
-                            ],
-                          ),
+                  ),
+                  const SizedBox(height: 8),
+                  const Divider(color: Color(0xFFE5E7EB), height: 1),
+                  const SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Bill No:',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Color(0xFF6B7280),
+                          fontWeight: FontWeight.w500,
                         ),
-                      ).toList(),
-                    ),
+                      ),
+                      Text(
+                        billNumber,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 12,
+                          color: Color(0xFF111827),
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-                const SizedBox(height: 8),
-                const Divider(color: Color(0xFFE5E7EB), height: 1),
-                const SizedBox(height: 8),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'Subtotal:',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Color(0xFF4B5563),
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    Text(
-                      '₹${subtotal.toStringAsFixed(2)}',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                        color: Color(0xFF111827),
-                      ),
-                    ),
-                  ],
-                ),
-                if (discount > 0) ...[
                   const SizedBox(height: 4),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       const Text(
-                        'Discount:',
+                        'Customer:',
                         style: TextStyle(
                           fontSize: 12,
-                          color: Color(0xFF059669),
-                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF6B7280),
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
                       Text(
-                        '-₹${discount.toStringAsFixed(2)}',
+                        customerName,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 12,
+                          color: Color(0xFF111827),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  const Divider(color: Color(0xFFE5E7EB), height: 1),
+                  const SizedBox(height: 8),
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxHeight: 180),
+                    child: SingleChildScrollView(
+                      child: Column(
+                        children: items.map(
+                          (it) => Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 3),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Expanded(
+                                  child: RichText(
+                                    overflow: TextOverflow.ellipsis,
+                                    text: TextSpan(
+                                      text: it.product.name,
+                                      style: const TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
+                                        color: Color(0xFF1F2937),
+                                      ),
+                                      children: [
+                                        TextSpan(
+                                          text: '  ×${it.quantity}',
+                                          style: const TextStyle(
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.w700,
+                                            color: Color(0xFF6B7280),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  '₹${it.amount.toStringAsFixed(2)}',
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w700,
+                                    color: Color(0xFF111827),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ).toList(),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  const Divider(color: Color(0xFFE5E7EB), height: 1),
+                  const SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Subtotal:',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Color(0xFF4B5563),
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      Text(
+                        '₹${subtotal.toStringAsFixed(2)}',
                         style: const TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w700,
+                          color: Color(0xFF111827),
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (discount > 0) ...[
+                    const SizedBox(height: 4),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Discount:',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Color(0xFF059669),
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        Text(
+                          '-₹${discount.toStringAsFixed(2)}',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF059669),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                  const SizedBox(height: 4),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'CGST (2.5%):',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Color(0xFF4B5563),
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      Text(
+                        '₹${cgst.toStringAsFixed(2)}',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF111827),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'SGST (2.5%):',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Color(0xFF4B5563),
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      Text(
+                        '₹${sgst.toStringAsFixed(2)}',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF111827),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  const Divider(color: Color(0xFFE5E7EB), height: 1),
+                  const SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Grand Total:',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w800,
+                          fontSize: 14,
+                          color: Color(0xFF111827),
+                        ),
+                      ),
+                      Text(
+                        '₹${grandTotal.toStringAsFixed(2)}',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w900,
                           color: Color(0xFF059669),
+                          fontSize: 18,
                         ),
                       ),
                     ],
                   ),
                 ],
-                const SizedBox(height: 4),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'CGST (2.5%):',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Color(0xFF4B5563),
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    Text(
-                      '₹${cgst.toStringAsFixed(2)}',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF111827),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'SGST (2.5%):',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Color(0xFF4B5563),
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    Text(
-                      '₹${sgst.toStringAsFixed(2)}',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF111827),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                const Divider(color: Color(0xFFE5E7EB), height: 1),
-                const SizedBox(height: 8),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'Grand Total:',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w800,
-                        fontSize: 14,
-                        color: Color(0xFF111827),
-                      ),
-                    ),
-                    Text(
-                      '₹${grandTotal.toStringAsFixed(2)}',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w900,
-                        color: Color(0xFF059669),
-                        fontSize: 18,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+              ),
             ),
           ),
         ),
       ),
-    ),
-    actions: [
+      actions: [
         TextButton(
           style: TextButton.styleFrom(
             foregroundColor: const Color(0xFF10B981),

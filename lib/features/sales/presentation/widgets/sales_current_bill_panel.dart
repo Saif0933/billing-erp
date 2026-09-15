@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/constants/app_colors.dart';
 import '../models/sales_ui_models.dart';
 
 class SalesCurrentBillPanel extends StatefulWidget {
@@ -92,16 +93,20 @@ class _SalesCurrentBillPanelState extends State<SalesCurrentBillPanel> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? AppColors.surfaceDark : Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
-        boxShadow: const [
+        border: Border.all(
+          color: isDark ? AppColors.borderDark : const Color(0xFFE5E7EB),
+        ),
+        boxShadow: [
           BoxShadow(
-            color: Color(0x06000000),
+            color: isDark ? Colors.transparent : const Color(0x06000000),
             blurRadius: 10,
-            offset: Offset(0, 4),
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -110,28 +115,28 @@ class _SalesCurrentBillPanelState extends State<SalesCurrentBillPanel> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           // Header: Current Bill, Bill No., Settings Icon
-          _buildHeader(),
+          _buildHeader(isDark),
           const SizedBox(height: 8),
 
           // Customer Selector
-          _buildCustomerSelector(),
+          _buildCustomerSelector(isDark),
           const SizedBox(height: 8),
 
           // Cart Table Header
-          _buildCartTableHeader(),
+          _buildCartTableHeader(isDark),
           const SizedBox(height: 4),
 
           // Scrollable Cart Table Items
           Expanded(
             child: widget.cartItems.isEmpty
-                ? _buildEmptyCartView()
-                : _buildCartItemsList(),
+                ? _buildEmptyCartView(isDark)
+                : _buildCartItemsList(isDark),
           ),
 
           const SizedBox(height: 4),
 
           // Actions Row: "+ Add Note" & "Clear Cart"
-          _buildCartQuickActions(),
+          _buildCartQuickActions(isDark),
           const SizedBox(height: 6),
 
           // Note indicator if note is present
@@ -140,18 +145,31 @@ class _SalesCurrentBillPanelState extends State<SalesCurrentBillPanel> {
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               margin: const EdgeInsets.only(bottom: 6),
               decoration: BoxDecoration(
-                color: const Color(0xFFF0FDF4),
+                color: isDark
+                    ? const Color(0xFF064E3B).withValues(alpha: 0.3)
+                    : const Color(0xFFF0FDF4),
                 borderRadius: BorderRadius.circular(6),
-                border: Border.all(color: const Color(0xFFBBF7D0)),
+                border: Border.all(
+                  color: isDark
+                      ? AppColors.accent.withValues(alpha: 0.4)
+                      : const Color(0xFFBBF7D0),
+                ),
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.note_alt_outlined, size: 14, color: Color(0xFF16A34A)),
+                  Icon(
+                    Icons.note_alt_outlined,
+                    size: 14,
+                    color: isDark ? AppColors.accentLight : const Color(0xFF16A34A),
+                  ),
                   const SizedBox(width: 6),
                   Expanded(
                     child: Text(
                       'Note: ${widget.note}',
-                      style: const TextStyle(fontSize: 11.5, color: Color(0xFF15803D)),
+                      style: TextStyle(
+                        fontSize: 11.5,
+                        color: isDark ? AppColors.accentLight : const Color(0xFF15803D),
+                      ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -162,27 +180,27 @@ class _SalesCurrentBillPanelState extends State<SalesCurrentBillPanel> {
           ],
 
           // Financial Breakdown
-          _buildFinancialBreakdown(),
+          _buildFinancialBreakdown(isDark),
           const SizedBox(height: 8),
 
           // Bottom Buttons: Save as Draft & Generate Bill (F8)
-          _buildBottomButtons(),
+          _buildBottomButtons(isDark),
         ],
       ),
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(bool isDark) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        const Flexible(
+        Flexible(
           child: Text(
             'Current Bill',
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w800,
-              color: Color(0xFF111827),
+              color: isDark ? AppColors.textDarkPrimary : const Color(0xFF111827),
             ),
             overflow: TextOverflow.ellipsis,
           ),
@@ -193,9 +211,9 @@ class _SalesCurrentBillPanelState extends State<SalesCurrentBillPanel> {
           children: [
             Text(
               'Bill No. ${widget.billNumber}',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 11.5,
-                color: Color(0xFF6B7280),
+                color: isDark ? AppColors.textDarkMuted : const Color(0xFF6B7280),
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -206,13 +224,13 @@ class _SalesCurrentBillPanelState extends State<SalesCurrentBillPanel> {
               child: Container(
                 padding: const EdgeInsets.all(4),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF3F4F6),
+                  color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF3F4F6),
                   borderRadius: BorderRadius.circular(6),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.settings_outlined,
                   size: 16,
-                  color: Color(0xFF4B5563),
+                  color: isDark ? AppColors.textDarkMuted : const Color(0xFF4B5563),
                 ),
               ),
             ),
@@ -222,7 +240,10 @@ class _SalesCurrentBillPanelState extends State<SalesCurrentBillPanel> {
     );
   }
 
-  Widget _buildCustomerSelector() {
+  Widget _buildCustomerSelector(bool isDark) {
+    final bgColor = isDark ? const Color(0xFF0F172A) : Colors.white;
+    final borderColor = isDark ? AppColors.borderDark : const Color(0xFFE5E7EB);
+
     return Row(
       children: [
         Expanded(
@@ -233,32 +254,32 @@ class _SalesCurrentBillPanelState extends State<SalesCurrentBillPanel> {
               height: 38,
               padding: const EdgeInsets.symmetric(horizontal: 10),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: bgColor,
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: const Color(0xFFE5E7EB)),
+                border: Border.all(color: borderColor),
               ),
               child: Row(
                 children: [
-                  const Icon(
+                  Icon(
                     Icons.person_outline,
-                    color: Color(0xFF6B7280),
+                    color: isDark ? AppColors.textDarkMuted : const Color(0xFF6B7280),
                     size: 18,
                   ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       widget.customerName,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
-                        color: Color(0xFF1F2937),
+                        color: isDark ? AppColors.textDarkPrimary : const Color(0xFF1F2937),
                       ),
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                  const Icon(
+                  Icon(
                     Icons.keyboard_arrow_down,
-                    color: Color(0xFF6B7280),
+                    color: isDark ? AppColors.textDarkMuted : const Color(0xFF6B7280),
                     size: 18,
                   ),
                 ],
@@ -274,13 +295,13 @@ class _SalesCurrentBillPanelState extends State<SalesCurrentBillPanel> {
             height: 38,
             width: 38,
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: bgColor,
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: const Color(0xFFE5E7EB)),
+              border: Border.all(color: borderColor),
             ),
-            child: const Icon(
+            child: Icon(
               Icons.add,
-              color: Color(0xFF374151),
+              color: isDark ? AppColors.textDarkPrimary : const Color(0xFF374151),
               size: 18,
             ),
           ),
@@ -289,56 +310,61 @@ class _SalesCurrentBillPanelState extends State<SalesCurrentBillPanel> {
     );
   }
 
-  Widget _buildCartTableHeader() {
+  Widget _buildCartTableHeader(bool isDark) {
+    final headerColor = isDark ? AppColors.textDarkMuted : const Color(0xFF6B7280);
+
     return LayoutBuilder(
       builder: (context, constraints) {
         final isNarrow = constraints.maxWidth < 350;
 
         return Container(
           padding: const EdgeInsets.symmetric(vertical: 4),
-          decoration: const BoxDecoration(
+          decoration: BoxDecoration(
             border: Border(
-              bottom: BorderSide(color: Color(0xFFF3F4F6), width: 1.5),
+              bottom: BorderSide(
+                color: isDark ? AppColors.borderDark : const Color(0xFFF3F4F6),
+                width: 1.5,
+              ),
             ),
           ),
           child: Row(
             children: [
-              const SizedBox(
+              SizedBox(
                 width: 18,
                 child: Text(
                   '#',
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w700,
-                    color: Color(0xFF6B7280),
+                    color: headerColor,
                   ),
                 ),
               ),
               const SizedBox(width: 4),
-              const Expanded(
+              Expanded(
                 child: Text(
                   'Product',
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w700,
-                    color: Color(0xFF6B7280),
+                    color: headerColor,
                   ),
                 ),
               ),
               SizedBox(
                 width: isNarrow ? 64 : 76,
-                child: const Text(
+                child: Text(
                   'Qty',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w700,
-                    color: Color(0xFF6B7280),
+                    color: headerColor,
                   ),
                 ),
               ),
               if (!isNarrow) ...[
-                const SizedBox(
+                SizedBox(
                   width: 52,
                   child: Text(
                     'Rate (₹)',
@@ -346,20 +372,20 @@ class _SalesCurrentBillPanelState extends State<SalesCurrentBillPanel> {
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w700,
-                      color: Color(0xFF6B7280),
+                      color: headerColor,
                     ),
                   ),
                 ),
               ],
               SizedBox(
                 width: isNarrow ? 54 : 60,
-                child: const Text(
+                child: Text(
                   'Amount',
                   textAlign: TextAlign.right,
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w700,
-                    color: Color(0xFF6B7280),
+                    color: headerColor,
                   ),
                 ),
               ),
@@ -371,7 +397,16 @@ class _SalesCurrentBillPanelState extends State<SalesCurrentBillPanel> {
     );
   }
 
-  Widget _buildCartItemsList() {
+  Widget _buildCartItemsList(bool isDark) {
+    final itemNameColor = isDark ? AppColors.textDarkPrimary : const Color(0xFF1F2937);
+    final itemUnitColor = isDark ? AppColors.textDarkMuted : const Color(0xFF9CA3AF);
+    final stepperBg = isDark ? const Color(0xFF0F172A) : const Color(0xFFF3F4F6);
+    final stepperIcons = isDark ? AppColors.textDarkSecondary : const Color(0xFF4B5563);
+    final stepperText = isDark ? AppColors.textDarkPrimary : const Color(0xFF111827);
+    final rateColor = isDark ? AppColors.textDarkSecondary : const Color(0xFF374151);
+    final amountColor = isDark ? AppColors.textDarkPrimary : const Color(0xFF111827);
+    final deleteColor = isDark ? AppColors.textDarkMuted : const Color(0xFF9CA3AF);
+
     return LayoutBuilder(
       builder: (context, constraints) {
         final isNarrow = constraints.maxWidth < 350;
@@ -386,8 +421,8 @@ class _SalesCurrentBillPanelState extends State<SalesCurrentBillPanel> {
             padding: const EdgeInsets.symmetric(vertical: 2),
             physics: const AlwaysScrollableScrollPhysics(),
             itemCount: widget.cartItems.length,
-            separatorBuilder: (context, index) => const Divider(
-              color: Color(0xFFF3F4F6),
+            separatorBuilder: (context, index) => Divider(
+              color: isDark ? AppColors.borderDark.withValues(alpha: 0.5) : const Color(0xFFF3F4F6),
               height: 1,
             ),
             itemBuilder: (context, index) {
@@ -403,10 +438,10 @@ class _SalesCurrentBillPanelState extends State<SalesCurrentBillPanel> {
                       width: 18,
                       child: Text(
                         '${index + 1}',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 11.5,
                           fontWeight: FontWeight.w500,
-                          color: Color(0xFF6B7280),
+                          color: isDark ? AppColors.textDarkMuted : const Color(0xFF6B7280),
                         ),
                       ),
                     ),
@@ -419,18 +454,18 @@ class _SalesCurrentBillPanelState extends State<SalesCurrentBillPanel> {
                         overflow: TextOverflow.ellipsis,
                         text: TextSpan(
                           text: item.product.name,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
-                            color: Color(0xFF1F2937),
+                            color: itemNameColor,
                           ),
                           children: [
                             TextSpan(
                               text: ' ${item.product.weight}',
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 10.5,
                                 fontWeight: FontWeight.w400,
-                                color: Color(0xFF9CA3AF),
+                                color: itemUnitColor,
                               ),
                             ),
                           ],
@@ -443,8 +478,9 @@ class _SalesCurrentBillPanelState extends State<SalesCurrentBillPanel> {
                       width: isNarrow ? 64 : 76,
                       height: 24,
                       decoration: BoxDecoration(
-                        color: const Color(0xFFF3F4F6),
+                        color: stepperBg,
                         borderRadius: BorderRadius.circular(5),
+                        border: isDark ? Border.all(color: AppColors.borderDark) : null,
                       ),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -455,21 +491,21 @@ class _SalesCurrentBillPanelState extends State<SalesCurrentBillPanel> {
                             child: SizedBox(
                               width: isNarrow ? 18 : 22,
                               height: 24,
-                              child: const Center(
+                              child: Center(
                                 child: Icon(
                                   Icons.remove,
                                   size: 12,
-                                  color: Color(0xFF4B5563),
+                                  color: stepperIcons,
                                 ),
                               ),
                             ),
                           ),
                           Text(
                             '${item.quantity}',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 11.5,
                               fontWeight: FontWeight.w700,
-                              color: Color(0xFF111827),
+                              color: stepperText,
                             ),
                           ),
                           InkWell(
@@ -478,11 +514,11 @@ class _SalesCurrentBillPanelState extends State<SalesCurrentBillPanel> {
                             child: SizedBox(
                               width: isNarrow ? 18 : 22,
                               height: 24,
-                              child: const Center(
+                              child: Center(
                                 child: Icon(
                                   Icons.add,
                                   size: 12,
-                                  color: Color(0xFF4B5563),
+                                  color: stepperIcons,
                                 ),
                               ),
                             ),
@@ -499,10 +535,10 @@ class _SalesCurrentBillPanelState extends State<SalesCurrentBillPanel> {
                         child: Text(
                           item.rate.toStringAsFixed(2),
                           textAlign: TextAlign.right,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 11.5,
                             fontWeight: FontWeight.w500,
-                            color: Color(0xFF374151),
+                            color: rateColor,
                           ),
                         ),
                       ),
@@ -515,10 +551,10 @@ class _SalesCurrentBillPanelState extends State<SalesCurrentBillPanel> {
                       child: Text(
                         item.amount.toStringAsFixed(2),
                         textAlign: TextAlign.right,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w700,
-                          color: Color(0xFF111827),
+                          color: amountColor,
                         ),
                       ),
                     ),
@@ -527,15 +563,15 @@ class _SalesCurrentBillPanelState extends State<SalesCurrentBillPanel> {
                     SizedBox(
                       width: 24,
                       child: IconButton(
-                        icon: const Icon(
+                        icon: Icon(
                           Icons.delete_outline,
                           size: 15,
-                          color: Color(0xFF9CA3AF),
+                          color: deleteColor,
                         ),
                         splashRadius: 12,
                         padding: EdgeInsets.zero,
                         constraints: const BoxConstraints(),
-                        hoverColor: const Color(0xFFFEE2E2),
+                        hoverColor: const Color(0xFFFEE2E2).withValues(alpha: isDark ? 0.2 : 1.0),
                         onPressed: () => widget.onRemoveItem(index),
                       ),
                     ),
@@ -549,31 +585,31 @@ class _SalesCurrentBillPanelState extends State<SalesCurrentBillPanel> {
     );
   }
 
-  Widget _buildEmptyCartView() {
+  Widget _buildEmptyCartView(bool isDark) {
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
-        children: const [
+        children: [
           Icon(
             Icons.shopping_cart_outlined,
             size: 40,
-            color: Color(0xFFD1D5DB),
+            color: isDark ? AppColors.borderDark : const Color(0xFFD1D5DB),
           ),
-          SizedBox(height: 8),
+          const SizedBox(height: 8),
           Text(
             'Current Bill is empty',
             style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w600,
-              color: Color(0xFF6B7280),
+              color: isDark ? AppColors.textDarkSecondary : const Color(0xFF6B7280),
             ),
           ),
-          SizedBox(height: 2),
+          const SizedBox(height: 2),
           Text(
             'Click on products to add to cart',
             style: TextStyle(
               fontSize: 11,
-              color: Color(0xFF9CA3AF),
+              color: isDark ? AppColors.textDarkMuted : const Color(0xFF9CA3AF),
             ),
           ),
         ],
@@ -581,7 +617,7 @@ class _SalesCurrentBillPanelState extends State<SalesCurrentBillPanel> {
     );
   }
 
-  Widget _buildCartQuickActions() {
+  Widget _buildCartQuickActions(bool isDark) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -591,15 +627,19 @@ class _SalesCurrentBillPanelState extends State<SalesCurrentBillPanel> {
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
             child: Row(
-              children: const [
-                Icon(Icons.add, size: 14, color: Color(0xFF059669)),
-                SizedBox(width: 4),
+              children: [
+                Icon(
+                  Icons.add,
+                  size: 14,
+                  color: isDark ? AppColors.accent : const Color(0xFF059669),
+                ),
+                const SizedBox(width: 4),
                 Text(
                   'Add Note',
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
-                    color: Color(0xFF059669),
+                    color: isDark ? AppColors.accent : const Color(0xFF059669),
                   ),
                 ),
               ],
@@ -617,7 +657,7 @@ class _SalesCurrentBillPanelState extends State<SalesCurrentBillPanel> {
                   Icons.delete_outline,
                   size: 14,
                   color: widget.cartItems.isEmpty
-                      ? const Color(0xFFD1D5DB)
+                      ? (isDark ? AppColors.textDarkMuted : const Color(0xFFD1D5DB))
                       : const Color(0xFFEF4444),
                 ),
                 const SizedBox(width: 4),
@@ -627,7 +667,7 @@ class _SalesCurrentBillPanelState extends State<SalesCurrentBillPanel> {
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
                     color: widget.cartItems.isEmpty
-                        ? const Color(0xFFD1D5DB)
+                        ? (isDark ? AppColors.textDarkMuted : const Color(0xFFD1D5DB))
                         : const Color(0xFFEF4444),
                   ),
                 ),
@@ -639,13 +679,15 @@ class _SalesCurrentBillPanelState extends State<SalesCurrentBillPanel> {
     );
   }
 
-  Widget _buildFinancialBreakdown() {
+  Widget _buildFinancialBreakdown(bool isDark) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: const Color(0xFFF9FAFB),
+        color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF9FAFB),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFF3F4F6)),
+        border: Border.all(
+          color: isDark ? AppColors.borderDark : const Color(0xFFF3F4F6),
+        ),
       ),
       child: Column(
         children: [
@@ -653,12 +695,14 @@ class _SalesCurrentBillPanelState extends State<SalesCurrentBillPanel> {
             label: 'Total Items',
             value: '$totalItemsCount',
             isBold: false,
+            isDark: isDark,
           ),
           const SizedBox(height: 3),
           _buildSummaryRow(
             label: 'Subtotal',
             value: '₹ ${subtotal.toStringAsFixed(2)}',
             isBold: true,
+            isDark: isDark,
           ),
           const SizedBox(height: 3),
           _buildSummaryRow(
@@ -666,38 +710,44 @@ class _SalesCurrentBillPanelState extends State<SalesCurrentBillPanel> {
             value: '₹ ${effectiveDiscount.toStringAsFixed(2)}',
             icon: Icons.percent,
             iconColor: const Color(0xFF3B82F6),
-            valueColor: const Color(0xFF059669),
+            valueColor: isDark ? AppColors.accentLight : const Color(0xFF059669),
             isBold: false,
+            isDark: isDark,
           ),
           const SizedBox(height: 3),
           _buildSummaryRow(
             label: 'CGST',
             value: '₹ ${cgst.toStringAsFixed(2)}',
             icon: Icons.receipt_outlined,
-            iconColor: const Color(0xFF6B7280),
+            iconColor: isDark ? AppColors.textDarkMuted : const Color(0xFF6B7280),
             isBold: false,
+            isDark: isDark,
           ),
           const SizedBox(height: 3),
           _buildSummaryRow(
             label: 'SGST',
             value: '₹ ${sgst.toStringAsFixed(2)}',
             icon: Icons.receipt_outlined,
-            iconColor: const Color(0xFF6B7280),
+            iconColor: isDark ? AppColors.textDarkMuted : const Color(0xFF6B7280),
             isBold: false,
+            isDark: isDark,
           ),
           const SizedBox(height: 6),
-          const Divider(color: Color(0xFFE5E7EB), height: 1),
+          Divider(
+            color: isDark ? AppColors.borderDark : const Color(0xFFE5E7EB),
+            height: 1,
+          ),
           const SizedBox(height: 6),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Flexible(
+              Flexible(
                 child: Text(
                   'Total Amount',
                   style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w800,
-                    color: Color(0xFF111827),
+                    color: isDark ? AppColors.textDarkPrimary : const Color(0xFF111827),
                   ),
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -706,10 +756,10 @@ class _SalesCurrentBillPanelState extends State<SalesCurrentBillPanel> {
               Flexible(
                 child: Text(
                   '₹ ${grandTotal.toStringAsFixed(2)}',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.w900,
-                    color: Color(0xFF059669),
+                    color: isDark ? AppColors.accent : const Color(0xFF059669),
                   ),
                   overflow: TextOverflow.ellipsis,
                   textAlign: TextAlign.right,
@@ -729,6 +779,7 @@ class _SalesCurrentBillPanelState extends State<SalesCurrentBillPanel> {
     Color? iconColor,
     Color? valueColor,
     bool isBold = false,
+    required bool isDark,
   }) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -742,14 +793,15 @@ class _SalesCurrentBillPanelState extends State<SalesCurrentBillPanel> {
                 height: 16,
                 margin: const EdgeInsets.only(right: 6),
                 decoration: BoxDecoration(
-                  color: (iconColor ?? const Color(0xFF6B7280)).withValues(alpha: 0.1),
+                  color: (iconColor ?? (isDark ? AppColors.textDarkMuted : const Color(0xFF6B7280)))
+                      .withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(4),
                 ),
                 child: Center(
                   child: Icon(
                     icon,
                     size: 11,
-                    color: iconColor ?? const Color(0xFF6B7280),
+                    color: iconColor ?? (isDark ? AppColors.textDarkMuted : const Color(0xFF6B7280)),
                   ),
                 ),
               ),
@@ -759,7 +811,7 @@ class _SalesCurrentBillPanelState extends State<SalesCurrentBillPanel> {
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: isBold ? FontWeight.w700 : FontWeight.w500,
-                color: const Color(0xFF4B5563),
+                color: isDark ? AppColors.textDarkSecondary : const Color(0xFF4B5563),
               ),
             ),
           ],
@@ -769,14 +821,29 @@ class _SalesCurrentBillPanelState extends State<SalesCurrentBillPanel> {
           style: TextStyle(
             fontSize: 12.5,
             fontWeight: isBold ? FontWeight.w800 : FontWeight.w600,
-            color: valueColor ?? const Color(0xFF111827),
+            color: valueColor ??
+                (isDark ? AppColors.textDarkPrimary : const Color(0xFF111827)),
           ),
         ),
       ],
     );
   }
 
-  Widget _buildBottomButtons() {
+  Widget _buildBottomButtons(bool isDark) {
+    final draftBg = isDark ? const Color(0xFF0F172A) : Colors.white;
+    final draftBorder = isDark ? AppColors.borderDark : const Color(0xFFD1D5DB);
+    final draftFg = isDark ? AppColors.textDarkPrimary : const Color(0xFF374151);
+
+    final genButtonColor = widget.cartItems.isEmpty
+        ? (isDark ? const Color(0xFF334155) : const Color(0xFF9CA3AF))
+        : (widget.isSubmitting
+            ? const Color(0xFF047857)
+            : (isDark ? AppColors.accent : const Color(0xFF059669)));
+
+    final genTextColor = isDark
+        ? (widget.cartItems.isEmpty ? AppColors.textDarkMuted : AppColors.primary)
+        : Colors.white;
+
     return Row(
       children: [
         // Save as Draft Button
@@ -794,27 +861,27 @@ class _SalesCurrentBillPanelState extends State<SalesCurrentBillPanel> {
               height: 42,
               padding: const EdgeInsets.symmetric(horizontal: 6),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: draftBg,
                 borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: const Color(0xFFD1D5DB)),
+                border: Border.all(color: draftBorder),
               ),
               child: FittedBox(
                 fit: BoxFit.scaleDown,
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
-                  children: const [
+                  children: [
                     Icon(
                       Icons.description_outlined,
                       size: 17,
-                      color: Color(0xFF374151),
+                      color: draftFg,
                     ),
-                    SizedBox(width: 6),
+                    const SizedBox(width: 6),
                     Text(
                       'Save as Draft',
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w700,
-                        color: Color(0xFF374151),
+                        color: draftFg,
                       ),
                     ),
                   ],
@@ -840,17 +907,16 @@ class _SalesCurrentBillPanelState extends State<SalesCurrentBillPanel> {
               height: 42,
               padding: const EdgeInsets.symmetric(horizontal: 6),
               decoration: BoxDecoration(
-                color: widget.cartItems.isEmpty
-                    ? const Color(0xFF9CA3AF)
-                    : (widget.isSubmitting ? const Color(0xFF047857) : const Color(0xFF059669)),
+                color: genButtonColor,
                 borderRadius: BorderRadius.circular(10),
                 boxShadow: widget.cartItems.isEmpty
                     ? null
-                    : const [
+                    : [
                         BoxShadow(
-                          color: Color(0x33059669),
+                          color: (isDark ? AppColors.accent : const Color(0xFF059669))
+                              .withValues(alpha: isDark ? 0.35 : 0.2),
                           blurRadius: 6,
-                          offset: Offset(0, 3),
+                          offset: const Offset(0, 3),
                         ),
                       ],
               ),
@@ -859,41 +925,41 @@ class _SalesCurrentBillPanelState extends State<SalesCurrentBillPanel> {
                 child: widget.isSubmitting
                     ? Row(
                         mainAxisAlignment: MainAxisAlignment.center,
-                        children: const [
+                        children: [
                           SizedBox(
                             width: 16,
                             height: 16,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              color: Colors.white,
+                              color: genTextColor,
                             ),
                           ),
-                          SizedBox(width: 8),
+                          const SizedBox(width: 8),
                           Text(
                             'Generating Bill...',
                             style: TextStyle(
                               fontSize: 13.5,
                               fontWeight: FontWeight.w800,
-                              color: Colors.white,
+                              color: genTextColor,
                             ),
                           ),
                         ],
                       )
                     : Row(
                         mainAxisAlignment: MainAxisAlignment.center,
-                        children: const [
+                        children: [
                           Icon(
                             Icons.print_outlined,
                             size: 18,
-                            color: Colors.white,
+                            color: genTextColor,
                           ),
-                          SizedBox(width: 8),
+                          const SizedBox(width: 8),
                           Text(
                             'Generate Bill (F8)',
                             style: TextStyle(
                               fontSize: 13.5,
                               fontWeight: FontWeight.w800,
-                              color: Colors.white,
+                              color: genTextColor,
                             ),
                           ),
                         ],

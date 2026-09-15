@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/constants/app_colors.dart';
 import '../models/sales_ui_models.dart';
 
 class SalesProductCard extends StatefulWidget {
@@ -20,7 +21,16 @@ class _SalesProductCardState extends State<SalesProductCard> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final p = widget.product;
+
+    final cardBg = isDark ? AppColors.surfaceDark : Colors.white;
+    final borderColor = _isHovered
+        ? (isDark ? AppColors.accent : const Color(0xFF10B981))
+        : (isDark ? AppColors.borderDark : const Color(0xFFE5E7EB));
+    final titleColor = isDark ? AppColors.textDarkPrimary : const Color(0xFF111827);
+    final unitColor = isDark ? AppColors.textDarkMuted : const Color(0xFF6B7280);
+    final priceColor = isDark ? AppColors.textDarkPrimary : const Color(0xFF111827);
 
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
@@ -28,17 +38,19 @@ class _SalesProductCardState extends State<SalesProductCard> {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 180),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: cardBg,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: _isHovered ? const Color(0xFF10B981) : const Color(0xFFE5E7EB),
+            color: borderColor,
             width: _isHovered ? 1.5 : 1.0,
           ),
           boxShadow: [
             BoxShadow(
               color: _isHovered
-                  ? const Color(0x1A10B981)
-                  : const Color(0x06000000),
+                  ? (isDark
+                      ? AppColors.accent.withValues(alpha: 0.22)
+                      : const Color(0x1A10B981))
+                  : (isDark ? Colors.transparent : const Color(0x06000000)),
               blurRadius: _isHovered ? 10 : 4,
               offset: const Offset(0, 3),
             ),
@@ -56,8 +68,8 @@ class _SalesProductCardState extends State<SalesProductCard> {
                   padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
                   decoration: BoxDecoration(
                     color: p.isLowStock
-                        ? const Color(0xFFFEF3C7)
-                        : const Color(0xFFDCFCE7),
+                        ? (isDark ? const Color(0xFF78350F).withValues(alpha: 0.6) : const Color(0xFFFEF3C7))
+                        : (isDark ? const Color(0xFF064E3B).withValues(alpha: 0.6) : const Color(0xFFDCFCE7)),
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: Text(
@@ -66,8 +78,8 @@ class _SalesProductCardState extends State<SalesProductCard> {
                       fontSize: 9.5,
                       fontWeight: FontWeight.w700,
                       color: p.isLowStock
-                          ? const Color(0xFFD97706)
-                          : const Color(0xFF15803D),
+                          ? (isDark ? const Color(0xFFFCD34D) : const Color(0xFFD97706))
+                          : (isDark ? const Color(0xFF6EE7B7) : const Color(0xFF15803D)),
                     ),
                   ),
                 ),
@@ -87,13 +99,13 @@ class _SalesProductCardState extends State<SalesProductCard> {
                             fit: BoxFit.contain,
                             loadingBuilder: (context, child, loadingProgress) {
                               if (loadingProgress == null) return child;
-                              return _buildFallbackIcon(p);
+                              return _buildFallbackIcon(p, isDark);
                             },
                             errorBuilder: (context, error, stackTrace) =>
-                                _buildFallbackIcon(p),
+                                _buildFallbackIcon(p, isDark),
                           ),
                         )
-                      : _buildFallbackIcon(p),
+                      : _buildFallbackIcon(p, isDark),
                 ),
               ),
             ),
@@ -105,19 +117,19 @@ class _SalesProductCardState extends State<SalesProductCard> {
               p.name,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w700,
-                color: Color(0xFF111827),
+                color: titleColor,
               ),
             ),
 
             // Unit/Variant Size
             Text(
               p.weight,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 11.5,
-                color: Color(0xFF6B7280),
+                color: unitColor,
                 fontWeight: FontWeight.w400,
               ),
             ),
@@ -132,10 +144,10 @@ class _SalesProductCardState extends State<SalesProductCard> {
                 Flexible(
                   child: Text(
                     '₹ ${p.price.toStringAsFixed(2)}',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 13.5,
                       fontWeight: FontWeight.w800,
-                      color: Color(0xFF111827),
+                      color: priceColor,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -151,22 +163,23 @@ class _SalesProductCardState extends State<SalesProductCard> {
                       vertical: 4.5,
                     ),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF059669), // Vibrant green matching image
+                      color: isDark ? AppColors.accent : const Color(0xFF059669),
                       borderRadius: BorderRadius.circular(6),
-                      boxShadow: const [
+                      boxShadow: [
                         BoxShadow(
-                          color: Color(0x26059669),
+                          color: (isDark ? AppColors.accent : const Color(0xFF059669))
+                              .withValues(alpha: isDark ? 0.35 : 0.15),
                           blurRadius: 4,
-                          offset: Offset(0, 2),
+                          offset: const Offset(0, 2),
                         ),
                       ],
                     ),
-                    child: const Text(
+                    child: Text(
                       'Add',
                       style: TextStyle(
                         fontSize: 11.5,
                         fontWeight: FontWeight.w700,
-                        color: Colors.white,
+                        color: isDark ? AppColors.primary : Colors.white,
                       ),
                     ),
                   ),
@@ -179,12 +192,12 @@ class _SalesProductCardState extends State<SalesProductCard> {
     );
   }
 
-  Widget _buildFallbackIcon(SalesProductItem p) {
+  Widget _buildFallbackIcon(SalesProductItem p, bool isDark) {
     return Container(
       width: 64,
       height: 64,
       decoration: BoxDecoration(
-        color: p.themeColor.withValues(alpha: 0.1),
+        color: p.themeColor.withValues(alpha: isDark ? 0.18 : 0.1),
         shape: BoxShape.circle,
       ),
       child: Icon(
