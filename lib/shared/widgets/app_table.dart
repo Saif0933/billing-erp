@@ -31,6 +31,7 @@ class AppTable<T> extends StatelessWidget {
   final void Function(int)? onPageChanged;
   final List<T> selectedItems;
   final void Function(List<T>)? onSelectionChanged;
+  final double? minWidth;
 
   const AppTable({
     super.key,
@@ -44,6 +45,7 @@ class AppTable<T> extends StatelessWidget {
     this.onPageChanged,
     this.selectedItems = const [],
     this.onSelectionChanged,
+    this.minWidth,
   });
 
   @override
@@ -74,12 +76,16 @@ class AppTable<T> extends StatelessWidget {
           return _buildMobileList(context);
         }
 
-        final double minWidth = columns.length * 120.0;
-        if (compact || width < minWidth) {
+        final int totalFlex = columns.fold<int>(0, (sum, col) => sum + col.flex);
+        final double computedMinWidth =
+            (totalFlex * 105.0).clamp(columns.length * 120.0, double.infinity);
+        final double effectiveMinWidth = minWidth ?? computedMinWidth;
+
+        if (compact || width < effectiveMinWidth) {
           return SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: SizedBox(
-              width: minWidth > width ? minWidth : width,
+              width: effectiveMinWidth > width ? effectiveMinWidth : width,
               child: _buildDesktopTable(context),
             ),
           );
@@ -97,7 +103,7 @@ class AppTable<T> extends StatelessWidget {
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           itemCount: items.length,
-          separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.sm),
+          separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.sm),
           itemBuilder: (context, index) {
             return mobileCardBuilder!(items[index]);
           },
@@ -152,13 +158,16 @@ class AppTable<T> extends StatelessWidget {
                     ...columns.map((col) {
                       return Expanded(
                         flex: col.flex,
-                        child: Align(
-                          alignment: col.isNumeric ? Alignment.centerRight : Alignment.centerLeft,
-                          child: Text(
-                            col.label,
-                            style: AppTypography.labelMedium.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: isDark ? AppColors.textDarkSecondary : AppColors.textLightSecondary,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                          child: Align(
+                            alignment: col.isNumeric ? Alignment.centerRight : Alignment.centerLeft,
+                            child: Text(
+                              col.label,
+                              style: AppTypography.labelMedium.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: isDark ? AppColors.textDarkSecondary : AppColors.textLightSecondary,
+                              ),
                             ),
                           ),
                         ),
@@ -172,14 +181,16 @@ class AppTable<T> extends StatelessWidget {
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 itemCount: items.length,
-                separatorBuilder: (_, __) => const Divider(height: 1),
+                separatorBuilder: (_, _) => const Divider(height: 1),
                 itemBuilder: (context, index) {
                   final item = items[index];
                   final isSelected = selectedItems.contains(item);
 
                   return Container(
                     color: isSelected
-                        ? (isDark ? AppColors.accent.withOpacity(0.1) : AppColors.primary.withOpacity(0.05))
+                        ? (isDark
+                            ? AppColors.accent.withValues(alpha: 0.1)
+                            : AppColors.primary.withValues(alpha: 0.05))
                         : null,
                     padding: const EdgeInsets.symmetric(
                       horizontal: AppSpacing.md,
@@ -205,13 +216,16 @@ class AppTable<T> extends StatelessWidget {
                         ...columns.map((col) {
                           return Expanded(
                             flex: col.flex,
-                            child: Align(
-                              alignment: col.isNumeric ? Alignment.centerRight : Alignment.centerLeft,
-                              child: DefaultTextStyle(
-                                style: AppTypography.bodyMedium.copyWith(
-                                  color: isDark ? AppColors.textDarkPrimary : AppColors.textLightPrimary,
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                              child: Align(
+                                alignment: col.isNumeric ? Alignment.centerRight : Alignment.centerLeft,
+                                child: DefaultTextStyle(
+                                  style: AppTypography.bodyMedium.copyWith(
+                                    color: isDark ? AppColors.textDarkPrimary : AppColors.textLightPrimary,
+                                  ),
+                                  child: col.cellBuilder(item),
                                 ),
-                                child: col.cellBuilder(item),
                               ),
                             ),
                           );

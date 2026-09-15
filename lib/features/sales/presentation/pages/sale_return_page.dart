@@ -154,7 +154,7 @@ class _SaleReturnPageState extends ConsumerState<SaleReturnPage> {
                 vertical: 4,
               ),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.15),
+                color: Colors.white.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(20),
               ),
               child: const Row(
@@ -214,7 +214,7 @@ class _SaleReturnPageState extends ConsumerState<SaleReturnPage> {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF004D40).withOpacity(0.3),
+            color: const Color(0xFF004D40).withValues(alpha: 0.3),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -351,7 +351,7 @@ class _SaleReturnPageState extends ConsumerState<SaleReturnPage> {
           ),
           _buildStatCard(
             title: 'Pending Drafts',
-            value: '${draftCount}',
+            value: '$draftCount',
             subtitle: 'Returns awaiting approval',
             icon: Icons.pending_actions_outlined,
             accentColor: const Color(0xFFF57C00),
@@ -426,7 +426,7 @@ class _SaleReturnPageState extends ConsumerState<SaleReturnPage> {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -437,7 +437,7 @@ class _SaleReturnPageState extends ConsumerState<SaleReturnPage> {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: isDark ? accentColor.withOpacity(0.2) : bgColor,
+              color: isDark ? accentColor.withValues(alpha: 0.2) : bgColor,
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(icon, color: accentColor, size: 24),
@@ -567,7 +567,7 @@ class _SaleReturnPageState extends ConsumerState<SaleReturnPage> {
               }
               if (mounted) {
                 AppFeedback.showSnackbar(
-                  context,
+                  this.context,
                   message: 'Sale return cancelled successfully.',
                 );
               }
@@ -578,7 +578,7 @@ class _SaleReturnPageState extends ConsumerState<SaleReturnPage> {
     );
   }
 
-  void _confirmReturn(BuildContext context, Invoice ret) async {
+  void _confirmReturn(Invoice ret) async {
     try {
       await ref
           .read(salesReturnNotifierProvider.notifier)
@@ -701,6 +701,7 @@ class _SaleReturnPageState extends ConsumerState<SaleReturnPage> {
 
                   // Returns Table / List
                   AppTable<Invoice>(
+                    minWidth: 1050,
                     items: filteredReturns,
                     isLoading: returnState.isLoadingList && allReturns.isEmpty,
                     emptyMessage: allReturns.isEmpty
@@ -709,10 +710,12 @@ class _SaleReturnPageState extends ConsumerState<SaleReturnPage> {
                     columns: [
                       TableColumnSpec<Invoice>(
                         label: 'Return No.',
+                        flex: 2,
                         cellBuilder: (ret) => InkWell(
                           onTap: () => context.push('/sales/returns/${ret.id}'),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
                             children: [
                               Text(
                                 ret.invoiceNumber,
@@ -720,6 +723,8 @@ class _SaleReturnPageState extends ConsumerState<SaleReturnPage> {
                                   fontWeight: FontWeight.bold,
                                   color: Color(0xFF00897B),
                                 ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
                               Text(
                                 '${ret.invoiceDate.day}/${ret.invoiceDate.month}/${ret.invoiceDate.year}',
@@ -727,6 +732,8 @@ class _SaleReturnPageState extends ConsumerState<SaleReturnPage> {
                                   color: Colors.grey.shade500,
                                   fontSize: 11,
                                 ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
                             ],
                           ),
@@ -734,38 +741,46 @@ class _SaleReturnPageState extends ConsumerState<SaleReturnPage> {
                       ),
                       TableColumnSpec<Invoice>(
                         label: 'Original Invoice',
+                        flex: 2,
                         cellBuilder: (ret) {
                           final origNo = ret.originalInvoiceId;
 
-                          return Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 3,
-                            ),
-                            decoration: BoxDecoration(
-                              color: isDark
-                                  ? Colors.white10
-                                  : Colors.grey.shade100,
-                              borderRadius: BorderRadius.circular(6),
-                              border: Border.all(color: Colors.grey.shade300),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Icon(
-                                  Icons.receipt_outlined,
-                                  size: 13,
-                                  color: Colors.grey,
-                                ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  origNo.isNotEmpty ? origNo : 'Direct Return',
-                                  style: const TextStyle(
-                                    fontSize: 11.5,
-                                    fontWeight: FontWeight.w500,
+                          return Tooltip(
+                            message: origNo.isNotEmpty ? origNo : 'Direct Return',
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 3,
+                              ),
+                              decoration: BoxDecoration(
+                                color: isDark
+                                    ? Colors.white10
+                                    : Colors.grey.shade100,
+                                borderRadius: BorderRadius.circular(6),
+                                border: Border.all(color: Colors.grey.shade300),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(
+                                    Icons.receipt_outlined,
+                                    size: 13,
+                                    color: Colors.grey,
                                   ),
-                                ),
-                              ],
+                                  const SizedBox(width: 4),
+                                  Flexible(
+                                    child: Text(
+                                      origNo.isNotEmpty ? origNo : 'Direct Return',
+                                      style: const TextStyle(
+                                        fontSize: 11.5,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           );
                         },
@@ -775,12 +790,15 @@ class _SaleReturnPageState extends ConsumerState<SaleReturnPage> {
                         flex: 2,
                         cellBuilder: (ret) => Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
                           children: [
                             Text(
                               ret.customerName,
                               style: const TextStyle(
                                 fontWeight: FontWeight.w600,
                               ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
                             if (ret.placeOfSupply.isNotEmpty)
                               Text(
@@ -789,14 +807,18 @@ class _SaleReturnPageState extends ConsumerState<SaleReturnPage> {
                                   color: Colors.grey.shade500,
                                   fontSize: 11,
                                 ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
                           ],
                         ),
                       ),
                       TableColumnSpec<Invoice>(
                         label: 'Items & Reason',
+                        flex: 2,
                         cellBuilder: (ret) => Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
                           children: [
                             Text(
                               '${ret.items.length} ${ret.items.length == 1 ? "item" : "items"} returned',
@@ -804,6 +826,8 @@ class _SaleReturnPageState extends ConsumerState<SaleReturnPage> {
                                 fontSize: 12,
                                 fontWeight: FontWeight.w500,
                               ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
                             if (ret.notes.isNotEmpty)
                               Text(
@@ -821,20 +845,25 @@ class _SaleReturnPageState extends ConsumerState<SaleReturnPage> {
                       TableColumnSpec<Invoice>(
                         label: 'Return Value',
                         isNumeric: true,
+                        flex: 2,
                         cellBuilder: (ret) => Text(
                           '₹${ret.grandTotal.toStringAsFixed(2)}',
                           style: const TextStyle(
                             fontWeight: FontWeight.bold,
                             color: Color(0xFF00897B),
                           ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                       TableColumnSpec<Invoice>(
                         label: 'Status',
+                        flex: 1,
                         cellBuilder: (ret) => _buildStatusBadge(ret.status),
                       ),
                       TableColumnSpec<Invoice>(
                         label: 'Actions',
+                        flex: 2,
                         cellBuilder: (ret) => FittedBox(
                           fit: BoxFit.scaleDown,
                           alignment: Alignment.centerLeft,
@@ -891,7 +920,7 @@ class _SaleReturnPageState extends ConsumerState<SaleReturnPage> {
                                   ),
                                   tooltip: 'Confirm Return',
                                   onPressed: () =>
-                                      _confirmReturn(context, ret),
+                                      _confirmReturn(ret),
                                 ),
                               if (ret.status != InvoiceStatus.cancelled)
                                 IconButton(
@@ -958,6 +987,8 @@ class _SaleReturnPageState extends ConsumerState<SaleReturnPage> {
                               style: const TextStyle(
                                 fontWeight: FontWeight.w600,
                               ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
                             if (ret.originalInvoiceId.isNotEmpty)
                               Padding(
@@ -968,6 +999,8 @@ class _SaleReturnPageState extends ConsumerState<SaleReturnPage> {
                                     color: Colors.grey.shade600,
                                     fontSize: 12,
                                   ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
                               ),
                             if (ret.notes.isNotEmpty)
@@ -979,6 +1012,8 @@ class _SaleReturnPageState extends ConsumerState<SaleReturnPage> {
                                     color: Colors.grey.shade500,
                                     fontSize: 12,
                                   ),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
                               ),
                             const Divider(height: 20),

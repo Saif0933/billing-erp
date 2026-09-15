@@ -1,7 +1,9 @@
 import 'dart:async';
+
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+
 import '../errors/error_handler.dart';
 import '../storage/secure_storage_service.dart';
 import '../storage/storage_service.dart';
@@ -42,11 +44,14 @@ class ApiClient {
     ]);
   }
 
-  static const String hostingerBaseUrl = 'https://antiquewhite-squirrel-660917.hostingersite.com';
+  static const String hostingerBaseUrl =
+      'https://antiquewhite-squirrel-660917.hostingersite.com';
 
   /// Ordered list of candidate backend URLs to test (prioritizing local development backend)
   static List<String> get candidateBaseUrls {
-    final envUrl = dotenv.isInitialized ? dotenv.maybeGet('API_BASE_URL') : null;
+    final envUrl = dotenv.isInitialized
+        ? dotenv.maybeGet('API_BASE_URL')
+        : null;
     if (kIsWeb) {
       return [
         if (envUrl != null && envUrl.isNotEmpty) envUrl,
@@ -58,11 +63,11 @@ class ApiClient {
 
     return {
       if (envUrl != null && envUrl.isNotEmpty) envUrl,
-      'http://localhost:5000',      // Localhost backend
-      'http://127.0.0.1:5000',      // Physical phone over USB (adb reverse)
-      'http://10.0.2.2:5000',        // Android Emulator loopback to host
-      'http://192.168.31.106:5000',  // Wi-Fi LAN
-      'http://192.168.1.4:5000',     // Device subnet
+      'http://localhost:5000', // Localhost backend
+      'http://127.0.0.1:5000', // Physical phone over USB (adb reverse)
+      'http://10.0.2.2:5000', // Android Emulator loopback to host
+      'http://192.168.31.106:5000', // Wi-Fi LAN
+      'http://192.168.1.4:5000', // Device subnet
       hostingerBaseUrl,
     }.toList();
   }
@@ -110,18 +115,21 @@ class ApiClient {
       int pending = candidates.length;
 
       for (final url in candidates) {
-        _pingUrl(url).then((working) {
-          if (working && !completer.isCompleted) {
-            completer.complete(url);
-          }
-        }).catchError((_) {
-          // Ignore individual ping failures
-        }).whenComplete(() {
-          pending--;
-          if (pending == 0 && !completer.isCompleted) {
-            completer.complete(_dio.options.baseUrl);
-          }
-        });
+        _pingUrl(url)
+            .then((working) {
+              if (working && !completer.isCompleted) {
+                completer.complete(url);
+              }
+            })
+            .catchError((_) {
+              // Ignore individual ping failures
+            })
+            .whenComplete(() {
+              pending--;
+              if (pending == 0 && !completer.isCompleted) {
+                completer.complete(_dio.options.baseUrl);
+              }
+            });
       }
 
       final workingUrl = await completer.future.timeout(
@@ -130,7 +138,9 @@ class ApiClient {
       );
 
       if (_dio.options.baseUrl != workingUrl) {
-        debugPrint('🌐 [ApiClient] Locked onto active backend: $workingUrl (was ${_dio.options.baseUrl})');
+        debugPrint(
+          '🌐 [ApiClient] Locked onto active backend: $workingUrl (was ${_dio.options.baseUrl})',
+        );
         _dio.options.baseUrl = workingUrl;
       }
 

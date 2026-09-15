@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
 import '../core/services/firebase_api_service.dart';
 import '../features/auth/presentation/providers/auth_provider.dart';
 import '../features/notifications/data/services/notification_api_service.dart';
@@ -23,9 +24,7 @@ Future<ProviderContainer> bootstrap() async {
   }
 
   final container = ProviderContainer(
-    overrides: [
-      sharedPreferencesProvider.overrideWithValue(sharedPrefs),
-    ],
+    overrides: [sharedPreferencesProvider.overrideWithValue(sharedPrefs)],
   );
 
   // Initialize Firebase Cloud Messaging & Core
@@ -45,9 +44,13 @@ Future<ProviderContainer> bootstrap() async {
 
   // Sync FCM token with backend notification service
   try {
-    final token = await container.read(firebaseApiServiceProvider).getFcmToken();
+    final token = await container
+        .read(firebaseApiServiceProvider)
+        .getFcmToken();
     if (token != null && token.isNotEmpty) {
-      await container.read(notificationApiServiceProvider).registerDeviceToken(fcmToken: token);
+      await container
+          .read(notificationApiServiceProvider)
+          .registerDeviceToken(fcmToken: token);
     }
   } catch (_) {}
 
