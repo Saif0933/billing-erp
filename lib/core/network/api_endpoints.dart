@@ -153,5 +153,15 @@ class ApiEndpoints {
   static const String notificationsMarkAllRead = '/api/v1/notifications/mark-all-read';
   static String notificationMarkRead(String id) => '/api/v1/notifications/$id/read';
   static const String notificationsTestSend = '/api/v1/notifications/test-send';
+
+  // Dashboard & Overview (backend: module/dashboard)
+  static const String dashboardOverview = '/api/v1/dashboard/overview';
+  static const String dashboardMetrics = '/api/v1/dashboard/metrics';
+  static const String dashboardTrends = '/api/v1/dashboard/trends';
+  static const String dashboardCashBank = '/api/v1/dashboard/cash-bank';
+  static const String dashboardInventorySummary = '/api/v1/dashboard/inventory-summary';
+  static const String dashboardRecentSales = '/api/v1/dashboard/recent-sales';
+  static const String dashboardRecentPurchases = '/api/v1/dashboard/recent-purchases';
+  static const String dashboardReminders = '/api/v1/dashboard/reminders';
 }
 

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
@@ -7,8 +8,11 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/models/billing_models.dart';
 import '../../../business/presentation/providers/business_provider.dart';
 import '../providers/billing_repository.dart';
+import '../providers/dashboard_provider.dart';
+import '../../data/models/dashboard_models.dart';
 
 class DashboardPage extends ConsumerStatefulWidget {
   const DashboardPage({super.key});
@@ -65,6 +69,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
     final businessState = ref.watch(businessProvider);
     final activeBiz = businessState.activeBusiness;
     final billingState = ref.watch(billingRepositoryProvider);
+    final dashboardState = ref.watch(dashboardProvider);
 
     final bizName = activeBiz?.name ?? 'Tax Bunny Retail Store';
 
@@ -83,56 +88,65 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
           final double bannerWidth =
               isDesktop ? ((contentWidth - 16) * 0.7) : contentWidth;
 
-          return SingleChildScrollView(
-            padding: EdgeInsets.all(hPadding),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // 1. Top Banner Row: Greeting Banner + Live Clock Widget
-                if (isDesktop)
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        flex: 7,
-                        child: _buildGreetingBanner(bizName, bannerWidth),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(flex: 3, child: _buildLiveClockCard()),
-                    ],
-                  )
-                else
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      _buildGreetingBanner(bizName, bannerWidth),
-                      const SizedBox(height: 14),
-                      _buildLiveClockCard(),
-                    ],
-                  ),
+          return RefreshIndicator(
+            color: const Color(0xFF10B981),
+            onRefresh: () => ref
+                .read(dashboardProvider.notifier)
+                .loadOverview(refresh: true),
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: EdgeInsets.all(hPadding),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // 1. Top Banner Row: Greeting Banner + Live Clock Widget
+                  if (isDesktop)
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          flex: 7,
+                          child: _buildGreetingBanner(bizName, bannerWidth),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(flex: 3, child: _buildLiveClockCard()),
+                      ],
+                    )
+                  else
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        _buildGreetingBanner(bizName, bannerWidth),
+                        const SizedBox(height: 14),
+                        _buildLiveClockCard(),
+                      ],
+                    ),
 
-                const SizedBox(height: 18),
+                  const SizedBox(height: 18),
 
-                // 2. Financial KPI Metric Cards (4 Cards)
-                _buildKpiSection(contentWidth, billingState),
+                  // 2. Financial KPI Metric Cards (4 Cards)
+                  _buildKpiSection(contentWidth, billingState, dashboardState),
 
-                const SizedBox(height: 18),
+                  const SizedBox(height: 18),
 
-                // 3. Middle Section: Trend Chart + Cash & Bank + Inventory Summary
-                _buildMiddleSection(contentWidth, billingState),
+                  // 3. Middle Section: Trend Chart + Cash & Bank + Inventory Summary
+                  _buildMiddleSection(
+                      contentWidth, billingState, dashboardState),
 
-                const SizedBox(height: 18),
+                  const SizedBox(height: 18),
 
-                // 4. Quick Actions Section
-                _buildQuickActions(contentWidth),
+                  // 4. Quick Actions Section
+                  _buildQuickActions(contentWidth),
 
-                const SizedBox(height: 18),
+                  const SizedBox(height: 18),
 
-                // 5. Bottom Section: Recent Sales + Recent Purchases + Reminders & Insights
-                _buildBottomSection(contentWidth, billingState),
+                  // 5. Bottom Section: Recent Sales + Recent Purchases + Reminders & Insights
+                  _buildBottomSection(
+                      contentWidth, billingState, dashboardState),
 
-                const SizedBox(height: 24),
-              ],
+                  const SizedBox(height: 24),
+                ],
+              ),
             ),
           );
         },
@@ -680,68 +694,131 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
   // 2. FINANCIAL KPI CARDS
   // ==========================================
 
-  Widget _buildKpiSection(double contentWidth, BillingState billingState) {
-    // Dynamic values with graceful fallbacks matching the exact design
-    final salesTotal = billingState.invoices.isNotEmpty
-        ? billingState.invoices.fold<double>(
-            0.0,
-            (sum, inv) => sum + inv.grandTotal,
-          )
-        : 12450.00;
-    final salesCount = billingState.invoices.isNotEmpty
-        ? billingState.invoices.length
-        : 24;
+  Widget _buildKpiSection(
+    double contentWidth,
+    BillingState billingState,
+    DashboardState dashboardState,
+  ) {
+    final liveMetrics = dashboardState.overview?.metrics;
 
-    final purchaseTotal = billingState.purchases.isNotEmpty
-        ? billingState.purchases.fold<double>(
-            0.0,
-            (sum, p) => sum + p.grandTotal,
-          )
-        : 8320.00;
-    final purchaseCount = billingState.purchases.isNotEmpty
-        ? billingState.purchases.length
-        : 6;
+    // Fully dynamic calculation from billingState if liveMetrics not yet loaded
+    final salesTotal = billingState.invoices.fold<double>(
+      0.0,
+      (sum, inv) => sum + inv.grandTotal,
+    );
+    final salesCount = billingState.invoices.length;
 
-    final receivablesTotal = 95430.00;
-    final payablesTotal = 40620.00;
+    final purchaseTotal = billingState.purchases.fold<double>(
+      0.0,
+      (sum, p) => sum + p.grandTotal,
+    );
+    final purchaseCount = billingState.purchases.length;
+
+    final unpaidInvoices = billingState.invoices
+        .where((inv) =>
+            inv.status != InvoiceStatus.paid &&
+            inv.status != InvoiceStatus.cancelled &&
+            inv.balanceAmount > 0)
+        .toList();
+    final receivablesTotal = unpaidInvoices.fold<double>(
+      0.0,
+      (sum, inv) => sum + inv.balanceAmount,
+    );
+    final receivablesCount = unpaidInvoices.length;
+
+    final unpaidPurchases = billingState.purchases
+        .where((p) =>
+            p.status != PurchaseStatus.paid &&
+            p.status != PurchaseStatus.cancelled &&
+            p.balanceAmount > 0)
+        .toList();
+    final payablesTotal = unpaidPurchases.fold<double>(
+      0.0,
+      (sum, p) => sum + p.balanceAmount,
+    );
+    final payablesCount = unpaidPurchases.length;
 
     final cards = [
-      _buildKpiCard(
-        title: "Today's Sales",
-        value: '₹ ${_formatCurrency(salesTotal)}',
-        subtitle: '$salesCount invoices today',
-        icon: Icons.trending_up_rounded,
-        iconColor: const Color(0xFF10B981),
-        percentage: '12%',
-        isPositive: true,
-      ),
-      _buildKpiCard(
-        title: "Today's Purchases",
-        value: '₹ ${_formatCurrency(purchaseTotal)}',
-        subtitle: '$purchaseCount purchase bills',
-        icon: Icons.shopping_cart_outlined,
-        iconColor: const Color(0xFF0EA5E9),
-        percentage: '5%',
-        isPositive: false,
-      ),
-      _buildKpiCard(
-        title: 'Total Receivables',
-        value: '₹ ${_formatCurrency(receivablesTotal)}',
-        subtitle: '18 outstanding',
-        icon: Icons.account_balance_wallet_outlined,
-        iconColor: const Color(0xFFF59E0B),
-        percentage: '8%',
-        isPositive: true,
-      ),
-      _buildKpiCard(
-        title: 'Total Payables',
-        value: '₹ ${_formatCurrency(payablesTotal)}',
-        subtitle: '12 outstanding',
-        icon: Icons.credit_card_outlined,
-        iconColor: const Color(0xFF8B5CF6),
-        percentage: '3%',
-        isPositive: false,
-      ),
+      liveMetrics != null
+          ? _buildKpiCard(
+              title: liveMetrics.todaysSales.title,
+              value: liveMetrics.todaysSales.formattedValue,
+              subtitle: liveMetrics.todaysSales.subtitle,
+              icon: Icons.trending_up_rounded,
+              iconColor: const Color(0xFF10B981),
+              percentage: liveMetrics.todaysSales.percentage,
+              isPositive: liveMetrics.todaysSales.isPositive,
+            )
+          : _buildKpiCard(
+              title: "Today's Sales",
+              value: '₹ ${_formatCurrency(salesTotal)}',
+              subtitle:
+                  '$salesCount ${salesCount == 1 ? "invoice" : "invoices"} today',
+              icon: Icons.trending_up_rounded,
+              iconColor: const Color(0xFF10B981),
+              percentage: salesTotal > 0 ? 'Active' : '0%',
+              isPositive: true,
+            ),
+      liveMetrics != null
+          ? _buildKpiCard(
+              title: liveMetrics.todaysPurchases.title,
+              value: liveMetrics.todaysPurchases.formattedValue,
+              subtitle: liveMetrics.todaysPurchases.subtitle,
+              icon: Icons.shopping_cart_outlined,
+              iconColor: const Color(0xFF0EA5E9),
+              percentage: liveMetrics.todaysPurchases.percentage,
+              isPositive: liveMetrics.todaysPurchases.isPositive,
+            )
+          : _buildKpiCard(
+              title: "Today's Purchases",
+              value: '₹ ${_formatCurrency(purchaseTotal)}',
+              subtitle:
+                  '$purchaseCount ${purchaseCount == 1 ? "purchase bill" : "purchase bills"}',
+              icon: Icons.shopping_cart_outlined,
+              iconColor: const Color(0xFF0EA5E9),
+              percentage: purchaseTotal > 0 ? 'Active' : '0%',
+              isPositive: false,
+            ),
+      liveMetrics != null
+          ? _buildKpiCard(
+              title: liveMetrics.totalReceivables.title,
+              value: liveMetrics.totalReceivables.formattedValue,
+              subtitle: liveMetrics.totalReceivables.subtitle,
+              icon: Icons.account_balance_wallet_outlined,
+              iconColor: const Color(0xFFF59E0B),
+              percentage: liveMetrics.totalReceivables.percentage,
+              isPositive: liveMetrics.totalReceivables.isPositive,
+            )
+          : _buildKpiCard(
+              title: 'Total Receivables',
+              value: '₹ ${_formatCurrency(receivablesTotal)}',
+              subtitle:
+                  '$receivablesCount ${receivablesCount == 1 ? "invoice" : "invoices"} pending',
+              icon: Icons.account_balance_wallet_outlined,
+              iconColor: const Color(0xFFF59E0B),
+              percentage: receivablesCount > 0 ? 'Pending' : '0%',
+              isPositive: receivablesCount == 0,
+            ),
+      liveMetrics != null
+          ? _buildKpiCard(
+              title: liveMetrics.totalPayables.title,
+              value: liveMetrics.totalPayables.formattedValue,
+              subtitle: liveMetrics.totalPayables.subtitle,
+              icon: Icons.credit_card_outlined,
+              iconColor: const Color(0xFF8B5CF6),
+              percentage: liveMetrics.totalPayables.percentage,
+              isPositive: liveMetrics.totalPayables.isPositive,
+            )
+          : _buildKpiCard(
+              title: 'Total Payables',
+              value: '₹ ${_formatCurrency(payablesTotal)}',
+              subtitle:
+                  '$payablesCount ${payablesCount == 1 ? "bill" : "bills"} pending',
+              icon: Icons.credit_card_outlined,
+              iconColor: const Color(0xFF8B5CF6),
+              percentage: payablesCount > 0 ? 'Due' : '0%',
+              isPositive: payablesCount == 0,
+            ),
     ];
 
     if (contentWidth >= 1100) {
@@ -903,10 +980,17 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
   // 3. MIDDLE SECTION (TREND CHART + CASH & BANK + INVENTORY)
   // ==========================================
 
-  Widget _buildMiddleSection(double contentWidth, BillingState billingState) {
-    final trendWidget = _buildSalesPurchaseTrendCard();
-    final bankWidget = _buildCashAndBankCard(billingState);
-    final inventoryWidget = _buildInventorySummaryCard();
+  Widget _buildMiddleSection(
+    double contentWidth,
+    BillingState billingState,
+    DashboardState dashboardState,
+  ) {
+    final trendWidget =
+        _buildSalesPurchaseTrendCard(dashboardState.overview?.trend);
+    final bankWidget = _buildCashAndBankCard(
+        billingState, dashboardState.overview?.cashAndBank);
+    final inventoryWidget =
+        _buildInventorySummaryCard(dashboardState.overview?.inventory);
 
     if (contentWidth >= 1200) {
       return Row(
@@ -949,10 +1033,70 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
     );
   }
 
-  Widget _buildSalesPurchaseTrendCard() {
+  Widget _buildSalesPurchaseTrendCard([DashboardTrendData? trendData]) {
     return LayoutBuilder(
       builder: (context, outerConstraints) {
         final isNarrow = outerConstraints.maxWidth < 620;
+
+        final labels = (trendData != null && trendData.labels.isNotEmpty)
+            ? trendData.labels
+            : const [
+                'Jan',
+                'Feb',
+                'Mar',
+                'Apr',
+                'May',
+                'Jun',
+                'Jul',
+                'Aug',
+                'Sep',
+                'Oct',
+                'Nov',
+                'Dec',
+              ];
+
+        final List<FlSpot> salesSpots = [];
+        final List<FlSpot> purchasesSpots = [];
+
+        if (trendData != null && trendData.sales.isNotEmpty) {
+          for (int i = 0; i < trendData.sales.length; i++) {
+            salesSpots.add(FlSpot(i.toDouble(), trendData.sales[i]));
+          }
+        } else {
+          for (int i = 0; i < labels.length; i++) {
+            salesSpots.add(FlSpot(i.toDouble(), 0));
+          }
+        }
+
+        if (trendData != null && trendData.purchases.isNotEmpty) {
+          for (int i = 0; i < trendData.purchases.length; i++) {
+            purchasesSpots.add(FlSpot(i.toDouble(), trendData.purchases[i]));
+          }
+        } else {
+          for (int i = 0; i < labels.length; i++) {
+            purchasesSpots.add(FlSpot(i.toDouble(), 0));
+          }
+        }
+
+        double highestY = 0.0;
+        for (final s in salesSpots) {
+          if (s.y > highestY) highestY = s.y;
+        }
+        for (final p in purchasesSpots) {
+          if (p.y > highestY) highestY = p.y;
+        }
+
+        final double yInterval = _calculateNiceYInterval(highestY);
+        final double rawMax = highestY <= 0
+            ? (yInterval * 4.0)
+            : ((highestY / yInterval).ceil() * yInterval).toDouble();
+        final double chartMaxY =
+            (highestY > 0 && (rawMax - highestY) < (yInterval * 0.15))
+                ? rawMax + yInterval
+                : (rawMax < yInterval * 2 ? yInterval * 2 : rawMax);
+        final double chartMaxX =
+            (labels.length > 1 ? (labels.length - 1).toDouble() : 11.0);
+
         return Container(
           height: isNarrow ? 375 : 330,
           padding: const EdgeInsets.all(20),
@@ -1035,8 +1179,17 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
 
                       // Dropdown pill
                       PopupMenuButton<String>(
-                        onSelected: (val) =>
-                            setState(() => _selectedTrendPeriod = val),
+                        onSelected: (val) {
+                          setState(() => _selectedTrendPeriod = val);
+                          final periodKey = val == 'This Year'
+                              ? 'this_year'
+                              : val == 'This Quarter'
+                                  ? 'this_quarter'
+                                  : 'this_month';
+                          ref
+                              .read(dashboardProvider.notifier)
+                              .changeTrendPeriod(periodKey);
+                        },
                         color: _isDark ? const Color(0xFF1E293B) : Colors.white,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10),
@@ -1143,7 +1296,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                     gridData: FlGridData(
                       show: true,
                       drawVerticalLine: false,
-                      horizontalInterval: 15,
+                      horizontalInterval: yInterval,
                       getDrawingHorizontalLine: (value) {
                         return FlLine(
                           color: _isDark
@@ -1164,23 +1317,25 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                       leftTitles: AxisTitles(
                         sideTitles: SideTitles(
                           showTitles: true,
-                          interval: 15,
-                          reservedSize: 34,
+                          interval: yInterval,
+                          reservedSize: 44,
                           getTitlesWidget: (value, meta) {
-                            const yLabels = {
-                              0: '0',
-                              15: '15K',
-                              30: '30K',
-                              45: '45K',
-                              60: '60K',
-                              75: '75K',
-                            };
-                            final text = yLabels[value.toInt()] ?? '';
-                            return Text(
-                              text,
-                              style: const TextStyle(
-                                fontSize: 10,
-                                color: Color(0xFF64748B),
+                            if (value < 0 || value > chartMaxY + 0.1) {
+                              return const SizedBox();
+                            }
+                            final intVal = value.round();
+                            return Align(
+                              alignment: Alignment.centerRight,
+                              child: Padding(
+                                padding: const EdgeInsets.only(right: 6),
+                                child: Text(
+                                  intVal == 0 ? '0' : '${intVal}K',
+                                  style: const TextStyle(
+                                    fontSize: 10,
+                                    color: Color(0xFF64748B),
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
                               ),
                             );
                           },
@@ -1192,27 +1347,14 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                           reservedSize: 22,
                           interval: outerConstraints.maxWidth < 460 ? 2 : 1,
                           getTitlesWidget: (value, meta) {
-                            const months = [
-                              'Jan',
-                              'Feb',
-                              'Mar',
-                              'Apr',
-                              'May',
-                              'Jun',
-                              'Jul',
-                              'Aug',
-                              'Sep',
-                              'Oct',
-                              'Nov',
-                              'Dec',
-                            ];
                             final index = value.toInt();
-                            if (index >= 0 && index < months.length) {
-                              if (outerConstraints.maxWidth < 460 && index % 2 != 0) {
+                            if (index >= 0 && index < labels.length) {
+                              if (outerConstraints.maxWidth < 460 &&
+                                  index % 2 != 0) {
                                 return const SizedBox();
                               }
                               return Text(
-                                months[index],
+                                labels[index],
                                 style: const TextStyle(
                                   fontSize: 10,
                                   color: Color(0xFF64748B),
@@ -1225,29 +1367,52 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                       ),
                     ),
                     borderData: FlBorderData(show: false),
+                    clipData: const FlClipData.all(),
+                    lineTouchData: LineTouchData(
+                      handleBuiltInTouches: true,
+                      touchTooltipData: LineTouchTooltipData(
+                        getTooltipColor: (touchedSpot) => _isDark
+                            ? const Color(0xFF1E293B)
+                            : const Color(0xFF0F172A),
+                        tooltipBorderRadius: BorderRadius.circular(8),
+                        tooltipPadding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 6,
+                        ),
+                        getTooltipItems: (List<LineBarSpot> touchedSpots) {
+                          return touchedSpots.map((spot) {
+                            final isSales = spot.barIndex == 0;
+                            final label = isSales ? 'Sales' : 'Purchases';
+                            final color = isSales
+                                ? const Color(0xFF10B981)
+                                : const Color(0xFFF59E0B);
+                            final amountInRupees = spot.y * 1000;
+                            final formatted =
+                                NumberFormat('#,##,##0.00', 'en_IN')
+                                    .format(amountInRupees);
+                            return LineTooltipItem(
+                              '$label: ₹ $formatted',
+                              TextStyle(
+                                color: color,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            );
+                          }).toList();
+                        },
+                      ),
+                    ),
                     minX: 0,
-                    maxX: 11,
+                    maxX: chartMaxX,
                     minY: 0,
-                    maxY: 75,
+                    maxY: chartMaxY,
                     lineBarsData: [
                       // Sales Line (Green)
                       LineChartBarData(
-                        spots: const [
-                          FlSpot(0, 12),
-                          FlSpot(1, 26),
-                          FlSpot(2, 34),
-                          FlSpot(3, 31),
-                          FlSpot(4, 42),
-                          FlSpot(5, 54),
-                          FlSpot(6, 46),
-                          FlSpot(7, 43),
-                          FlSpot(8, 52),
-                          FlSpot(9, 61),
-                          FlSpot(10, 68),
-                          FlSpot(11, 75),
-                        ],
+                        spots: salesSpots,
                         isCurved: true,
-                        curveSmoothness: 0.35,
+                        curveSmoothness: 0.22,
+                        preventCurveOverShooting: true,
                         color: const Color(0xFF10B981),
                         barWidth: 2.8,
                         isStrokeCapRound: true,
@@ -1277,22 +1442,10 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
 
                       // Purchases Line (Orange/Yellow)
                       LineChartBarData(
-                        spots: const [
-                          FlSpot(0, 5),
-                          FlSpot(1, 14),
-                          FlSpot(2, 17),
-                          FlSpot(3, 13),
-                          FlSpot(4, 21),
-                          FlSpot(5, 29),
-                          FlSpot(6, 19),
-                          FlSpot(7, 16),
-                          FlSpot(8, 23),
-                          FlSpot(9, 32),
-                          FlSpot(10, 34),
-                          FlSpot(11, 38),
-                        ],
+                        spots: purchasesSpots,
                         isCurved: true,
-                        curveSmoothness: 0.35,
+                        curveSmoothness: 0.22,
+                        preventCurveOverShooting: true,
                         color: const Color(0xFFF59E0B),
                         barWidth: 2.6,
                         isStrokeCapRound: true,
@@ -1330,7 +1483,66 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
     );
   }
 
-  Widget _buildCashAndBankCard(BillingState billingState) {
+  double _calculateNiceYInterval(double maxVal) {
+    if (maxVal <= 10.0) return 5.0;
+    const double targetSteps = 4.0;
+    final double roughStep = maxVal / targetSteps;
+    final double powerOf10 =
+        math.pow(10, (math.log(roughStep) / math.ln10).floor()).toDouble();
+    final double ratio = roughStep / powerOf10;
+    double niceRatio;
+    if (ratio <= 1.25) {
+      niceRatio = 1.0;
+    } else if (ratio <= 2.5) {
+      niceRatio = 2.0;
+    } else if (ratio <= 6.0) {
+      niceRatio = 5.0;
+    } else {
+      niceRatio = 10.0;
+    }
+    final double interval = niceRatio * powerOf10;
+    return interval < 1.0 ? 1.0 : interval;
+  }
+
+  Color _parseHexColor(String? hexString, Color fallback) {
+    if (hexString == null || hexString.isEmpty) return fallback;
+    try {
+      String hex = hexString.replaceAll('#', '');
+      if (hex.length == 6) {
+        hex = 'FF$hex';
+      }
+      return Color(int.parse(hex, radix: 16));
+    } catch (_) {
+      return fallback;
+    }
+  }
+
+  IconData _parseIcon(String? iconName, IconData fallback) {
+    switch (iconName) {
+      case 'account_balance':
+        return Icons.account_balance;
+      case 'payments':
+        return Icons.payments_outlined;
+      case 'calendar_month':
+        return Icons.calendar_month_outlined;
+      case 'credit_card':
+        return Icons.credit_card_outlined;
+      case 'receipt_long':
+        return Icons.receipt_long_outlined;
+      case 'shopping_cart':
+        return Icons.shopping_cart_outlined;
+      case 'assignment_turned_in':
+        return Icons.assignment_turned_in_outlined;
+      case 'notifications':
+      default:
+        return fallback;
+    }
+  }
+
+  Widget _buildCashAndBankCard(
+    BillingState billingState, [
+    DashboardCashBankSummary? cashAndBank,
+  ]) {
     return Container(
       height: 330,
       padding: const EdgeInsets.all(20),
@@ -1398,9 +1610,9 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
           FittedBox(
             fit: BoxFit.scaleDown,
             alignment: Alignment.centerLeft,
-            child: const Text(
-              '₹ 1,73,500.00',
-              style: TextStyle(
+            child: Text(
+              cashAndBank?.formattedTotalBalance ?? '₹ 0.00',
+              style: const TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.w900,
                 color: Color(0xFF10B981),
@@ -1411,29 +1623,74 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
           const SizedBox(height: 18),
 
           // Bank Accounts List
-          _buildBankItem(
-            name: 'HDFC Bank - 1234',
-            amount: '₹ 1,20,000.00',
-            iconColor: const Color(0xFFEF4444),
-            icon: Icons.account_balance,
-            isSquare: true,
-          ),
-          Divider(color: _dividerColor, height: 16),
-          _buildBankItem(
-            name: 'SBI - 5678',
-            amount: '₹ 45,300.00',
-            iconColor: const Color(0xFF2563EB),
-            icon: Icons.account_balance,
-            isSquare: false,
-          ),
-          Divider(color: _dividerColor, height: 16),
-          _buildBankItem(
-            name: 'Cash in Hand',
-            amount: '₹ 8,200.00',
-            iconColor: const Color(0xFF10B981),
-            icon: Icons.payments_outlined,
-            isSquare: true,
-          ),
+          if (cashAndBank != null && cashAndBank.accounts.isNotEmpty) ...[
+            for (int i = 0;
+                i < cashAndBank.accounts.take(3).length;
+                i++) ...[
+              if (i > 0) Divider(color: _dividerColor, height: 16),
+              _buildBankItem(
+                name: cashAndBank.accounts[i].accountNumberMasked.isNotEmpty
+                    ? '${cashAndBank.accounts[i].name} - ${cashAndBank.accounts[i].accountNumberMasked}'
+                    : cashAndBank.accounts[i].name,
+                amount: cashAndBank.accounts[i].formattedAmount,
+                iconColor: _parseHexColor(
+                  cashAndBank.accounts[i].iconColor,
+                  const Color(0xFF10B981),
+                ),
+                icon: _parseIcon(
+                  cashAndBank.accounts[i].icon,
+                  Icons.account_balance,
+                ),
+                isSquare: cashAndBank.accounts[i].isSquare,
+              ),
+            ],
+          ] else ...[
+            Expanded(
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.account_balance_outlined,
+                      size: 34,
+                      color: _textMuted.withValues(alpha: 0.5),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'No bank accounts linked',
+                      style: TextStyle(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w600,
+                        color: _textMuted,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    InkWell(
+                      onTap: () => context.push('/accounting/bank-management'),
+                      borderRadius: BorderRadius.circular(8),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color:
+                              const Color(0xFF10B981).withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Text(
+                          '+ Link Account',
+                          style: TextStyle(
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF10B981),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -1493,7 +1750,12 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
     );
   }
 
-  Widget _buildInventorySummaryCard() {
+  Widget _buildInventorySummaryCard([DashboardInventorySummary? inventory]) {
+    final int totalItems = inventory?.totalItems ?? 0;
+    final int inStock = inventory?.inStockCount ?? 0;
+    final int lowStock = inventory?.lowStockCount ?? 0;
+    final int outOfStock = inventory?.outOfStockCount ?? 0;
+
     return Container(
       height: 330,
       padding: const EdgeInsets.all(20),
@@ -1578,33 +1840,44 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                               sectionsSpace: 3,
                               centerSpaceRadius: centerRadius,
                               startDegreeOffset: -90,
-                              sections: [
-                                PieChartSectionData(
-                                  value: 186,
-                                  color: const Color(0xFF10B981),
-                                  radius: sectionRadius,
-                                  showTitle: false,
-                                ),
-                                PieChartSectionData(
-                                  value: 42,
-                                  color: const Color(0xFFF59E0B),
-                                  radius: sectionRadius,
-                                  showTitle: false,
-                                ),
-                                PieChartSectionData(
-                                  value: 20,
-                                  color: const Color(0xFFEF4444),
-                                  radius: sectionRadius,
-                                  showTitle: false,
-                                ),
-                              ],
+                              sections: totalItems > 0
+                                  ? [
+                                      PieChartSectionData(
+                                        value: inStock.toDouble(),
+                                        color: const Color(0xFF10B981),
+                                        radius: sectionRadius,
+                                        showTitle: false,
+                                      ),
+                                      PieChartSectionData(
+                                        value: lowStock.toDouble(),
+                                        color: const Color(0xFFF59E0B),
+                                        radius: sectionRadius,
+                                        showTitle: false,
+                                      ),
+                                      PieChartSectionData(
+                                        value: outOfStock.toDouble(),
+                                        color: const Color(0xFFEF4444),
+                                        radius: sectionRadius,
+                                        showTitle: false,
+                                      ),
+                                    ]
+                                  : [
+                                      PieChartSectionData(
+                                        value: 1,
+                                        color: _isDark
+                                            ? const Color(0xFF1E2E4A)
+                                            : const Color(0xFFE2E8F0),
+                                        radius: sectionRadius,
+                                        showTitle: false,
+                                      ),
+                                    ],
                             ),
                           ),
                           Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Text(
-                                '248',
+                                '$totalItems',
                                 style: TextStyle(
                                   fontSize: isCompact ? 18 : 22,
                                   fontWeight: FontWeight.w900,
@@ -1635,19 +1908,19 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                           _buildInventoryLegendItem(
                             color: const Color(0xFF10B981),
                             label: 'In Stock',
-                            count: '186',
+                            count: '$inStock',
                           ),
                           const SizedBox(height: 14),
                           _buildInventoryLegendItem(
                             color: const Color(0xFFF59E0B),
                             label: 'Low Stock',
-                            count: '42',
+                            count: '$lowStock',
                           ),
                           const SizedBox(height: 14),
                           _buildInventoryLegendItem(
                             color: const Color(0xFFEF4444),
                             label: 'Out of Stock',
-                            count: '20',
+                            count: '$outOfStock',
                           ),
                         ],
                       ),
@@ -1847,12 +2120,22 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
   // 5. BOTTOM SECTION (TABLES + REMINDERS & INSIGHTS)
   // ==========================================
 
-  Widget _buildBottomSection(double contentWidth, BillingState billingState) {
-    final recentSales = _buildRecentSalesCard(billingState);
-    final recentPurchases = _buildRecentPurchasesCard(billingState);
+  Widget _buildBottomSection(
+    double contentWidth,
+    BillingState billingState,
+    DashboardState dashboardState,
+  ) {
+    final recentSales = _buildRecentSalesCard(
+      billingState,
+      dashboardState.overview?.recentSales,
+    );
+    final recentPurchases = _buildRecentPurchasesCard(
+      billingState,
+      dashboardState.overview?.recentPurchases,
+    );
     final remindersAndInsights = Column(
       children: [
-        _buildUpcomingRemindersCard(),
+        _buildUpcomingRemindersCard(dashboardState.overview?.reminders),
         const SizedBox(height: 16),
         _buildInsightsPromoCard(),
       ],
@@ -1886,7 +2169,10 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(child: _buildUpcomingRemindersCard()),
+              Expanded(
+                child: _buildUpcomingRemindersCard(
+                    dashboardState.overview?.reminders),
+              ),
               const SizedBox(width: 16),
               Expanded(child: _buildInsightsPromoCard()),
             ],
@@ -1906,41 +2192,22 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
     );
   }
 
-  Widget _buildRecentSalesCard(BillingState billingState) {
-    final rows = [
-      _TableRowData(
-        'INV-000123',
-        '05 Sep 2026',
-        'Walk-in Customer',
-        '₹ 1,250.00',
-        'Paid',
-        true,
-      ),
-      _TableRowData(
-        'INV-000122',
-        '05 Sep 2026',
-        'Rahul Sharma',
-        '₹ 2,480.00',
-        'Paid',
-        true,
-      ),
-      _TableRowData(
-        'INV-000121',
-        '04 Sep 2026',
-        'Acme Corporates',
-        '₹ 6,320.00',
-        'Pending',
-        false,
-      ),
-      _TableRowData(
-        'INV-000120',
-        '04 Sep 2026',
-        'Walk-in Customer',
-        '₹ 890.00',
-        'Paid',
-        true,
-      ),
-    ];
+  Widget _buildRecentSalesCard(
+    BillingState billingState, [
+    List<DashboardRecentSalesItem>? liveSales,
+  ]) {
+    final rows = (liveSales != null && liveSales.isNotEmpty)
+        ? liveSales
+            .map((s) => _TableRowData(
+                  s.invoiceNumber,
+                  s.date,
+                  s.customerName,
+                  s.formattedAmount,
+                  s.status,
+                  s.isPaid,
+                ))
+            .toList()
+        : <_TableRowData>[];
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -1997,78 +2264,109 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
           ),
           const SizedBox(height: 16),
 
-          // Table Content with LayoutBuilder for responsiveness
-          LayoutBuilder(
-            builder: (context, constraints) {
-              const minWidth = 440.0;
-              final content = Column(
-                children: [
-                  _buildTableHeader([
-                    '#',
-                    'Date',
-                    'Customer',
-                    'Amount',
-                    'Status',
-                  ]),
-                  Divider(color: _dividerColor, height: 16),
-                  ...rows.map(
-                    (row) => Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 7),
-                      child: _buildTableRow(row),
+          // Table Content or Empty State
+          if (rows.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 26),
+              child: Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.receipt_long_outlined,
+                      size: 34,
+                      color: _textMuted.withValues(alpha: 0.45),
                     ),
-                  ),
-                ],
-              );
-
-              if (constraints.maxWidth < minWidth) {
-                return SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: SizedBox(width: minWidth, child: content),
+                    const SizedBox(height: 8),
+                    Text(
+                      'No recent sales recorded',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: _textMuted,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    ElevatedButton.icon(
+                      onPressed: () => context.push('/sales'),
+                      icon: const Icon(Icons.add, size: 15),
+                      label: const Text(
+                        'New Invoice',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF10B981),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 8,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        elevation: 0,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          else
+            LayoutBuilder(
+              builder: (context, constraints) {
+                const minWidth = 440.0;
+                final content = Column(
+                  children: [
+                    _buildTableHeader([
+                      '#',
+                      'Date',
+                      'Customer',
+                      'Amount',
+                      'Status',
+                    ]),
+                    Divider(color: _dividerColor, height: 16),
+                    ...rows.map(
+                      (row) => Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 7),
+                        child: _buildTableRow(row),
+                      ),
+                    ),
+                  ],
                 );
-              }
-              return content;
-            },
-          ),
+
+                if (constraints.maxWidth < minWidth) {
+                  return SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: SizedBox(width: minWidth, child: content),
+                  );
+                }
+                return content;
+              },
+            ),
         ],
       ),
     );
   }
 
-  Widget _buildRecentPurchasesCard(BillingState billingState) {
-    final rows = [
-      _TableRowData(
-        'PUR-000045',
-        '05 Sep 2026',
-        'Metro Distributors',
-        '₹ 4,500.00',
-        'Received',
-        true,
-      ),
-      _TableRowData(
-        'PUR-000044',
-        '04 Sep 2026',
-        'Shree Traders',
-        '₹ 2,850.00',
-        'Received',
-        true,
-      ),
-      _TableRowData(
-        'PUR-000043',
-        '03 Sep 2026',
-        'Global Supplies',
-        '₹ 1,980.00',
-        'Pending',
-        false,
-      ),
-      _TableRowData(
-        'PUR-000042',
-        '01 Sep 2026',
-        'RK Enterprises',
-        '₹ 3,200.00',
-        'Received',
-        true,
-      ),
-    ];
+  Widget _buildRecentPurchasesCard(
+    BillingState billingState, [
+    List<DashboardRecentPurchasesItem>? livePurchases,
+  ]) {
+    final rows = (livePurchases != null && livePurchases.isNotEmpty)
+        ? livePurchases
+            .map((p) => _TableRowData(
+                  p.purchaseNumber,
+                  p.date,
+                  p.supplierName,
+                  p.formattedAmount,
+                  p.status,
+                  p.isReceived,
+                ))
+            .toList()
+        : <_TableRowData>[];
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -2125,38 +2423,88 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
           ),
           const SizedBox(height: 16),
 
-          // Table Content with LayoutBuilder for responsiveness
-          LayoutBuilder(
-            builder: (context, constraints) {
-              const minWidth = 440.0;
-              final content = Column(
-                children: [
-                  _buildTableHeader([
-                    '#',
-                    'Date',
-                    'Supplier',
-                    'Amount',
-                    'Status',
-                  ]),
-                  Divider(color: _dividerColor, height: 16),
-                  ...rows.map(
-                    (row) => Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 7),
-                      child: _buildTableRow(row),
+          // Table Content or Empty State
+          if (rows.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 26),
+              child: Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.shopping_cart_outlined,
+                      size: 34,
+                      color: _textMuted.withValues(alpha: 0.45),
                     ),
-                  ),
-                ],
-              );
-
-              if (constraints.maxWidth < minWidth) {
-                return SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: SizedBox(width: minWidth, child: content),
+                    const SizedBox(height: 8),
+                    Text(
+                      'No recent purchases recorded',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: _textMuted,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    ElevatedButton.icon(
+                      onPressed: () => context.push('/purchase'),
+                      icon: const Icon(Icons.add, size: 15),
+                      label: const Text(
+                        'Record Purchase',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF0EA5E9),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 8,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        elevation: 0,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          else
+            LayoutBuilder(
+              builder: (context, constraints) {
+                const minWidth = 440.0;
+                final content = Column(
+                  children: [
+                    _buildTableHeader([
+                      '#',
+                      'Date',
+                      'Supplier',
+                      'Amount',
+                      'Status',
+                    ]),
+                    Divider(color: _dividerColor, height: 16),
+                    ...rows.map(
+                      (row) => Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 7),
+                        child: _buildTableRow(row),
+                      ),
+                    ),
+                  ],
                 );
-              }
-              return content;
-            },
-          ),
+
+                if (constraints.maxWidth < minWidth) {
+                  return SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: SizedBox(width: minWidth, child: content),
+                  );
+                }
+                return content;
+              },
+            ),
         ],
       ),
     );
@@ -2302,7 +2650,9 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
     );
   }
 
-  Widget _buildUpcomingRemindersCard() {
+  Widget _buildUpcomingRemindersCard([
+    List<DashboardReminderItem>? liveReminders,
+  ]) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -2366,29 +2716,57 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
           const SizedBox(height: 16),
 
           // Items
-          _buildReminderItem(
-            icon: Icons.calendar_month_outlined,
-            iconColor: const Color(0xFFF97316),
-            title: '3 Purchase Bills due',
-            subtitle: 'Due within 7 days',
-            route: '/purchase',
-          ),
-          Divider(color: _dividerColor, height: 16),
-          _buildReminderItem(
-            icon: Icons.credit_card_outlined,
-            iconColor: const Color(0xFF8B5CF6),
-            title: '5 Customer Payments',
-            subtitle: 'Awaiting payment',
-            route: '/outstanding',
-          ),
-          Divider(color: _dividerColor, height: 16),
-          _buildReminderItem(
-            icon: Icons.assignment_turned_in_outlined,
-            iconColor: const Color(0xFF10B981),
-            title: 'GST Return',
-            subtitle: 'Due on 20 Sep 2026',
-            route: '/gst',
-          ),
+          if (liveReminders != null && liveReminders.isNotEmpty) ...[
+            for (int i = 0; i < liveReminders.length; i++) ...[
+              if (i > 0) Divider(color: _dividerColor, height: 16),
+              _buildReminderItem(
+                icon: _parseIcon(
+                  liveReminders[i].icon,
+                  Icons.notifications_active_outlined,
+                ),
+                iconColor: _parseHexColor(
+                  liveReminders[i].iconColor,
+                  const Color(0xFFF59E0B),
+                ),
+                title: liveReminders[i].title,
+                subtitle: liveReminders[i].subtitle,
+                route: liveReminders[i].route,
+              ),
+            ],
+          ] else ...[
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 24),
+              child: Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.check_circle_outline,
+                      size: 34,
+                      color: const Color(0xFF10B981).withValues(alpha: 0.8),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'All caught up!',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: _textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'No pending bills or due reminders',
+                      style: TextStyle(
+                        fontSize: 11.5,
+                        color: _textMuted,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );
