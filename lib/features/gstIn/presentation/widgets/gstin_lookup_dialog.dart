@@ -110,13 +110,14 @@ class _GstinLookupDialogState extends ConsumerState<GstinLookupDialog> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final screenSize = MediaQuery.of(context).size;
 
     return Dialog(
       insetPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 24),
       shape: RoundedRectangleBorder(borderRadius: AppRadius.lgBorder),
       backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
       child: Container(
-        constraints: const BoxConstraints(maxWidth: 520),
+        constraints: BoxConstraints(maxWidth: 520, maxHeight: screenSize.height * 0.88),
         padding: const EdgeInsets.all(AppSpacing.md),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -163,24 +164,24 @@ class _GstinLookupDialogState extends ConsumerState<GstinLookupDialog> {
             const Divider(height: 20),
 
             // Search Bar Input
-            Row(
-              children: [
-                Expanded(
-                  child: TextFormField(
-                    controller: _gstinController,
-                    textCapitalization: TextCapitalization.characters,
-                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, letterSpacing: 0.5),
-                    decoration: InputDecoration(
-                      labelText: '15-Digit GSTIN Number',
-                      hintText: 'e.g. 27AAAAA0000A1Z5',
-                      prefixIcon: const Icon(Icons.search, size: 18),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                    ),
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final isSmall = constraints.maxWidth < 360;
+
+                final inputField = TextFormField(
+                  controller: _gstinController,
+                  textCapitalization: TextCapitalization.characters,
+                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, letterSpacing: 0.5),
+                  decoration: InputDecoration(
+                    labelText: '15-Digit GSTIN Number',
+                    hintText: 'e.g. 27AAAAA0000A1Z5',
+                    prefixIcon: const Icon(Icons.search, size: 18),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                   ),
-                ),
-                const SizedBox(width: 8),
-                ElevatedButton(
+                );
+
+                final verifyButton = ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF15803D),
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -190,8 +191,27 @@ class _GstinLookupDialogState extends ConsumerState<GstinLookupDialog> {
                   child: _isLoading
                       ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                       : const Text('Verify', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                ),
-              ],
+                );
+
+                if (isSmall) {
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      inputField,
+                      const SizedBox(height: 8),
+                      verifyButton,
+                    ],
+                  );
+                }
+
+                return Row(
+                  children: [
+                    Expanded(child: inputField),
+                    const SizedBox(width: 8),
+                    verifyButton,
+                  ],
+                );
+              },
             ),
             const SizedBox(height: 14),
 

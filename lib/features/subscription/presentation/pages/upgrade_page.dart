@@ -86,43 +86,46 @@ class _UpgradePageState extends ConsumerState<UpgradePage> {
 
                     // Billing Cycle Toggle (Monthly vs Yearly)
                     Center(
-                      child: Container(
-                        margin: const EdgeInsets.symmetric(
-                          vertical: AppSpacing.md,
-                        ),
-                        padding: const EdgeInsets.all(4),
-                        decoration: BoxDecoration(
-                          color: isDark
-                              ? AppColors.surfaceDark
-                              : const Color(0xFFF1F5F9),
-                          borderRadius: BorderRadius.circular(30),
-                          border: Border.all(
-                            color: isDark
-                                ? AppColors.borderDark
-                                : AppColors.borderLight,
+                      child: SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Container(
+                          margin: const EdgeInsets.symmetric(
+                            vertical: AppSpacing.md,
                           ),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            _BillingCycleTab(
-                              title: 'Monthly billing',
-                              isSelected: !isYearly,
-                              isDark: isDark,
-                              onTap: () => ref
-                                  .read(availablePlansProvider.notifier)
-                                  .setBillingCycle('MONTHLY'),
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            color: isDark
+                                ? AppColors.surfaceDark
+                                : const Color(0xFFF1F5F9),
+                            borderRadius: BorderRadius.circular(30),
+                            border: Border.all(
+                              color: isDark
+                                  ? AppColors.borderDark
+                                  : AppColors.borderLight,
                             ),
-                            _BillingCycleTab(
-                              title: 'Annual billing',
-                              badge: 'Save ~17%',
-                              isSelected: isYearly,
-                              isDark: isDark,
-                              onTap: () => ref
-                                  .read(availablePlansProvider.notifier)
-                                  .setBillingCycle('YEARLY'),
-                            ),
-                          ],
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              _BillingCycleTab(
+                                title: 'Monthly billing',
+                                isSelected: !isYearly,
+                                isDark: isDark,
+                                onTap: () => ref
+                                    .read(availablePlansProvider.notifier)
+                                    .setBillingCycle('MONTHLY'),
+                              ),
+                              _BillingCycleTab(
+                                title: 'Annual billing',
+                                badge: 'Save ~17%',
+                                isSelected: isYearly,
+                                isDark: isDark,
+                                onTap: () => ref
+                                    .read(availablePlansProvider.notifier)
+                                    .setBillingCycle('YEARLY'),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
@@ -656,7 +659,7 @@ class _BillingCycleTab extends StatelessWidget {
       borderRadius: BorderRadius.circular(24),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
         decoration: BoxDecoration(
           color: isSelected
               ? (isDark ? const Color(0xFF10B981) : const Color(0xFF0F172A))
@@ -680,7 +683,7 @@ class _BillingCycleTab extends StatelessWidget {
             Text(
               title,
               style: TextStyle(
-                fontSize: 13,
+                fontSize: 12.5,
                 fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                 color: isSelected
                     ? Colors.white
@@ -690,9 +693,9 @@ class _BillingCycleTab extends StatelessWidget {
               ),
             ),
             if (badge != null) ...[
-              const SizedBox(width: 8),
+              const SizedBox(width: 6),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
                   color: isSelected
                       ? Colors.white.withValues(alpha: 0.22)
@@ -704,7 +707,7 @@ class _BillingCycleTab extends StatelessWidget {
                   style: TextStyle(
                     color: isSelected ? Colors.white : const Color(0xFF10B981),
                     fontWeight: FontWeight.w800,
-                    fontSize: 10.5,
+                    fontSize: 10,
                   ),
                 ),
               ),

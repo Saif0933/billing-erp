@@ -385,32 +385,63 @@ class _GstPortalPageState extends ConsumerState<GstPortalPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Column(
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final isSmall = constraints.maxWidth < 600;
+              final titleSection = Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     'GST Payments & PMT-06 Challans',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: isDark ? Colors.white : const Color(0xFF0F172A)),
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: isDark ? Colors.white : const Color(0xFF0F172A),
+                    ),
                   ),
                   const SizedBox(height: 2),
-                  const Text('Manage challans, electronic cash offsets and payment records', style: TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+                  const Text(
+                    'Manage challans, electronic cash offsets and payment records',
+                    style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                  ),
                 ],
-              ),
-              ElevatedButton.icon(
+              );
+
+              final createButton = ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF15803D),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                 ),
                 icon: const Icon(Icons.add_card, size: 16, color: Colors.white),
-                label: const Text('Create Challan', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
+                label: const Text(
+                  'Create Challan',
+                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
+                ),
                 onPressed: () {
                   AppFeedback.showSnackbar(context, message: 'Opening PMT-06 Challan Generator...');
                 },
-              ),
-            ],
+              );
+
+              if (isSmall) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    titleSection,
+                    const SizedBox(height: 12),
+                    createButton,
+                  ],
+                );
+              }
+
+              return Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(child: titleSection),
+                  const SizedBox(width: 12),
+                  createButton,
+                ],
+              );
+            },
           ),
           const SizedBox(height: 16),
           Divider(height: 1, color: isDark ? Colors.white12 : const Color(0xFFE2E8F0)),
@@ -436,33 +467,58 @@ class _GstPortalPageState extends ConsumerState<GstPortalPage> {
         borderRadius: BorderRadius.circular(10),
         border: Border.all(color: isDark ? Colors.white12 : const Color(0xFFE2E8F0)),
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Row(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final isSmall = constraints.maxWidth < 520;
+
+          final iconWidget = Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: isPaid ? const Color(0xFF15803D).withValues(alpha: 0.15) : const Color(0xFFDC2626).withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(
+              isPaid ? Icons.check_circle_outline : Icons.pending_actions,
+              color: isPaid ? const Color(0xFF15803D) : const Color(0xFFDC2626),
+              size: 20,
+            ),
+          );
+
+          final detailsWidget = Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: isPaid ? const Color(0xFF15803D).withValues(alpha: 0.15) : const Color(0xFFDC2626).withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(8),
+              Text(
+                '$chNo • $desc',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.bold,
+                  color: isDark ? Colors.white : const Color(0xFF0F172A),
                 ),
-                child: Icon(isPaid ? Icons.check_circle_outline : Icons.pending_actions, color: isPaid ? const Color(0xFF15803D) : const Color(0xFFDC2626), size: 20),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
               ),
-              const SizedBox(width: 12),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('$chNo • $desc', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: isDark ? Colors.white : const Color(0xFF0F172A))),
-                  const SizedBox(height: 2),
-                  Text('Period: $period | $cpin', style: const TextStyle(fontSize: 11.5, color: Color(0xFF64748B))),
-                ],
+              const SizedBox(height: 2),
+              Text(
+                'Period: $period | $cpin',
+                style: const TextStyle(fontSize: 11.5, color: Color(0xFF64748B)),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
             ],
-          ),
-          Row(
+          );
+
+          final amountAndActionWidget = Row(
+            mainAxisSize: isSmall ? MainAxisSize.max : MainAxisSize.min,
+            mainAxisAlignment: isSmall ? MainAxisAlignment.spaceBetween : MainAxisAlignment.end,
             children: [
-              Text('₹${_formatCurrency(amount)}', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w900, color: isPaid ? const Color(0xFF15803D) : const Color(0xFFDC2626))),
+              Text(
+                '₹${_formatCurrency(amount)}',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w900,
+                  color: isPaid ? const Color(0xFF15803D) : const Color(0xFFDC2626),
+                ),
+              ),
               const SizedBox(width: 12),
               OutlinedButton(
                 style: OutlinedButton.styleFrom(
@@ -476,8 +532,36 @@ class _GstPortalPageState extends ConsumerState<GstPortalPage> {
                 child: Text(isPaid ? 'Receipt' : 'Pay Now', style: const TextStyle(fontSize: 11)),
               ),
             ],
-          ),
-        ],
+          );
+
+          if (isSmall) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    iconWidget,
+                    const SizedBox(width: 12),
+                    Expanded(child: detailsWidget),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                amountAndActionWidget,
+              ],
+            );
+          }
+
+          return Row(
+            children: [
+              iconWidget,
+              const SizedBox(width: 12),
+              Expanded(child: detailsWidget),
+              const SizedBox(width: 12),
+              amountAndActionWidget,
+            ],
+          );
+        },
       ),
     );
   }
@@ -487,14 +571,36 @@ class _GstPortalPageState extends ConsumerState<GstPortalPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Row(
-          children: [
-            Expanded(child: _buildLedgerBox('Electronic Cash Ledger', '₹12,450.00', 'Available for immediate tax settlement', const Color(0xFF16A34A), isDark)),
-            const SizedBox(width: 12),
-            Expanded(child: _buildLedgerBox('Electronic Credit Ledger (ITC)', '₹42,350.00', 'Input Tax Credit as per GSTR-2B', const Color(0xFF0284C7), isDark)),
-            const SizedBox(width: 12),
-            Expanded(child: _buildLedgerBox('Electronic Liability Ledger', '₹18,750.00', 'Upcoming return tax liability', const Color(0xFFDC2626), isDark)),
-          ],
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final isSmall = constraints.maxWidth < 700;
+
+            final box1 = _buildLedgerBox('Electronic Cash Ledger', '₹12,450.00', 'Available for immediate tax settlement', const Color(0xFF16A34A), isDark);
+            final box2 = _buildLedgerBox('Electronic Credit Ledger (ITC)', '₹42,350.00', 'Input Tax Credit as per GSTR-2B', const Color(0xFF0284C7), isDark);
+            final box3 = _buildLedgerBox('Electronic Liability Ledger', '₹18,750.00', 'Upcoming return tax liability', const Color(0xFFDC2626), isDark);
+
+            if (isSmall) {
+              return Column(
+                children: [
+                  box1,
+                  const SizedBox(height: 10),
+                  box2,
+                  const SizedBox(height: 10),
+                  box3,
+                ],
+              );
+            }
+
+            return Row(
+              children: [
+                Expanded(child: box1),
+                const SizedBox(width: 12),
+                Expanded(child: box2),
+                const SizedBox(width: 12),
+                Expanded(child: box3),
+              ],
+            );
+          },
         ),
         const SizedBox(height: 16),
         Container(
@@ -532,11 +638,15 @@ class _GstPortalPageState extends ConsumerState<GstPortalPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF64748B))),
+          Text(title, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF64748B)), maxLines: 1, overflow: TextOverflow.ellipsis),
           const SizedBox(height: 8),
-          Text(amount, style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: color)),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(amount, style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: color)),
+          ),
           const SizedBox(height: 4),
-          Text(subtitle, style: TextStyle(fontSize: 10.5, color: isDark ? Colors.white38 : const Color(0xFF94A3B8))),
+          Text(subtitle, style: TextStyle(fontSize: 10.5, color: isDark ? Colors.white38 : const Color(0xFF94A3B8)), maxLines: 1, overflow: TextOverflow.ellipsis),
         ],
       ),
     );
@@ -546,15 +656,18 @@ class _GstPortalPageState extends ConsumerState<GstPortalPage> {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Row(
-            children: [
-              Text(date, style: const TextStyle(fontSize: 12, color: Color(0xFF64748B))),
-              const SizedBox(width: 14),
-              Text(desc, style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w500, color: isDark ? Colors.white : const Color(0xFF0F172A))),
-            ],
+          Text(date, style: const TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Text(
+              desc,
+              style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w500, color: isDark ? Colors.white : const Color(0xFF0F172A)),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
+          const SizedBox(width: 10),
           Text(
             amount,
             style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: isCredit ? const Color(0xFF16A34A) : const Color(0xFFDC2626)),
@@ -613,31 +726,39 @@ class _GstPortalPageState extends ConsumerState<GstPortalPage> {
         borderRadius: BorderRadius.circular(10),
         border: Border.all(color: isDark ? Colors.white12 : const Color(0xFFE2E8F0)),
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Row(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final isSmall = constraints.maxWidth < 480;
+
+          final iconWidget = Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: const Color(0xFF15803D).withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(icon, color: const Color(0xFF15803D), size: 20),
+          );
+
+          final textWidget = Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF15803D).withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(icon, color: const Color(0xFF15803D), size: 20),
+              Text(
+                title,
+                style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: isDark ? Colors.white : const Color(0xFF0F172A)),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
               ),
-              const SizedBox(width: 12),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(title, style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: isDark ? Colors.white : const Color(0xFF0F172A))),
-                  const SizedBox(height: 2),
-                  Text(subtitle, style: const TextStyle(fontSize: 11.5, color: Color(0xFF64748B))),
-                ],
+              const SizedBox(height: 2),
+              Text(
+                subtitle,
+                style: const TextStyle(fontSize: 11.5, color: Color(0xFF64748B)),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
             ],
-          ),
-          ElevatedButton.icon(
+          );
+
+          final downloadBtn = ElevatedButton.icon(
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF15803D),
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
@@ -647,8 +768,36 @@ class _GstPortalPageState extends ConsumerState<GstPortalPage> {
             icon: const Icon(Icons.download, size: 14, color: Colors.white),
             label: const Text('Download', style: TextStyle(fontSize: 11, color: Colors.white, fontWeight: FontWeight.bold)),
             onPressed: onDownload,
-          ),
-        ],
+          );
+
+          if (isSmall) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    iconWidget,
+                    const SizedBox(width: 12),
+                    Expanded(child: textWidget),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                Align(alignment: Alignment.centerRight, child: downloadBtn),
+              ],
+            );
+          }
+
+          return Row(
+            children: [
+              iconWidget,
+              const SizedBox(width: 12),
+              Expanded(child: textWidget),
+              const SizedBox(width: 12),
+              downloadBtn,
+            ],
+          );
+        },
       ),
     );
   }
@@ -667,51 +816,83 @@ class _GstPortalPageState extends ConsumerState<GstPortalPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Column(
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final isSmall = constraints.maxWidth < 600;
+              final headerText = Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('GSTIN Registration Dossier', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: isDark ? Colors.white : const Color(0xFF0F172A))),
+                  Text(
+                    'GSTIN Registration Dossier',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: isDark ? Colors.white : const Color(0xFF0F172A)),
+                  ),
                   const SizedBox(height: 2),
-                  const Text('Verified taxpayer identification details under GSTN Act', style: TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+                  const Text(
+                    'Verified taxpayer identification details under GSTN Act',
+                    style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                  ),
                 ],
-              ),
-              OutlinedButton.icon(
+              );
+
+              final lookupButton = OutlinedButton.icon(
                 icon: const Icon(Icons.search, size: 15),
                 label: const Text('Lookup Another GSTIN'),
                 onPressed: () => GstinLookupDialog.show(context),
-              ),
-            ],
+              );
+
+              if (isSmall) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    headerText,
+                    const SizedBox(height: 10),
+                    lookupButton,
+                  ],
+                );
+              }
+
+              return Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(child: headerText),
+                  const SizedBox(width: 12),
+                  lookupButton,
+                ],
+              );
+            },
           ),
           const SizedBox(height: 16),
           Divider(height: 1, color: isDark ? Colors.white12 : const Color(0xFFE2E8F0)),
           const SizedBox(height: 16),
 
-          Wrap(
-            spacing: 24,
-            runSpacing: 16,
-            children: [
-              _buildProfileField('GSTIN', profile.gstin, isDark, isHighlight: true),
-              _buildProfileField('Legal Name', profile.legalName, isDark),
-              _buildProfileField('Trade Name', profile.tradeName, isDark),
-              _buildProfileField('Constitution of Business', 'Proprietorship / Private Limited', isDark),
-              _buildProfileField('Date of Registration', profile.registrationDate, isDark),
-              _buildProfileField('Taxpayer Type', 'Regular Taxpayer', isDark),
-              _buildProfileField('GSTIN Status', profile.status, isDark, statusColor: const Color(0xFF16A34A)),
-              _buildProfileField('State / Jurisdiction', '${profile.state} (Code: ${profile.stateCode})', isDark),
-              _buildProfileField('Principal Place of Business', profile.primaryPlaceOfBusiness, isDark, isFullWidth: true),
-            ],
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final isMobile = constraints.maxWidth < 550;
+              return Wrap(
+                spacing: 24,
+                runSpacing: 16,
+                children: [
+                  _buildProfileField('GSTIN', profile.gstin, isDark, isHighlight: true, isMobile: isMobile),
+                  _buildProfileField('Legal Name', profile.legalName, isDark, isMobile: isMobile),
+                  _buildProfileField('Trade Name', profile.tradeName, isDark, isMobile: isMobile),
+                  _buildProfileField('Constitution of Business', 'Proprietorship / Private Limited', isDark, isMobile: isMobile),
+                  _buildProfileField('Date of Registration', profile.registrationDate, isDark, isMobile: isMobile),
+                  _buildProfileField('Taxpayer Type', 'Regular Taxpayer', isDark, isMobile: isMobile),
+                  _buildProfileField('GSTIN Status', profile.status, isDark, statusColor: const Color(0xFF16A34A), isMobile: isMobile),
+                  _buildProfileField('State / Jurisdiction', '${profile.state} (Code: ${profile.stateCode})', isDark, isMobile: isMobile),
+                  _buildProfileField('Principal Place of Business', profile.primaryPlaceOfBusiness, isDark, isFullWidth: true, isMobile: isMobile),
+                ],
+              );
+            },
           ),
         ],
       ),
     );
   }
 
-  Widget _buildProfileField(String label, String value, bool isDark, {bool isHighlight = false, Color? statusColor, bool isFullWidth = false}) {
+  Widget _buildProfileField(String label, String value, bool isDark, {bool isHighlight = false, Color? statusColor, bool isFullWidth = false, bool isMobile = false}) {
     return SizedBox(
-      width: isFullWidth ? double.infinity : 240,
+      width: isFullWidth || isMobile ? double.infinity : 240,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -749,14 +930,36 @@ class _GstPortalPageState extends ConsumerState<GstPortalPage> {
           Divider(height: 1, color: isDark ? Colors.white12 : const Color(0xFFE2E8F0)),
           const SizedBox(height: 16),
 
-          Row(
-            children: [
-              Expanded(child: _buildComplianceCard('Filing Timeliness', '100%', '5 of 5 returns filed on time', const Color(0xFF16A34A), isDark)),
-              const SizedBox(width: 12),
-              Expanded(child: _buildComplianceCard('ITC Match Ratio', '98.4%', 'GSTR-2B vs 3B ITC reconciled', const Color(0xFF0284C7), isDark)),
-              const SizedBox(width: 12),
-              Expanded(child: _buildComplianceCard('Active Notices', '0', 'Zero pending notices / DRC-01', const Color(0xFF16A34A), isDark)),
-            ],
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final isSmall = constraints.maxWidth < 680;
+
+              final card1 = _buildComplianceCard('Filing Timeliness', '100%', '5 of 5 returns filed on time', const Color(0xFF16A34A), isDark);
+              final card2 = _buildComplianceCard('ITC Match Ratio', '98.4%', 'GSTR-2B vs 3B ITC reconciled', const Color(0xFF0284C7), isDark);
+              final card3 = _buildComplianceCard('Active Notices', '0', 'Zero pending notices / DRC-01', const Color(0xFF16A34A), isDark);
+
+              if (isSmall) {
+                return Column(
+                  children: [
+                    card1,
+                    const SizedBox(height: 10),
+                    card2,
+                    const SizedBox(height: 10),
+                    card3,
+                  ],
+                );
+              }
+
+              return Row(
+                children: [
+                  Expanded(child: card1),
+                  const SizedBox(width: 12),
+                  Expanded(child: card2),
+                  const SizedBox(width: 12),
+                  Expanded(child: card3),
+                ],
+              );
+            },
           ),
         ],
       ),

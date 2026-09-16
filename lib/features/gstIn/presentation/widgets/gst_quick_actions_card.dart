@@ -217,13 +217,17 @@ class GstQuickActionsCard extends ConsumerWidget {
         // 6 Action Cards Grid
         LayoutBuilder(
           builder: (context, constraints) {
-            final isSmall = constraints.maxWidth < 650;
-            final isMedium = constraints.maxWidth < 950;
-            final cardWidth = isSmall
-                ? (constraints.maxWidth - 8) / 2
-                : (isMedium
-                    ? (constraints.maxWidth - 16) / 3
-                    : (constraints.maxWidth - 40) / 6);
+            final width = constraints.maxWidth;
+            final double cardWidth;
+            if (width < 340) {
+              cardWidth = width;
+            } else if (width < 650) {
+              cardWidth = (width - 8) / 2;
+            } else if (width < 950) {
+              cardWidth = (width - 16) / 3;
+            } else {
+              cardWidth = (width - 40) / 6;
+            }
 
             return Wrap(
               spacing: 8,

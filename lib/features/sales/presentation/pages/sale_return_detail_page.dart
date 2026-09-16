@@ -299,7 +299,7 @@ class SaleReturnDetailPage extends ConsumerWidget {
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.03),
+                    color: Colors.black.withValues(alpha: 0.03),
                     blurRadius: 10,
                     offset: const Offset(0, 4),
                   ),
@@ -308,14 +308,17 @@ class SaleReturnDetailPage extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Column(
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      final isCompact = constraints.maxWidth < 600;
+
+                      final leftHeader = Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Row(
+                          Wrap(
+                            crossAxisAlignment: WrapCrossAlignment.center,
+                            spacing: 12,
+                            runSpacing: 8,
                             children: [
                               Text(
                                 ret.invoiceNumber,
@@ -325,7 +328,6 @@ class SaleReturnDetailPage extends ConsumerWidget {
                                   color: Color(0xFF00897B),
                                 ),
                               ),
-                              const SizedBox(width: 12),
                               _buildStatusBadge(ret.status),
                             ],
                           ),
@@ -338,25 +340,52 @@ class SaleReturnDetailPage extends ConsumerWidget {
                             ),
                           ),
                         ],
-                      ),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
+                      );
+
+                      final rightHeader = Column(
+                        crossAxisAlignment: isCompact
+                            ? CrossAxisAlignment.start
+                            : CrossAxisAlignment.end,
                         children: [
                           const Text(
                             'Total Credit Amount',
                             style: TextStyle(fontSize: 12, color: Colors.grey),
                           ),
-                          Text(
-                            '₹${ret.grandTotal.toStringAsFixed(2)}',
-                            style: const TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF00897B),
+                          FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text(
+                              '₹${ret.grandTotal.toStringAsFixed(2)}',
+                              style: const TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF00897B),
+                              ),
                             ),
                           ),
                         ],
-                      ),
-                    ],
+                      );
+
+                      if (isCompact) {
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            leftHeader,
+                            const SizedBox(height: 14),
+                            rightHeader,
+                          ],
+                        );
+                      }
+
+                      return Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(child: leftHeader),
+                          const SizedBox(width: 16),
+                          rightHeader,
+                        ],
+                      );
+                    },
                   ),
                   const Divider(height: 24),
                   ResponsiveRow(
@@ -439,7 +468,7 @@ class SaleReturnDetailPage extends ConsumerWidget {
                                     border: Border.all(
                                       color: const Color(
                                         0xFF00897B,
-                                      ).withOpacity(0.3),
+                                      ).withValues(alpha: 0.3),
                                     ),
                                   ),
                                   child: Row(
@@ -451,12 +480,15 @@ class SaleReturnDetailPage extends ConsumerWidget {
                                         color: Color(0xFF00897B),
                                       ),
                                       const SizedBox(width: 6),
-                                      Text(
-                                        '${originalInvoice.invoiceNumber} (View)',
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          color: Color(0xFF00897B),
-                                          fontSize: 13,
+                                      Flexible(
+                                        child: Text(
+                                          '${originalInvoice.invoiceNumber} (View)',
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            color: Color(0xFF00897B),
+                                            fontSize: 13,
+                                          ),
+                                          overflow: TextOverflow.ellipsis,
                                         ),
                                       ),
                                     ],
@@ -506,11 +538,14 @@ class SaleReturnDetailPage extends ConsumerWidget {
                                   color: Colors.grey,
                                 ),
                                 const SizedBox(width: 6),
-                                Text(
-                                  'Restock Godown: ${warehouse.name}',
-                                  style: const TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w500,
+                                Expanded(
+                                  child: Text(
+                                    'Restock Godown: ${warehouse.name}',
+                                    style: const TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
                               ],
@@ -524,11 +559,14 @@ class SaleReturnDetailPage extends ConsumerWidget {
                                   color: Colors.grey,
                                 ),
                                 const SizedBox(width: 6),
-                                Text(
-                                  'Settlement: ${ret.paymentMode.isNotEmpty ? ret.paymentMode : "Credit Note"}',
-                                  style: const TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w500,
+                                Expanded(
+                                  child: Text(
+                                    'Settlement: ${ret.paymentMode.isNotEmpty ? ret.paymentMode : "Credit Note"}',
+                                    style: const TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
                               ],
@@ -548,6 +586,7 @@ class SaleReturnDetailPage extends ConsumerWidget {
             AppCard(
               title: 'Returned Items Breakdown',
               child: AppTable<InvoiceItem>(
+                minWidth: 750,
                 items: ret.items,
                 emptyMessage: 'No items in this return record.',
                 columns: [
@@ -728,19 +767,26 @@ class SaleReturnDetailPage extends ConsumerWidget {
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              const Text(
-                                'Grand Total Credit',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 14,
+                              const Flexible(
+                                child: Text(
+                                  'Grand Total Credit',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
                                 ),
                               ),
-                              Text(
-                                '₹${ret.grandTotal.toStringAsFixed(2)}',
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 18,
-                                  color: Color(0xFF00897B),
+                              const SizedBox(width: 8),
+                              FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: Text(
+                                  '₹${ret.grandTotal.toStringAsFixed(2)}',
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 18,
+                                    color: Color(0xFF00897B),
+                                  ),
                                 ),
                               ),
                             ],
@@ -764,10 +810,14 @@ class SaleReturnDetailPage extends ConsumerWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            title,
-            style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+          Expanded(
+            child: Text(
+              title,
+              style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
+          const SizedBox(width: 8),
           Text(
             val,
             style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),

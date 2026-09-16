@@ -12,10 +12,17 @@ class GstMetricCards extends ConsumerWidget {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final isSmall = constraints.maxWidth < 700;
-        final cardWidth = isSmall
-            ? (constraints.maxWidth - 8) / 2
-            : (constraints.maxWidth - 32) / 5;
+        final width = constraints.maxWidth;
+        final double cardWidth;
+        if (width < 360) {
+          cardWidth = width;
+        } else if (width < 600) {
+          cardWidth = (width - 8) / 2;
+        } else if (width < 980) {
+          cardWidth = (width - 16) / 3;
+        } else {
+          cardWidth = (width - 32) / 5;
+        }
 
         return Wrap(
           spacing: 8,

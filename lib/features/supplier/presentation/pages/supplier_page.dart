@@ -110,43 +110,65 @@ class _SupplierPageState extends ConsumerState<SupplierPage> {
 
             // Top Metric Cards from Backend
             if (metrics != null) ...[
-              GridView.count(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                crossAxisCount: Responsive.isMobile(context) ? 2 : 4,
-                crossAxisSpacing: Responsive.isMobile(context)
-                    ? AppSpacing.sm
-                    : AppSpacing.md,
-                mainAxisSpacing: Responsive.isMobile(context)
-                    ? AppSpacing.sm
-                    : AppSpacing.md,
-                childAspectRatio: Responsive.isMobile(context) ? 1.35 : 1.85,
-                children: [
-                  AppMetricCard(
-                    title: 'Total Suppliers',
-                    value: '${metrics.totalSuppliers}',
-                    icon: Icons.local_shipping_outlined,
-                  ),
-                  AppMetricCard(
-                    title: 'Active Suppliers',
-                    value: '${metrics.activeSuppliers}',
-                    icon: Icons.check_circle_outline,
-                    trendColor: Colors.green,
-                  ),
-                  AppMetricCard(
-                    title: 'GST Registered',
-                    value: '${metrics.registeredSuppliers}',
-                    icon: Icons.domain_verification_outlined,
-                  ),
-                  AppMetricCard(
-                    title: 'Total Payables',
-                    value: '₹${metrics.totalPayable.toStringAsFixed(2)}',
-                    icon: Icons.account_balance_wallet_outlined,
-                    trendColor: metrics.totalPayable > 0
-                        ? Colors.red
-                        : Colors.green,
-                  ),
-                ],
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final width = constraints.maxWidth;
+                  final double cardWidth;
+                  final double spacing = width < 600 ? AppSpacing.sm : AppSpacing.md;
+
+                  if (width < 340) {
+                    cardWidth = width;
+                  } else if (width < 650) {
+                    cardWidth = (width - spacing) / 2;
+                  } else if (width < 1000) {
+                    cardWidth = (width - (spacing * 2)) / 3;
+                  } else {
+                    cardWidth = (width - (spacing * 3)) / 4;
+                  }
+
+                  return Wrap(
+                    spacing: spacing,
+                    runSpacing: spacing,
+                    children: [
+                      SizedBox(
+                        width: cardWidth,
+                        child: AppMetricCard(
+                          title: 'Total Suppliers',
+                          value: '${metrics.totalSuppliers}',
+                          icon: Icons.local_shipping_outlined,
+                        ),
+                      ),
+                      SizedBox(
+                        width: cardWidth,
+                        child: AppMetricCard(
+                          title: 'Active Suppliers',
+                          value: '${metrics.activeSuppliers}',
+                          icon: Icons.check_circle_outline,
+                          trendColor: Colors.green,
+                        ),
+                      ),
+                      SizedBox(
+                        width: cardWidth,
+                        child: AppMetricCard(
+                          title: 'GST Registered',
+                          value: '${metrics.registeredSuppliers}',
+                          icon: Icons.domain_verification_outlined,
+                        ),
+                      ),
+                      SizedBox(
+                        width: cardWidth,
+                        child: AppMetricCard(
+                          title: 'Total Payables',
+                          value: '₹${metrics.totalPayable.toStringAsFixed(2)}',
+                          icon: Icons.account_balance_wallet_outlined,
+                          trendColor: metrics.totalPayable > 0
+                              ? Colors.red
+                              : Colors.green,
+                        ),
+                      ),
+                    ],
+                  );
+                },
               ),
               const SizedBox(height: AppSpacing.lg),
             ],

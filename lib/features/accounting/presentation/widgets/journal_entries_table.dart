@@ -534,6 +534,7 @@ class JournalEntriesTable extends ConsumerWidget {
                       Clipboard.setData(ClipboardData(text: item.journalNo));
                       AppFeedback.showSnackbar(context, message: 'Journal No. copied!');
                     } else if (val == 'share') {
+                      // ignore: deprecated_member_use
                       Share.share(
                         'Journal Entry: ${item.journalNo}\nDate: ${item.date}\nNarration: ${item.narration}\nDebit: ₹${item.debit}\nCredit: ₹${item.credit}',
                       );
@@ -667,89 +668,303 @@ class JournalEntriesTable extends ConsumerWidget {
     }
   }
 
-  void _showJournalDetailDialog(BuildContext context, JournalEntryItemDto item, bool isDark) {
+  void _showJournalDetailDialog(
+    BuildContext context,
+    JournalEntryItemDto item,
+    bool isDark,
+  ) {
+    final screenSize = MediaQuery.sizeOf(context);
+
     showDialog(
       context: context,
       builder: (ctx) => Dialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
-        child: Padding(
+        insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+        child: Container(
+          constraints: BoxConstraints(
+            maxWidth: 560,
+            maxHeight: screenSize.height * 0.9,
+          ),
           padding: const EdgeInsets.all(20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    item.journalNo,
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF15803D)),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.close, size: 18),
-                    onPressed: () => Navigator.pop(ctx),
-                  ),
-                ],
-              ),
-              const Divider(),
-              Text('Narration: ${item.narration}', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
-              const SizedBox(height: 8),
-              Text('Date: ${item.date} • ${item.time}', style: const TextStyle(fontSize: 12, color: Colors.grey)),
-              const SizedBox(height: 4),
-              Text('Type: ${item.journalTypeLabel} • Ref: ${item.reference}', style: const TextStyle(fontSize: 12, color: Colors.grey)),
-              const SizedBox(height: 12),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final isMobile = constraints.maxWidth < 460;
 
-              // Legs breakdown if available
-              if (item.lines.isNotEmpty) ...[
-                const Text('Double-Entry Distribution:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 6),
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: isDark ? Colors.black26 : const Color(0xFFF8FAFC),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Column(
-                    children: item.lines.map((l) {
-                      final isDebit = l.debitAmount > 0;
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 3),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              l.accountName,
-                              style: TextStyle(fontSize: 12, color: isDark ? Colors.white70 : const Color(0xFF334155)),
-                            ),
-                            Text(
-                              isDebit ? 'Dr ₹${_formatCurrency(l.debitAmount)}' : 'Cr ₹${_formatCurrency(l.creditAmount)}',
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                                color: isDebit ? const Color(0xFF16A34A) : const Color(0xFFDC2626),
-                              ),
-                            ),
-                          ],
+              return SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // Header Row
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF15803D).withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Icon(
+                            Icons.receipt_long_outlined,
+                            color: Color(0xFF15803D),
+                            size: 20,
+                          ),
                         ),
-                      );
-                    }).toList(),
-                  ),
-                ),
-                const SizedBox(height: 12),
-              ],
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                item.journalNo,
+                                style: TextStyle(
+                                  fontSize: isMobile ? 15 : 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: isDark ? Colors.white : const Color(0xFF0F172A),
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              Text(
+                                '${item.journalTypeLabel} • Ref: ${item.reference}',
+                                style: TextStyle(
+                                  fontSize: 11.5,
+                                  color: isDark ? Colors.white60 : const Color(0xFF64748B),
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        IconButton(
+                          icon: const Icon(Icons.close, size: 20),
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                          onPressed: () => Navigator.pop(ctx),
+                        ),
+                      ],
+                    ),
+                    const Divider(height: 20),
 
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text('Total Debit: ₹${_formatCurrency(item.debit)}', style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF16A34A))),
-                  Text('Total Credit: ₹${_formatCurrency(item.credit)}', style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFFDC2626))),
-                ],
-              ),
-            ],
+                    // Metadata Card
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: isDark ? Colors.white10 : const Color(0xFFE2E8F0),
+                        ),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildDetailRow(
+                            'Narration',
+                            item.narration,
+                            isDark,
+                            isMobile,
+                          ),
+                          const SizedBox(height: 6),
+                          _buildDetailRow(
+                            'Date & Time',
+                            '${item.date} • ${item.time}',
+                            isDark,
+                            isMobile,
+                          ),
+                          const SizedBox(height: 6),
+                          _buildDetailRow(
+                            'Status',
+                            item.status == JournalEntryStatus.posted
+                                ? 'Posted'
+                                : item.status == JournalEntryStatus.draft
+                                    ? 'Draft'
+                                    : 'Voided',
+                            isDark,
+                            isMobile,
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+
+                    // Double-Entry Legs breakdown if available
+                    if (item.lines.isNotEmpty) ...[
+                      const Text(
+                        'Double-Entry Distribution',
+                        style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 8),
+                      Container(
+                        decoration: BoxDecoration(
+                          color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: isDark ? Colors.white10 : const Color(0xFFE2E8F0),
+                          ),
+                        ),
+                        child: Column(
+                          children: item.lines.map((l) {
+                            final isDebit = l.debitAmount > 0;
+                            return Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              decoration: BoxDecoration(
+                                border: Border(
+                                  bottom: BorderSide(
+                                    color: isDark ? Colors.white10 : Colors.grey.shade200,
+                                    width: 0.5,
+                                  ),
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      l.accountName,
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
+                                        color: isDark ? Colors.white70 : const Color(0xFF334155),
+                                      ),
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    isDebit
+                                        ? 'Dr ₹${_formatCurrency(l.debitAmount)}'
+                                        : 'Cr ₹${_formatCurrency(l.creditAmount)}',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                      color: isDebit
+                                          ? const Color(0xFF16A34A)
+                                          : const Color(0xFFDC2626),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+                    ],
+
+                    // Total Debit & Credit Summary Box
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: isDark ? Colors.white.withValues(alpha: 0.05) : const Color(0xFFF1F5F9),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Wrap(
+                        alignment: WrapAlignment.spaceBetween,
+                        runSpacing: 6,
+                        spacing: 12,
+                        children: [
+                          Text(
+                            'Total Debit: ₹${_formatCurrency(item.debit)}',
+                            style: const TextStyle(
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF16A34A),
+                            ),
+                          ),
+                          Text(
+                            'Total Credit: ₹${_formatCurrency(item.credit)}',
+                            style: const TextStyle(
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFFDC2626),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Action Buttons (Responsive Wrap)
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      alignment: WrapAlignment.end,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        OutlinedButton.icon(
+                          icon: const Icon(Icons.copy, size: 16),
+                          label: const Text('Copy No.'),
+                          onPressed: () {
+                            Clipboard.setData(ClipboardData(text: item.journalNo));
+                            AppFeedback.showSnackbar(ctx, message: 'Journal No. copied!');
+                          },
+                        ),
+                        OutlinedButton.icon(
+                          icon: const Icon(Icons.share, size: 16),
+                          label: const Text('Share'),
+                          onPressed: () {
+                            // ignore: deprecated_member_use
+                            Share.share(
+                              'Journal Entry: ${item.journalNo}\nDate: ${item.date} ${item.time}\nNarration: ${item.narration}\nDebit: ₹${item.debit}\nCredit: ₹${item.credit}',
+                            );
+                          },
+                        ),
+                        ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF15803D),
+                            foregroundColor: Colors.white,
+                          ),
+                          onPressed: () => Navigator.pop(ctx),
+                          child: const Text('Close'),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              );
+            },
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildDetailRow(
+    String label,
+    String value,
+    bool isDark,
+    bool isMobile,
+  ) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          width: isMobile ? 95 : 120,
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: isMobile ? 11.5 : 12,
+              fontWeight: FontWeight.w600,
+              color: isDark ? Colors.white60 : Colors.grey.shade600,
+            ),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            value,
+            style: TextStyle(
+              fontSize: isMobile ? 11.5 : 12,
+              fontWeight: FontWeight.bold,
+              color: isDark ? Colors.white : const Color(0xFF0F172A),
+            ),
+          ),
+        ),
+      ],
     );
   }
 

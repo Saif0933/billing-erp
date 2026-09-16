@@ -30,12 +30,14 @@ class _GstFileReturnDialogState extends ConsumerState<GstFileReturnDialog> {
     final item = widget.item;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
+    final screenSize = MediaQuery.of(context).size;
+
     return Dialog(
       insetPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 24),
       shape: RoundedRectangleBorder(borderRadius: AppRadius.lgBorder),
       backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
       child: Container(
-        constraints: const BoxConstraints(maxWidth: 540),
+        constraints: BoxConstraints(maxWidth: 540, maxHeight: screenSize.height * 0.88),
         padding: const EdgeInsets.all(AppSpacing.md),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -193,8 +195,10 @@ class _GstFileReturnDialogState extends ConsumerState<GstFileReturnDialog> {
             const SizedBox(height: 14),
 
             // Action Buttons
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
+            Wrap(
+              alignment: WrapAlignment.end,
+              spacing: 8,
+              runSpacing: 8,
               children: [
                 OutlinedButton.icon(
                   icon: const Icon(Icons.file_download, size: 15),
@@ -203,7 +207,6 @@ class _GstFileReturnDialogState extends ConsumerState<GstFileReturnDialog> {
                     AppFeedback.showSnackbar(context, message: '${item.returnType} JSON payload downloaded!');
                   },
                 ),
-                const SizedBox(width: 8),
                 if (item.status != GstReturnStatus.filed)
                   ElevatedButton.icon(
                     style: ElevatedButton.styleFrom(

@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_spacing.dart';
 import '../../../../core/constants/app_typography.dart';
-import '../../../../core/responsive/responsive.dart';
 import '../../../../core/models/billing_models.dart';
 import '../../../../shared/widgets/app_cards.dart';
 import '../../../../shared/widgets/app_table.dart';
@@ -179,36 +178,56 @@ class SupplierDetailPage extends ConsumerWidget {
               ),
 
               // Key Stats
-              GridView.count(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                crossAxisCount: Responsive.isMobile(context) ? 1 : 3,
-                crossAxisSpacing: AppSpacing.md,
-                mainAxisSpacing: AppSpacing.md,
-                childAspectRatio: Responsive.isMobile(context) ? 3.0 : 2.2,
-                children: [
-                  AppMetricCard(
-                    title: 'Current Outward Payable',
-                    value: '₹${supplier.currentBalance.toStringAsFixed(2)}',
-                    trendColor: supplier.currentBalance > 0
-                        ? Colors.red
-                        : Colors.green,
-                    trendLabel:
-                        supplier.currentBalance > 0 ? 'Payable' : 'Clear',
-                  ),
-                  AppMetricCard(
-                    title: 'Total Purchased Value',
-                    value:
-                        '₹${(totalPurchasesValue as num).toDouble().toStringAsFixed(2)}',
-                    subtitle: 'Confirmed Purchase Bills',
-                  ),
-                  AppMetricCard(
-                    title: 'Total Payments Cleared',
-                    value:
-                        '₹${(totalPaymentsValue as num).toDouble().toStringAsFixed(2)}',
-                    subtitle: 'Outward Payments',
-                  ),
-                ],
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final width = constraints.maxWidth;
+                  final double cardWidth;
+                  if (width < 600) {
+                    cardWidth = width;
+                  } else if (width < 900) {
+                    cardWidth = (width - AppSpacing.md) / 2;
+                  } else {
+                    cardWidth = (width - (AppSpacing.md * 2)) / 3;
+                  }
+
+                  return Wrap(
+                    spacing: AppSpacing.md,
+                    runSpacing: AppSpacing.md,
+                    children: [
+                      SizedBox(
+                        width: cardWidth,
+                        child: AppMetricCard(
+                          title: 'Current Outward Payable',
+                          value:
+                              '₹${supplier.currentBalance.toStringAsFixed(2)}',
+                          trendColor: supplier.currentBalance > 0
+                              ? Colors.red
+                              : Colors.green,
+                          trendLabel:
+                              supplier.currentBalance > 0 ? 'Payable' : 'Clear',
+                        ),
+                      ),
+                      SizedBox(
+                        width: cardWidth,
+                        child: AppMetricCard(
+                          title: 'Total Purchased Value',
+                          value:
+                              '₹${(totalPurchasesValue as num).toDouble().toStringAsFixed(2)}',
+                          subtitle: 'Confirmed Purchase Bills',
+                        ),
+                      ),
+                      SizedBox(
+                        width: cardWidth,
+                        child: AppMetricCard(
+                          title: 'Total Payments Cleared',
+                          value:
+                              '₹${(totalPaymentsValue as num).toDouble().toStringAsFixed(2)}',
+                          subtitle: 'Outward Payments',
+                        ),
+                      ),
+                    ],
+                  );
+                },
               ),
 
               const SizedBox(height: AppSpacing.xl),
@@ -224,52 +243,69 @@ class SupplierDetailPage extends ConsumerWidget {
                           .copyWith(fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: AppSpacing.md),
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          child: Column(
+                    LayoutBuilder(
+                      builder: (context, constraints) {
+                        final isMobile = constraints.maxWidth < 600;
+
+                        final col1 = Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _buildInfoRow(
+                                'GSTIN:',
+                                supplier.gstin.isNotEmpty
+                                    ? supplier.gstin
+                                    : 'Unregistered'),
+                            _buildInfoRow(
+                                'PAN:',
+                                supplier.pan.isNotEmpty
+                                    ? supplier.pan
+                                    : 'N/A'),
+                            _buildInfoRow(
+                                'Email:',
+                                supplier.email.isNotEmpty
+                                    ? supplier.email
+                                    : 'N/A'),
+                            _buildInfoRow(
+                                'Mobile:',
+                                supplier.mobile.isNotEmpty
+                                    ? supplier.mobile
+                                    : 'N/A'),
+                          ],
+                        );
+
+                        final col2 = Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _buildInfoRow('Office/Warehouse Address:',
+                                supplier.address),
+                            _buildInfoRow('State / State Code:',
+                                '${supplier.state} (${supplier.stateCode})'),
+                            _buildInfoRow('Credit Terms:',
+                                '${supplier.creditTerms} Days'),
+                            _buildInfoRow('Supplier Group:',
+                                supplier.supplierGroup),
+                          ],
+                        );
+
+                        if (isMobile) {
+                          return Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              _buildInfoRow(
-                                  'GSTIN:',
-                                  supplier.gstin.isNotEmpty
-                                      ? supplier.gstin
-                                      : 'Unregistered'),
-                              _buildInfoRow(
-                                  'PAN:',
-                                  supplier.pan.isNotEmpty
-                                      ? supplier.pan
-                                      : 'N/A'),
-                              _buildInfoRow(
-                                  'Email:',
-                                  supplier.email.isNotEmpty
-                                      ? supplier.email
-                                      : 'N/A'),
-                              _buildInfoRow(
-                                  'Mobile:',
-                                  supplier.mobile.isNotEmpty
-                                      ? supplier.mobile
-                                      : 'N/A'),
+                              col1,
+                              col2,
                             ],
-                          ),
-                        ),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              _buildInfoRow('Office/Warehouse Address:',
-                                  supplier.address),
-                              _buildInfoRow('State / State Code:',
-                                  '${supplier.state} (${supplier.stateCode})'),
-                              _buildInfoRow('Credit Terms:',
-                                  '${supplier.creditTerms} Days'),
-                              _buildInfoRow('Supplier Group:',
-                                  supplier.supplierGroup),
-                            ],
-                          ),
-                        ),
-                      ],
+                          );
+                        }
+
+                        return Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(child: col1),
+                            const SizedBox(width: AppSpacing.md),
+                            Expanded(child: col2),
+                          ],
+                        );
+                      },
                     ),
                   ],
                 ),
@@ -279,6 +315,8 @@ class SupplierDetailPage extends ConsumerWidget {
 
               // Tabs
               TabBar(
+                isScrollable: true,
+                tabAlignment: TabAlignment.start,
                 tabs: const [
                   Tab(text: 'Ledger Statement'),
                   Tab(text: 'Purchase Bills'),
@@ -493,7 +531,7 @@ class SupplierDetailPage extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
-            width: 170,
+            width: 140,
             child: Text(
               label,
               style: const TextStyle(

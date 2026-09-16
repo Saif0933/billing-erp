@@ -48,11 +48,12 @@ class GstTaxLiabilityCard extends ConsumerWidget {
           ),
           const SizedBox(height: 16),
 
-          // Donut Chart & Legend Row
-          Row(
-            children: [
-              // Segmented Donut Chart with Center Text
-              SizedBox(
+          // Donut Chart & Legend Row / Stack
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final isNarrow = constraints.maxWidth < 360;
+
+              final chartWidget = SizedBox(
                 width: 125,
                 height: 125,
                 child: Stack(
@@ -88,24 +89,38 @@ class GstTaxLiabilityCard extends ConsumerWidget {
                     ),
                   ],
                 ),
-              ),
-              const SizedBox(width: 16),
+              );
 
-              // Legend
-              Expanded(
-                child: Column(
+              final legendWidget = Column(
+                children: [
+                  _buildLegendItem('Integrated Tax (IGST)', '₹${_formatCurrency(summary.igst)}', const Color(0xFFEF4444), isDark),
+                  const SizedBox(height: 8),
+                  _buildLegendItem('Central Tax (CGST)', '₹${_formatCurrency(summary.cgst)}', const Color(0xFF3B82F6), isDark),
+                  const SizedBox(height: 8),
+                  _buildLegendItem('State/UT Tax (SGST)', '₹${_formatCurrency(summary.sgst)}', const Color(0xFFF59E0B), isDark),
+                  const SizedBox(height: 8),
+                  _buildLegendItem('Cess', '₹${_formatCurrency(summary.cess)}', const Color(0xFF10B981), isDark),
+                ],
+              );
+
+              if (isNarrow) {
+                return Column(
                   children: [
-                    _buildLegendItem('Integrated Tax (IGST)', '₹${_formatCurrency(summary.igst)}', const Color(0xFFEF4444), isDark),
-                    const SizedBox(height: 8),
-                    _buildLegendItem('Central Tax (CGST)', '₹${_formatCurrency(summary.cgst)}', const Color(0xFF3B82F6), isDark),
-                    const SizedBox(height: 8),
-                    _buildLegendItem('State/UT Tax (SGST)', '₹${_formatCurrency(summary.sgst)}', const Color(0xFFF59E0B), isDark),
-                    const SizedBox(height: 8),
-                    _buildLegendItem('Cess', '₹${_formatCurrency(summary.cess)}', const Color(0xFF10B981), isDark),
+                    Center(child: chartWidget),
+                    const SizedBox(height: 16),
+                    legendWidget,
                   ],
-                ),
-              ),
-            ],
+                );
+              }
+
+              return Row(
+                children: [
+                  chartWidget,
+                  const SizedBox(width: 16),
+                  Expanded(child: legendWidget),
+                ],
+              );
+            },
           ),
           const SizedBox(height: 16),
 

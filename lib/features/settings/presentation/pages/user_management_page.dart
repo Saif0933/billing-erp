@@ -34,89 +34,127 @@ class _UserManagementPageState extends ConsumerState<UserManagementPage> {
     showDialog(
       context: context,
       builder: (ctx) {
-        return AlertDialog(
-          title: const Text('Invite Team Member'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              AppTextField(
-                label: 'Full Name *',
-                controller: _nameController,
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
               ),
-              const SizedBox(height: AppSpacing.md),
-              AppTextField(
-                label: 'Email Address *',
-                controller: _emailController,
-                keyboardType: TextInputType.emailAddress,
+              title: const Text('Invite Team Member'),
+              content: SizedBox(
+                width: 420,
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      AppTextField(
+                        label: 'Full Name *',
+                        controller: _nameController,
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      AppTextField(
+                        label: 'Email Address *',
+                        controller: _emailController,
+                        keyboardType: TextInputType.emailAddress,
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      AppDropdownField<String>(
+                        label: 'Default Access Role *',
+                        value: _selectedRole,
+                        items: const [
+                          DropdownMenuItem(
+                            value: 'owner',
+                            child: Text(
+                              'Owner (Full Admin Access)',
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          DropdownMenuItem(
+                            value: 'admin',
+                            child: Text(
+                              'Manager / Administrator',
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          DropdownMenuItem(
+                            value: 'accountant',
+                            child: Text(
+                              'Accountant (Finance & GST)',
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          DropdownMenuItem(
+                            value: 'salesUser',
+                            child: Text(
+                              'Sales Billing Operator',
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          DropdownMenuItem(
+                            value: 'inventoryUser',
+                            child: Text(
+                              'Inventory Stock Keeper',
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                        onChanged: (role) {
+                          if (role != null) {
+                            setDialogState(() => _selectedRole = role);
+                            setState(() => _selectedRole = role);
+                          }
+                        },
+                      ),
+                    ],
+                  ),
+                ),
               ),
-              const SizedBox(height: AppSpacing.md),
-              AppDropdownField<String>(
-                label: 'Default Access Role *',
-                value: _selectedRole,
-                items: const [
-                  DropdownMenuItem(
-                      value: 'owner', child: Text('Owner (Full Admin Access)')),
-                  DropdownMenuItem(
-                      value: 'admin', child: Text('Manager / Administrator')),
-                  DropdownMenuItem(
-                      value: 'accountant',
-                      child: Text('Accountant (Finance & GST)')),
-                  DropdownMenuItem(
-                      value: 'salesUser',
-                      child: Text('Sales Billing Operator')),
-                  DropdownMenuItem(
-                      value: 'inventoryUser',
-                      child: Text('Inventory Stock Keeper')),
-                ],
-                onChanged: (role) {
-                  if (role != null) setState(() => _selectedRole = role);
-                },
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('Cancel'),
-            ),
-            AppButton(
-              label: 'Send Invitation',
-              onPressed: () async {
-                if (_nameController.text.isEmpty ||
-                    _emailController.text.isEmpty) {
-                  AppFeedback.showSnackbar(context,
-                      message: 'Please fill in all fields!', isError: true);
-                  return;
-                }
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  child: const Text('Cancel'),
+                ),
+                AppButton(
+                  label: 'Send Invitation',
+                  onPressed: () async {
+                    if (_nameController.text.isEmpty ||
+                        _emailController.text.isEmpty) {
+                      AppFeedback.showSnackbar(context,
+                          message: 'Please fill in all fields!', isError: true);
+                      return;
+                    }
 
-                final user = {
-                  'name': _nameController.text,
-                  'email': _emailController.text,
-                  'role': _selectedRole,
-                  'permissions': {
-                    'view': true,
-                    'create': true,
-                    'edit': _selectedRole != 'inventoryUser',
-                    'delete': _selectedRole == 'owner',
-                    'print': true,
-                    'export': _selectedRole == 'owner' ||
-                        _selectedRole == 'accountant',
-                    'cancel': false,
-                    'approve': false,
-                  }
-                };
+                    final user = {
+                      'name': _nameController.text,
+                      'email': _emailController.text,
+                      'role': _selectedRole,
+                      'permissions': {
+                        'view': true,
+                        'create': true,
+                        'edit': _selectedRole != 'inventoryUser',
+                        'delete': _selectedRole == 'owner',
+                        'print': true,
+                        'export': _selectedRole == 'owner' ||
+                            _selectedRole == 'accountant',
+                        'cancel': false,
+                        'approve': false,
+                      }
+                    };
 
-                await ref
-                    .read(billingRepositoryProvider.notifier)
-                    .inviteUser(user);
-                if (ctx.mounted) {
-                  Navigator.pop(ctx);
-                  AppFeedback.showSnackbar(ctx,
-                      message: 'Invitation email dispatched successfully!');
-                }
-              },
-            ),
-          ],
+                    await ref
+                        .read(billingRepositoryProvider.notifier)
+                        .inviteUser(user);
+                    if (ctx.mounted) {
+                      Navigator.pop(ctx);
+                      AppFeedback.showSnackbar(ctx,
+                          message: 'Invitation email dispatched successfully!');
+                    }
+                  },
+                ),
+              ],
+            );
+          },
         );
       },
     );
