@@ -1058,16 +1058,6 @@ class _ExpensePageState extends ConsumerState<ExpensePage> {
     final isMobile = Responsive.isMobile(context);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Expenses'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh_rounded),
-            tooltip: 'Refresh',
-            onPressed: _loadExpenses,
-          ),
-        ],
-      ),
       body: RefreshIndicator(
         onRefresh: _loadExpenses,
         child: SingleChildScrollView(
@@ -1084,6 +1074,11 @@ class _ExpensePageState extends ConsumerState<ExpensePage> {
                     'Record operating expenses (electricity, rent, packaging) to track cash outflows.',
                 breadcrumbs: const ['Dashboard', 'Expenses'],
                 actions: [
+                  IconButton(
+                    icon: const Icon(Icons.refresh_rounded),
+                    tooltip: 'Refresh',
+                    onPressed: _loadExpenses,
+                  ),
                   AppButton(
                     label: 'Record Expense',
                     icon: Icons.add_circle_outline,

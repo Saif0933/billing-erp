@@ -92,16 +92,6 @@ class _ServicePageState extends ConsumerState<ServicePage> {
     ];
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Services & Work Master'),
-        actions: [
-          IconButton(
-            tooltip: 'Refresh Services Directory',
-            icon: const Icon(Icons.refresh),
-            onPressed: () => serviceNotifier.loadServices(refresh: true),
-          ),
-        ],
-      ),
       body: SingleChildScrollView(
         padding: EdgeInsets.all(
           Responsive.isMobile(context) ? AppSpacing.md : AppSpacing.lg,
@@ -119,6 +109,11 @@ class _ServicePageState extends ConsumerState<ServicePage> {
                 'Services & Work',
               ],
               actions: [
+                IconButton(
+                  tooltip: 'Refresh Services Directory',
+                  icon: const Icon(Icons.refresh),
+                  onPressed: () => serviceNotifier.loadServices(refresh: true),
+                ),
                 AppButton(
                   label: 'Add Service',
                   icon: Icons.add_circle_outline,

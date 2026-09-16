@@ -146,27 +146,6 @@ class _ProductPageState extends ConsumerState<ProductPage> {
     }).toList();
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Products & Items'),
-        actions: [
-          IconButton(
-            tooltip: 'Refresh Products',
-            icon: _isRefreshing
-                ? const SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.refresh),
-            onPressed: _isRefreshing ? null : _refreshProducts,
-          ),
-          IconButton(
-            icon: const Icon(Icons.design_services_outlined),
-            onPressed: () => context.push('/services'),
-            tooltip: 'View Service Master',
-          ),
-        ],
-      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
@@ -178,6 +157,22 @@ class _ProductPageState extends ConsumerState<ProductPage> {
                   'Manage physical inventory stock, HSN classification, and multiple price lists.',
               breadcrumbs: const ['Dashboard', 'Items', 'Products'],
               actions: [
+                IconButton(
+                  tooltip: 'Refresh Products',
+                  icon: _isRefreshing
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.refresh),
+                  onPressed: _isRefreshing ? null : _refreshProducts,
+                ),
+                IconButton(
+                  icon: const Icon(Icons.design_services_outlined),
+                  onPressed: () => context.push('/services'),
+                  tooltip: 'View Service Master',
+                ),
                 AppButton(
                   label: 'New Product',
                   icon: Icons.add_box_outlined,

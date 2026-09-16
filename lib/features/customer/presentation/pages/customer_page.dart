@@ -82,16 +82,6 @@ class _CustomerPageState extends ConsumerState<CustomerPage> {
     final metrics = customerState.metrics;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Customers'),
-        actions: [
-          IconButton(
-            tooltip: 'Refresh Customer Directory',
-            icon: const Icon(Icons.refresh),
-            onPressed: () => customerNotifier.loadCustomers(refresh: true),
-          ),
-        ],
-      ),
       body: SingleChildScrollView(
         padding: EdgeInsets.all(
           Responsive.isMobile(context) ? AppSpacing.md : AppSpacing.lg,
@@ -105,6 +95,11 @@ class _CustomerPageState extends ConsumerState<CustomerPage> {
                   'Manage client profiles, GSTIN details, outstanding dues, and party ledgers.',
               breadcrumbs: const ['Dashboard', 'Business Masters', 'Customers'],
               actions: [
+                IconButton(
+                  tooltip: 'Refresh Customer Directory',
+                  icon: const Icon(Icons.refresh),
+                  onPressed: () => customerNotifier.loadCustomers(refresh: true),
+                ),
                 AppButton(
                   label: 'Add Customer',
                   icon: Icons.person_add_alt_1_outlined,

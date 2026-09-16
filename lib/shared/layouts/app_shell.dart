@@ -24,21 +24,6 @@ class AppShell extends ConsumerStatefulWidget {
 class _AppShellState extends ConsumerState<AppShell> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
-  static const Set<String> _tabRoutes = {
-    '/dashboard',
-    '/sales',
-    '/pos',
-    '/inventory',
-  };
-
-  bool _isTabRoute(String location) {
-    final cleanPath = location.split('?').first;
-    final normalized = cleanPath.endsWith('/') && cleanPath.length > 1
-        ? cleanPath.substring(0, cleanPath.length - 1)
-        : cleanPath;
-    return _tabRoutes.contains(normalized);
-  }
-
   int _calculateSelectedIndex(String location) {
     if (location == '/dashboard') return 0;
     if (location == '/sales') return 1;
@@ -362,31 +347,27 @@ class _AppShellState extends ConsumerState<AppShell> {
 
     final isMobile = ResponsiveBreakpoints.isMobile(context);
     final isPosTerminal = currentLoc == '/pos' || currentLoc.startsWith('/pos');
-    final isTabScreen = _isTabRoute(currentLoc) && !isPosTerminal;
+    final showTopHeader = !isPosTerminal;
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       key: _scaffoldKey,
-      appBar: isTabScreen
+      appBar: showTopHeader
           ? ResponsiveTopHeader(scaffoldKey: _scaffoldKey)
           : null,
-      drawer: (isMobile && isTabScreen) ? const MobileDrawer() : null,
+      drawer: (isMobile && showTopHeader) ? const MobileDrawer() : null,
       body: Row(
         children: [
           // Sidebar for Desktop & Tablet (Hidden on POS Sales Terminal for full screen width)
           if (!isMobile && !isPosTerminal) const DesktopSidebar(),
           // Content Area
           Expanded(
-            child: SafeArea(
-              top: !isTabScreen && !isPosTerminal,
-              bottom: !isTabScreen && !isPosTerminal,
-              child: widget.child,
-            ),
+            child: widget.child,
           ),
         ],
       ),
-      bottomNavigationBar: (isMobile && isTabScreen)
+      bottomNavigationBar: (isMobile && showTopHeader)
           ? Container(
               decoration: BoxDecoration(
                 color: isDark ? const Color(0xFF0B132B) : Colors.white,

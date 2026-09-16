@@ -82,16 +82,6 @@ class _SupplierPageState extends ConsumerState<SupplierPage> {
     final metrics = supplierState.metrics;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Suppliers'),
-        actions: [
-          IconButton(
-            tooltip: 'Refresh Supplier Directory',
-            icon: const Icon(Icons.refresh),
-            onPressed: () => supplierNotifier.loadSuppliers(refresh: true),
-          ),
-        ],
-      ),
       body: SingleChildScrollView(
         padding: EdgeInsets.all(
           Responsive.isMobile(context) ? AppSpacing.md : AppSpacing.lg,
@@ -105,6 +95,11 @@ class _SupplierPageState extends ConsumerState<SupplierPage> {
                   'Manage vendor profiles, purchase bills, payable dues, and supplier ledgers.',
               breadcrumbs: const ['Dashboard', 'Business Masters', 'Suppliers'],
               actions: [
+                IconButton(
+                  tooltip: 'Refresh Supplier Directory',
+                  icon: const Icon(Icons.refresh),
+                  onPressed: () => supplierNotifier.loadSuppliers(refresh: true),
+                ),
                 AppButton(
                   label: 'Add Supplier',
                   icon: Icons.local_shipping_outlined,

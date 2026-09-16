@@ -81,7 +81,6 @@ class _PurchasePageState extends ConsumerState<PurchasePage> {
     final purchases = purchaseState.purchases;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Purchase & Bills')),
       body: RefreshIndicator(
         onRefresh: () => ref.read(purchaseProvider.notifier).loadPurchases(),
         child: SingleChildScrollView(
