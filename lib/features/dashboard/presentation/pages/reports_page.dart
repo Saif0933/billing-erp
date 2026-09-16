@@ -6,6 +6,7 @@ import '../../../../core/constants/app_typography.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/models/billing_models.dart';
 import '../../../../core/responsive/responsive.dart';
+import '../../../../core/constants/app_radius.dart';
 import '../../../../shared/widgets/app_button.dart';
 import '../../../../shared/widgets/app_cards.dart';
 import '../../../../shared/widgets/app_input_fields.dart';
@@ -117,11 +118,58 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
   }
 
   Future<void> _pickDateRange(DateTimeRange currentRange) async {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final picked = await showDateRangePicker(
       context: context,
       firstDate: DateTime(2020),
       lastDate: DateTime(2030),
       initialDateRange: currentRange,
+      builder: (context, child) {
+        return Center(
+          child: Container(
+            constraints: const BoxConstraints(
+              maxWidth: 480,
+              maxHeight: 560,
+            ),
+            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.35),
+                  blurRadius: 24,
+                  offset: const Offset(0, 8),
+                ),
+              ],
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(16),
+              child: Theme(
+                data: Theme.of(context).copyWith(
+                  scaffoldBackgroundColor:
+                      isDark ? const Color(0xFF1E293B) : Colors.white,
+                  colorScheme: isDark
+                      ? const ColorScheme.dark(
+                          primary: Color(0xFF2E7D32),
+                          onPrimary: Colors.white,
+                          surface: Color(0xFF1E293B),
+                          onSurface: Colors.white,
+                          secondary: Color(0xFF2E7D32),
+                        )
+                      : const ColorScheme.light(
+                          primary: Color(0xFF2E7D32),
+                          onPrimary: Colors.white,
+                          surface: Colors.white,
+                          onSurface: Color(0xFF0F172A),
+                          secondary: Color(0xFF2E7D32),
+                        ),
+                ),
+                child: child ?? const SizedBox(),
+              ),
+            ),
+          ),
+        );
+      },
     );
     if (picked != null) {
       ref.read(reportsStateProvider.notifier).updateDateRange(picked);
@@ -190,63 +238,81 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
     final dateLabel =
         '${_formatDate(reportsState.dateRange.start)} - ${_formatDate(reportsState.dateRange.end)}';
 
-    final warehouseDropdown = AppDropdownField<String>(
-      label: 'Filter by Warehouse',
-      value: reportsState.warehouseId,
-      items: [
-        const DropdownMenuItem(
-          value: 'all',
-          child: Text('All Locations / Warehouses'),
+    final dateRangeWidget = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          'Date Range',
+          style: AppTypography.titleSmall.copyWith(
+            color: isDark
+                ? AppColors.textDarkSecondary
+                : AppColors.textLightSecondary,
+          ),
         ),
-        ...billingState.warehouses.map(
-          (wh) => DropdownMenuItem(value: wh.id, child: Text(wh.name)),
+        const SizedBox(height: AppSpacing.xs),
+        InkWell(
+          onTap: () => _pickDateRange(reportsState.dateRange),
+          borderRadius: AppRadius.smBorder,
+          child: Container(
+            height: 48,
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.md,
+            ),
+            decoration: BoxDecoration(
+              color: isDark ? AppColors.surfaceDark : Colors.white,
+              borderRadius: AppRadius.smBorder,
+              border: Border.all(
+                color: isDark ? AppColors.borderDark : AppColors.borderLight,
+                width: 1,
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(
+                  Icons.calendar_today_outlined,
+                  size: 16,
+                  color: Color(0xFF2E7D32),
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                Text(
+                  dateLabel,
+                  style: AppTypography.bodyMedium.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: isDark
+                        ? AppColors.textDarkPrimary
+                        : AppColors.textLightPrimary,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ],
-      onChanged: (val) {
-        if (val != null) {
-          ref.read(reportsStateProvider.notifier).updateWarehouse(val);
-        }
-      },
     );
 
-    final dateRangeButton = OutlinedButton.icon(
-      icon: const Icon(Icons.calendar_today, size: 14),
-      label: Text(
-        dateLabel,
-        style: TextStyle(fontSize: isMobile ? 12 : 14),
-        overflow: TextOverflow.ellipsis,
+    final warehouseWidget = SizedBox(
+      width: 260,
+      child: AppDropdownField<String>(
+        label: 'Filter by Warehouse',
+        value: reportsState.warehouseId,
+        items: [
+          const DropdownMenuItem(
+            value: 'all',
+            child: Text('All Locations / Warehouses'),
+          ),
+          ...billingState.warehouses.map(
+            (wh) => DropdownMenuItem(value: wh.id, child: Text(wh.name)),
+          ),
+        ],
+        onChanged: (val) {
+          if (val != null) {
+            ref.read(reportsStateProvider.notifier).updateWarehouse(val);
+          }
+        },
       ),
-      style: OutlinedButton.styleFrom(
-        padding: EdgeInsets.symmetric(
-          horizontal: isMobile ? 12 : 16,
-          vertical: isMobile ? 12 : 14,
-        ),
-        side: BorderSide(
-          color: isDark ? AppColors.borderDark : Colors.grey.shade300,
-        ),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
-        ),
-      ),
-      onPressed: () => _pickDateRange(reportsState.dateRange),
     );
-
-    final filterBarContent = isMobile
-        ? Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              dateRangeButton,
-              const SizedBox(height: 10),
-              warehouseDropdown,
-            ],
-          )
-        : Row(
-            children: [
-              Flexible(child: dateRangeButton),
-              const SizedBox(width: 12),
-              SizedBox(width: isTablet ? 220 : 260, child: warehouseDropdown),
-            ],
-          );
 
     return DefaultTabController(
       length: 4,
@@ -305,7 +371,7 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
               width: double.infinity,
               padding: EdgeInsets.symmetric(
                 horizontal: isMobile ? AppSpacing.md : AppSpacing.lg,
-                vertical: AppSpacing.md,
+                vertical: AppSpacing.sm + 2,
               ),
               decoration: BoxDecoration(
                 color: isDark ? AppColors.surfaceDark : Colors.grey.shade50,
@@ -315,7 +381,18 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
                   ),
                 ),
               ),
-              child: filterBarContent,
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                physics: const BouncingScrollPhysics(),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    dateRangeWidget,
+                    const SizedBox(width: AppSpacing.md),
+                    warehouseWidget,
+                  ],
+                ),
+              ),
             ),
             if (reportsState.isLoading)
               const LinearProgressIndicator(
@@ -491,6 +568,7 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
             padding: EdgeInsets.zero,
             child: AppTable<Invoice>(
               items: invoices,
+              minWidth: 850,
               emptyMessage: isLoading
                   ? 'Loading sales records from server...'
                   : 'No sales recorded for the selected period.',
@@ -498,28 +576,38 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
               columns: [
                 TableColumnSpec<Invoice>(
                   label: 'Invoice No',
+                  flex: 3,
                   cellBuilder: (inv) => Text(
                     inv.invoiceNumber,
                     style: const TextStyle(fontWeight: FontWeight.bold),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
                 TableColumnSpec<Invoice>(
                   label: 'Date',
+                  flex: 1,
                   cellBuilder: (inv) => Text(_formatDate(inv.invoiceDate)),
                 ),
                 TableColumnSpec<Invoice>(
                   label: 'Customer',
                   flex: 2,
-                  cellBuilder: (inv) => Text(inv.customerName),
+                  cellBuilder: (inv) => Text(
+                    inv.customerName,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
                 TableColumnSpec<Invoice>(
                   label: 'Taxable Amt',
+                  flex: 1,
                   isNumeric: true,
                   cellBuilder: (inv) =>
                       Text('₹${inv.taxableAmount.toStringAsFixed(2)}'),
                 ),
                 TableColumnSpec<Invoice>(
                   label: 'GST (₹)',
+                  flex: 1,
                   isNumeric: true,
                   cellBuilder: (inv) => Text(
                     '₹${(inv.cgst + inv.sgst + inv.igst).toStringAsFixed(2)}',
@@ -527,6 +615,7 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
                 ),
                 TableColumnSpec<Invoice>(
                   label: 'Grand Total',
+                  flex: 1,
                   isNumeric: true,
                   cellBuilder: (inv) => Text(
                     '₹${inv.grandTotal.toStringAsFixed(2)}',
@@ -654,6 +743,7 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
             padding: EdgeInsets.zero,
             child: AppTable<Purchase>(
               items: purchases,
+              minWidth: 850,
               emptyMessage: isLoading
                   ? 'Loading purchase records from server...'
                   : 'No purchase bills logged for the selected period.',
@@ -661,28 +751,38 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
               columns: [
                 TableColumnSpec<Purchase>(
                   label: 'Bill No',
+                  flex: 3,
                   cellBuilder: (p) => Text(
                     p.purchaseNumber,
                     style: const TextStyle(fontWeight: FontWeight.bold),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
                 TableColumnSpec<Purchase>(
                   label: 'Date',
+                  flex: 1,
                   cellBuilder: (p) => Text(_formatDate(p.purchaseDate)),
                 ),
                 TableColumnSpec<Purchase>(
                   label: 'Supplier',
                   flex: 2,
-                  cellBuilder: (p) => Text(p.supplierName),
+                  cellBuilder: (p) => Text(
+                    p.supplierName,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
                 TableColumnSpec<Purchase>(
                   label: 'Taxable Value',
+                  flex: 1,
                   isNumeric: true,
                   cellBuilder: (p) =>
                       Text('₹${p.taxableAmount.toStringAsFixed(2)}'),
                 ),
                 TableColumnSpec<Purchase>(
                   label: 'GST Input (₹)',
+                  flex: 1,
                   isNumeric: true,
                   cellBuilder: (p) => Text(
                     '₹${(p.cgst + p.sgst + p.igst).toStringAsFixed(2)}',
@@ -690,6 +790,7 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
                 ),
                 TableColumnSpec<Purchase>(
                   label: 'Total Value',
+                  flex: 1,
                   isNumeric: true,
                   cellBuilder: (p) => Text(
                     '₹${p.grandTotal.toStringAsFixed(2)}',
@@ -1018,6 +1119,7 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
             padding: EdgeInsets.zero,
             child: AppTable<Product>(
               items: products,
+              minWidth: 850,
               emptyMessage: isLoading
                   ? 'Calculating stock asset valuation from server...'
                   : 'No products catalogued in selected warehouse.',
@@ -1025,18 +1127,26 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
               columns: [
                 TableColumnSpec<Product>(
                   label: 'Product Name',
-                  flex: 2,
+                  flex: 3,
                   cellBuilder: (p) => Text(
                     p.name,
                     style: const TextStyle(fontWeight: FontWeight.bold),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
                 TableColumnSpec<Product>(
                   label: 'SKU Code',
-                  cellBuilder: (p) => Text(p.sku),
+                  flex: 2,
+                  cellBuilder: (p) => Text(
+                    p.sku,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
                 TableColumnSpec<Product>(
                   label: 'Warehouse Stock',
+                  flex: 2,
                   isNumeric: true,
                   cellBuilder: (p) {
                     final qty = _stockQty(p);
@@ -1045,12 +1155,14 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
                 ),
                 TableColumnSpec<Product>(
                   label: 'Cost Price',
+                  flex: 1,
                   isNumeric: true,
                   cellBuilder: (p) =>
                       Text('₹${p.purchasePrice.toStringAsFixed(2)}'),
                 ),
                 TableColumnSpec<Product>(
                   label: 'Asset Value (Cost)',
+                  flex: 2,
                   isNumeric: true,
                   cellBuilder: (p) {
                     final qty = _stockQty(p);
