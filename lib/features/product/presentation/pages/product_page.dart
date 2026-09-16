@@ -39,23 +39,24 @@ class _ProductPageState extends ConsumerState<ProductPage> {
     try {
       final apiService = ref.read(productApiServiceProvider);
       final res = await apiService.getProducts(limit: 100);
-      final billingProducts =
-          res.products.map((dto) => dto.toBillingProduct()).toList();
-      ref
-          .read(billingRepositoryProvider.notifier)
-          .setProducts(billingProducts);
+      final billingProducts = res.products
+          .map((dto) => dto.toBillingProduct())
+          .toList();
+      ref.read(billingRepositoryProvider.notifier).setProducts(billingProducts);
       ref.read(productListingProvider.notifier).loadProducts(refresh: true);
       if (mounted) {
         AppFeedback.showSnackbar(
           context,
-          message: 'Product directory refreshed (${billingProducts.length} items)',
+          message:
+              'Product directory refreshed (${billingProducts.length} items)',
         );
       }
     } catch (e) {
       if (mounted) {
         AppFeedback.showSnackbar(
           context,
-          message: 'Refresh failed: ${e.toString().replaceAll('Exception:', '').trim()}',
+          message:
+              'Refresh failed: ${e.toString().replaceAll('Exception:', '').trim()}',
           isError: true,
         );
       }
@@ -98,7 +99,8 @@ class _ProductPageState extends ConsumerState<ProductPage> {
                 if (mounted) {
                   AppFeedback.showSnackbar(
                     context,
-                    message: 'Product "${product.name}" processed successfully.',
+                    message:
+                        'Product "${product.name}" processed successfully.',
                   );
                 }
               } catch (e) {
@@ -126,17 +128,17 @@ class _ProductPageState extends ConsumerState<ProductPage> {
     // Get categories for filtering
     final categories = {
       'All',
-      ...allProducts.map((p) => p.category).where((cat) => cat.isNotEmpty)
+      ...allProducts.map((p) => p.category).where((cat) => cat.isNotEmpty),
     };
 
     // Filter products
     final filteredProducts = allProducts.where((p) {
-      final matchesSearch = p.name
-              .toLowerCase()
-              .contains(_searchQuery.toLowerCase()) ||
+      final matchesSearch =
+          p.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
           p.code.toLowerCase().contains(_searchQuery.toLowerCase()) ||
           p.barcode.contains(_searchQuery);
-      final matchesCategory = _selectedCategoryFilter == 'All' ||
+      final matchesCategory =
+          _selectedCategoryFilter == 'All' ||
           p.category == _selectedCategoryFilter;
       final matchesLowStock =
           !_showOnlyLowStock || (p.currentStock <= p.minStockLevel);
@@ -191,7 +193,8 @@ class _ProductPageState extends ConsumerState<ProductPage> {
                       Expanded(
                         child: AppTextField(
                           label: 'Search Products',
-                          hintText: 'Search by product name, code, or barcode...',
+                          hintText:
+                              'Search by product name, code, or barcode...',
                           controller: _searchController,
                           prefixIcon: const Icon(Icons.search),
                           onChanged: (val) =>
@@ -207,13 +210,15 @@ class _ProductPageState extends ConsumerState<ProductPage> {
                           value: _selectedCategoryFilter,
                           items: categories.map((cat) {
                             return DropdownMenuItem(
-                                value: cat,
-                                child: Text(cat == 'All'
-                                    ? 'All Categories'
-                                    : cat));
+                              value: cat,
+                              child: Text(
+                                cat == 'All' ? 'All Categories' : cat,
+                              ),
+                            );
                           }).toList(),
                           onChanged: (val) => setState(
-                              () => _selectedCategoryFilter = val ?? 'All'),
+                            () => _selectedCategoryFilter = val ?? 'All',
+                          ),
                         ),
                       ),
                     ],
@@ -222,7 +227,8 @@ class _ProductPageState extends ConsumerState<ProductPage> {
                   CheckboxListTile(
                     title: const Text('Show only Low Stock Alert items'),
                     subtitle: const Text(
-                        'Filters items where Current Stock <= Minimum Stock Level'),
+                      'Filters items where Current Stock <= Minimum Stock Level',
+                    ),
                     value: _showOnlyLowStock,
                     onChanged: (val) =>
                         setState(() => _showOnlyLowStock = val ?? false),
@@ -241,12 +247,19 @@ class _ProductPageState extends ConsumerState<ProductPage> {
                         cellBuilder: (p) => Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(p.name,
-                                style: const TextStyle(
-                                    fontWeight: FontWeight.bold)),
-                            Text('Code: ${p.code} | HSN: ${p.hsnCode}',
-                                style: const TextStyle(
-                                    fontSize: 11, color: Colors.grey)),
+                            Text(
+                              p.name,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            Text(
+                              'Code: ${p.code} | HSN: ${p.hsnCode}',
+                              style: const TextStyle(
+                                fontSize: 11,
+                                color: Colors.grey,
+                              ),
+                            ),
                           ],
                         ),
                       ),
@@ -290,9 +303,10 @@ class _ProductPageState extends ConsumerState<ProductPage> {
                                 const Text(
                                   'LOW STOCK',
                                   style: TextStyle(
-                                      color: Colors.red,
-                                      fontSize: 9,
-                                      fontWeight: FontWeight.bold),
+                                    color: Colors.red,
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                             ],
                           );
@@ -310,8 +324,11 @@ class _ProductPageState extends ConsumerState<ProductPage> {
                                   context.push('/products/edit/${p.id}'),
                             ),
                             IconButton(
-                              icon: const Icon(Icons.delete_outline,
-                                  size: 18, color: Colors.red),
+                              icon: const Icon(
+                                Icons.delete_outline,
+                                size: 18,
+                                color: Colors.red,
+                              ),
                               tooltip: 'Delete Product',
                               onPressed: () => _confirmDelete(p),
                             ),
@@ -329,22 +346,31 @@ class _ProductPageState extends ConsumerState<ProductPage> {
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 Expanded(
-                                    child: Text(p.name,
-                                        style: AppTypography.titleMedium
-                                            .copyWith(
-                                                fontWeight: FontWeight.bold))),
+                                  child: Text(
+                                    p.name,
+                                    style: AppTypography.titleMedium.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
                                 Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     IconButton(
-                                      icon: const Icon(Icons.edit_outlined,
-                                          size: 18),
-                                      onPressed: () =>
-                                          context.push('/products/edit/${p.id}'),
+                                      icon: const Icon(
+                                        Icons.edit_outlined,
+                                        size: 18,
+                                      ),
+                                      onPressed: () => context.push(
+                                        '/products/edit/${p.id}',
+                                      ),
                                     ),
                                     IconButton(
-                                      icon: const Icon(Icons.delete_outline,
-                                          size: 18, color: Colors.red),
+                                      icon: const Icon(
+                                        Icons.delete_outline,
+                                        size: 18,
+                                        color: Colors.red,
+                                      ),
                                       onPressed: () => _confirmDelete(p),
                                     ),
                                   ],
@@ -353,9 +379,11 @@ class _ProductPageState extends ConsumerState<ProductPage> {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                                'Code: ${p.code} • SKU: ${p.sku} • HSN: ${p.hsnCode}'),
+                              'Code: ${p.code} • SKU: ${p.sku} • HSN: ${p.hsnCode}',
+                            ),
                             Text(
-                                'Category: ${p.category} • GST: ${p.gstRate}%'),
+                              'Category: ${p.category} • GST: ${p.gstRate}%',
+                            ),
                             const Divider(),
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -364,12 +392,16 @@ class _ProductPageState extends ConsumerState<ProductPage> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                        'Selling Price: ₹${p.sellingPrice.toStringAsFixed(2)}',
-                                        style: const TextStyle(fontSize: 12)),
+                                      'Selling Price: ₹${p.sellingPrice.toStringAsFixed(2)}',
+                                      style: const TextStyle(fontSize: 12),
+                                    ),
                                     Text(
-                                        'Purchase Price: ₹${p.purchasePrice.toStringAsFixed(2)}',
-                                        style: const TextStyle(
-                                            fontSize: 12, color: Colors.grey)),
+                                      'Purchase Price: ₹${p.purchasePrice.toStringAsFixed(2)}',
+                                      style: const TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.grey,
+                                      ),
+                                    ),
                                   ],
                                 ),
                                 Column(
@@ -379,17 +411,19 @@ class _ProductPageState extends ConsumerState<ProductPage> {
                                       'Stock: ${p.currentStock} ${p.primaryUnit}',
                                       style: TextStyle(
                                         fontWeight: FontWeight.bold,
-                                        color:
-                                            isLow ? Colors.red : Colors.green,
+                                        color: isLow
+                                            ? Colors.red
+                                            : Colors.green,
                                       ),
                                     ),
                                     if (isLow)
                                       const Text(
                                         'LOW STOCK ALERT',
                                         style: TextStyle(
-                                            color: Colors.red,
-                                            fontSize: 10,
-                                            fontWeight: FontWeight.bold),
+                                          color: Colors.red,
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.bold,
+                                        ),
                                       ),
                                   ],
                                 ),

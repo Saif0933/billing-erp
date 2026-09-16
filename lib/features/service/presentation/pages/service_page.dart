@@ -53,8 +53,7 @@ class _ServicePageState extends ConsumerState<ServicePage> {
                 if (mounted) {
                   AppFeedback.showSnackbar(
                     context,
-                    message:
-                        'Service "${service.name}" deleted successfully.',
+                    message: 'Service "${service.name}" deleted successfully.',
                   );
                 }
               } catch (e) {
@@ -114,7 +113,11 @@ class _ServicePageState extends ConsumerState<ServicePage> {
               title: 'Services Directory',
               description:
                   'Manage professional consulting, logistics, and labor service items with SAC codes and rates.',
-              breadcrumbs: const ['Dashboard', 'Business Masters', 'Services & Work'],
+              breadcrumbs: const [
+                'Dashboard',
+                'Business Masters',
+                'Services & Work',
+              ],
               actions: [
                 AppButton(
                   label: 'Add Service',
@@ -130,8 +133,12 @@ class _ServicePageState extends ConsumerState<ServicePage> {
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 crossAxisCount: Responsive.isMobile(context) ? 2 : 4,
-                crossAxisSpacing: Responsive.isMobile(context) ? AppSpacing.sm : AppSpacing.md,
-                mainAxisSpacing: Responsive.isMobile(context) ? AppSpacing.sm : AppSpacing.md,
+                crossAxisSpacing: Responsive.isMobile(context)
+                    ? AppSpacing.sm
+                    : AppSpacing.md,
+                mainAxisSpacing: Responsive.isMobile(context)
+                    ? AppSpacing.sm
+                    : AppSpacing.md,
                 childAspectRatio: Responsive.isMobile(context) ? 1.35 : 1.85,
                 children: [
                   AppMetricCard(
@@ -162,7 +169,8 @@ class _ServicePageState extends ConsumerState<ServicePage> {
             ],
 
             // Error notice with retry
-            if (serviceState.error != null && serviceState.error!.isNotEmpty) ...[
+            if (serviceState.error != null &&
+                serviceState.error!.isNotEmpty) ...[
               Container(
                 margin: const EdgeInsets.only(bottom: AppSpacing.md),
                 padding: const EdgeInsets.all(AppSpacing.md),
@@ -179,7 +187,9 @@ class _ServicePageState extends ConsumerState<ServicePage> {
                       child: Text(
                         'Using local cache: ${serviceState.error}',
                         style: TextStyle(
-                            color: Colors.amber.shade900, fontSize: 13),
+                          color: Colors.amber.shade900,
+                          fontSize: 13,
+                        ),
                       ),
                     ),
                     TextButton(
@@ -206,7 +216,8 @@ class _ServicePageState extends ConsumerState<ServicePage> {
                       Expanded(
                         child: AppTextField(
                           label: 'Search Services',
-                          hintText: 'Search by service name, reference code, or SAC code...',
+                          hintText:
+                              'Search by service name, reference code, or SAC code...',
                           controller: _searchController,
                           prefixIcon: const Icon(Icons.search),
                           onChanged: (val) =>
@@ -220,19 +231,26 @@ class _ServicePageState extends ConsumerState<ServicePage> {
                         child: AppDropdownField<String>(
                           label: 'Filter by Unit',
                           value: serviceState.selectedUnitFilter,
-                          items: {
-                            for (var unit in unitFilterOptions)
-                              unit: unit == 'All' ? 'All Units' : unit,
-                            if (serviceState.selectedUnitFilter.isNotEmpty &&
-                                !unitFilterOptions
-                                    .contains(serviceState.selectedUnitFilter))
-                              serviceState.selectedUnitFilter:
-                                  serviceState.selectedUnitFilter,
-                          }
-                              .entries
-                              .map((e) => DropdownMenuItem(
-                                  value: e.key, child: Text(e.value)))
-                              .toList(),
+                          items:
+                              {
+                                    for (var unit in unitFilterOptions)
+                                      unit: unit == 'All' ? 'All Units' : unit,
+                                    if (serviceState
+                                            .selectedUnitFilter
+                                            .isNotEmpty &&
+                                        !unitFilterOptions.contains(
+                                          serviceState.selectedUnitFilter,
+                                        ))
+                                      serviceState.selectedUnitFilter:
+                                          serviceState.selectedUnitFilter,
+                                  }.entries
+                                  .map(
+                                    (e) => DropdownMenuItem(
+                                      value: e.key,
+                                      child: Text(e.value),
+                                    ),
+                                  )
+                                  .toList(),
                           onChanged: (val) =>
                               serviceNotifier.setUnitFilter(val ?? 'All'),
                         ),
@@ -288,7 +306,9 @@ class _ServicePageState extends ConsumerState<ServicePage> {
                         label: 'Billing Unit',
                         cellBuilder: (s) => Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 3),
+                            horizontal: 8,
+                            vertical: 3,
+                          ),
                           decoration: BoxDecoration(
                             color: Colors.teal.shade50,
                             borderRadius: BorderRadius.circular(4),
@@ -296,7 +316,9 @@ class _ServicePageState extends ConsumerState<ServicePage> {
                           child: Text(
                             s.unit.isNotEmpty ? s.unit : 'Hour',
                             style: TextStyle(
-                                fontSize: 12, color: Colors.teal.shade800),
+                              fontSize: 12,
+                              color: Colors.teal.shade800,
+                            ),
                           ),
                         ),
                       ),
@@ -305,9 +327,7 @@ class _ServicePageState extends ConsumerState<ServicePage> {
                         isNumeric: true,
                         cellBuilder: (s) => Text(
                           '₹${s.rate.toStringAsFixed(2)}',
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                          ),
+                          style: const TextStyle(fontWeight: FontWeight.bold),
                         ),
                       ),
                       TableColumnSpec<Service>(
@@ -326,7 +346,9 @@ class _ServicePageState extends ConsumerState<ServicePage> {
                         label: 'GST Rate',
                         cellBuilder: (s) => Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 6, vertical: 2),
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
                           decoration: BoxDecoration(
                             color: Colors.indigo.shade50,
                             borderRadius: BorderRadius.circular(4),
@@ -353,8 +375,11 @@ class _ServicePageState extends ConsumerState<ServicePage> {
                                   context.push('/services/edit/${s.id}'),
                             ),
                             IconButton(
-                              icon: const Icon(Icons.delete_outline,
-                                  size: 18, color: Colors.red),
+                              icon: const Icon(
+                                Icons.delete_outline,
+                                size: 18,
+                                color: Colors.red,
+                              ),
                               tooltip: 'Delete Service',
                               onPressed: () => _confirmDelete(s),
                             ),
@@ -384,7 +409,9 @@ class _ServicePageState extends ConsumerState<ServicePage> {
                                 const SizedBox(width: AppSpacing.xs),
                                 Container(
                                   padding: const EdgeInsets.symmetric(
-                                      horizontal: 6, vertical: 2),
+                                    horizontal: 6,
+                                    vertical: 2,
+                                  ),
                                   decoration: BoxDecoration(
                                     color: Colors.teal.shade50,
                                     borderRadius: BorderRadius.circular(4),
@@ -392,8 +419,9 @@ class _ServicePageState extends ConsumerState<ServicePage> {
                                   child: Text(
                                     s.unit.isNotEmpty ? s.unit : 'Hour',
                                     style: TextStyle(
-                                        fontSize: 11,
-                                        color: Colors.teal.shade800),
+                                      fontSize: 11,
+                                      color: Colors.teal.shade800,
+                                    ),
                                   ),
                                 ),
                               ],
@@ -410,7 +438,9 @@ class _ServicePageState extends ConsumerState<ServicePage> {
                                 maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
                                 style: TextStyle(
-                                    fontSize: 12, color: Colors.grey.shade600),
+                                  fontSize: 12,
+                                  color: Colors.grey.shade600,
+                                ),
                               ),
                             const Divider(height: AppSpacing.md),
                             Row(
@@ -426,7 +456,8 @@ class _ServicePageState extends ConsumerState<ServicePage> {
                                 Text(
                                   'GST: ${s.gstRate.toStringAsFixed(0)}%',
                                   style: const TextStyle(
-                                      fontWeight: FontWeight.bold),
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                               ],
                             ),
@@ -437,9 +468,15 @@ class _ServicePageState extends ConsumerState<ServicePage> {
                                 TextButton.icon(
                                   style: TextButton.styleFrom(
                                     visualDensity: VisualDensity.compact,
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 4,
+                                    ),
                                   ),
-                                  icon: const Icon(Icons.edit_outlined, size: 16),
+                                  icon: const Icon(
+                                    Icons.edit_outlined,
+                                    size: 16,
+                                  ),
                                   label: const Text('Edit'),
                                   onPressed: () =>
                                       context.push('/services/edit/${s.id}'),
@@ -448,12 +485,20 @@ class _ServicePageState extends ConsumerState<ServicePage> {
                                 TextButton.icon(
                                   style: TextButton.styleFrom(
                                     visualDensity: VisualDensity.compact,
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 4,
+                                    ),
                                   ),
-                                  icon: const Icon(Icons.delete_outline,
-                                      size: 16, color: Colors.red),
-                                  label: const Text('Delete',
-                                      style: TextStyle(color: Colors.red)),
+                                  icon: const Icon(
+                                    Icons.delete_outline,
+                                    size: 16,
+                                    color: Colors.red,
+                                  ),
+                                  label: const Text(
+                                    'Delete',
+                                    style: TextStyle(color: Colors.red),
+                                  ),
                                   onPressed: () => _confirmDelete(s),
                                 ),
                               ],

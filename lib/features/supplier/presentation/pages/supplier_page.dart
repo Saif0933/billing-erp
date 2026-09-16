@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+
 import '../../../../core/constants/app_spacing.dart';
 import '../../../../core/constants/app_typography.dart';
-import '../../../../core/responsive/responsive.dart';
 import '../../../../core/models/billing_models.dart';
+import '../../../../core/responsive/responsive.dart';
 import '../../../../shared/widgets/app_button.dart';
 import '../../../../shared/widgets/app_cards.dart';
 import '../../../../shared/widgets/app_input_fields.dart';
@@ -118,8 +119,12 @@ class _SupplierPageState extends ConsumerState<SupplierPage> {
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 crossAxisCount: Responsive.isMobile(context) ? 2 : 4,
-                crossAxisSpacing: Responsive.isMobile(context) ? AppSpacing.sm : AppSpacing.md,
-                mainAxisSpacing: Responsive.isMobile(context) ? AppSpacing.sm : AppSpacing.md,
+                crossAxisSpacing: Responsive.isMobile(context)
+                    ? AppSpacing.sm
+                    : AppSpacing.md,
+                mainAxisSpacing: Responsive.isMobile(context)
+                    ? AppSpacing.sm
+                    : AppSpacing.md,
                 childAspectRatio: Responsive.isMobile(context) ? 1.35 : 1.85,
                 children: [
                   AppMetricCard(
@@ -142,8 +147,9 @@ class _SupplierPageState extends ConsumerState<SupplierPage> {
                     title: 'Total Payables',
                     value: '₹${metrics.totalPayable.toStringAsFixed(2)}',
                     icon: Icons.account_balance_wallet_outlined,
-                    trendColor:
-                        metrics.totalPayable > 0 ? Colors.red : Colors.green,
+                    trendColor: metrics.totalPayable > 0
+                        ? Colors.red
+                        : Colors.green,
                   ),
                 ],
               ),
@@ -169,7 +175,9 @@ class _SupplierPageState extends ConsumerState<SupplierPage> {
                       child: Text(
                         'Using local cache: ${supplierState.error}',
                         style: TextStyle(
-                            color: Colors.amber.shade900, fontSize: 13),
+                          color: Colors.amber.shade900,
+                          fontSize: 13,
+                        ),
                       ),
                     ),
                     TextButton(
@@ -196,7 +204,8 @@ class _SupplierPageState extends ConsumerState<SupplierPage> {
                       Expanded(
                         child: AppTextField(
                           label: 'Search Suppliers',
-                          hintText: 'Search by supplier name, mobile, or GSTIN...',
+                          hintText:
+                              'Search by supplier name, mobile, or GSTIN...',
                           controller: _searchController,
                           prefixIcon: const Icon(Icons.search),
                           onChanged: (val) =>
@@ -210,22 +219,29 @@ class _SupplierPageState extends ConsumerState<SupplierPage> {
                         child: AppDropdownField<String>(
                           label: 'Filter by Group',
                           value: supplierState.selectedGroupFilter,
-                          items: {
-                            'All': 'All Groups',
-                            'General': 'General',
-                            'Raw Materials': 'Raw Materials',
-                            'Packaging': 'Packaging',
-                            'Consumables': 'Consumables',
-                            if (supplierState.selectedGroupFilter.isNotEmpty)
-                              supplierState.selectedGroupFilter:
-                                  supplierState.selectedGroupFilter == 'All'
-                                      ? 'All Groups'
-                                      : supplierState.selectedGroupFilter,
-                          }
-                              .entries
-                              .map((e) => DropdownMenuItem(
-                                  value: e.key, child: Text(e.value)))
-                              .toList(),
+                          items:
+                              {
+                                    'All': 'All Groups',
+                                    'General': 'General',
+                                    'Raw Materials': 'Raw Materials',
+                                    'Packaging': 'Packaging',
+                                    'Consumables': 'Consumables',
+                                    if (supplierState
+                                        .selectedGroupFilter
+                                        .isNotEmpty)
+                                      supplierState.selectedGroupFilter:
+                                          supplierState.selectedGroupFilter ==
+                                              'All'
+                                          ? 'All Groups'
+                                          : supplierState.selectedGroupFilter,
+                                  }.entries
+                                  .map(
+                                    (e) => DropdownMenuItem(
+                                      value: e.key,
+                                      child: Text(e.value),
+                                    ),
+                                  )
+                                  .toList(),
                           onChanged: (val) =>
                               supplierNotifier.setGroupFilter(val ?? 'All'),
                         ),
@@ -271,7 +287,9 @@ class _SupplierPageState extends ConsumerState<SupplierPage> {
                         label: 'Group',
                         cellBuilder: (s) => Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 3),
+                            horizontal: 8,
+                            vertical: 3,
+                          ),
                           decoration: BoxDecoration(
                             color: Colors.teal.shade50,
                             borderRadius: BorderRadius.circular(4),
@@ -281,7 +299,9 @@ class _SupplierPageState extends ConsumerState<SupplierPage> {
                                 ? s.supplierGroup
                                 : 'General',
                             style: TextStyle(
-                                fontSize: 12, color: Colors.teal.shade800),
+                              fontSize: 12,
+                              color: Colors.teal.shade800,
+                            ),
                           ),
                         ),
                       ),
@@ -333,8 +353,11 @@ class _SupplierPageState extends ConsumerState<SupplierPage> {
                                   context.push('/suppliers/edit/${s.id}'),
                             ),
                             IconButton(
-                              icon: const Icon(Icons.delete_outline,
-                                  size: 18, color: Colors.red),
+                              icon: const Icon(
+                                Icons.delete_outline,
+                                size: 18,
+                                color: Colors.red,
+                              ),
                               tooltip: 'Delete Supplier',
                               onPressed: () => _confirmDelete(s),
                             ),
@@ -364,7 +387,9 @@ class _SupplierPageState extends ConsumerState<SupplierPage> {
                                 const SizedBox(width: AppSpacing.xs),
                                 Container(
                                   padding: const EdgeInsets.symmetric(
-                                      horizontal: 6, vertical: 2),
+                                    horizontal: 6,
+                                    vertical: 2,
+                                  ),
                                   decoration: BoxDecoration(
                                     color: Colors.teal.shade50,
                                     borderRadius: BorderRadius.circular(4),
@@ -374,8 +399,9 @@ class _SupplierPageState extends ConsumerState<SupplierPage> {
                                         ? s.supplierGroup
                                         : 'General',
                                     style: TextStyle(
-                                        fontSize: 11,
-                                        color: Colors.teal.shade800),
+                                      fontSize: 11,
+                                      color: Colors.teal.shade800,
+                                    ),
                                   ),
                                 ),
                               ],
@@ -391,8 +417,12 @@ class _SupplierPageState extends ConsumerState<SupplierPage> {
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
-                                fontFamily: s.gstin.isNotEmpty ? 'monospace' : null,
-                                color: s.gstin.isNotEmpty ? Colors.black87 : Colors.grey,
+                                fontFamily: s.gstin.isNotEmpty
+                                    ? 'monospace'
+                                    : null,
+                                color: s.gstin.isNotEmpty
+                                    ? Colors.black87
+                                    : Colors.grey,
                                 fontSize: 12,
                               ),
                             ),
@@ -403,7 +433,10 @@ class _SupplierPageState extends ConsumerState<SupplierPage> {
                                 const Flexible(
                                   child: Text(
                                     'Payable Balance:',
-                                    style: TextStyle(fontSize: 12, color: Colors.grey),
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey,
+                                    ),
                                     overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
@@ -426,9 +459,15 @@ class _SupplierPageState extends ConsumerState<SupplierPage> {
                                 TextButton.icon(
                                   style: TextButton.styleFrom(
                                     visualDensity: VisualDensity.compact,
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 4,
+                                    ),
                                   ),
-                                  icon: const Icon(Icons.edit_outlined, size: 16),
+                                  icon: const Icon(
+                                    Icons.edit_outlined,
+                                    size: 16,
+                                  ),
                                   label: const Text('Edit'),
                                   onPressed: () =>
                                       context.push('/suppliers/edit/${s.id}'),
@@ -437,12 +476,20 @@ class _SupplierPageState extends ConsumerState<SupplierPage> {
                                 TextButton.icon(
                                   style: TextButton.styleFrom(
                                     visualDensity: VisualDensity.compact,
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 4,
+                                    ),
                                   ),
-                                  icon: const Icon(Icons.delete_outline,
-                                      size: 16, color: Colors.red),
-                                  label: const Text('Delete',
-                                      style: TextStyle(color: Colors.red)),
+                                  icon: const Icon(
+                                    Icons.delete_outline,
+                                    size: 16,
+                                    color: Colors.red,
+                                  ),
+                                  label: const Text(
+                                    'Delete',
+                                    style: TextStyle(color: Colors.red),
+                                  ),
                                   onPressed: () => _confirmDelete(s),
                                 ),
                               ],

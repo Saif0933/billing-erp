@@ -81,9 +81,7 @@ class _PurchasePageState extends ConsumerState<PurchasePage> {
     final purchases = purchaseState.purchases;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Purchase & Bills'),
-      ),
+      appBar: AppBar(title: const Text('Purchase & Bills')),
       body: RefreshIndicator(
         onRefresh: () => ref.read(purchaseProvider.notifier).loadPurchases(),
         child: SingleChildScrollView(
@@ -122,7 +120,10 @@ class _PurchasePageState extends ConsumerState<PurchasePage> {
                   ),
                   child: Text(
                     purchaseState.error!,
-                    style: const TextStyle(color: Color(0xFFB91C1C), fontSize: 13),
+                    style: const TextStyle(
+                      color: Color(0xFFB91C1C),
+                      fontSize: 13,
+                    ),
                   ),
                 ),
               ],
@@ -164,18 +165,29 @@ class _PurchasePageState extends ConsumerState<PurchasePage> {
                             value: purchaseState.selectedStatusFilter,
                             items: const [
                               DropdownMenuItem(
-                                  value: 'All', child: Text('All Statuses')),
+                                value: 'All',
+                                child: Text('All Statuses'),
+                              ),
                               DropdownMenuItem(
-                                  value: 'Draft', child: Text('Draft')),
+                                value: 'Draft',
+                                child: Text('Draft'),
+                              ),
                               DropdownMenuItem(
-                                  value: 'Confirmed', child: Text('Confirmed')),
+                                value: 'Confirmed',
+                                child: Text('Confirmed'),
+                              ),
                               DropdownMenuItem(
-                                  value: 'PartiallyPaid',
-                                  child: Text('Partially Paid')),
+                                value: 'PartiallyPaid',
+                                child: Text('Partially Paid'),
+                              ),
                               DropdownMenuItem(
-                                  value: 'Paid', child: Text('Paid')),
+                                value: 'Paid',
+                                child: Text('Paid'),
+                              ),
                               DropdownMenuItem(
-                                  value: 'Cancelled', child: Text('Cancelled')),
+                                value: 'Cancelled',
+                                child: Text('Cancelled'),
+                              ),
                             ],
                             onChanged: (val) => ref
                                 .read(purchaseProvider.notifier)
@@ -188,56 +200,58 @@ class _PurchasePageState extends ConsumerState<PurchasePage> {
                     SingleChildScrollView(
                       scrollDirection: Axis.horizontal,
                       child: Row(
-                        children: [
-                          'All',
-                          'Draft',
-                          'Confirmed',
-                          'PartiallyPaid',
-                          'Paid',
-                          'Cancelled',
-                        ].map((status) {
-                          final isSelected =
-                              purchaseState.selectedStatusFilter == status;
-                          final displayLabel = status == 'PartiallyPaid'
-                              ? 'Partially Paid'
-                              : status;
-                          final isDark =
-                              Theme.of(context).brightness == Brightness.dark;
-                          return Padding(
-                            padding: const EdgeInsets.only(right: 8),
-                            child: ChoiceChip(
-                              label: Text(displayLabel),
-                              selected: isSelected,
-                              selectedColor: isDark
-                                  ? const Color(0xFF1E3A2F)
-                                  : const Color(0xFFE8F5E9),
-                              checkmarkColor: const Color(0xFF2E7D32),
-                              labelStyle: TextStyle(
-                                fontSize: 12,
-                                color: isSelected
-                                    ? const Color(0xFF2E7D32)
-                                    : (isDark
-                                        ? AppColors.textDarkSecondary
-                                        : AppColors.textLightSecondary),
-                                fontWeight: isSelected
-                                    ? FontWeight.bold
-                                    : FontWeight.normal,
-                              ),
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 4,
-                                vertical: 2,
-                              ),
-                              visualDensity: VisualDensity.compact,
-                              onSelected: (selected) {
-                                if (selected) {
-                                  ref
-                                      .read(purchaseProvider.notifier)
-                                      .setStatusFilter(status);
-                                }
-                              },
-                            ),
-                          );
-                        }).toList(),
+                        children:
+                            [
+                              'All',
+                              'Draft',
+                              'Confirmed',
+                              'PartiallyPaid',
+                              'Paid',
+                              'Cancelled',
+                            ].map((status) {
+                              final isSelected =
+                                  purchaseState.selectedStatusFilter == status;
+                              final displayLabel = status == 'PartiallyPaid'
+                                  ? 'Partially Paid'
+                                  : status;
+                              final isDark =
+                                  Theme.of(context).brightness ==
+                                  Brightness.dark;
+                              return Padding(
+                                padding: const EdgeInsets.only(right: 8),
+                                child: ChoiceChip(
+                                  label: Text(displayLabel),
+                                  selected: isSelected,
+                                  selectedColor: isDark
+                                      ? const Color(0xFF1E3A2F)
+                                      : const Color(0xFFE8F5E9),
+                                  checkmarkColor: const Color(0xFF2E7D32),
+                                  labelStyle: TextStyle(
+                                    fontSize: 12,
+                                    color: isSelected
+                                        ? const Color(0xFF2E7D32)
+                                        : (isDark
+                                              ? AppColors.textDarkSecondary
+                                              : AppColors.textLightSecondary),
+                                    fontWeight: isSelected
+                                        ? FontWeight.bold
+                                        : FontWeight.normal,
+                                  ),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 4,
+                                    vertical: 2,
+                                  ),
+                                  visualDensity: VisualDensity.compact,
+                                  onSelected: (selected) {
+                                    if (selected) {
+                                      ref
+                                          .read(purchaseProvider.notifier)
+                                          .setStatusFilter(status);
+                                    }
+                                  },
+                                ),
+                              );
+                            }).toList(),
                       ),
                     ),
                     const SizedBox(height: AppSpacing.lg),
@@ -301,8 +315,9 @@ class _PurchasePageState extends ConsumerState<PurchasePage> {
                             isNumeric: true,
                             cellBuilder: (pur) => Text(
                               '₹${pur.grandTotal.toStringAsFixed(2)}',
-                              style:
-                                  const TextStyle(fontWeight: FontWeight.bold),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                              ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -314,7 +329,8 @@ class _PurchasePageState extends ConsumerState<PurchasePage> {
                               '₹${pur.balanceAmount.toStringAsFixed(2)}',
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
-                                color: pur.balanceAmount > 0 &&
+                                color:
+                                    pur.balanceAmount > 0 &&
                                         pur.status != PurchaseStatus.cancelled
                                     ? Colors.red
                                     : const Color(0xFF2E7D32),
@@ -357,11 +373,12 @@ class _PurchasePageState extends ConsumerState<PurchasePage> {
                                           pur.purchaseNumber,
                                           style: AppTypography.titleMedium
                                               .copyWith(
-                                            fontWeight: FontWeight.bold,
-                                            color: isDarkCard
-                                                ? AppColors.textDarkPrimary
-                                                : AppColors.textLightPrimary,
-                                          ),
+                                                fontWeight: FontWeight.bold,
+                                                color: isDarkCard
+                                                    ? AppColors.textDarkPrimary
+                                                    : AppColors
+                                                          .textLightPrimary,
+                                              ),
                                           maxLines: 1,
                                           overflow: TextOverflow.ellipsis,
                                         ),
@@ -413,8 +430,7 @@ class _PurchasePageState extends ConsumerState<PurchasePage> {
                                     ],
                                   ),
                                   const Padding(
-                                    padding:
-                                        EdgeInsets.symmetric(vertical: 10),
+                                    padding: EdgeInsets.symmetric(vertical: 10),
                                     child: Divider(height: 1),
                                   ),
                                   Row(
@@ -433,7 +449,8 @@ class _PurchasePageState extends ConsumerState<PurchasePage> {
                                                 fontSize: 14,
                                                 color: isDarkCard
                                                     ? AppColors.textDarkPrimary
-                                                    : AppColors.textLightPrimary,
+                                                    : AppColors
+                                                          .textLightPrimary,
                                               ),
                                               maxLines: 1,
                                               overflow: TextOverflow.ellipsis,
@@ -446,22 +463,24 @@ class _PurchasePageState extends ConsumerState<PurchasePage> {
                                                               .cancelled
                                                   ? 'Payable Due: ₹${pur.balanceAmount.toStringAsFixed(2)}'
                                                   : (pur.status ==
-                                                          PurchaseStatus
-                                                              .cancelled
-                                                      ? 'Cancelled'
-                                                      : 'Fully Paid'),
+                                                            PurchaseStatus
+                                                                .cancelled
+                                                        ? 'Cancelled'
+                                                        : 'Fully Paid'),
                                               style: TextStyle(
-                                                color: pur.balanceAmount > 0 &&
+                                                color:
+                                                    pur.balanceAmount > 0 &&
                                                         pur.status !=
                                                             PurchaseStatus
                                                                 .cancelled
                                                     ? Colors.red.shade700
                                                     : (pur.status ==
-                                                            PurchaseStatus
-                                                                .cancelled
-                                                        ? Colors.grey
-                                                        : const Color(
-                                                            0xFF2E7D32)),
+                                                              PurchaseStatus
+                                                                  .cancelled
+                                                          ? Colors.grey
+                                                          : const Color(
+                                                              0xFF2E7D32,
+                                                            )),
                                                 fontSize: 12,
                                                 fontWeight: FontWeight.w500,
                                               ),

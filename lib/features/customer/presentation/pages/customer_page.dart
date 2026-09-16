@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+
 import '../../../../core/constants/app_spacing.dart';
 import '../../../../core/constants/app_typography.dart';
-import '../../../../core/responsive/responsive.dart';
 import '../../../../core/models/billing_models.dart';
+import '../../../../core/responsive/responsive.dart';
 import '../../../../shared/widgets/app_button.dart';
 import '../../../../shared/widgets/app_cards.dart';
 import '../../../../shared/widgets/app_input_fields.dart';
@@ -47,11 +48,14 @@ class _CustomerPageState extends ConsumerState<CustomerPage> {
             onPressed: () async {
               Navigator.of(ctx).pop();
               try {
-                await ref.read(customerProvider.notifier).deleteCustomer(customer.id);
+                await ref
+                    .read(customerProvider.notifier)
+                    .deleteCustomer(customer.id);
                 if (mounted) {
                   AppFeedback.showSnackbar(
                     context,
-                    message: 'Customer "${customer.name}" processed successfully.',
+                    message:
+                        'Customer "${customer.name}" processed successfully.',
                   );
                 }
               } catch (e) {
@@ -115,8 +119,12 @@ class _CustomerPageState extends ConsumerState<CustomerPage> {
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 crossAxisCount: Responsive.isMobile(context) ? 2 : 4,
-                crossAxisSpacing: Responsive.isMobile(context) ? AppSpacing.sm : AppSpacing.md,
-                mainAxisSpacing: Responsive.isMobile(context) ? AppSpacing.sm : AppSpacing.md,
+                crossAxisSpacing: Responsive.isMobile(context)
+                    ? AppSpacing.sm
+                    : AppSpacing.md,
+                mainAxisSpacing: Responsive.isMobile(context)
+                    ? AppSpacing.sm
+                    : AppSpacing.md,
                 childAspectRatio: Responsive.isMobile(context) ? 1.35 : 1.85,
                 children: [
                   AppMetricCard(
@@ -139,7 +147,9 @@ class _CustomerPageState extends ConsumerState<CustomerPage> {
                     title: 'Total Receivables',
                     value: '₹${metrics.totalReceivables.toStringAsFixed(2)}',
                     icon: Icons.account_balance_wallet_outlined,
-                    trendColor: metrics.totalReceivables > 0 ? Colors.red : Colors.green,
+                    trendColor: metrics.totalReceivables > 0
+                        ? Colors.red
+                        : Colors.green,
                   ),
                 ],
               ),
@@ -147,7 +157,8 @@ class _CustomerPageState extends ConsumerState<CustomerPage> {
             ],
 
             // Error notice with retry
-            if (customerState.error != null && customerState.error!.isNotEmpty) ...[
+            if (customerState.error != null &&
+                customerState.error!.isNotEmpty) ...[
               Container(
                 margin: const EdgeInsets.only(bottom: AppSpacing.md),
                 padding: const EdgeInsets.all(AppSpacing.md),
@@ -163,11 +174,15 @@ class _CustomerPageState extends ConsumerState<CustomerPage> {
                     Expanded(
                       child: Text(
                         'Using local cache: ${customerState.error}',
-                        style: TextStyle(color: Colors.amber.shade900, fontSize: 13),
+                        style: TextStyle(
+                          color: Colors.amber.shade900,
+                          fontSize: 13,
+                        ),
                       ),
                     ),
                     TextButton(
-                      onPressed: () => customerNotifier.loadCustomers(refresh: true),
+                      onPressed: () =>
+                          customerNotifier.loadCustomers(refresh: true),
                       child: const Text('Retry Server'),
                     ),
                   ],
@@ -192,25 +207,40 @@ class _CustomerPageState extends ConsumerState<CustomerPage> {
                           hintText: 'Search by name, mobile, or GSTIN...',
                           controller: _searchController,
                           prefixIcon: const Icon(Icons.search),
-                          onChanged: (val) => customerNotifier.setSearchQuery(val),
+                          onChanged: (val) =>
+                              customerNotifier.setSearchQuery(val),
                         ),
                       ),
                       SizedBox(
-                        width: Responsive.isMobile(context) ? double.infinity : 180,
+                        width: Responsive.isMobile(context)
+                            ? double.infinity
+                            : 180,
                         child: AppDropdownField<String>(
                           label: 'Filter by Type',
                           value: customerState.selectedTypeFilter,
-                          items: {
-                            'All': 'All Types',
-                            'Wholesale': 'Wholesale',
-                            'Retail': 'Retail',
-                            'Corporate': 'Corporate',
-                            'General': 'General',
-                            if (customerState.selectedTypeFilter.isNotEmpty)
-                              customerState.selectedTypeFilter: customerState.selectedTypeFilter == 'All'
-                                  ? 'All Types'
-                                  : customerState.selectedTypeFilter,
-                          }.entries.map((e) => DropdownMenuItem(value: e.key, child: Text(e.value))).toList(),
+                          items:
+                              {
+                                    'All': 'All Types',
+                                    'Wholesale': 'Wholesale',
+                                    'Retail': 'Retail',
+                                    'Corporate': 'Corporate',
+                                    'General': 'General',
+                                    if (customerState
+                                        .selectedTypeFilter
+                                        .isNotEmpty)
+                                      customerState.selectedTypeFilter:
+                                          customerState.selectedTypeFilter ==
+                                              'All'
+                                          ? 'All Types'
+                                          : customerState.selectedTypeFilter,
+                                  }.entries
+                                  .map(
+                                    (e) => DropdownMenuItem(
+                                      value: e.key,
+                                      child: Text(e.value),
+                                    ),
+                                  )
+                                  .toList(),
                           onChanged: (val) =>
                               customerNotifier.setTypeFilter(val ?? 'All'),
                         ),
@@ -255,24 +285,32 @@ class _CustomerPageState extends ConsumerState<CustomerPage> {
                       TableColumnSpec<Customer>(
                         label: 'Type',
                         cellBuilder: (c) => Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 3,
+                          ),
                           decoration: BoxDecoration(
                             color: Colors.blue.shade50,
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: Text(
                             c.type,
-                            style: TextStyle(fontSize: 12, color: Colors.blue.shade800),
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.blue.shade800,
+                            ),
                           ),
                         ),
                       ),
                       TableColumnSpec<Customer>(
                         label: 'State',
-                        cellBuilder: (c) => Text(c.state.isNotEmpty ? c.state : '—'),
+                        cellBuilder: (c) =>
+                            Text(c.state.isNotEmpty ? c.state : '—'),
                       ),
                       TableColumnSpec<Customer>(
                         label: 'Mobile No.',
-                        cellBuilder: (c) => Text(c.mobile.isNotEmpty ? c.mobile : '—'),
+                        cellBuilder: (c) =>
+                            Text(c.mobile.isNotEmpty ? c.mobile : '—'),
                       ),
                       TableColumnSpec<Customer>(
                         label: 'GSTIN',
@@ -281,7 +319,9 @@ class _CustomerPageState extends ConsumerState<CustomerPage> {
                           c.gstin.isNotEmpty ? c.gstin : 'Unregistered',
                           style: TextStyle(
                             fontFamily: c.gstin.isNotEmpty ? 'monospace' : null,
-                            color: c.gstin.isNotEmpty ? Colors.black87 : Colors.grey,
+                            color: c.gstin.isNotEmpty
+                                ? Colors.black87
+                                : Colors.grey,
                           ),
                         ),
                       ),
@@ -292,7 +332,9 @@ class _CustomerPageState extends ConsumerState<CustomerPage> {
                           '₹${c.currentBalance.toStringAsFixed(2)}',
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
-                            color: c.currentBalance > 0 ? Colors.red : Colors.green,
+                            color: c.currentBalance > 0
+                                ? Colors.red
+                                : Colors.green,
                           ),
                         ),
                       ),
@@ -304,10 +346,15 @@ class _CustomerPageState extends ConsumerState<CustomerPage> {
                             IconButton(
                               icon: const Icon(Icons.edit_outlined, size: 18),
                               tooltip: 'Edit Customer',
-                              onPressed: () => context.push('/customers/edit/${c.id}'),
+                              onPressed: () =>
+                                  context.push('/customers/edit/${c.id}'),
                             ),
                             IconButton(
-                              icon: const Icon(Icons.delete_outline, size: 18, color: Colors.red),
+                              icon: const Icon(
+                                Icons.delete_outline,
+                                size: 18,
+                                color: Colors.red,
+                              ),
                               tooltip: 'Delete Customer',
                               onPressed: () => _confirmDelete(c),
                             ),
@@ -336,14 +383,20 @@ class _CustomerPageState extends ConsumerState<CustomerPage> {
                                 ),
                                 const SizedBox(width: AppSpacing.xs),
                                 Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 6,
+                                    vertical: 2,
+                                  ),
                                   decoration: BoxDecoration(
                                     color: Colors.blue.shade50,
                                     borderRadius: BorderRadius.circular(4),
                                   ),
                                   child: Text(
                                     c.type,
-                                    style: TextStyle(fontSize: 11, color: Colors.blue.shade800),
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: Colors.blue.shade800,
+                                    ),
                                   ),
                                 ),
                               ],
@@ -359,7 +412,9 @@ class _CustomerPageState extends ConsumerState<CustomerPage> {
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
-                                fontFamily: c.gstin.isNotEmpty ? 'monospace' : null,
+                                fontFamily: c.gstin.isNotEmpty
+                                    ? 'monospace'
+                                    : null,
                               ),
                             ),
                             const Divider(),
@@ -369,7 +424,10 @@ class _CustomerPageState extends ConsumerState<CustomerPage> {
                                 const Flexible(
                                   child: Text(
                                     'Outstanding Balance:',
-                                    style: TextStyle(fontSize: 12, color: Colors.grey),
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey,
+                                    ),
                                     overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
@@ -378,7 +436,9 @@ class _CustomerPageState extends ConsumerState<CustomerPage> {
                                   '₹${c.currentBalance.toStringAsFixed(2)}',
                                   style: TextStyle(
                                     fontWeight: FontWeight.bold,
-                                    color: c.currentBalance > 0 ? Colors.red : Colors.green,
+                                    color: c.currentBalance > 0
+                                        ? Colors.red
+                                        : Colors.green,
                                   ),
                                 ),
                               ],
@@ -390,20 +450,34 @@ class _CustomerPageState extends ConsumerState<CustomerPage> {
                                 TextButton.icon(
                                   style: TextButton.styleFrom(
                                     visualDensity: VisualDensity.compact,
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 4,
+                                    ),
                                   ),
                                   icon: const Icon(Icons.edit, size: 16),
                                   label: const Text('Edit'),
-                                  onPressed: () => context.push('/customers/edit/${c.id}'),
+                                  onPressed: () =>
+                                      context.push('/customers/edit/${c.id}'),
                                 ),
                                 const SizedBox(width: 4),
                                 TextButton.icon(
                                   style: TextButton.styleFrom(
                                     visualDensity: VisualDensity.compact,
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 4,
+                                    ),
                                   ),
-                                  icon: const Icon(Icons.delete, size: 16, color: Colors.red),
-                                  label: const Text('Delete', style: TextStyle(color: Colors.red)),
+                                  icon: const Icon(
+                                    Icons.delete,
+                                    size: 16,
+                                    color: Colors.red,
+                                  ),
+                                  label: const Text(
+                                    'Delete',
+                                    style: TextStyle(color: Colors.red),
+                                  ),
                                   onPressed: () => _confirmDelete(c),
                                 ),
                               ],
