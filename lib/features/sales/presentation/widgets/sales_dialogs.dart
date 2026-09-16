@@ -59,15 +59,22 @@ class _SalesCustomerDialogState extends State<SalesCustomerDialog> {
       title: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            _isCreatingNew ? 'Add New Customer' : 'Select Customer (F4)',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: isDark ? AppColors.textDarkPrimary : const Color(0xFF111827),
+          Expanded(
+            child: Text(
+              _isCreatingNew ? 'Add New Customer' : 'Select Customer (F4)',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: isDark ? AppColors.textDarkPrimary : const Color(0xFF111827),
+              ),
+              overflow: TextOverflow.ellipsis,
             ),
           ),
+          const SizedBox(width: 8),
           IconButton(
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+            visualDensity: VisualDensity.compact,
             icon: Icon(
               Icons.close,
               size: 20,
@@ -394,14 +401,21 @@ class SalesHoldBillsDialog extends StatelessWidget {
       title: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            'Held Bills',
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              color: isDark ? AppColors.textDarkPrimary : const Color(0xFF111827),
+          Expanded(
+            child: Text(
+              'Held Bills',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: isDark ? AppColors.textDarkPrimary : const Color(0xFF111827),
+              ),
+              overflow: TextOverflow.ellipsis,
             ),
           ),
+          const SizedBox(width: 8),
           IconButton(
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+            visualDensity: VisualDensity.compact,
             icon: Icon(
               Icons.close,
               size: 20,

@@ -75,55 +75,14 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    AppPageHeader(
-                      leading: IconButton(
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(
-                          minWidth: 36,
-                          minHeight: 36,
-                        ),
-                        visualDensity: VisualDensity.compact,
-                        alignment: Alignment.centerLeft,
-                        icon: Icon(
-                          Icons.arrow_back,
-                          size: 22,
-                          color: isDark
-                              ? Colors.white
-                              : const Color(0xFF0F172A),
-                        ),
-                        tooltip: 'Back',
-                        onPressed: () {
-                          if (context.canPop()) {
-                            context.pop();
-                          } else {
-                            context.go('/dashboard');
-                          }
-                        },
-                      ),
-                      title: 'Billing & Subscription',
-                      description:
-                          'Review your current license, renewal dates, and included modules.',
-                      breadcrumbs: const [
-                        'Dashboard',
-                        'Settings',
-                        'Subscription',
-                      ],
-                      actions: [
-                        IconButton(
-                          icon: const Icon(Icons.refresh),
-                          tooltip: 'Refresh Subscription',
-                          onPressed: () =>
-                              ref.read(subscriptionProvider.notifier).loadSubscription(),
-                        ),
-                        if (!isMobile)
-                          AppButton(
-                            label: 'Change Plan',
-                            icon: Icons.upgrade_outlined,
-                            onPressed: () =>
-                                context.push('/upgrade'),
-                            type: AppButtonType.primary,
-                          ),
-                      ],
+                    _buildSubscriptionHeader(
+                      context: context,
+                      isDark: isDark,
+                      isMobile: isMobile,
+                      onRefresh: () => ref
+                          .read(subscriptionProvider.notifier)
+                          .loadSubscription(),
+                      onChangePlan: () => context.push('/upgrade'),
                     ),
                     _PlanHeroCard(
                       sub: sub,
@@ -217,6 +176,222 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
             ),
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildSubscriptionHeader({
+    required BuildContext context,
+    required bool isDark,
+    required bool isMobile,
+    required VoidCallback onRefresh,
+    required VoidCallback onChangePlan,
+  }) {
+    final primaryTextColor =
+        isDark ? Colors.white : const Color(0xFF0F172A);
+    final secondaryTextColor =
+        isDark ? AppColors.textDarkMuted : AppColors.textLightMuted;
+    final borderColor =
+        isDark ? AppColors.borderDark : const Color(0xFFE2E8F0);
+    final cardBg = isDark ? const Color(0xFF1E293B) : Colors.white;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.lg),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Breadcrumbs
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                _buildBreadcrumbItem('Dashboard', false, isDark),
+                _buildBreadcrumbSeparator(isDark),
+                _buildBreadcrumbItem('Settings', false, isDark),
+                _buildBreadcrumbSeparator(isDark),
+                _buildBreadcrumbItem('Subscription', true, isDark),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+
+          // Main Header Row
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Back Button
+              InkWell(
+                onTap: () {
+                  if (context.canPop()) {
+                    context.pop();
+                  } else {
+                    context.go('/dashboard');
+                  }
+                },
+                borderRadius: BorderRadius.circular(10),
+                child: Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: cardBg,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: borderColor),
+                  ),
+                  child: Icon(
+                    Icons.arrow_back_rounded,
+                    size: 20,
+                    color: primaryTextColor,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+
+              // Title and Subtitle Block
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Billing & Subscription',
+                      style: TextStyle(
+                        fontSize: isMobile ? 20 : 24,
+                        fontWeight: FontWeight.w800,
+                        color: primaryTextColor,
+                        letterSpacing: -0.4,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Review your current license, renewal dates, and included modules.',
+                      style: TextStyle(
+                        fontSize: isMobile ? 12.5 : 13.5,
+                        color: secondaryTextColor,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(width: 12),
+
+              // Action Buttons
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Refresh Button
+                  Tooltip(
+                    message: 'Refresh Subscription',
+                    child: InkWell(
+                      onTap: onRefresh,
+                      borderRadius: BorderRadius.circular(10),
+                      child: Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: cardBg,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: borderColor),
+                        ),
+                        child: Icon(
+                          Icons.refresh_rounded,
+                          size: 20,
+                          color: isDark
+                              ? Colors.white70
+                              : const Color(0xFF475569),
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  if (!isMobile) ...[
+                    const SizedBox(width: 10),
+                    // Gradient Change Plan Button
+                    InkWell(
+                      onTap: onChangePlan,
+                      borderRadius: BorderRadius.circular(10),
+                      child: Container(
+                        height: 40,
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFF10B981), Color(0xFF059669)],
+                          ),
+                          borderRadius: BorderRadius.circular(10),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFF10B981)
+                                  .withValues(alpha: 0.28),
+                              blurRadius: 10,
+                              offset: const Offset(0, 3),
+                            ),
+                          ],
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.bolt_rounded,
+                              color: Colors.white,
+                              size: 18,
+                            ),
+                            SizedBox(width: 6),
+                            Text(
+                              'Change Plan',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 13.5,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBreadcrumbItem(String title, bool isLast, bool isDark) {
+    if (isLast) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+        decoration: BoxDecoration(
+          color: const Color(0xFF10B981).withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(6),
+        ),
+        child: Text(
+          title,
+          style: const TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w700,
+            color: Color(0xFF10B981),
+          ),
+        ),
+      );
+    }
+    return Text(
+      title,
+      style: TextStyle(
+        fontSize: 12,
+        fontWeight: FontWeight.w500,
+        color: isDark ? AppColors.textDarkMuted : AppColors.textLightMuted,
+      ),
+    );
+  }
+
+  Widget _buildBreadcrumbSeparator(bool isDark) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 6),
+      child: Icon(
+        Icons.chevron_right_rounded,
+        size: 14,
+        color: isDark ? Colors.white30 : Colors.black26,
       ),
     );
   }

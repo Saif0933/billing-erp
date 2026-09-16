@@ -285,13 +285,64 @@ class _LedgerPageState extends ConsumerState<LedgerPage> {
                                     : '${_dateRange!.start.day}/${_dateRange!.start.month} to ${_dateRange!.end.day}/${_dateRange!.end.month}',
                               ),
                               onPressed: () async {
+                                final isDark = Theme.of(context).brightness == Brightness.dark;
                                 final selected = await showDateRangePicker(
                                   context: context,
                                   firstDate: DateTime(2020),
                                   lastDate: DateTime(2030),
+                                  builder: (context, child) {
+                                    return Center(
+                                      child: Container(
+                                        constraints: const BoxConstraints(
+                                          maxWidth: 480,
+                                          maxHeight: 560,
+                                        ),
+                                        margin: const EdgeInsets.symmetric(
+                                          horizontal: 16,
+                                          vertical: 24,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          borderRadius: BorderRadius.circular(16),
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: Colors.black.withValues(alpha: 0.35),
+                                              blurRadius: 24,
+                                              offset: const Offset(0, 8),
+                                            ),
+                                          ],
+                                        ),
+                                        child: ClipRRect(
+                                          borderRadius: BorderRadius.circular(16),
+                                          child: Theme(
+                                            data: Theme.of(context).copyWith(
+                                              scaffoldBackgroundColor:
+                                                  isDark ? const Color(0xFF1E293B) : Colors.white,
+                                              colorScheme: isDark
+                                                  ? const ColorScheme.dark(
+                                                      primary: Color(0xFF2E7D32),
+                                                      onPrimary: Colors.white,
+                                                      surface: Color(0xFF1E293B),
+                                                      onSurface: Colors.white,
+                                                      secondary: Color(0xFF2E7D32),
+                                                    )
+                                                  : const ColorScheme.light(
+                                                      primary: Color(0xFF2E7D32),
+                                                      onPrimary: Colors.white,
+                                                      surface: Colors.white,
+                                                      onSurface: Color(0xFF0F172A),
+                                                      secondary: Color(0xFF2E7D32),
+                                                    ),
+                                            ),
+                                            child: child ?? const SizedBox(),
+                                          ),
+                                        ),
+                                      ),
+                                    );
+                                  },
                                 );
-                                if (selected != null)
+                                if (selected != null) {
                                   setState(() => _dateRange = selected);
+                                }
                               },
                             ),
                           ],

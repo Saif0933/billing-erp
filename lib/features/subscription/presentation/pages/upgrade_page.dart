@@ -8,7 +8,6 @@ import '../../../../core/constants/app_spacing.dart';
 import '../../../../core/constants/app_typography.dart';
 import '../../../../core/responsive/responsive.dart';
 import '../../../../shared/widgets/app_button.dart';
-import '../../../../shared/widgets/app_cards.dart';
 import '../../../../shared/widgets/feedback.dart';
 import '../../data/models/subscription_dto.dart';
 import '../providers/subscription_provider.dart';
@@ -71,54 +70,18 @@ class _UpgradePageState extends ConsumerState<UpgradePage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    AppPageHeader(
-                      leading: IconButton(
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(
-                          minWidth: 36,
-                          minHeight: 36,
-                        ),
-                        visualDensity: VisualDensity.compact,
-                        alignment: Alignment.centerLeft,
-                        icon: Icon(
-                          Icons.arrow_back,
-                          size: 22,
-                          color: isDark
-                              ? Colors.white
-                              : const Color(0xFF0F172A),
-                        ),
-                        tooltip: 'Back',
-                        onPressed: () {
-                          if (context.canPop()) {
-                            context.pop();
-                          } else {
-                            context.go('/subscription');
-                          }
-                        },
-                      ),
-                      title: 'Choose a plan',
-                      description:
-                          'Select the business tier that matches your transaction volume, users, and ERP features.',
-                      breadcrumbs: const [
-                        'Dashboard',
-                        'Settings',
-                        'Subscription',
-                        'Upgrade',
-                      ],
-                      actions: [
-                        IconButton(
-                          icon: const Icon(Icons.refresh),
-                          tooltip: 'Refresh Plans',
-                          onPressed: () {
-                            ref
-                                .read(availablePlansProvider.notifier)
-                                .fetchPlans();
-                            ref
-                                .read(subscriptionProvider.notifier)
-                                .loadSubscription();
-                          },
-                        ),
-                      ],
+                    _buildUpgradeHeader(
+                      context: context,
+                      isDark: isDark,
+                      isMobile: isMobile,
+                      onRefresh: () {
+                        ref
+                            .read(availablePlansProvider.notifier)
+                            .fetchPlans();
+                        ref
+                            .read(subscriptionProvider.notifier)
+                            .loadSubscription();
+                      },
                     ),
 
                     // Billing Cycle Toggle (Monthly vs Yearly)
@@ -504,6 +467,171 @@ class _UpgradePageState extends ConsumerState<UpgradePage> {
       }
     }
   }
+
+  Widget _buildUpgradeHeader({
+    required BuildContext context,
+    required bool isDark,
+    required bool isMobile,
+    required VoidCallback onRefresh,
+  }) {
+    final primaryTextColor =
+        isDark ? Colors.white : const Color(0xFF0F172A);
+    final secondaryTextColor =
+        isDark ? AppColors.textDarkMuted : AppColors.textLightMuted;
+    final borderColor =
+        isDark ? AppColors.borderDark : const Color(0xFFE2E8F0);
+    final cardBg = isDark ? const Color(0xFF1E293B) : Colors.white;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.md),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Breadcrumbs
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                _buildBreadcrumbItem('Dashboard', false, isDark),
+                _buildBreadcrumbSeparator(isDark),
+                _buildBreadcrumbItem('Settings', false, isDark),
+                _buildBreadcrumbSeparator(isDark),
+                _buildBreadcrumbItem('Subscription', false, isDark),
+                _buildBreadcrumbSeparator(isDark),
+                _buildBreadcrumbItem('Upgrade', true, isDark),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+
+          // Main Header Row
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Back Button
+              InkWell(
+                onTap: () {
+                  if (context.canPop()) {
+                    context.pop();
+                  } else {
+                    context.go('/subscription');
+                  }
+                },
+                borderRadius: BorderRadius.circular(10),
+                child: Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: cardBg,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: borderColor),
+                  ),
+                  child: Icon(
+                    Icons.arrow_back_rounded,
+                    size: 20,
+                    color: primaryTextColor,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+
+              // Title and Subtitle Block
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Choose a plan',
+                      style: TextStyle(
+                        fontSize: isMobile ? 20 : 24,
+                        fontWeight: FontWeight.w800,
+                        color: primaryTextColor,
+                        letterSpacing: -0.4,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Select the business tier that matches your transaction volume, users, and ERP features.',
+                      style: TextStyle(
+                        fontSize: isMobile ? 12.5 : 13.5,
+                        color: secondaryTextColor,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(width: 12),
+
+              // Refresh Button
+              Tooltip(
+                message: 'Refresh Plans',
+                child: InkWell(
+                  onTap: onRefresh,
+                  borderRadius: BorderRadius.circular(10),
+                  child: Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: cardBg,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: borderColor),
+                    ),
+                    child: Icon(
+                      Icons.refresh_rounded,
+                      size: 20,
+                      color: isDark
+                          ? Colors.white70
+                          : const Color(0xFF475569),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBreadcrumbItem(String title, bool isLast, bool isDark) {
+    if (isLast) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+        decoration: BoxDecoration(
+          color: const Color(0xFF10B981).withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(6),
+        ),
+        child: Text(
+          title,
+          style: const TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w700,
+            color: Color(0xFF10B981),
+          ),
+        ),
+      );
+    }
+    return Text(
+      title,
+      style: TextStyle(
+        fontSize: 12,
+        fontWeight: FontWeight.w500,
+        color: isDark ? AppColors.textDarkMuted : AppColors.textLightMuted,
+      ),
+    );
+  }
+
+  Widget _buildBreadcrumbSeparator(bool isDark) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 6),
+      child: Icon(
+        Icons.chevron_right_rounded,
+        size: 14,
+        color: isDark ? Colors.white30 : Colors.black26,
+      ),
+    );
+  }
 }
 
 class _BillingCycleTab extends StatelessWidget {
@@ -526,18 +654,21 @@ class _BillingCycleTab extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(24),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
         decoration: BoxDecoration(
           color: isSelected
-              ? (isDark ? AppColors.primary : Colors.white)
+              ? (isDark ? const Color(0xFF10B981) : const Color(0xFF0F172A))
               : Colors.transparent,
           borderRadius: BorderRadius.circular(24),
           boxShadow: isSelected
               ? [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.08),
-                    blurRadius: 8,
+                    color: isDark
+                        ? const Color(0xFF10B981).withValues(alpha: 0.35)
+                        : Colors.black.withValues(alpha: 0.12),
+                    blurRadius: 10,
                     offset: const Offset(0, 2),
                   ),
                 ]
@@ -548,29 +679,32 @@ class _BillingCycleTab extends StatelessWidget {
           children: [
             Text(
               title,
-              style: AppTypography.labelMedium.copyWith(
+              style: TextStyle(
+                fontSize: 13,
                 fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                 color: isSelected
-                    ? (isDark ? Colors.white : AppColors.textLightPrimary)
+                    ? Colors.white
                     : (isDark
-                          ? AppColors.textDarkMuted
-                          : AppColors.textLightMuted),
+                        ? AppColors.textDarkMuted
+                        : AppColors.textLightMuted),
               ),
             ),
             if (badge != null) ...[
-              const SizedBox(width: 6),
+              const SizedBox(width: 8),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
                 decoration: BoxDecoration(
-                  color: AppColors.success.withValues(alpha: 0.16),
+                  color: isSelected
+                      ? Colors.white.withValues(alpha: 0.22)
+                      : const Color(0xFF10B981).withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Text(
                   badge!,
-                  style: AppTypography.labelSmall.copyWith(
-                    color: AppColors.success,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 10,
+                  style: TextStyle(
+                    color: isSelected ? Colors.white : const Color(0xFF10B981),
+                    fontWeight: FontWeight.w800,
+                    fontSize: 10.5,
                   ),
                 ),
               ),
@@ -601,51 +735,80 @@ class _DynamicPlanCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final accent = isDark ? AppColors.accent : AppColors.primary;
     final highlighted = plan.isPopular && !isCurrent;
     final price = isYearly ? plan.priceYearly : plan.priceMonthly;
     final formattedPrice = '₹${NumberFormat('#,##0').format(price)}';
     final periodText = isYearly ? '/year' : '/month';
 
+    final cardBg = isDark ? const Color(0xFF1E293B) : Colors.white;
+    final primaryTextColor = isDark ? Colors.white : const Color(0xFF0F172A);
+    final mutedTextColor =
+        isDark ? AppColors.textDarkMuted : AppColors.textLightMuted;
+
     return Container(
       decoration: BoxDecoration(
-        color: isDark ? AppColors.surfaceDark : Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        color: cardBg,
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: isCurrent || highlighted
-              ? (isDark ? AppColors.accent : AppColors.primary)
-              : (isDark ? AppColors.borderDark : AppColors.borderLight),
+          color: isCurrent
+              ? const Color(0xFF10B981)
+              : highlighted
+                  ? const Color(0xFF10B981).withValues(alpha: 0.8)
+                  : (isDark ? AppColors.borderDark : const Color(0xFFE2E8F0)),
           width: isCurrent || highlighted ? 2 : 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.05),
-            blurRadius: highlighted ? 16 : 8,
-            offset: const Offset(0, 4),
+            color: isCurrent || highlighted
+                ? const Color(0xFF10B981)
+                    .withValues(alpha: isDark ? 0.18 : 0.12)
+                : Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
+            blurRadius: highlighted ? 20 : 12,
+            offset: const Offset(0, 6),
           ),
         ],
       ),
+      clipBehavior: Clip.antiAlias,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           if (plan.isPopular || isCurrent)
             Container(
-              padding: const EdgeInsets.symmetric(vertical: 8),
+              padding: const EdgeInsets.symmetric(vertical: 7, horizontal: 12),
               decoration: BoxDecoration(
-                color: isCurrent
-                    ? AppColors.success.withValues(alpha: 0.14)
-                    : accent.withValues(alpha: 0.12),
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(14),
-                ),
+                gradient: isCurrent
+                    ? LinearGradient(
+                        colors: [
+                          const Color(0xFF10B981).withValues(alpha: 0.2),
+                          const Color(0xFF059669).withValues(alpha: 0.12),
+                        ],
+                      )
+                    : const LinearGradient(
+                        colors: [Color(0xFF10B981), Color(0xFF059669)],
+                      ),
               ),
-              child: Text(
-                isCurrent ? 'Current active plan' : 'Most popular',
-                textAlign: TextAlign.center,
-                style: AppTypography.labelMedium.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: isCurrent ? AppColors.success : accent,
-                ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    isCurrent
+                        ? Icons.check_circle_rounded
+                        : Icons.star_rounded,
+                    size: 15,
+                    color: isCurrent ? const Color(0xFF10B981) : Colors.white,
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    isCurrent ? 'Current active plan' : 'Most Popular Choice',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w800,
+                      color: isCurrent ? const Color(0xFF10B981) : Colors.white,
+                      letterSpacing: 0.2,
+                    ),
+                  ),
+                ],
               ),
             ),
           Padding(
@@ -659,9 +822,12 @@ class _DynamicPlanCard extends StatelessWidget {
                     Expanded(
                       child: Text(
                         plan.name,
-                        style: AppTypography.titleLarge.copyWith(
+                        style: TextStyle(
+                          fontSize: 20,
                           fontWeight: FontWeight.w800,
-                          color: isCurrent ? accent : null,
+                          color: isCurrent
+                              ? const Color(0xFF10B981)
+                              : primaryTextColor,
                         ),
                       ),
                     ),
@@ -669,81 +835,175 @@ class _DynamicPlanCard extends StatelessWidget {
                       Container(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 8,
-                          vertical: 3,
+                          vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color: AppColors.primary.withValues(alpha: 0.1),
+                          color:
+                              const Color(0xFF10B981).withValues(alpha: 0.12),
                           borderRadius: BorderRadius.circular(6),
                         ),
-                        child: Text(
+                        child: const Text(
                           'Billed Yearly',
-                          style: AppTypography.labelSmall.copyWith(
-                            color: AppColors.primary,
-                            fontWeight: FontWeight.w600,
+                          style: TextStyle(
+                            color: Color(0xFF10B981),
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
                           ),
                         ),
                       ),
                   ],
                 ),
                 const SizedBox(height: AppSpacing.sm),
-                Wrap(
-                  crossAxisAlignment: WrapCrossAlignment.end,
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.baseline,
+                  textBaseline: TextBaseline.alphabetic,
                   children: [
                     Text(
                       formattedPrice,
-                      style: AppTypography.headlineMedium.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: isDark
-                            ? AppColors.textDarkPrimary
-                            : AppColors.textLightPrimary,
+                      style: TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.w900,
+                        color: primaryTextColor,
+                        letterSpacing: -0.5,
                       ),
                     ),
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 4),
-                      child: Text(
-                        periodText,
-                        style: AppTypography.bodySmall.copyWith(
-                          color: isDark
-                              ? AppColors.textDarkMuted
-                              : AppColors.textLightMuted,
-                        ),
+                    const SizedBox(width: 4),
+                    Text(
+                      periodText,
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                        color: mutedTextColor,
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: AppSpacing.sm),
-                Text(
-                  plan.tagline,
-                  style: AppTypography.bodySmall.copyWith(
-                    color: isDark
-                        ? AppColors.textDarkSecondary
-                        : AppColors.textLightSecondary,
-                    height: 1.4,
+                if (plan.tagline.isNotEmpty) ...[
+                  const SizedBox(height: AppSpacing.xs),
+                  Text(
+                    plan.tagline,
+                    style: TextStyle(
+                      fontSize: 12.5,
+                      color: isDark
+                          ? AppColors.textDarkSecondary
+                          : AppColors.textLightSecondary,
+                      height: 1.4,
+                    ),
                   ),
-                ),
-                const SizedBox(height: AppSpacing.md),
-                AppButton(
-                  label: isCurrent
-                      ? 'Active Plan'
-                      : isProcessing
-                      ? 'Processing...'
-                      : 'Select ${plan.name}',
-                  icon: isCurrent ? Icons.check : Icons.arrow_forward,
-                  width: double.infinity,
-                  onPressed: isProcessing ? null : onSelect,
-                  type: isCurrent
-                      ? AppButtonType.secondary
-                      : AppButtonType.primary,
-                ),
-                const SizedBox(height: AppSpacing.md),
+                ],
+                const SizedBox(height: AppSpacing.lg),
+
+                // Button CTA
+                if (isCurrent)
+                  Container(
+                    width: double.infinity,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: isDark
+                          ? Colors.white.withValues(alpha: 0.06)
+                          : const Color(0xFFF1F5F9),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: isDark
+                            ? Colors.white12
+                            : const Color(0xFFCBD5E1),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.check_circle_rounded,
+                          size: 17,
+                          color:
+                              isDark ? Colors.white60 : const Color(0xFF64748B),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Active Plan',
+                          style: TextStyle(
+                            fontSize: 13.5,
+                            fontWeight: FontWeight.w700,
+                            color: isDark
+                                ? Colors.white60
+                                : const Color(0xFF64748B),
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                else
+                  InkWell(
+                    onTap: isProcessing ? null : onSelect,
+                    borderRadius: BorderRadius.circular(12),
+                    child: Container(
+                      width: double.infinity,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF10B981), Color(0xFF059669)],
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF10B981)
+                                .withValues(alpha: 0.3),
+                            blurRadius: 10,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          if (isProcessing) ...[
+                            const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            const Text(
+                              'Processing...',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 13.5,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ] else ...[
+                            const Icon(
+                              Icons.bolt_rounded,
+                              color: Colors.white,
+                              size: 18,
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              'Select ${plan.name}',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 13.5,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ),
+
+                const SizedBox(height: AppSpacing.lg),
                 Divider(
-                  color: isDark ? AppColors.borderDark : AppColors.dividerLight,
+                  color: isDark ? Colors.white10 : const Color(0xFFE2E8F0),
                 ),
                 const SizedBox(height: AppSpacing.sm),
 
                 // Key limits
                 _PlanLimitRow(
-                  icon: Icons.people_outline,
+                  icon: Icons.people_outline_rounded,
                   text: 'Up to ${plan.maxUsers} Team Members',
                   isDark: isDark,
                 ),
@@ -762,7 +1022,7 @@ class _DynamicPlanCard extends StatelessWidget {
 
                 const SizedBox(height: AppSpacing.xs),
                 Divider(
-                  color: isDark ? AppColors.borderDark : AppColors.dividerLight,
+                  color: isDark ? Colors.white10 : const Color(0xFFE2E8F0),
                 ),
                 const SizedBox(height: AppSpacing.sm),
 
@@ -774,19 +1034,19 @@ class _DynamicPlanCard extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const Icon(
-                          Icons.check_circle_outline,
+                          Icons.check_circle_rounded,
                           size: 16,
-                          color: AppColors.success,
+                          color: Color(0xFF10B981),
                         ),
                         const SizedBox(width: AppSpacing.sm),
                         Expanded(
                           child: Text(
                             feature,
-                            style: AppTypography.bodySmall.copyWith(
+                            style: TextStyle(
+                              fontSize: 12.5,
                               height: 1.35,
-                              color: isDark
-                                  ? AppColors.textDarkPrimary
-                                  : AppColors.textLightPrimary,
+                              fontWeight: FontWeight.w500,
+                              color: primaryTextColor,
                             ),
                           ),
                         ),
@@ -817,15 +1077,20 @@ class _PlanLimitRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: AppSpacing.xs),
+      padding: const EdgeInsets.only(bottom: AppSpacing.xs + 2),
       child: Row(
         children: [
-          Icon(icon, size: 16, color: AppColors.primary),
+          Icon(
+            icon,
+            size: 16,
+            color: const Color(0xFF10B981),
+          ),
           const SizedBox(width: AppSpacing.sm),
           Expanded(
             child: Text(
               text,
-              style: AppTypography.bodySmall.copyWith(
+              style: TextStyle(
+                fontSize: 12.5,
                 fontWeight: FontWeight.w600,
                 color: isDark
                     ? AppColors.textDarkPrimary
