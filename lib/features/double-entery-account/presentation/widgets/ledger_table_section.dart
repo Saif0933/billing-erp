@@ -102,6 +102,7 @@ class LedgerTableSection extends ConsumerWidget {
 
         // Table Container
         Container(
+          clipBehavior: Clip.antiAlias,
           decoration: BoxDecoration(
             color: isDark ? const Color(0xFF1E293B) : Colors.white,
             borderRadius: BorderRadius.circular(16),
@@ -112,126 +113,141 @@ class LedgerTableSection extends ConsumerWidget {
           ),
           child: Column(
             children: [
-              // Horizontally Scrollable Table Content
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: SizedBox(
-                  width: 780, // Full width for clean tabular rendering
-                  child: Column(
-                    children: [
-                      // Header Row
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                        decoration: BoxDecoration(
-                          color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
-                          borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-                        ),
-                        child: const Row(
-                          children: [
-                            SizedBox(width: 100, child: Text('Date', style: _headerStyle)),
-                            SizedBox(width: 130, child: Text('Voucher No.', style: _headerStyle)),
-                            SizedBox(width: 130, child: Text('Account', style: _headerStyle)),
-                            Expanded(child: Text('Narration', style: _headerStyle)),
-                            SizedBox(width: 90, child: Text('Debit (₹)', textAlign: TextAlign.right, style: _headerStyle)),
-                            SizedBox(width: 90, child: Text('Credit (₹)', textAlign: TextAlign.right, style: _headerStyle)),
-                            SizedBox(width: 100, child: Text('Balance (₹)', textAlign: TextAlign.right, style: _headerStyle)),
-                          ],
-                        ),
-                      ),
-                      const Divider(height: 1, color: Color(0xFFE2E8F0)),
+              // Horizontally Scrollable Table Content that expands to fill full card on desktop
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  const minTableWidth = 960.0;
+                  final tableWidth = constraints.maxWidth > minTableWidth
+                      ? constraints.maxWidth
+                      : minTableWidth;
 
-                      // Data Rows
-                      if (summary.isLoading)
-                        Container(
-                          padding: const EdgeInsets.all(40),
-                          alignment: Alignment.center,
-                          child: const Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              CircularProgressIndicator(color: Color(0xFF15803D)),
-                              SizedBox(height: 12),
-                              Text(
-                                'Loading general ledger entries...',
-                                style: TextStyle(fontSize: 13, color: Color(0xFF64748B)),
-                              ),
-                            ],
+                  return SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: SizedBox(
+                      width: tableWidth,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          // Header Row
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            decoration: BoxDecoration(
+                              color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+                            ),
+                            child: const Row(
+                              children: [
+                                SizedBox(width: 110, child: Text('Date', style: _headerStyle)),
+                                SizedBox(width: 175, child: Text('Voucher No.', style: _headerStyle)),
+                                SizedBox(width: 130, child: Text('Account', style: _headerStyle)),
+                                Expanded(child: Text('Narration', style: _headerStyle)),
+                                SizedBox(width: 110, child: Text('Debit (₹)', textAlign: TextAlign.right, style: _headerStyle)),
+                                SizedBox(width: 110, child: Text('Credit (₹)', textAlign: TextAlign.right, style: _headerStyle)),
+                                SizedBox(width: 120, child: Text('Balance (₹)', textAlign: TextAlign.right, style: _headerStyle)),
+                              ],
+                            ),
                           ),
-                        )
-                      else if (summary.error != null && summary.pagedItems.isEmpty)
-                        Container(
-                          padding: const EdgeInsets.all(32),
-                          alignment: Alignment.center,
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(Icons.error_outline, color: Color(0xFFDC2626), size: 36),
-                              const SizedBox(height: 8),
-                              Text(
-                                'Unable to load ledger entries',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.bold,
-                                  color: isDark ? Colors.white : const Color(0xFF0F172A),
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                summary.error!,
-                                style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
-                                textAlign: TextAlign.center,
-                              ),
-                              const SizedBox(height: 12),
-                              ElevatedButton.icon(
-                                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF15803D)),
-                                icon: const Icon(Icons.refresh, size: 16, color: Colors.white),
-                                label: const Text('Retry', style: TextStyle(color: Colors.white)),
-                                onPressed: () => notifier.refresh(),
-                              ),
-                            ],
-                          ),
-                        )
-                      else if (summary.pagedItems.isEmpty)
-                        Container(
-                          padding: const EdgeInsets.all(40),
-                          alignment: Alignment.center,
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Icons.inbox_outlined,
-                                size: 40,
-                                color: isDark ? Colors.white38 : const Color(0xFF94A3B8),
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                'No transactions match your search/filter.',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color: isDark ? Colors.white60 : const Color(0xFF64748B),
-                                ),
-                              ),
-                            ],
-                          ),
-                        )
-                      else
-                        ListView.separated(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          itemCount: summary.pagedItems.length,
-                          separatorBuilder: (context, index) => Divider(
+                          Divider(
                             height: 1,
-                            color: isDark ? Colors.white12 : const Color(0xFFF1F5F9),
+                            color: isDark ? Colors.white12 : const Color(0xFFE2E8F0),
                           ),
-                          itemBuilder: (context, index) {
-                            final item = summary.pagedItems[index];
-                            return _buildTableRow(context, item, isDark);
-                          },
-                        ),
-                    ],
-                  ),
-                ),
+
+                          // Data Rows
+                          if (summary.isLoading)
+                            Container(
+                              padding: const EdgeInsets.all(40),
+                              alignment: Alignment.center,
+                              child: const Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  CircularProgressIndicator(color: Color(0xFF15803D)),
+                                  SizedBox(height: 12),
+                                  Text(
+                                    'Loading general ledger entries...',
+                                    style: TextStyle(fontSize: 13, color: Color(0xFF64748B)),
+                                  ),
+                                ],
+                              ),
+                            )
+                          else if (summary.error != null && summary.pagedItems.isEmpty)
+                            Container(
+                              padding: const EdgeInsets.all(32),
+                              alignment: Alignment.center,
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.error_outline, color: Color(0xFFDC2626), size: 36),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    'Unable to load ledger entries',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold,
+                                      color: isDark ? Colors.white : const Color(0xFF0F172A),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    summary.error!,
+                                    style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                  const SizedBox(height: 12),
+                                  ElevatedButton.icon(
+                                    style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF15803D)),
+                                    icon: const Icon(Icons.refresh, size: 16, color: Colors.white),
+                                    label: const Text('Retry', style: TextStyle(color: Colors.white)),
+                                    onPressed: () => notifier.refresh(),
+                                  ),
+                                ],
+                              ),
+                            )
+                          else if (summary.pagedItems.isEmpty)
+                            Container(
+                              padding: const EdgeInsets.all(40),
+                              alignment: Alignment.center,
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.inbox_outlined,
+                                    size: 40,
+                                    color: isDark ? Colors.white38 : const Color(0xFF94A3B8),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    'No transactions match your search/filter.',
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      color: isDark ? Colors.white60 : const Color(0xFF64748B),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            )
+                          else
+                            ListView.separated(
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              itemCount: summary.pagedItems.length,
+                              separatorBuilder: (context, index) => Divider(
+                                height: 1,
+                                color: isDark ? Colors.white12 : const Color(0xFFF1F5F9),
+                              ),
+                              itemBuilder: (context, index) {
+                                final item = summary.pagedItems[index];
+                                return _buildTableRow(context, item, isDark);
+                              },
+                            ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
               ),
-              const Divider(height: 1, color: Color(0xFFE2E8F0)),
+              Divider(
+                height: 1,
+                color: isDark ? Colors.white12 : const Color(0xFFE2E8F0),
+              ),
 
               // Pagination Footer Row (Scrollable horizontally on narrow devices to prevent overflow)
               LayoutBuilder(
@@ -383,7 +399,7 @@ class LedgerTableSection extends ConsumerWidget {
           children: [
             // Date + Time
             SizedBox(
-              width: 100,
+              width: 110,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -409,16 +425,16 @@ class LedgerTableSection extends ConsumerWidget {
 
             // Voucher No + Voucher Type
             SizedBox(
-              width: 130,
+              width: 175,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     item.voucherNo,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF15803D), // Emerald green like in image
+                      color: isDark ? const Color(0xFF34D399) : const Color(0xFF15803D), // Emerald green like in image
                     ),
                   ),
                   const SizedBox(height: 2),
@@ -461,7 +477,7 @@ class LedgerTableSection extends ConsumerWidget {
 
             // Debit (₹)
             SizedBox(
-              width: 90,
+              width: 110,
               child: Text(
                 item.debit > 0 ? _formatCurrency(item.debit) : '-',
                 textAlign: TextAlign.right,
@@ -475,7 +491,7 @@ class LedgerTableSection extends ConsumerWidget {
 
             // Credit (₹)
             SizedBox(
-              width: 90,
+              width: 110,
               child: Text(
                 item.credit > 0 ? _formatCurrency(item.credit) : '-',
                 textAlign: TextAlign.right,
@@ -489,7 +505,7 @@ class LedgerTableSection extends ConsumerWidget {
 
             // Balance (₹) + Dr/Cr badge below
             SizedBox(
-              width: 100,
+              width: 120,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [

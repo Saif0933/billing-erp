@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:share_plus/share_plus.dart';
+import 'package:intl/intl.dart';
 
+import '../../../../core/utils/file_downloader_helper.dart';
 import '../providers/general_ledger_provider.dart';
 import '../widgets/ledger_filter_section.dart';
 import '../widgets/ledger_insights_card.dart';
@@ -163,37 +164,71 @@ class GeneralLedgerPage extends ConsumerWidget {
     GeneralLedgerSummaryData summary,
   ) async {
     try {
+      String? csvContent;
+      final dateStamp = DateFormat('yyyyMMdd_HHmmss').format(DateTime.now());
+      String fileName = 'general_ledger_$dateStamp.csv';
+
       final exportResult =
           await ref.read(generalLedgerNotifierProvider.notifier).exportLedger(format: 'csv');
       if (exportResult != null && exportResult['csv'] != null) {
-        final csvContent = exportResult['csv'].toString();
-        await Share.share(
-          csvContent,
-          subject: exportResult['filename']?.toString() ?? 'general_ledger.csv',
-        );
-        return;
+        csvContent = exportResult['csv'].toString();
+        if (exportResult['filename'] != null) {
+          fileName = exportResult['filename'].toString();
+        }
       }
-    } catch (_) {}
 
-    // Fallback: formatted ledger statement summary
-    final buffer = StringBuffer();
-    buffer.writeln('========================================');
-    buffer.writeln('GENERAL LEDGER STATEMENT');
-    buffer.writeln('Generated: ${DateTime.now().toLocal()}');
-    buffer.writeln('========================================');
-    buffer.writeln('Total Debit:    ₹${summary.totalDebit.toStringAsFixed(2)}');
-    buffer.writeln('Total Credit:   ₹${summary.totalCredit.toStringAsFixed(2)}');
-    buffer.writeln('Closing Balance: ₹${summary.closingBalance.toStringAsFixed(2)}');
-    buffer.writeln('Total Entries:  ${summary.totalEntries}');
-    buffer.writeln('Status:         ${summary.isBalanced ? "Balanced (Dr = Cr)" : "Unbalanced"}');
-    buffer.writeln('----------------------------------------');
-    for (final item in summary.pagedItems) {
-      buffer.writeln(
-        '${item.date} ${item.time} | ${item.voucherNo} | ${item.account} | Dr: ${item.debit} | Cr: ${item.credit} | Bal: ${item.balance} ${item.isDebitBalance ? "Dr" : "Cr"}',
+      if (csvContent == null || csvContent.trim().isEmpty) {
+        // Build clean CSV table from ledger transactions
+        final buffer = StringBuffer();
+        buffer.writeln('Date,Time,Voucher No,Voucher Type,Account,Narration,Debit (₹),Credit (₹),Balance (₹),Dr/Cr');
+        for (final item in summary.pagedItems) {
+          final cleanNarration = '"${item.narration.replaceAll('"', '""')}"';
+          final cleanAccount = '"${item.account.replaceAll('"', '""')}"';
+          buffer.writeln(
+            '=" ${item.date}"," ${item.time}","${item.voucherNo}","${item.voucherType}",$cleanAccount,$cleanNarration,${item.debit > 0 ? item.debit.toStringAsFixed(2) : '0.00'},${item.credit > 0 ? item.credit.toStringAsFixed(2) : '0.00'},${item.balance.toStringAsFixed(2)},${item.isDebitBalance ? 'Dr' : 'Cr'}',
+          );
+        }
+        csvContent = buffer.toString();
+      }
+
+      await downloadFileToDevice(
+        content: csvContent,
+        fileName: fileName,
+        mimeType: 'text/csv;charset=utf-8',
       );
-    }
-    buffer.writeln('========================================');
 
-    Share.share(buffer.toString());
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.check_circle_rounded, color: Color(0xFF10B981), size: 20),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Ledger exported successfully ($fileName)',
+                    style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.white),
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: const Color(0xFF0F172A),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Export failed: $e'),
+            backgroundColor: const Color(0xFFDC2626),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
   }
 }
