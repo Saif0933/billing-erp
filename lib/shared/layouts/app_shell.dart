@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -23,12 +24,13 @@ class AppShell extends ConsumerStatefulWidget {
 
 class _AppShellState extends ConsumerState<AppShell> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  DateTime? _lastBackPressTime;
 
   int _calculateSelectedIndex(String location) {
-    if (location == '/dashboard') return 0;
+    if (location == '/dashboard' || location == '/') return 0;
     if (location == '/sales') return 1;
-    if (location == '/pos') return 2;
-    if (location == '/inventory') return 3;
+    if (location == '/pos' || location.startsWith('/pos')) return 2;
+    if (location == '/inventory' || location.startsWith('/inventory')) return 3;
     return 0;
   }
 
@@ -126,44 +128,6 @@ class _AppShellState extends ConsumerState<AppShell> {
                           ),
                         ],
                       ),
-                      /*
-                      const SizedBox(height: AppSpacing.lg),
-                      _buildMoreGroup(
-                        context,
-                        title: 'Manufacturing & Workflow',
-                        subscription: subscription,
-                        items: [
-                          _buildMoreItem(
-                            context,
-                            'Bill of Materials',
-                            '/manufacturing/bom',
-                            Icons.settings_input_component_outlined,
-                            SubscriptionFeature.manufacturing,
-                          ),
-                          _buildMoreItem(
-                            context,
-                            'Production Orders',
-                            '/manufacturing/production-orders',
-                            Icons.precision_manufacturing_outlined,
-                            SubscriptionFeature.manufacturing,
-                          ),
-                          _buildMoreItem(
-                            context,
-                            'Job Work Register',
-                            '/manufacturing/job-work',
-                            Icons.assignment_ind_outlined,
-                            SubscriptionFeature.manufacturing,
-                          ),
-                          _buildMoreItem(
-                            context,
-                            'Manufacturing Reports',
-                            '/manufacturing/reports',
-                            Icons.assessment_outlined,
-                            SubscriptionFeature.manufacturing,
-                          ),
-                        ],
-                      ),
-                      */
                       const SizedBox(height: AppSpacing.lg),
                       _buildMoreGroup(
                         context,
@@ -349,77 +313,119 @@ class _AppShellState extends ConsumerState<AppShell> {
     final isPosTerminal = currentLoc == '/pos' || currentLoc.startsWith('/pos');
     final showTopHeader = !isPosTerminal;
 
+    // Show Bottom Navigation Bar ONLY on the main tabs: Home (/dashboard), Sales (/sales), POS (/pos), Stock (/inventory)
+    final isMainTab = currentLoc == '/dashboard' ||
+        currentLoc == '/' ||
+        currentLoc == '/sales' ||
+        currentLoc == '/pos' ||
+        currentLoc == '/inventory';
+
+    final showBottomNav = isMobile && isMainTab;
+
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Scaffold(
-      key: _scaffoldKey,
-      appBar: showTopHeader
-          ? ResponsiveTopHeader(scaffoldKey: _scaffoldKey)
-          : null,
-      drawer: (isMobile && showTopHeader) ? const MobileDrawer() : null,
-      body: Row(
-        children: [
-          // Sidebar for Desktop & Tablet (Hidden on POS Sales Terminal for full screen width)
-          if (!isMobile && !isPosTerminal) const DesktopSidebar(),
-          // Content Area
-          Expanded(
-            child: widget.child,
-          ),
-        ],
-      ),
-      bottomNavigationBar: (isMobile && showTopHeader)
-          ? Container(
-              decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF0B132B) : Colors.white,
-                border: Border(
-                  top: BorderSide(
-                    color: isDark
-                        ? const Color(0xFF1E2E4A)
-                        : AppColors.borderLight,
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+
+        // 1. If Mobile Drawer is open, close drawer first
+        if (_scaffoldKey.currentState?.isDrawerOpen ?? false) {
+          _scaffoldKey.currentState?.closeDrawer();
+          return;
+        }
+
+        // 2. If user is on any other tab/screen, go back to Dashboard
+        if (currentLoc != '/dashboard' && currentLoc != '/') {
+          context.go('/dashboard');
+          return;
+        }
+
+        // 3. If on Dashboard, press back again to exit
+        final now = DateTime.now();
+        if (_lastBackPressTime == null ||
+            now.difference(_lastBackPressTime!) > const Duration(seconds: 2)) {
+          _lastBackPressTime = now;
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Press back again to exit'),
+              duration: Duration(seconds: 2),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+          return;
+        }
+
+        SystemNavigator.pop();
+      },
+      child: Scaffold(
+        key: _scaffoldKey,
+        appBar: showTopHeader
+            ? ResponsiveTopHeader(scaffoldKey: _scaffoldKey)
+            : null,
+        drawer: (isMobile && showTopHeader) ? const MobileDrawer() : null,
+        body: Row(
+          children: [
+            // Sidebar for Desktop & Tablet (Hidden on POS Sales Terminal for full screen width)
+            if (!isMobile && !isPosTerminal) const DesktopSidebar(),
+            // Content Area
+            Expanded(child: widget.child),
+          ],
+        ),
+        bottomNavigationBar: showBottomNav
+            ? Container(
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0xFF0B132B) : Colors.white,
+                  border: Border(
+                    top: BorderSide(
+                      color: isDark
+                          ? const Color(0xFF1E2E4A)
+                          : AppColors.borderLight,
+                    ),
                   ),
                 ),
-              ),
-              child: BottomNavigationBar(
-                backgroundColor: isDark
-                    ? const Color(0xFF0B132B)
-                    : Colors.white,
-                elevation: 0,
-                currentIndex: _calculateSelectedIndex(currentLoc),
-                selectedItemColor: const Color(0xFF10B981),
-                unselectedItemColor: isDark
-                    ? const Color(0xFF94A3B8)
-                    : const Color(0xFF64748B),
-                type: BottomNavigationBarType.fixed,
-                onTap: _onBottomNavTapped,
-                items: const [
-                  BottomNavigationBarItem(
-                    icon: Icon(Icons.dashboard_outlined),
-                    activeIcon: Icon(Icons.dashboard),
-                    label: 'Home',
-                  ),
-                  BottomNavigationBarItem(
-                    icon: Icon(Icons.receipt_long_outlined),
-                    activeIcon: Icon(Icons.receipt_long),
-                    label: 'Sales',
-                  ),
-                  BottomNavigationBarItem(
-                    icon: Icon(Icons.point_of_sale_outlined),
-                    activeIcon: Icon(Icons.point_of_sale),
-                    label: 'POS',
-                  ),
-                  BottomNavigationBarItem(
-                    icon: Icon(Icons.warehouse_outlined),
-                    activeIcon: Icon(Icons.warehouse),
-                    label: 'Stock',
-                  ),
-                  BottomNavigationBarItem(
-                    icon: Icon(Icons.more_horiz),
-                    label: 'More',
-                  ),
-                ],
-              ),
-            )
-          : null,
+                child: BottomNavigationBar(
+                  backgroundColor: isDark
+                      ? const Color(0xFF0B132B)
+                      : Colors.white,
+                  elevation: 0,
+                  currentIndex: _calculateSelectedIndex(currentLoc),
+                  selectedItemColor: const Color(0xFF10B981),
+                  unselectedItemColor: isDark
+                      ? const Color(0xFF94A3B8)
+                      : const Color(0xFF64748B),
+                  type: BottomNavigationBarType.fixed,
+                  onTap: _onBottomNavTapped,
+                  items: const [
+                    BottomNavigationBarItem(
+                      icon: Icon(Icons.dashboard_outlined),
+                      activeIcon: Icon(Icons.dashboard),
+                      label: 'Home',
+                    ),
+                    BottomNavigationBarItem(
+                      icon: Icon(Icons.receipt_long_outlined),
+                      activeIcon: Icon(Icons.receipt_long),
+                      label: 'Sales',
+                    ),
+                    BottomNavigationBarItem(
+                      icon: Icon(Icons.point_of_sale_outlined),
+                      activeIcon: Icon(Icons.point_of_sale),
+                      label: 'POS',
+                    ),
+                    BottomNavigationBarItem(
+                      icon: Icon(Icons.warehouse_outlined),
+                      activeIcon: Icon(Icons.warehouse),
+                      label: 'Stock',
+                    ),
+                    BottomNavigationBarItem(
+                      icon: Icon(Icons.more_horiz),
+                      label: 'More',
+                    ),
+                  ],
+                ),
+              )
+            : null,
+      ),
     );
   }
 }
