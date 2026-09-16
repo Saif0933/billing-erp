@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../../shared/widgets/feedback.dart';
+import '../../data/services/gst_export_helper.dart';
 import '../../domain/models/gst_models.dart';
 import '../providers/gst_provider.dart';
+import 'gst_file_return_dialog.dart';
 
 class GstReturnsDashboardCard extends ConsumerWidget {
   const GstReturnsDashboardCard({super.key});
@@ -10,9 +11,11 @@ class GstReturnsDashboardCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final returns = ref.watch(gstReturnsListProvider);
+    final profile = ref.watch(gstProfileProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
+      clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF1E293B) : Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -27,48 +30,89 @@ class GstReturnsDashboardCard extends ConsumerWidget {
           // Header
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            child: Text(
-              'Upcoming & Recent Returns',
-              style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.bold,
-                color: isDark ? Colors.white : const Color(0xFF0F172A),
-              ),
-            ),
-          ),
-          const Divider(height: 1, color: Color(0xFFE2E8F0)),
-
-          // Horizontally Scrollable Table Canvas
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: SizedBox(
-              width: 620,
-              child: Column(
-                children: [
-                  // Table Column Headers
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                    color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Upcoming & Recent Returns',
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                    color: isDark ? Colors.white : const Color(0xFF0F172A),
+                  ),
+                ),
+                // Export All Returns
+                InkWell(
+                  onTap: () => GstExportHelper.downloadAllReturnsExcel(
+                    context: context,
+                    returns: returns,
+                    profile: profile,
+                  ),
+                  borderRadius: BorderRadius.circular(6),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                     child: Row(
+                      mainAxisSize: MainAxisSize.min,
                       children: const [
-                        SizedBox(width: 85, child: Text('Return Type', style: _headerStyle)),
-                        SizedBox(width: 85, child: Text('Tax Period', style: _headerStyle)),
-                        SizedBox(width: 95, child: Text('Due Date', style: _headerStyle)),
-                        SizedBox(width: 90, child: Text('Status', textAlign: TextAlign.center, style: _headerStyle)),
-                        SizedBox(width: 105, child: Text('Liability (₹)', textAlign: TextAlign.right, style: _headerStyle)),
-                        SizedBox(width: 120, child: Text('Actions', textAlign: TextAlign.right, style: _headerStyle)),
+                        Icon(Icons.file_download_outlined, size: 14, color: Color(0xFF15803D)),
+                        SizedBox(width: 4),
+                        Text(
+                          'Export All',
+                          style: TextStyle(
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF15803D),
+                          ),
+                        ),
                       ],
                     ),
                   ),
-                  const Divider(height: 1, color: Color(0xFFE2E8F0)),
-
-                  // 5 Exact Rows
-                  ...returns.map((item) => _buildTableRow(context, item, isDark)),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
-          const Divider(height: 1, color: Color(0xFFE2E8F0)),
+          Divider(height: 1, color: isDark ? Colors.white12 : const Color(0xFFE2E8F0)),
+
+          // Horizontally Scrollable Table Canvas with Dynamic Width
+          LayoutBuilder(
+            builder: (context, constraints) {
+              const minTableWidth = 620.0;
+              final tableWidth = constraints.maxWidth > minTableWidth
+                  ? constraints.maxWidth
+                  : minTableWidth;
+
+              return SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: SizedBox(
+                  width: tableWidth,
+                  child: Column(
+                    children: [
+                      // Table Column Headers
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                        color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+                        child: Row(
+                          children: const [
+                            SizedBox(width: 90, child: Text('Return Type', style: _headerStyle)),
+                            SizedBox(width: 90, child: Text('Tax Period', style: _headerStyle)),
+                            SizedBox(width: 100, child: Text('Due Date', style: _headerStyle)),
+                            SizedBox(width: 90, child: Text('Status', textAlign: TextAlign.center, style: _headerStyle)),
+                            Expanded(child: Text('Liability (₹)', textAlign: TextAlign.right, style: _headerStyle)),
+                            SizedBox(width: 120, child: Text('Actions', textAlign: TextAlign.right, style: _headerStyle)),
+                          ],
+                        ),
+                      ),
+                      Divider(height: 1, color: isDark ? Colors.white12 : const Color(0xFFE2E8F0)),
+
+                      // Table Data Rows
+                      ...returns.map((item) => _buildTableRow(context, item, profile, isDark)),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+          Divider(height: 1, color: isDark ? Colors.white12 : const Color(0xFFE2E8F0)),
 
           // Bottom Link: View All Returns ->
           Padding(
@@ -105,14 +149,14 @@ class GstReturnsDashboardCard extends ConsumerWidget {
     color: Color(0xFF64748B),
   );
 
-  Widget _buildTableRow(BuildContext context, GstReturnRecord item, bool isDark) {
+  Widget _buildTableRow(BuildContext context, GstReturnRecord item, GstProfile profile, bool isDark) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       child: Row(
         children: [
           // Return Type
           SizedBox(
-            width: 85,
+            width: 90,
             child: Text(
               item.returnType,
               style: TextStyle(
@@ -125,7 +169,7 @@ class GstReturnsDashboardCard extends ConsumerWidget {
 
           // Tax Period
           SizedBox(
-            width: 85,
+            width: 90,
             child: Text(
               item.taxPeriod,
               style: TextStyle(
@@ -137,7 +181,7 @@ class GstReturnsDashboardCard extends ConsumerWidget {
 
           // Due Date
           SizedBox(
-            width: 95,
+            width: 100,
             child: Text(
               item.dueDate,
               style: TextStyle(
@@ -174,8 +218,7 @@ class GstReturnsDashboardCard extends ConsumerWidget {
           ),
 
           // Liability (₹)
-          SizedBox(
-            width: 105,
+          Expanded(
             child: Text(
               item.liabilityAmount != null ? _formatCurrency(item.liabilityAmount!) : '-',
               textAlign: TextAlign.right,
@@ -197,16 +240,11 @@ class GstReturnsDashboardCard extends ConsumerWidget {
               children: [
                 InkWell(
                   onTap: () {
-                    AppFeedback.showSnackbar(
-                      context,
-                      message: item.status == GstReturnStatus.notFiled
-                          ? 'Opening ${item.returnType} preparation wizard...'
-                          : 'Viewing filed ${item.returnType} summary...',
-                    );
+                    GstFileReturnDialog.show(context, item);
                   },
                   borderRadius: BorderRadius.circular(6),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(
                       color: item.status == GstReturnStatus.notFiled
                           ? (isDark ? const Color(0xFF0F172A) : Colors.white)
@@ -238,10 +276,55 @@ class GstReturnsDashboardCard extends ConsumerWidget {
                   ),
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(),
-                  onSelected: (val) {},
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  onSelected: (val) {
+                    if (val == 'json') {
+                      GstExportHelper.downloadReturnJson(
+                        context: context,
+                        item: item,
+                        profile: profile,
+                      );
+                    } else if (val == 'excel') {
+                      GstExportHelper.downloadReturnExcel(
+                        context: context,
+                        item: item,
+                        profile: profile,
+                      );
+                    } else if (val == 'details') {
+                      GstFileReturnDialog.show(context, item);
+                    }
+                  },
                   itemBuilder: (ctx) => [
-                    const PopupMenuItem(value: 'json', child: Text('Download JSON', style: TextStyle(fontSize: 12))),
-                    const PopupMenuItem(value: 'excel', child: Text('Export to Excel', style: TextStyle(fontSize: 12))),
+                    PopupMenuItem(
+                      value: 'details',
+                      child: Row(
+                        children: const [
+                          Icon(Icons.visibility_outlined, size: 14),
+                          SizedBox(width: 8),
+                          Text('View Return Summary', style: TextStyle(fontSize: 12)),
+                        ],
+                      ),
+                    ),
+                    PopupMenuItem(
+                      value: 'json',
+                      child: Row(
+                        children: const [
+                          Icon(Icons.code, size: 14, color: Color(0xFF0284C7)),
+                          SizedBox(width: 8),
+                          Text('Download JSON', style: TextStyle(fontSize: 12)),
+                        ],
+                      ),
+                    ),
+                    PopupMenuItem(
+                      value: 'excel',
+                      child: Row(
+                        children: const [
+                          Icon(Icons.table_chart_outlined, size: 14, color: Color(0xFF15803D)),
+                          SizedBox(width: 8),
+                          Text('Export to Excel', style: TextStyle(fontSize: 12)),
+                        ],
+                      ),
+                    ),
                   ],
                 ),
               ],
