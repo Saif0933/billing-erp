@@ -16,6 +16,7 @@ class JournalEntriesTable extends ConsumerWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
+      clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF1E293B) : Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -26,165 +27,185 @@ class JournalEntriesTable extends ConsumerWidget {
       ),
       child: Column(
         children: [
-          // Horizontally Scrollable Table Content
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: SizedBox(
-              width: 820, // Full width for clean tabular rendering
-              child: Column(
-                children: [
-                  // Table Header Row
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                    decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
-                      borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-                    ),
-                    child: Row(
-                      children: [
-                        SizedBox(
-                          width: 100,
-                          child: Row(
-                            children: const [
-                              Text('Date', style: _headerStyle),
-                              SizedBox(width: 4),
-                              Icon(Icons.swap_vert, size: 14, color: Color(0xFF64748B)),
+          // Horizontally Scrollable Table Content that expands to fill full card on desktop
+          LayoutBuilder(
+            builder: (context, constraints) {
+              const minTableWidth = 900.0;
+              final tableWidth = constraints.maxWidth > minTableWidth
+                  ? constraints.maxWidth
+                  : minTableWidth;
+
+              return SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: SizedBox(
+                  width: tableWidth,
+                  child: Column(
+                    children: [
+                      // Table Header Row
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        decoration: BoxDecoration(
+                          color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+                        ),
+                        child: Row(
+                          children: [
+                            SizedBox(
+                              width: 110,
+                              child: Row(
+                                children: const [
+                                  Text('Date', style: _headerStyle),
+                                  SizedBox(width: 4),
+                                  Icon(Icons.swap_vert, size: 14, color: Color(0xFF64748B)),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 140, child: Text('Journal No.', style: _headerStyle)),
+                            const SizedBox(width: 90, child: Text('Reference', style: _headerStyle)),
+                            const Expanded(child: Text('Narration', style: _headerStyle)),
+                            const SizedBox(width: 105, child: Text('Debit (₹)', textAlign: TextAlign.right, style: _headerStyle)),
+                            const SizedBox(width: 105, child: Text('Credit (₹)', textAlign: TextAlign.right, style: _headerStyle)),
+                            const SizedBox(width: 90, child: Text('Status', textAlign: TextAlign.center, style: _headerStyle)),
+                            const SizedBox(width: 50, child: Text('Actions', textAlign: TextAlign.center, style: _headerStyle)),
+                          ],
+                        ),
+                      ),
+                      Divider(
+                        height: 1,
+                        color: isDark ? Colors.white12 : const Color(0xFFE2E8F0),
+                      ),
+
+                      // Loading State
+                      if (state.isLoading && summary.pagedItems.isEmpty)
+                        Container(
+                          padding: const EdgeInsets.symmetric(vertical: 48),
+                          alignment: Alignment.center,
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const SizedBox(
+                                width: 28,
+                                height: 28,
+                                child: CircularProgressIndicator(strokeWidth: 2.5, color: Color(0xFF15803D)),
+                              ),
+                              const SizedBox(height: 14),
+                              Text(
+                                'Loading journal entries...',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: isDark ? Colors.white70 : const Color(0xFF64748B),
+                                ),
+                              ),
                             ],
                           ),
+                        )
+                      // Error State
+                      else if (state.error != null && summary.pagedItems.isEmpty)
+                        Container(
+                          padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
+                          alignment: Alignment.center,
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.error_outline_rounded, color: Colors.redAccent, size: 36),
+                              const SizedBox(height: 10),
+                              Text(
+                                'Failed to load journal entries',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                  color: isDark ? Colors.white : const Color(0xFF0F172A),
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                state.error!,
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: isDark ? Colors.white60 : const Color(0xFF64748B),
+                                ),
+                              ),
+                              const SizedBox(height: 14),
+                              ElevatedButton.icon(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF15803D),
+                                ),
+                                icon: const Icon(Icons.refresh, size: 16, color: Colors.white),
+                                label: const Text('Retry', style: TextStyle(color: Colors.white)),
+                                onPressed: () => notifier.fetchJournalEntries(isRefresh: true),
+                              ),
+                            ],
+                          ),
+                        )
+                      // Empty State
+                      else if (summary.pagedItems.isEmpty)
+                        Container(
+                          padding: const EdgeInsets.symmetric(vertical: 48, horizontal: 20),
+                          alignment: Alignment.center,
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.receipt_long_outlined,
+                                size: 44,
+                                color: isDark ? Colors.white30 : const Color(0xFF94A3B8),
+                              ),
+                              const SizedBox(height: 12),
+                              Text(
+                                'No journal entries match the filter criteria.',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                  color: isDark ? Colors.white : const Color(0xFF0F172A),
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                'Try clearing search filters or changing the date range',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: isDark ? Colors.white60 : const Color(0xFF64748B),
+                                ),
+                              ),
+                              const SizedBox(height: 14),
+                              ElevatedButton.icon(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+                                  foregroundColor: isDark ? Colors.white : const Color(0xFF0F172A),
+                                  elevation: 0,
+                                ),
+                                icon: const Icon(Icons.filter_alt_off_outlined, size: 16),
+                                label: const Text('Reset Filters'),
+                                onPressed: () => notifier.reset(),
+                              ),
+                            ],
+                          ),
+                        )
+                      // Table Data Rows
+                      else
+                        ListView.separated(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: summary.pagedItems.length,
+                          separatorBuilder: (context, index) => Divider(
+                            height: 1,
+                            color: isDark ? Colors.white12 : const Color(0xFFF1F5F9),
+                          ),
+                          itemBuilder: (context, index) {
+                            final item = summary.pagedItems[index];
+                            return _buildTableRow(context, ref, item, isDark);
+                          },
                         ),
-                        const SizedBox(width: 125, child: Text('Journal No.', style: _headerStyle)),
-                        const SizedBox(width: 80, child: Text('Reference', style: _headerStyle)),
-                        const Expanded(child: Text('Narration', style: _headerStyle)),
-                        const SizedBox(width: 95, child: Text('Debit (₹)', textAlign: TextAlign.right, style: _headerStyle)),
-                        const SizedBox(width: 95, child: Text('Credit (₹)', textAlign: TextAlign.right, style: _headerStyle)),
-                        const SizedBox(width: 80, child: Text('Status', textAlign: TextAlign.center, style: _headerStyle)),
-                        const SizedBox(width: 40, child: Text('Actions', textAlign: TextAlign.center, style: _headerStyle)),
-                      ],
-                    ),
+                    ],
                   ),
-                  const Divider(height: 1, color: Color(0xFFE2E8F0)),
-
-                  // Loading State
-                  if (state.isLoading && summary.pagedItems.isEmpty)
-                    Container(
-                      padding: const EdgeInsets.symmetric(vertical: 48),
-                      alignment: Alignment.center,
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const SizedBox(
-                            width: 28,
-                            height: 28,
-                            child: CircularProgressIndicator(strokeWidth: 2.5, color: Color(0xFF15803D)),
-                          ),
-                          const SizedBox(height: 14),
-                          Text(
-                            'Loading journal entries...',
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: isDark ? Colors.white70 : const Color(0xFF64748B),
-                            ),
-                          ),
-                        ],
-                      ),
-                    )
-                  // Error State
-                  else if (state.error != null && summary.pagedItems.isEmpty)
-                    Container(
-                      padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
-                      alignment: Alignment.center,
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(Icons.error_outline_rounded, color: Colors.redAccent, size: 36),
-                          const SizedBox(height: 10),
-                          Text(
-                            'Failed to load journal entries',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
-                              color: isDark ? Colors.white : const Color(0xFF0F172A),
-                            ),
-                          ),
-                          const SizedBox(height: 6),
-                          Text(
-                            state.error!,
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: isDark ? Colors.white60 : const Color(0xFF64748B),
-                            ),
-                          ),
-                          const SizedBox(height: 14),
-                          ElevatedButton.icon(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF15803D),
-                            ),
-                            icon: const Icon(Icons.refresh, size: 16, color: Colors.white),
-                            label: const Text('Retry', style: TextStyle(color: Colors.white)),
-                            onPressed: () => notifier.fetchJournalEntries(isRefresh: true),
-                          ),
-                        ],
-                      ),
-                    )
-                  // Empty State
-                  else if (summary.pagedItems.isEmpty)
-                    Container(
-                      padding: const EdgeInsets.symmetric(vertical: 48, horizontal: 20),
-                      alignment: Alignment.center,
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.receipt_long_outlined,
-                            size: 44,
-                            color: isDark ? Colors.white30 : const Color(0xFF94A3B8),
-                          ),
-                          const SizedBox(height: 12),
-                          Text(
-                            'No journal entries match the filter criteria.',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              color: isDark ? Colors.white : const Color(0xFF0F172A),
-                            ),
-                          ),
-                          const SizedBox(height: 6),
-                          Text(
-                            'Try clearing search filters or changing the date range',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: isDark ? Colors.white60 : const Color(0xFF64748B),
-                            ),
-                          ),
-                          const SizedBox(height: 14),
-                          OutlinedButton(
-                            onPressed: () => notifier.reset(),
-                            child: const Text('Reset All Filters'),
-                          ),
-                        ],
-                      ),
-                    )
-                  // Data Rows
-                  else
-                    ListView.separated(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: summary.pagedItems.length,
-                      separatorBuilder: (context, index) => Divider(
-                        height: 1,
-                        color: isDark ? Colors.white12 : const Color(0xFFF1F5F9),
-                      ),
-                      itemBuilder: (context, index) {
-                        final item = summary.pagedItems[index];
-                        return _buildTableRow(context, ref, item, isDark);
-                      },
-                    ),
-                ],
-              ),
-            ),
+                ),
+              );
+            },
           ),
-          const Divider(height: 1, color: Color(0xFFE2E8F0)),
+          Divider(
+            height: 1,
+            color: isDark ? Colors.white12 : const Color(0xFFE2E8F0),
+          ),
 
           // Pagination Footer Row
           LayoutBuilder(
@@ -361,7 +382,7 @@ class JournalEntriesTable extends ConsumerWidget {
           children: [
             // Date + Time
             SizedBox(
-              width: 100,
+              width: 110,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -387,7 +408,7 @@ class JournalEntriesTable extends ConsumerWidget {
 
             // Journal No + Type
             SizedBox(
-              width: 125,
+              width: 140,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -413,7 +434,7 @@ class JournalEntriesTable extends ConsumerWidget {
 
             // Reference
             SizedBox(
-              width: 80,
+              width: 90,
               child: Text(
                 item.reference,
                 style: TextStyle(
@@ -437,7 +458,7 @@ class JournalEntriesTable extends ConsumerWidget {
 
             // Debit (₹)
             SizedBox(
-              width: 95,
+              width: 105,
               child: Text(
                 _formatCurrency(item.debit),
                 textAlign: TextAlign.right,
@@ -451,7 +472,7 @@ class JournalEntriesTable extends ConsumerWidget {
 
             // Credit (₹)
             SizedBox(
-              width: 95,
+              width: 105,
               child: Text(
                 _formatCurrency(item.credit),
                 textAlign: TextAlign.right,
@@ -465,7 +486,7 @@ class JournalEntriesTable extends ConsumerWidget {
 
             // Status Badge (Posted / Draft / Voided)
             SizedBox(
-              width: 80,
+              width: 90,
               child: Center(
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -499,7 +520,7 @@ class JournalEntriesTable extends ConsumerWidget {
 
             // Actions (⋮)
             SizedBox(
-              width: 40,
+              width: 50,
               child: Center(
                 child: PopupMenuButton<String>(
                   icon: Icon(

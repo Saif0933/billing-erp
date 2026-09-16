@@ -15,6 +15,7 @@ class BankAccountsTable extends ConsumerWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
+      clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF1E293B) : Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -26,33 +27,42 @@ class BankAccountsTable extends ConsumerWidget {
       child: Column(
         children: [
           // Horizontally Scrollable Table
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: SizedBox(
-              width: 900,
-              child: Column(
-                children: [
-                  // Header Row
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                    decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
-                      borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-                    ),
-                    child: Row(
-                      children: const [
-                        SizedBox(width: 200, child: Text('Bank Account', style: _headerStyle)),
-                        SizedBox(width: 140, child: Text('Account Number', style: _headerStyle)),
-                        SizedBox(width: 100, child: Text('Account Type', style: _headerStyle)),
-                        SizedBox(width: 110, child: Text('Balance (₹)', textAlign: TextAlign.right, style: _headerStyle)),
-                        SizedBox(width: 110, child: Text('Cleared Balance (₹)', textAlign: TextAlign.right, style: _headerStyle)),
-                        SizedBox(width: 95, child: Text('Uncleared (₹)', textAlign: TextAlign.right, style: _headerStyle)),
-                        SizedBox(width: 75, child: Text('Status', textAlign: TextAlign.center, style: _headerStyle)),
-                        SizedBox(width: 38, child: Text('Actions', textAlign: TextAlign.center, style: _headerStyle)),
-                      ],
-                    ),
-                  ),
-                  const Divider(height: 1, color: Color(0xFFE2E8F0)),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              const minTableWidth = 920.0;
+              final tableWidth = constraints.maxWidth > minTableWidth
+                  ? constraints.maxWidth
+                  : minTableWidth;
+
+              return SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: SizedBox(
+                  width: tableWidth,
+                  child: Column(
+                    children: [
+                      // Header Row
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        decoration: BoxDecoration(
+                          color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+                        ),
+                        child: Row(
+                          children: const [
+                            Expanded(child: Text('Bank Account', style: _headerStyle)),
+                            SizedBox(width: 140, child: Text('Account Number', style: _headerStyle)),
+                            SizedBox(width: 100, child: Text('Account Type', style: _headerStyle)),
+                            SizedBox(width: 110, child: Text('Balance (₹)', textAlign: TextAlign.right, style: _headerStyle)),
+                            SizedBox(width: 115, child: Text('Cleared Balance (₹)', textAlign: TextAlign.right, style: _headerStyle)),
+                            SizedBox(width: 95, child: Text('Uncleared (₹)', textAlign: TextAlign.right, style: _headerStyle)),
+                            SizedBox(width: 80, child: Text('Status', textAlign: TextAlign.center, style: _headerStyle)),
+                            SizedBox(width: 50, child: Text('Actions', textAlign: TextAlign.center, style: _headerStyle)),
+                          ],
+                        ),
+                      ),
+                      Divider(
+                        height: 1,
+                        color: isDark ? Colors.white12 : const Color(0xFFE2E8F0),
+                      ),
 
                   // Data Rows or Loading / Error / Empty States
                   if (summary.isLoading)
@@ -144,8 +154,13 @@ class BankAccountsTable extends ConsumerWidget {
                 ],
               ),
             ),
-          ),
-          const Divider(height: 1, color: Color(0xFFE2E8F0)),
+          );
+        },
+      ),
+      Divider(
+        height: 1,
+        color: isDark ? Colors.white12 : const Color(0xFFE2E8F0),
+      ),
 
           // Dynamic Pagination Footer Row
           LayoutBuilder(
@@ -280,8 +295,7 @@ class BankAccountsTable extends ConsumerWidget {
       child: Row(
         children: [
           // Bank Logo & Name + Subtitle
-          SizedBox(
-            width: 200,
+          Expanded(
             child: Row(
               children: [
                 _buildBankLogo(item.logoType),
@@ -368,7 +382,7 @@ class BankAccountsTable extends ConsumerWidget {
 
           // Cleared Balance (₹)
           SizedBox(
-            width: 110,
+            width: 115,
             child: Text(
               '₹${_formatCurrency(item.clearedBalance)}',
               textAlign: TextAlign.right,
@@ -394,7 +408,7 @@ class BankAccountsTable extends ConsumerWidget {
 
           // Status Badge (Active)
           SizedBox(
-            width: 75,
+            width: 80,
             child: Center(
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2.5),
@@ -416,7 +430,7 @@ class BankAccountsTable extends ConsumerWidget {
 
           // Actions (⋮)
           SizedBox(
-            width: 38,
+            width: 50,
             child: Center(
               child: PopupMenuButton<String>(
                 icon: Icon(

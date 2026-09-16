@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:share_plus/share_plus.dart';
-import '../../../../shared/widgets/feedback.dart';
+import '../../data/services/financial_statement_export_helper.dart';
 import '../providers/financial_statements_provider.dart';
 
 class StatementDataTable extends ConsumerWidget {
@@ -14,6 +14,7 @@ class StatementDataTable extends ConsumerWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
+      clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF1E293B) : Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -66,30 +67,23 @@ class StatementDataTable extends ConsumerWidget {
                     _buildOutlinedBtn(
                       icon: Icons.file_download_outlined,
                       label: 'Export',
-                      onTap: () async {
-                        AppFeedback.showSnackbar(context, message: 'Exporting ${filter.reportTypeLabel} as CSV...');
-                        try {
-                          final res = await ref.read(financialStatementsNotifierProvider.notifier).exportStatement(format: 'csv');
-                          final content = res['content']?.toString() ?? '';
-                          if (content.isNotEmpty) {
-                            // ignore: deprecated_member_use
-                            Share.share(content);
-                          }
-                        } catch (_) {
-                          if (context.mounted) {
-                            AppFeedback.showSnackbar(context, message: 'Export completed.');
-                          }
-                        }
-                      },
+                      onTap: () => FinancialStatementExportHelper.downloadExcelStatement(
+                        context: context,
+                        ref: ref,
+                        summary: summary,
+                        filter: filter,
+                      ),
                       isDark: isDark,
                     ),
                     const SizedBox(width: 8),
                     _buildOutlinedBtn(
                       icon: Icons.print_outlined,
                       label: 'Print',
-                      onTap: () {
-                        AppFeedback.showSnackbar(context, message: 'Sending ${filter.reportTypeLabel} to printer...');
-                      },
+                      onTap: () => FinancialStatementExportHelper.downloadPdfStatement(
+                        context: context,
+                        summary: summary,
+                        filter: filter,
+                      ),
                       isDark: isDark,
                     ),
                     const SizedBox(width: 8),
@@ -118,22 +112,24 @@ class StatementDataTable extends ConsumerWidget {
                               '${filter.reportTypeLabel} - ${summary.companyName}\nPeriod: ${summary.currentPeriodLabel}\nTotal Income: ₹${_formatCurrency(summary.totalIncome)}\nTotal Expenses: ₹${_formatCurrency(summary.totalExpenses)}\nNet Profit: ₹${_formatCurrency(summary.netProfit)}',
                             );
                           } else if (val == 'excel') {
-                            if (context.mounted) {
-                              AppFeedback.showSnackbar(context, message: 'Exporting ${filter.reportTypeLabel} as Excel...');
-                            }
-                            try {
-                              final res = await ref.read(financialStatementsNotifierProvider.notifier).exportStatement(format: 'excel');
-                              final content = res['content']?.toString() ?? '';
-                              if (content.isNotEmpty) {
-                                // ignore: deprecated_member_use
-                                Share.share(content);
-                              }
-                            } catch (_) {}
+                            FinancialStatementExportHelper.downloadExcelStatement(
+                              context: context,
+                              ref: ref,
+                              summary: summary,
+                              filter: filter,
+                            );
+                          } else if (val == 'pdf') {
+                            FinancialStatementExportHelper.downloadPdfStatement(
+                              context: context,
+                              summary: summary,
+                              filter: filter,
+                            );
                           }
                         },
                         itemBuilder: (ctx) => const [
                           PopupMenuItem(value: 'share', child: Text('Share Statement', style: TextStyle(fontSize: 12.5))),
                           PopupMenuItem(value: 'excel', child: Text('Export to Excel', style: TextStyle(fontSize: 12.5))),
+                          PopupMenuItem(value: 'pdf', child: Text('Download PDF', style: TextStyle(fontSize: 12.5))),
                         ],
                       ),
                     ),
@@ -142,91 +138,100 @@ class StatementDataTable extends ConsumerWidget {
               ],
             ),
           ),
-          const Divider(height: 1, color: Color(0xFFE2E8F0)),
+          Divider(height: 1, color: isDark ? Colors.white12 : const Color(0xFFE2E8F0)),
 
-          // Horizontally Scrollable Table Content
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: SizedBox(
-              width: 780,
-              child: Column(
-                children: [
-                  // Table Column Headers
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                    color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
-                    child: Row(
-                      children: [
-                        const Expanded(child: SizedBox()),
-                        SizedBox(
-                          width: 170,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              Text(summary.currentPeriodLabel, style: _colHeaderStyle),
-                              const Text('( Current Period )', style: _colSubHeaderStyle),
-                            ],
+          // Horizontally Scrollable Table Content that dynamically expands to full card width
+          LayoutBuilder(
+            builder: (context, constraints) {
+              const minTableWidth = 780.0;
+              final tableWidth = constraints.maxWidth > minTableWidth
+                  ? constraints.maxWidth
+                  : minTableWidth;
+
+              return SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: SizedBox(
+                  width: tableWidth,
+                  child: Column(
+                    children: [
+                      // Table Column Headers
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                        color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+                        child: Row(
+                          children: [
+                            const Expanded(child: SizedBox()),
+                            SizedBox(
+                              width: 170,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  Text(summary.currentPeriodLabel, style: _colHeaderStyle(isDark)),
+                                  const Text('( Current Period )', style: _colSubHeaderStyle),
+                                ],
+                              ),
+                            ),
+                            SizedBox(
+                              width: 170,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  Text(summary.previousPeriodLabel, style: _colHeaderStyle(isDark)),
+                                  Text('( ${filter.compareWith} )', style: _colSubHeaderStyle),
+                                ],
+                              ),
+                            ),
+                            SizedBox(
+                              width: 110,
+                              child: Text('% Change', textAlign: TextAlign.right, style: _colHeaderStyle(isDark)),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Divider(height: 1, color: isDark ? Colors.white12 : const Color(0xFFE2E8F0)),
+
+                      if (summary.sections.isNotEmpty) ...[
+                        for (final section in summary.sections) ...[
+                          _buildSectionHeader(
+                            section.sectionTitle,
+                            _parseColor(section.sectionColor),
+                            isDark,
                           ),
-                        ),
-                        SizedBox(
-                          width: 170,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              Text(summary.previousPeriodLabel, style: _colHeaderStyle),
-                              Text('( ${filter.compareWith} )', style: _colSubHeaderStyle),
-                            ],
+                          ...section.items.map((item) => _buildDataRow(item, isDark)),
+                          _buildTotalRow(
+                            section.totalItem,
+                            isDark,
+                            isIncome: !section.sectionTitle.contains('EXPENSE') &&
+                                !section.sectionTitle.contains('LIABILIT'),
                           ),
-                        ),
-                        const SizedBox(
-                          width: 110,
-                          child: Text('% Change', textAlign: TextAlign.right, style: _colHeaderStyle),
-                        ),
+                          const SizedBox(height: 10),
+                        ],
+                        _buildNetProfitBannerRow(summary.netProfitItem, isDark),
+                        const SizedBox(height: 8),
+                      ] else ...[
+                        // Section 1: INCOME
+                        _buildSectionHeader('INCOME', const Color(0xFF15803D), isDark),
+                        ...summary.incomeItems.map((item) => _buildDataRow(item, isDark)),
+                        _buildTotalRow(summary.totalIncomeItem, isDark, isIncome: true),
+                        const SizedBox(height: 10),
+
+                        // Section 2: EXPENSES
+                        _buildSectionHeader('EXPENSES', const Color(0xFFDC2626), isDark),
+                        ...summary.expenseItems.map((item) => _buildDataRow(item, isDark)),
+                        _buildTotalRow(summary.totalExpenseItem, isDark, isIncome: false),
+                        const SizedBox(height: 12),
+
+                        // Section 3: NET PROFIT BANNER ROW
+                        _buildNetProfitBannerRow(summary.netProfitItem, isDark),
+                        const SizedBox(height: 8),
                       ],
-                    ),
-                  ),
-                  const Divider(height: 1, color: Color(0xFFE2E8F0)),
-
-                  if (summary.sections.isNotEmpty) ...[
-                    for (final section in summary.sections) ...[
-                      _buildSectionHeader(
-                        section.sectionTitle,
-                        _parseColor(section.sectionColor),
-                        isDark,
-                      ),
-                      ...section.items.map((item) => _buildDataRow(item, isDark)),
-                      _buildTotalRow(
-                        section.totalItem,
-                        isDark,
-                        isIncome: !section.sectionTitle.contains('EXPENSE') &&
-                            !section.sectionTitle.contains('LIABILIT'),
-                      ),
-                      const SizedBox(height: 10),
                     ],
-                    _buildNetProfitBannerRow(summary.netProfitItem, isDark),
-                    const SizedBox(height: 8),
-                  ] else ...[
-                    // Section 1: INCOME
-                    _buildSectionHeader('INCOME', const Color(0xFF15803D), isDark),
-                    ...summary.incomeItems.map((item) => _buildDataRow(item, isDark)),
-                    _buildTotalRow(summary.totalIncomeItem, isDark, isIncome: true),
-                    const SizedBox(height: 10),
-
-                    // Section 2: EXPENSES
-                    _buildSectionHeader('EXPENSES', const Color(0xFFDC2626), isDark),
-                    ...summary.expenseItems.map((item) => _buildDataRow(item, isDark)),
-                    _buildTotalRow(summary.totalExpenseItem, isDark, isIncome: false),
-                    const SizedBox(height: 12),
-
-                    // Section 3: NET PROFIT BANNER ROW
-                    _buildNetProfitBannerRow(summary.netProfitItem, isDark),
-                    const SizedBox(height: 8),
-                  ],
-                ],
-              ),
-            ),
+                  ),
+                ),
+              );
+            },
           ),
-          const Divider(height: 1, color: Color(0xFFE2E8F0)),
+          Divider(height: 1, color: isDark ? Colors.white12 : const Color(0xFFE2E8F0)),
 
           // Footer Note: ⓘ All amounts are in INR
           Padding(
@@ -254,10 +259,10 @@ class StatementDataTable extends ConsumerWidget {
     );
   }
 
-  static const _colHeaderStyle = TextStyle(
+  static TextStyle _colHeaderStyle(bool isDark) => TextStyle(
     fontSize: 12,
     fontWeight: FontWeight.bold,
-    color: Color(0xFF0F172A),
+    color: isDark ? Colors.white : const Color(0xFF0F172A),
   );
 
   static const _colSubHeaderStyle = TextStyle(

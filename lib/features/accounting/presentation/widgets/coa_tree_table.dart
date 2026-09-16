@@ -15,6 +15,7 @@ class CoaTreeTable extends ConsumerWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
+      clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF1E293B) : Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -25,199 +26,211 @@ class CoaTreeTable extends ConsumerWidget {
       ),
       child: Column(
         children: [
-          // Horizontally scrollable tree table
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: SizedBox(
-              width: 720, // Tabular width for comfortable display
-              child: Column(
-                children: [
-                  // Table Header Row: Account Name | Account Code | Account Type ▾ | Balance (₹) | Actions
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                    child: Row(
-                      children: [
-                        const Expanded(
-                          flex: 5,
-                          child: Text(
-                            'Account Name',
-                            style: TextStyle(
-                              fontSize: 11.5,
-                              fontWeight: FontWeight.w600,
-                              color: Color(0xFF64748B),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(
-                          width: 85,
-                          child: Text(
-                            'Account Code',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: 11.5,
-                              fontWeight: FontWeight.w600,
-                              color: Color(0xFF64748B),
-                            ),
-                          ),
-                        ),
-                        SizedBox(
-                          width: 95,
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: const [
-                              Text(
-                                'Account Type',
+          // Horizontally scrollable tree table that expands to fill card width
+          LayoutBuilder(
+            builder: (context, constraints) {
+              const minTableWidth = 850.0;
+              final tableWidth = constraints.maxWidth > minTableWidth
+                  ? constraints.maxWidth
+                  : minTableWidth;
+
+              return SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: SizedBox(
+                  width: tableWidth,
+                  child: Column(
+                    children: [
+                      // Table Header Row: Account Name | Account Code | Account Type ▾ | Balance (₹) | Actions
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        child: Row(
+                          children: [
+                            const Expanded(
+                              flex: 5,
+                              child: Text(
+                                'Account Name',
                                 style: TextStyle(
                                   fontSize: 11.5,
                                   fontWeight: FontWeight.w600,
                                   color: Color(0xFF64748B),
                                 ),
                               ),
-                              SizedBox(width: 2),
-                              Icon(Icons.keyboard_arrow_down, size: 13, color: Color(0xFF64748B)),
+                            ),
+                            const SizedBox(
+                              width: 100,
+                              child: Text(
+                                'Account Code',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontSize: 11.5,
+                                  fontWeight: FontWeight.w600,
+                                  color: Color(0xFF64748B),
+                                ),
+                              ),
+                            ),
+                            SizedBox(
+                              width: 110,
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: const [
+                                  Text(
+                                    'Account Type',
+                                    style: TextStyle(
+                                      fontSize: 11.5,
+                                      fontWeight: FontWeight.w600,
+                                      color: Color(0xFF64748B),
+                                    ),
+                                  ),
+                                  SizedBox(width: 2),
+                                  Icon(Icons.keyboard_arrow_down, size: 13, color: Color(0xFF64748B)),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(
+                              width: 140,
+                              child: Text(
+                                'Balance (₹)',
+                                textAlign: TextAlign.right,
+                                style: TextStyle(
+                                  fontSize: 11.5,
+                                  fontWeight: FontWeight.w600,
+                                  color: Color(0xFF64748B),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 40), // Space for chevron / action menu
+                          ],
+                        ),
+                      ),
+                      Divider(
+                        height: 1,
+                        color: isDark ? Colors.white12 : const Color(0xFFE2E8F0),
+                      ),
+
+                      // Loading state
+                      if (state.isLoading && summary.displayedGroups.isEmpty)
+                        Container(
+                          padding: const EdgeInsets.symmetric(vertical: 48),
+                          alignment: Alignment.center,
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const SizedBox(
+                                width: 28,
+                                height: 28,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2.5,
+                                  color: Color(0xFF15803D),
+                                ),
+                              ),
+                              const SizedBox(height: 14),
+                              Text(
+                                'Loading Chart of Accounts...',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: isDark ? Colors.white70 : const Color(0xFF64748B),
+                                ),
+                              ),
                             ],
                           ),
-                        ),
-                        const SizedBox(
-                          width: 120,
-                          child: Text(
-                            'Balance (₹)',
-                            textAlign: TextAlign.right,
-                            style: TextStyle(
-                              fontSize: 11.5,
-                              fontWeight: FontWeight.w600,
-                              color: Color(0xFF64748B),
-                            ),
+                        )
+                      // Error state
+                      else if (state.error != null && summary.displayedGroups.isEmpty)
+                        Container(
+                          padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
+                          alignment: Alignment.center,
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.error_outline_rounded, color: Colors.redAccent, size: 36),
+                              const SizedBox(height: 10),
+                              Text(
+                                'Failed to load accounts',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                  color: isDark ? Colors.white : const Color(0xFF0F172A),
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                state.error!,
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: isDark ? Colors.white60 : const Color(0xFF64748B),
+                                ),
+                              ),
+                              const SizedBox(height: 14),
+                              ElevatedButton.icon(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF15803D),
+                                ),
+                                icon: const Icon(Icons.refresh, size: 16, color: Colors.white),
+                                label: const Text('Retry', style: TextStyle(color: Colors.white)),
+                                onPressed: () => notifier.fetchChartOfAccounts(isRefresh: true),
+                              ),
+                            ],
                           ),
+                        )
+                      // Empty state
+                      else if (summary.displayedGroups.isEmpty)
+                        Container(
+                          padding: const EdgeInsets.symmetric(vertical: 48, horizontal: 20),
+                          alignment: Alignment.center,
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.folder_open_rounded,
+                                size: 44,
+                                color: isDark ? Colors.white30 : const Color(0xFF94A3B8),
+                              ),
+                              const SizedBox(height: 12),
+                              Text(
+                                'No accounts found.',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                  color: isDark ? Colors.white : const Color(0xFF0F172A),
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                'Try changing search keyword or filter category',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: isDark ? Colors.white60 : const Color(0xFF64748B),
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      // Accounts List
+                      else
+                        ListView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: summary.displayedGroups.length,
+                          itemBuilder: (context, index) {
+                            final group = summary.displayedGroups[index];
+                            final isExpanded = state.expandedGroupCodes.contains(group.code);
+
+                            return _buildGroupRow(
+                              context: context,
+                              ref: ref,
+                              group: group,
+                              isExpanded: isExpanded,
+                              onToggle: () => notifier.toggleGroupExpansion(group.code),
+                              isDark: isDark,
+                            );
+                          },
                         ),
-                        const SizedBox(width: 36), // Space for chevron / action menu
-                      ],
-                    ),
+                    ],
                   ),
-                  const Divider(height: 1, color: Color(0xFFE2E8F0)),
-
-                  // Loading state
-                  if (state.isLoading && summary.displayedGroups.isEmpty)
-                    Container(
-                      padding: const EdgeInsets.symmetric(vertical: 48),
-                      alignment: Alignment.center,
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const SizedBox(
-                            width: 28,
-                            height: 28,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2.5,
-                              color: Color(0xFF15803D),
-                            ),
-                          ),
-                          const SizedBox(height: 14),
-                          Text(
-                            'Loading Chart of Accounts...',
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: isDark ? Colors.white70 : const Color(0xFF64748B),
-                            ),
-                          ),
-                        ],
-                      ),
-                    )
-                  // Error state
-                  else if (state.error != null && summary.displayedGroups.isEmpty)
-                    Container(
-                      padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
-                      alignment: Alignment.center,
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(Icons.error_outline_rounded, color: Colors.redAccent, size: 36),
-                          const SizedBox(height: 10),
-                          Text(
-                            'Failed to load accounts',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
-                              color: isDark ? Colors.white : const Color(0xFF0F172A),
-                            ),
-                          ),
-                          const SizedBox(height: 6),
-                          Text(
-                            state.error!,
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: isDark ? Colors.white60 : const Color(0xFF64748B),
-                            ),
-                          ),
-                          const SizedBox(height: 14),
-                          ElevatedButton.icon(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF15803D),
-                            ),
-                            icon: const Icon(Icons.refresh, size: 16, color: Colors.white),
-                            label: const Text('Retry', style: TextStyle(color: Colors.white)),
-                            onPressed: () => notifier.fetchChartOfAccounts(isRefresh: true),
-                          ),
-                        ],
-                      ),
-                    )
-                  // Empty state
-                  else if (summary.displayedGroups.isEmpty)
-                    Container(
-                      padding: const EdgeInsets.symmetric(vertical: 48, horizontal: 20),
-                      alignment: Alignment.center,
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.folder_open_rounded,
-                            size: 44,
-                            color: isDark ? Colors.white30 : const Color(0xFF94A3B8),
-                          ),
-                          const SizedBox(height: 12),
-                          Text(
-                            'No accounts found.',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              color: isDark ? Colors.white : const Color(0xFF0F172A),
-                            ),
-                          ),
-                          const SizedBox(height: 6),
-                          Text(
-                            'Try changing search keyword or filter category',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: isDark ? Colors.white60 : const Color(0xFF64748B),
-                            ),
-                          ),
-                        ],
-                      ),
-                    )
-                  // Accounts List
-                  else
-                    ListView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: summary.displayedGroups.length,
-                      itemBuilder: (context, index) {
-                        final group = summary.displayedGroups[index];
-                        final isExpanded = state.expandedGroupCodes.contains(group.code);
-
-                        return _buildGroupRow(
-                          context: context,
-                          ref: ref,
-                          group: group,
-                          isExpanded: isExpanded,
-                          onToggle: () => notifier.toggleGroupExpansion(group.code),
-                          isDark: isDark,
-                        );
-                      },
-                    ),
-                ],
-              ),
-            ),
+                ),
+              );
+            },
           ),
         ],
       ),
@@ -292,7 +305,7 @@ class CoaTreeTable extends ConsumerWidget {
 
                 // Code (e.g. 1000)
                 SizedBox(
-                  width: 85,
+                  width: 100,
                   child: Text(
                     group.code,
                     textAlign: TextAlign.center,
@@ -306,7 +319,7 @@ class CoaTreeTable extends ConsumerWidget {
 
                 // Type Badge (e.g. Asset, Liability, etc.)
                 SizedBox(
-                  width: 95,
+                  width: 110,
                   child: Center(
                     child: _buildTypeBadge(group.type, isDark),
                   ),
@@ -314,7 +327,7 @@ class CoaTreeTable extends ConsumerWidget {
 
                 // Balance
                 SizedBox(
-                  width: 120,
+                  width: 140,
                   child: Text(
                     '₹${_formatCurrency(group.balance)}',
                     textAlign: TextAlign.right,
@@ -328,7 +341,7 @@ class CoaTreeTable extends ConsumerWidget {
 
                 // Expand/Collapse Chevron
                 SizedBox(
-                  width: 36,
+                  width: 40,
                   child: Center(
                     child: AnimatedRotation(
                       turns: isExpanded ? 0.5 : 0.0,
@@ -345,7 +358,10 @@ class CoaTreeTable extends ConsumerWidget {
             ),
           ),
         ),
-        const Divider(height: 1, color: Color(0xFFF1F5F9)),
+        Divider(
+          height: 1,
+          color: isDark ? Colors.white12 : const Color(0xFFF1F5F9),
+        ),
 
         // Children Sub-Accounts (Animated Expansion)
         if (isExpanded && group.children.isNotEmpty)
@@ -354,7 +370,17 @@ class CoaTreeTable extends ConsumerWidget {
             final child = entry.value;
             final isLast = idx == group.children.length - 1;
 
-            return _buildChildRow(context, ref, child, isLast, isDark);
+            return Column(
+              children: [
+                _buildChildRow(context, ref, child, isLast, isDark),
+                if (!isLast)
+                  Divider(
+                    height: 1,
+                    color: isDark ? Colors.white.withValues(alpha: 0.05) : const Color(0xFFF1F5F9),
+                    indent: 48,
+                  ),
+              ],
+            );
           }),
       ],
     );
@@ -425,7 +451,7 @@ class CoaTreeTable extends ConsumerWidget {
 
             // Child Code (e.g. 1001)
             SizedBox(
-              width: 85,
+              width: 100,
               child: Text(
                 child.code,
                 textAlign: TextAlign.center,
@@ -438,7 +464,7 @@ class CoaTreeTable extends ConsumerWidget {
 
             // Child Type Badge
             SizedBox(
-              width: 95,
+              width: 110,
               child: Center(
                 child: _buildTypeBadge(child.type, isDark),
               ),
@@ -446,7 +472,7 @@ class CoaTreeTable extends ConsumerWidget {
 
             // Child Balance
             SizedBox(
-              width: 120,
+              width: 140,
               child: Text(
                 '₹${_formatCurrency(child.balance)}',
                 textAlign: TextAlign.right,
@@ -460,7 +486,7 @@ class CoaTreeTable extends ConsumerWidget {
 
             // Row Action More Button (⋮)
             SizedBox(
-              width: 36,
+              width: 40,
               child: PopupMenuButton<String>(
                 padding: EdgeInsets.zero,
                 icon: Icon(

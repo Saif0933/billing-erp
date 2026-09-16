@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:share_plus/share_plus.dart';
 import '../../../../shared/widgets/feedback.dart';
+import '../../data/services/financial_statement_export_helper.dart';
 import '../providers/financial_statements_provider.dart';
 
 class StatementQuickActionsCard extends ConsumerWidget {
@@ -10,6 +10,7 @@ class StatementQuickActionsCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final summary = ref.watch(financialStatementsDataProvider);
     final filter = ref.watch(financialStatementFilterProvider);
     final notifier = ref.read(financialStatementsNotifierProvider.notifier);
 
@@ -95,17 +96,12 @@ class StatementQuickActionsCard extends ConsumerWidget {
                       iconColor: const Color(0xFF16A34A),
                       title: 'Export to Excel',
                       subtitle: 'Download in Excel',
-                      onTap: () async {
-                        AppFeedback.showSnackbar(context, message: 'Exporting Excel workbook...');
-                        try {
-                          final res = await notifier.exportStatement(format: 'excel');
-                          final content = res['content']?.toString() ?? '';
-                          if (content.isNotEmpty) {
-                            // ignore: deprecated_member_use
-                            Share.share(content);
-                          }
-                        } catch (_) {}
-                      },
+                      onTap: () => FinancialStatementExportHelper.downloadExcelStatement(
+                        context: context,
+                        ref: ref,
+                        summary: summary,
+                        filter: filter,
+                      ),
                       isDark: isDark,
                     ),
                   ),
@@ -117,10 +113,12 @@ class StatementQuickActionsCard extends ConsumerWidget {
                       icon: Icons.print_outlined,
                       iconColor: const Color(0xFF0284C7),
                       title: 'Print Report',
-                      subtitle: 'Print current report',
-                      onTap: () {
-                        AppFeedback.showSnackbar(context, message: 'Printing current ${filter.reportTypeLabel}...');
-                      },
+                      subtitle: 'Download PDF statement',
+                      onTap: () => FinancialStatementExportHelper.downloadPdfStatement(
+                        context: context,
+                        summary: summary,
+                        filter: filter,
+                      ),
                       isDark: isDark,
                     ),
                   ),
