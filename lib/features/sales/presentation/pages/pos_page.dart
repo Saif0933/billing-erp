@@ -54,7 +54,7 @@ class _POSPageState extends ConsumerState<POSPage> {
 
   // Catalog products (fetched from database or empty)
   late List<SalesProductItem> _products;
-  bool _isLoadingProducts = false;
+  bool _isLoadingProducts = true;
 
   // Held bills storage
   final List<Map<String, dynamic>> _heldBills = [];
@@ -152,6 +152,7 @@ class _POSPageState extends ConsumerState<POSPage> {
     _products = widget.initialProducts != null
         ? List.from(widget.initialProducts!)
         : [];
+    _isLoadingProducts = widget.initialProducts == null;
 
     _cartItems = widget.initialCartItems != null
         ? List.from(widget.initialCartItems!)
@@ -1096,9 +1097,11 @@ class _POSPageState extends ConsumerState<POSPage> {
 
                 // Product Catalog Grid
                 Expanded(
-                  child: filtered.isEmpty
+                  child: _isLoadingProducts
                       ? _buildEmptyProductsView()
-                      : GridView.builder(
+                      : filtered.isEmpty
+                          ? _buildEmptyProductsView()
+                          : GridView.builder(
                           physics: const BouncingScrollPhysics(),
                           itemCount: filtered.length,
                           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
@@ -1182,9 +1185,11 @@ class _POSPageState extends ConsumerState<POSPage> {
               ),
               const SizedBox(height: 10),
               Expanded(
-                child: filtered.isEmpty
+                child: _isLoadingProducts
                     ? _buildEmptyProductsView()
-                    : GridView.builder(
+                    : filtered.isEmpty
+                        ? _buildEmptyProductsView()
+                        : GridView.builder(
                         physics: const BouncingScrollPhysics(),
                         itemCount: filtered.length,
                         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
