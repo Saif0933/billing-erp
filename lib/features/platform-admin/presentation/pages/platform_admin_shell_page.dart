@@ -10,6 +10,8 @@ import 'platform_admin_dashboard_page.dart';
 import 'platform_admin_onboarding_page.dart';
 import 'platform_admin_organization_page.dart';
 import 'platform_admin_subscription_page.dart';
+import '../../../settings/presentation/pages/terms_conditions_page.dart';
+import '../../../settings/presentation/pages/privacy_policy_page.dart';
 
 class PlatformAdminShellPage extends ConsumerStatefulWidget {
   final String? initialTab;
@@ -74,6 +76,18 @@ class _PlatformAdminShellPageState
         break;
       case 'onboarding':
         contentBody = const PlatformAdminOnboardingPage();
+        break;
+      case 'terms-conditions':
+      case 'terms_conditions':
+      case 'terms-and-conditions':
+      case 'terms':
+        contentBody = const TermsConditionsPage();
+        break;
+      case 'privacy-policy':
+      case 'privacy_policy':
+      case 'privacy-and-policy':
+      case 'privacy':
+        contentBody = const PrivacyPolicyPage();
         break;
       case 'dashboard':
       default:
@@ -592,6 +606,29 @@ class _PlatformAdminShellPageState
                           ? state.onboardingRequests.length
                           : null,
                     ),
+                    const SizedBox(height: 8),
+                    const Divider(height: 1),
+                    const SizedBox(height: 8),
+                    _buildSidebarItem(
+                      title: 'Terms & Conditions',
+                      icon: Icons.gavel_outlined,
+                      activeIcon: Icons.gavel_rounded,
+                      tabId: 'terms-conditions',
+                      isSelected: state.selectedNavTab == 'terms-conditions' ||
+                          state.selectedNavTab == 'terms',
+                      onTap: () => notifier.setNavTab('terms-conditions'),
+                      isDark: isDark,
+                    ),
+                    _buildSidebarItem(
+                      title: 'Privacy Policy',
+                      icon: Icons.privacy_tip_outlined,
+                      activeIcon: Icons.privacy_tip_rounded,
+                      tabId: 'privacy-policy',
+                      isSelected: state.selectedNavTab == 'privacy-policy' ||
+                          state.selectedNavTab == 'privacy',
+                      onTap: () => notifier.setNavTab('privacy-policy'),
+                      isDark: isDark,
+                    ),
                     const Spacer(),
                     const Divider(height: 1),
                     Padding(
@@ -924,6 +961,35 @@ class _PlatformAdminShellPageState
               badgeCount: state.onboardingRequests.isNotEmpty
                   ? state.onboardingRequests.length
                   : null,
+            ),
+            const SizedBox(height: 8),
+            const Divider(height: 1),
+            const SizedBox(height: 8),
+            _buildSidebarItem(
+              title: 'Terms & Conditions',
+              icon: Icons.gavel_outlined,
+              activeIcon: Icons.gavel_rounded,
+              tabId: 'terms-conditions',
+              isSelected: state.selectedNavTab == 'terms-conditions' ||
+                  state.selectedNavTab == 'terms',
+              onTap: () {
+                notifier.setNavTab('terms-conditions');
+                Navigator.pop(context);
+              },
+              isDark: isDark,
+            ),
+            _buildSidebarItem(
+              title: 'Privacy Policy',
+              icon: Icons.privacy_tip_outlined,
+              activeIcon: Icons.privacy_tip_rounded,
+              tabId: 'privacy-policy',
+              isSelected: state.selectedNavTab == 'privacy-policy' ||
+                  state.selectedNavTab == 'privacy',
+              onTap: () {
+                notifier.setNavTab('privacy-policy');
+                Navigator.pop(context);
+              },
+              isDark: isDark,
             ),
             const Spacer(),
             ListTile(

@@ -60,6 +60,8 @@ import '../../features/settings/presentation/pages/invoice_customization_page.da
 import '../../features/settings/presentation/pages/user_management_page.dart';
 import '../../features/settings/presentation/pages/audit_log_page.dart';
 import '../../features/settings/presentation/pages/import_export_page.dart';
+import '../../features/settings/presentation/pages/terms_conditions_page.dart';
+import '../../features/settings/presentation/pages/privacy_policy_page.dart';
 
 // Phase 3 Page Imports
 import '../../features/accounting/presentation/pages/chart_of_accounts_page.dart';
@@ -152,6 +154,46 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/platform-admin/onboarding',
         builder: (context, state) => const PlatformAdminShellPage(initialTab: 'onboarding'),
+      ),
+      GoRoute(
+        path: '/platform-admin/terms-conditions',
+        builder: (context, state) => const PlatformAdminShellPage(initialTab: 'terms-conditions'),
+      ),
+      GoRoute(
+        path: '/platform-admin/terms-and-conditions',
+        builder: (context, state) => const PlatformAdminShellPage(initialTab: 'terms-conditions'),
+      ),
+      GoRoute(
+        path: '/platform-admin/privacy-policy',
+        builder: (context, state) => const PlatformAdminShellPage(initialTab: 'privacy-policy'),
+      ),
+      GoRoute(
+        path: '/platform-admin/privacy-and-policy',
+        builder: (context, state) => const PlatformAdminShellPage(initialTab: 'privacy-policy'),
+      ),
+      GoRoute(
+        path: '/terms-conditions',
+        builder: (context, state) => const TermsConditionsPage(),
+      ),
+      GoRoute(
+        path: '/terms-and-conditions',
+        builder: (context, state) => const TermsConditionsPage(),
+      ),
+      GoRoute(
+        path: '/terms',
+        builder: (context, state) => const TermsConditionsPage(),
+      ),
+      GoRoute(
+        path: '/privacy-policy',
+        builder: (context, state) => const PrivacyPolicyPage(),
+      ),
+      GoRoute(
+        path: '/privacy-and-policy',
+        builder: (context, state) => const PrivacyPolicyPage(),
+      ),
+      GoRoute(
+        path: '/privacy',
+        builder: (context, state) => const PrivacyPolicyPage(),
       ),
       ShellRoute(
         builder: (context, state, child) => AppShell(
@@ -422,6 +464,22 @@ final routerProvider = Provider<GoRouter>((ref) {
             path: '/settings/import-export',
             builder: (context, state) => const ImportExportPage(),
           ),
+          GoRoute(
+            path: '/settings/terms-conditions',
+            builder: (context, state) => const TermsConditionsPage(),
+          ),
+          GoRoute(
+            path: '/settings/terms-and-conditions',
+            builder: (context, state) => const TermsConditionsPage(),
+          ),
+          GoRoute(
+            path: '/settings/privacy-policy',
+            builder: (context, state) => const PrivacyPolicyPage(),
+          ),
+          GoRoute(
+            path: '/settings/privacy-and-policy',
+            builder: (context, state) => const PrivacyPolicyPage(),
+          ),
 
           // Phase 3: Accounting Routes
           GoRoute(
@@ -483,6 +541,27 @@ final routerProvider = Provider<GoRouter>((ref) {
       
       if (authState.status == AuthStatus.splash) {
         return '/splash';
+      }
+
+      // Allow public & legal policy pages for all users without redirection
+      final legalRoutes = [
+        '/settings/terms-conditions',
+        '/settings/privacy-policy',
+        '/settings/terms-and-conditions',
+        '/settings/privacy-and-policy',
+        '/terms-conditions',
+        '/privacy-policy',
+        '/terms-and-conditions',
+        '/privacy-and-policy',
+        '/terms',
+        '/privacy',
+        '/platform-admin/terms-conditions',
+        '/platform-admin/privacy-policy',
+        '/platform-admin/terms-and-conditions',
+        '/platform-admin/privacy-and-policy',
+      ];
+      if (legalRoutes.contains(loc)) {
+        return null;
       }
 
       final isPlatformAdminRoute = loc.startsWith('/platform-admin');

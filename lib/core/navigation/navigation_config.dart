@@ -323,6 +323,18 @@ class NavigationConfig {
           route: '/settings/import-export',
         ),
         NavigationItem(
+          id: 'terms_conditions',
+          title: 'Terms & Conditions',
+          icon: Icons.gavel_outlined,
+          route: '/settings/terms-conditions',
+        ),
+        NavigationItem(
+          id: 'privacy_policy',
+          title: 'Privacy Policy',
+          icon: Icons.privacy_tip_outlined,
+          route: '/settings/privacy-policy',
+        ),
+        NavigationItem(
           id: 'platform_admin',
           title: 'Platform SuperAdmin',
           icon: Icons.admin_panel_settings_outlined,

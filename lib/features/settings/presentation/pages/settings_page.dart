@@ -95,6 +95,23 @@ class SettingsPage extends StatelessWidget {
           ),
         ],
       ),
+      _SettingsGroup(
+        title: 'Legal & Compliance',
+        items: [
+          _SettingsItem(
+            title: 'Terms & Conditions',
+            subtitle: 'Review enterprise SaaS terms, SLAs, and liability policies',
+            icon: Icons.gavel_outlined,
+            route: '/settings/terms-conditions',
+          ),
+          _SettingsItem(
+            title: 'Privacy Policy',
+            subtitle: 'Understand data protection, isolation, and privacy rights',
+            icon: Icons.privacy_tip_outlined,
+            route: '/settings/privacy-policy',
+          ),
+        ],
+      ),
     ];
 
     return Scaffold(
