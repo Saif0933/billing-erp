@@ -1,24 +1,29 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../core/errors/exceptions.dart';
 import '../../../../core/network/api_client.dart';
+import '../../../../core/services/firebase_api_service.dart';
 import '../../../../core/storage/secure_storage_service.dart';
 import '../../../../core/storage/storage_service.dart';
+import '../../../notifications/data/services/notification_api_service.dart';
 import '../../data/models/user_model.dart';
 import '../../data/services/auth_api_service.dart';
 
-final sharedPreferencesProvider =
-    Provider<SharedPreferences>((ref) => throw UnimplementedError());
+final sharedPreferencesProvider = Provider<SharedPreferences>(
+  (ref) => throw UnimplementedError(),
+);
 
 final storageServiceProvider = Provider<StorageService>((ref) {
   final prefs = ref.watch(sharedPreferencesProvider);
   return StorageService(prefs);
 });
 
-final secureStorageProvider =
-    Provider<FlutterSecureStorage>((ref) => const FlutterSecureStorage());
+final secureStorageProvider = Provider<FlutterSecureStorage>(
+  (ref) => const FlutterSecureStorage(),
+);
 
 final secureStorageServiceProvider = Provider<SecureStorageService>((ref) {
   final secure = ref.watch(secureStorageProvider);
@@ -43,17 +48,13 @@ class AuthState {
   final UserModel? user;
   final String? error;
 
-  const AuthState({
-    required this.status,
-    this.user,
-    this.error,
-  });
+  const AuthState({required this.status, this.user, this.error});
 
   const AuthState.splash() : this(status: AuthStatus.splash);
   const AuthState.unauthenticated({String? error})
-      : this(status: AuthStatus.unauthenticated, error: error);
+    : this(status: AuthStatus.unauthenticated, error: error);
   const AuthState.authenticated(UserModel user)
-      : this(status: AuthStatus.authenticated, user: user);
+    : this(status: AuthStatus.authenticated, user: user);
 
   bool get isPlatformAdmin => user?.isPlatformAdmin ?? false;
 }
@@ -62,9 +63,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
   final AuthApiService _apiService;
   final SecureStorageService _secureStorage;
   final StorageService _storage;
+  final Ref _ref;
 
-  AuthNotifier(this._apiService, this._secureStorage, this._storage)
-      : super(const AuthState.splash()) {
+  AuthNotifier(this._apiService, this._secureStorage, this._storage, this._ref)
+    : super(const AuthState.splash()) {
     initialize();
   }
 
@@ -84,6 +86,9 @@ class AuthNotifier extends StateNotifier<AuthState> {
               await _storage.setActiveBusinessId(realId);
             }
           }
+
+          // Register device FCM token with backend for push notifications
+          _registerDeviceFcmToken(user);
           return;
         } catch (_) {
           // Fallback to local cache if network/token verification fails temporarily
@@ -115,15 +120,44 @@ class AuthNotifier extends StateNotifier<AuthState> {
         if (id != null && id.isNotEmpty) return id;
       }
     }
-    if (user.businessMemberships != null && user.businessMemberships!.isNotEmpty) {
+    if (user.businessMemberships != null &&
+        user.businessMemberships!.isNotEmpty) {
       final first = user.businessMemberships!.first;
       if (first is Map<String, dynamic>) {
-        final id = first['businessId']?.toString() ??
-            (first['business'] is Map ? first['business']['id']?.toString() : null);
+        final id =
+            first['businessId']?.toString() ??
+            (first['business'] is Map
+                ? first['business']['id']?.toString()
+                : null);
         if (id != null && id.isNotEmpty) return id;
       }
     }
     return null;
+  }
+
+  /// Register or update the device FCM token in the database with user & business context
+  Future<void> _registerDeviceFcmToken(UserModel user) async {
+    try {
+      final fcmService = _ref.read(firebaseApiServiceProvider);
+      final token = await fcmService.getFcmToken();
+      if (token != null && token.isNotEmpty) {
+        final activeBizId =
+            _storage.getActiveBusinessId() ?? _resolveRealBusinessId(user);
+        final deviceType = defaultTargetPlatform == TargetPlatform.android
+            ? 'android'
+            : (kIsWeb ? 'web' : 'ios');
+        await _ref
+            .read(notificationApiServiceProvider)
+            .registerDeviceToken(
+              fcmToken: token,
+              deviceType: deviceType,
+              userId: user.id,
+              businessId: activeBizId,
+            );
+      }
+    } catch (e) {
+      debugPrint('[AuthNotifier] FCM token registration notice: $e');
+    }
   }
 
   Future<bool> login(
@@ -141,7 +175,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
       // Strict portal segregation: Platform Admin accounts cannot enter Organization portal
       if (!isPlatformAdminPortal && response.user.isPlatformAdmin) {
         state = const AuthState.unauthenticated(
-          error: 'Ye email aur password Platform Admin ke hain, isse Organization portal me login nahi kar sakte. Kripya Platform Admin tab use karein.',
+          error:
+              'Ye email aur password Platform Admin ke hain, isse Organization portal me login nahi kar sakte. Kripya Platform Admin tab use karein.',
         );
         return false;
       }
@@ -149,7 +184,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
       // Non-admin accounts cannot enter Platform Admin portal
       if (isPlatformAdminPortal && !response.user.isPlatformAdmin) {
         state = const AuthState.unauthenticated(
-          error: 'Access Denied: This account does not possess Platform Administrator permissions.',
+          error:
+              'Access Denied: This account does not possess Platform Administrator permissions.',
         );
         return false;
       }
@@ -165,6 +201,9 @@ class AuthNotifier extends StateNotifier<AuthState> {
       }
 
       state = AuthState.authenticated(response.user);
+
+      // Register device FCM token with backend on successful login
+      _registerDeviceFcmToken(response.user);
       return true;
     } on AppException catch (e) {
       state = AuthState.unauthenticated(error: e.message);
@@ -209,6 +248,18 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   Future<void> logout() async {
+    // 1. Deactivate device token on backend and delete locally
+    try {
+      final fcmService = _ref.read(firebaseApiServiceProvider);
+      final token = await fcmService.getFcmToken();
+      if (token != null && token.isNotEmpty) {
+        await _ref
+            .read(notificationApiServiceProvider)
+            .deactivateDeviceToken(fcmToken: token);
+      }
+    } catch (_) {}
+
+    // 2. Revoke backend session
     try {
       final refreshToken = await _secureStorage.getRefreshToken();
       await _apiService.logout(refreshToken: refreshToken);
@@ -225,5 +276,5 @@ final authProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {
   final apiService = ref.watch(authApiServiceProvider);
   final secure = ref.watch(secureStorageServiceProvider);
   final storage = ref.watch(storageServiceProvider);
-  return AuthNotifier(apiService, secure, storage);
+  return AuthNotifier(apiService, secure, storage, ref);
 });

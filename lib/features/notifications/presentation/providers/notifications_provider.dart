@@ -4,6 +4,8 @@ import '../../../../core/services/firebase_api_service.dart';
 import '../../data/models/notification_model.dart';
 import '../../data/services/notification_api_service.dart';
 
+import '../../../auth/presentation/providers/auth_provider.dart';
+
 class NotificationsState {
   final List<NotificationModel> notifications;
   final bool isLoading;
@@ -41,6 +43,7 @@ class NotificationsNotifier extends StateNotifier<NotificationsState> {
     loadNotifications();
     _listenToForegroundFcm();
     _syncFcmTokenWithBackend();
+    _listenToTokenRefresh();
   }
 
   /// Listen to real-time FCM foreground messages
@@ -72,13 +75,52 @@ class NotificationsNotifier extends StateNotifier<NotificationsState> {
     }
   }
 
+  /// Listen to token refresh events from Firebase Messaging (Android / iOS / Web)
+  void _listenToTokenRefresh() {
+    try {
+      final fcmService = _ref.read(firebaseApiServiceProvider);
+      fcmService.onTokenRefresh.listen((newToken) async {
+        debugPrint('[NotificationsNotifier] FCM token refreshed: $newToken');
+        if (newToken.isNotEmpty) {
+          final authState = _ref.read(authProvider);
+          final storage = _ref.read(storageServiceProvider);
+          final activeBizId = storage.getActiveBusinessId();
+          final deviceType = defaultTargetPlatform == TargetPlatform.android
+              ? 'android'
+              : (kIsWeb ? 'web' : 'ios');
+
+          await _apiService.registerDeviceToken(
+            fcmToken: newToken,
+            deviceType: deviceType,
+            userId: authState.user?.id,
+            businessId: activeBizId,
+          );
+        }
+      });
+    } catch (e) {
+      debugPrint('[NotificationsNotifier] Token refresh listener notice: $e');
+    }
+  }
+
   /// Synchronize FCM device token with backend
   Future<void> _syncFcmTokenWithBackend() async {
     try {
       final fcmService = _ref.read(firebaseApiServiceProvider);
       final token = await fcmService.getFcmToken();
       if (token != null && token.isNotEmpty) {
-        await _apiService.registerDeviceToken(fcmToken: token);
+        final authState = _ref.read(authProvider);
+        final storage = _ref.read(storageServiceProvider);
+        final activeBizId = storage.getActiveBusinessId();
+        final deviceType = defaultTargetPlatform == TargetPlatform.android
+            ? 'android'
+            : (kIsWeb ? 'web' : 'ios');
+
+        await _apiService.registerDeviceToken(
+          fcmToken: token,
+          deviceType: deviceType,
+          userId: authState.user?.id,
+          businessId: activeBizId,
+        );
       }
     } catch (e) {
       debugPrint('[NotificationsNotifier] Token sync notice: $e');

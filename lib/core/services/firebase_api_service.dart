@@ -15,14 +15,18 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   try {
     await Firebase.initializeApp();
   } catch (_) {}
-  debugPrint('FCM Background Message received: [${message.messageId}] ${message.notification?.title}');
+  debugPrint(
+    'FCM Background Message received: [${message.messageId}] ${message.notification?.title}',
+  );
 }
 
 /// Android High Importance Notification Channel for Foreground Heads-Up Alerts
-const AndroidNotificationChannel highImportanceChannel = AndroidNotificationChannel(
+const AndroidNotificationChannel
+highImportanceChannel = AndroidNotificationChannel(
   'taxbunny_high_importance_channel',
   'Tax Bunny Notifications',
-  description: 'High importance notifications for Tax Bunny ERP, Stock, and Subscriptions.',
+  description:
+      'High importance notifications for Tax Bunny ERP, Stock, and Subscriptions.',
   importance: Importance.max,
   playSound: true,
   enableVibration: true,
@@ -65,7 +69,8 @@ class FirebaseApiService {
   Stream<RemoteMessage> get onMessage => _foregroundMessageController.stream;
 
   /// Stream of notifications that caused the app to open
-  Stream<RemoteMessage> get onMessageOpenedApp => _messageOpenedAppController.stream;
+  Stream<RemoteMessage> get onMessageOpenedApp =>
+      _messageOpenedAppController.stream;
 
   /// Stream of refreshed FCM tokens
   Stream<String> get onTokenRefresh {
@@ -94,15 +99,16 @@ class FirebaseApiService {
 
       const DarwinInitializationSettings initializationSettingsDarwin =
           DarwinInitializationSettings(
-        requestAlertPermission: true,
-        requestBadgePermission: true,
-        requestSoundPermission: true,
-      );
+            requestAlertPermission: true,
+            requestBadgePermission: true,
+            requestSoundPermission: true,
+          );
 
-      const InitializationSettings initializationSettings = InitializationSettings(
-        android: initializationSettingsAndroid,
-        iOS: initializationSettingsDarwin,
-      );
+      const InitializationSettings initializationSettings =
+          InitializationSettings(
+            android: initializationSettingsAndroid,
+            iOS: initializationSettingsDarwin,
+          );
 
       await flutterLocalNotificationsPlugin.initialize(
         settings: initializationSettings,
@@ -115,7 +121,8 @@ class FirebaseApiService {
       // 5. Create Android High Importance Notification Channel
       await flutterLocalNotificationsPlugin
           .resolvePlatformSpecificImplementation<
-              AndroidFlutterLocalNotificationsPlugin>()
+            AndroidFlutterLocalNotificationsPlugin
+          >()
           ?.createNotificationChannel(highImportanceChannel);
 
       // 6. Set presentation options for foreground notifications (iOS & Android)
@@ -127,11 +134,20 @@ class FirebaseApiService {
 
       // 7. Setup foreground notification listener
       FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-        debugPrint('FCM Foreground message: ${message.notification?.title} - ${message.notification?.body}');
+        debugPrint(
+          'FCM Foreground message: ${message.notification?.title} - ${message.notification?.body}',
+        );
         _foregroundMessageController.add(message);
 
-        final title = message.notification?.title ?? message.data['title'] ?? 'New Notification';
-        final body = message.notification?.body ?? message.data['body'] ?? message.data['message'] ?? '';
+        final title =
+            message.notification?.title ??
+            message.data['title'] ??
+            'New Notification';
+        final body =
+            message.notification?.body ??
+            message.data['body'] ??
+            message.data['message'] ??
+            '';
         final type = message.data['type']?.toString();
 
         // A) Display in Android Status Bar Tray via FlutterLocalNotifications
@@ -188,7 +204,9 @@ class FirebaseApiService {
       // 9. Check if app was opened from a terminated state notification
       final initialMessage = await _messaging?.getInitialMessage();
       if (initialMessage != null) {
-        debugPrint('FCM App launched from terminated state via message: ${initialMessage.data}');
+        debugPrint(
+          'FCM App launched from terminated state via message: ${initialMessage.data}',
+        );
         _messageOpenedAppController.add(initialMessage);
       }
 
@@ -219,7 +237,11 @@ class FirebaseApiService {
     try {
       final overlayState = rootNavigatorKey.currentState?.overlay;
       if (overlayState == null) {
-        _showScaffoldMessengerNotification(title: title, body: body, onTap: onTap);
+        _showScaffoldMessengerNotification(
+          title: title,
+          body: body,
+          onTap: onTap,
+        );
         return;
       }
 
@@ -255,7 +277,11 @@ class FirebaseApiService {
       overlayState.insert(entry);
     } catch (e) {
       debugPrint('[FirebaseApiService] Notice inserting in-app banner: $e');
-      _showScaffoldMessengerNotification(title: title, body: body, onTap: onTap);
+      _showScaffoldMessengerNotification(
+        title: title,
+        body: body,
+        onTap: onTap,
+      );
     }
   }
 
@@ -273,7 +299,9 @@ class FirebaseApiService {
       messenger.showSnackBar(
         SnackBar(
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
           backgroundColor: const Color(0xFF1E293B),
           content: Column(
             mainAxisSize: MainAxisSize.min,
@@ -281,11 +309,17 @@ class FirebaseApiService {
             children: [
               Text(
                 title,
-                style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
               ),
               if (body.isNotEmpty) ...[
                 const SizedBox(height: 2),
-                Text(body, style: const TextStyle(color: Colors.white70, fontSize: 13)),
+                Text(
+                  body,
+                  style: const TextStyle(color: Colors.white70, fontSize: 13),
+                ),
               ],
             ],
           ),
@@ -321,15 +355,23 @@ class FirebaseApiService {
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           title: Row(
             children: [
-              const Icon(Icons.notifications_active_rounded, color: Color(0xFF2563EB)),
+              const Icon(
+                Icons.notifications_active_rounded,
+                color: Color(0xFF2563EB),
+              ),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   title,
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             ],
@@ -382,12 +424,15 @@ class FirebaseApiService {
         provisional: false,
         sound: true,
       );
-      debugPrint('User granted notification permission: ${settings.authorizationStatus}');
+      debugPrint(
+        'User granted notification permission: ${settings.authorizationStatus}',
+      );
 
       // Also request Android local notification permissions for Android 13+
       await flutterLocalNotificationsPlugin
           .resolvePlatformSpecificImplementation<
-              AndroidFlutterLocalNotificationsPlugin>()
+            AndroidFlutterLocalNotificationsPlugin
+          >()
           ?.requestNotificationsPermission();
 
       return settings;

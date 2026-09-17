@@ -111,21 +111,50 @@ class NotificationApiService {
   Future<bool> registerDeviceToken({
     required String fcmToken,
     String deviceType = 'android',
+    String? userId,
+    String? businessId,
   }) async {
     if (fcmToken.trim().isEmpty) return false;
 
     try {
+      final payload = <String, dynamic>{
+        'token': fcmToken.trim(),
+        'deviceType': deviceType,
+      };
+      if (userId != null && userId.isNotEmpty) {
+        payload['userId'] = userId;
+      }
+      if (businessId != null && businessId.isNotEmpty) {
+        payload['businessId'] = businessId;
+      }
+
       final response = await _apiClient.post(
         ApiEndpoints.notificationsToken,
-        data: {
-          'token': fcmToken.trim(),
-          'deviceType': deviceType,
-        },
+        data: payload,
       );
       debugPrint('[NotificationApiService] FCM token registered on backend: ${response.statusCode}');
       return true;
     } catch (e) {
       debugPrint('[NotificationApiService] Notice registering FCM token on backend: $e');
+      return false;
+    }
+  }
+
+  /// Deactivate device FCM token on logout
+  Future<bool> deactivateDeviceToken({
+    required String fcmToken,
+  }) async {
+    if (fcmToken.trim().isEmpty) return false;
+
+    try {
+      final response = await _apiClient.delete(
+        ApiEndpoints.notificationsToken,
+        data: {'token': fcmToken.trim()},
+      );
+      debugPrint('[NotificationApiService] FCM token deactivated on backend: ${response.statusCode}');
+      return true;
+    } catch (e) {
+      debugPrint('[NotificationApiService] Notice deactivating FCM token on backend: $e');
       return false;
     }
   }
