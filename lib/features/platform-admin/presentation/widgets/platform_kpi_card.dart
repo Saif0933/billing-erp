@@ -70,7 +70,7 @@ class PlatformKpiCard extends StatelessWidget {
                         fontWeight: FontWeight.w600,
                         color: isDark ? Colors.white70 : const Color(0xFF64748B),
                       ),
-                      maxLines: 1,
+                      maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 4),

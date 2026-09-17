@@ -1,23 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../../shared/widgets/feedback.dart';
-import '../providers/platform_admin_provider.dart';
 import '../widgets/platform_onboarding_wizard.dart';
 
-class PlatformAdminOnboardingPage extends ConsumerStatefulWidget {
+class PlatformAdminOnboardingPage extends ConsumerWidget {
   const PlatformAdminOnboardingPage({super.key});
 
   @override
-  ConsumerState<PlatformAdminOnboardingPage> createState() => _PlatformAdminOnboardingPageState();
-}
-
-class _PlatformAdminOnboardingPageState extends ConsumerState<PlatformAdminOnboardingPage> {
-  int _selectedSubTab = 0; // 0: Wizard, 1: Pending Approvals
-
-  @override
-  Widget build(BuildContext context) {
-    final state = ref.watch(platformAdminProvider);
-    final notifier = ref.read(platformAdminProvider.notifier);
+  Widget build(BuildContext context, WidgetRef ref) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return SingleChildScrollView(
@@ -63,49 +52,47 @@ class _PlatformAdminOnboardingPageState extends ConsumerState<PlatformAdminOnboa
           ),
           const SizedBox(height: 20),
 
-          // Sub-Tab Switcher (Wizard vs Pending Approvals) with Horizontal Scroll
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: [
-                _buildSubTabButton(
-                  title: 'New Tenant Wizard',
-                  icon: Icons.auto_awesome,
-                  isSelected: _selectedSubTab == 0,
-                  onTap: () => setState(() => _selectedSubTab = 0),
-                  isDark: isDark,
-                ),
-                const SizedBox(width: 10),
-                _buildSubTabButton(
-                  title: 'Pending Approvals (${state.onboardingRequests.length})',
-                  icon: Icons.pending_actions,
-                  isSelected: _selectedSubTab == 1,
-                  badgeCount: state.onboardingRequests.length,
-                  onTap: () => setState(() => _selectedSubTab = 1),
-                  isDark: isDark,
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 20),
+          // Sub-Tab Switcher (Wizard vs Pending Approvals) - Commented
+          // SingleChildScrollView(
+          //   scrollDirection: Axis.horizontal,
+          //   child: Row(
+          //     children: [
+          //       _buildSubTabButton(
+          //         title: 'New Tenant Wizard',
+          //         icon: Icons.auto_awesome,
+          //         isSelected: _selectedSubTab == 0,
+          //         onTap: () => setState(() => _selectedSubTab = 0),
+          //         isDark: isDark,
+          //       ),
+          //       const SizedBox(width: 10),
+          //       _buildSubTabButton(
+          //         title: 'Pending Approvals (${state.onboardingRequests.length})',
+          //         icon: Icons.pending_actions,
+          //         isSelected: _selectedSubTab == 1,
+          //         badgeCount: state.onboardingRequests.length,
+          //         onTap: () => setState(() => _selectedSubTab = 1),
+          //         isDark: isDark,
+          //       ),
+          //     ],
+          //   ),
+          // ),
+          // const SizedBox(height: 20),
 
           // Content
-          if (_selectedSubTab == 0)
-            const PlatformOnboardingWizard()
-          else
-            _buildApprovalsList(context, notifier, state, isDark),
+          const PlatformOnboardingWizard(),
         ],
       ),
     );
   }
 
+  // Sub-Tab helper and approvals list (Commented)
+  /*
   Widget _buildSubTabButton({
     required String title,
     required IconData icon,
     required bool isSelected,
     required VoidCallback onTap,
     required bool isDark,
-    int? badgeCount,
   }) {
     return InkWell(
       onTap: onTap,
@@ -145,7 +132,9 @@ class _PlatformAdminOnboardingPageState extends ConsumerState<PlatformAdminOnboa
       ),
     );
   }
+  */
 
+  /*
   Widget _buildApprovalsList(
     BuildContext context,
     PlatformAdminNotifier notifier,
@@ -337,4 +326,5 @@ class _PlatformAdminOnboardingPageState extends ConsumerState<PlatformAdminOnboa
       },
     );
   }
+  */
 }

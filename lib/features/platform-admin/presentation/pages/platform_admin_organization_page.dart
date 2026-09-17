@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/platform_admin_provider.dart';
 import '../widgets/platform_tenant_table.dart';
-import '../widgets/platform_tenant_modal.dart';
 
 class PlatformAdminOrganizationPage extends ConsumerStatefulWidget {
   const PlatformAdminOrganizationPage({super.key});
@@ -109,7 +108,7 @@ class _PlatformAdminOrganizationPageState
                     color: Colors.white,
                   ),
                 ),
-                onPressed: () => PlatformTenantModal.show(context),
+                onPressed: () => notifier.setNavTab('onboarding'),
               );
 
               final actionButtons = Row(
@@ -421,7 +420,7 @@ class _PlatformAdminOrganizationPageState
                         color: Colors.white,
                       ),
                     ),
-                    onPressed: () => PlatformTenantModal.show(context),
+                    onPressed: () => notifier.setNavTab('onboarding'),
                   ),
                 ],
               ),

@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../../shared/widgets/feedback.dart';
 import '../providers/platform_admin_provider.dart';
 import '../widgets/platform_kpi_card.dart';
 import '../widgets/platform_tenant_table.dart';
-import '../widgets/platform_tenant_modal.dart';
 
 class PlatformAdminDashboardPage extends ConsumerWidget {
   const PlatformAdminDashboardPage({super.key});
@@ -14,44 +12,52 @@ class PlatformAdminDashboardPage extends ConsumerWidget {
     final state = ref.watch(platformAdminProvider);
     final notifier = ref.read(platformAdminProvider.notifier);
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isMobile = screenWidth < 768;
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.symmetric(
+        horizontal: isMobile ? 16 : 24,
+        vertical: isMobile ? 16 : 24,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           // Top Welcome & Quick Actions Bar
           LayoutBuilder(
             builder: (context, constraints) {
-              final isSmall = constraints.maxWidth < 600;
+              final isSmall = constraints.maxWidth < 650;
 
               final headerInfo = Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Row(
+                  Wrap(
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    spacing: 8,
+                    runSpacing: 4,
                     children: [
-                      Container(
-                        width: 3,
-                        height: 18,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF10B981),
-                          borderRadius: BorderRadius.circular(2),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Flexible(
-                        child: Text(
-                          'Platform SuperAdmin',
-                          style: TextStyle(
-                            fontSize: isSmall ? 18 : 22,
-                            fontWeight: FontWeight.w700,
-                            color: isDark ? Colors.white : const Color(0xFF0F172A),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            width: 3,
+                            height: 18,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF10B981),
+                              borderRadius: BorderRadius.circular(2),
+                            ),
                           ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
+                          const SizedBox(width: 10),
+                          Text(
+                            'Platform SuperAdmin',
+                            style: TextStyle(
+                              fontSize: isSmall ? 18 : 22,
+                              fontWeight: FontWeight.w700,
+                              color: isDark ? Colors.white : const Color(0xFF0F172A),
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(width: 8),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                         decoration: BoxDecoration(
@@ -97,17 +103,18 @@ class PlatformAdminDashboardPage extends ConsumerWidget {
                     label: const Text('New Onboarding', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold)),
                     onPressed: () => notifier.setNavTab('onboarding'),
                   ),
-                  ElevatedButton.icon(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF4F46E5),
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                      elevation: 0,
-                    ),
-                    icon: const Icon(Icons.add_business, size: 16, color: Colors.white),
-                    label: const Text('Add Tenant', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Colors.white)),
-                    onPressed: () => PlatformTenantModal.show(context),
-                  ),
+                  // Add Tenant Button (Commented)
+                  // ElevatedButton.icon(
+                  //   style: ElevatedButton.styleFrom(
+                  //     backgroundColor: const Color(0xFF4F46E5),
+                  //     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  //     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  //     elevation: 0,
+                  //   ),
+                  //   icon: const Icon(Icons.add_business, size: 16, color: Colors.white),
+                  //   label: const Text('Add Tenant', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Colors.white)),
+                  //   onPressed: () => PlatformTenantModal.show(context),
+                  // ),
                 ],
               );
 
@@ -139,10 +146,20 @@ class PlatformAdminDashboardPage extends ConsumerWidget {
             builder: (context, constraints) {
               final width = constraints.maxWidth;
               int crossAxisCount = 4;
+              double childAspectRatio = 1.8;
+
               if (width < 600) {
                 crossAxisCount = 1;
-              } else if (width < 1000) {
+                childAspectRatio = width < 380 ? 2.25 : 2.5;
+              } else if (width < 960) {
                 crossAxisCount = 2;
+                childAspectRatio = 2.0;
+              } else if (width < 1300) {
+                crossAxisCount = 4;
+                childAspectRatio = 1.65;
+              } else {
+                crossAxisCount = 4;
+                childAspectRatio = 1.9;
               }
 
               return GridView.count(
@@ -151,7 +168,7 @@ class PlatformAdminDashboardPage extends ConsumerWidget {
                 crossAxisCount: crossAxisCount,
                 crossAxisSpacing: 14,
                 mainAxisSpacing: 14,
-                childAspectRatio: crossAxisCount == 1 ? 2.8 : (crossAxisCount == 2 ? 2.1 : 1.9),
+                childAspectRatio: childAspectRatio,
                 children: [
                   PlatformKpiCard(
                     title: 'MONTHLY RECURRING (MRR)',
@@ -193,145 +210,137 @@ class PlatformAdminDashboardPage extends ConsumerWidget {
           ),
           const SizedBox(height: 24),
 
-          // Pending Onboarding Approvals Banner (If any)
-          if (state.onboardingRequests.isNotEmpty) ...[
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF1E293B) : const Color(0xFFFFFBEB),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0xFFFDE68A)),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  LayoutBuilder(
-                    builder: (context, constraints) {
-                      final isNarrow = constraints.maxWidth < 560;
-
-                      final headerTitle = Row(
-                        children: [
-                          const Icon(Icons.pending_actions, color: Color(0xFFD97706), size: 18),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              'Pending Tenant Onboarding Approvals (${state.onboardingRequests.length})',
-                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5, color: Color(0xFFB45309)),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
-                      );
-
-                      final viewAllLink = TextButton(
-                        style: TextButton.styleFrom(
-                          padding: EdgeInsets.zero,
-                          minimumSize: Size.zero,
-                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        ),
-                        onPressed: () => notifier.setNavTab('onboarding'),
-                        child: const Text('View All in Wizard →', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                      );
-
-                      if (isNarrow) {
-                        return Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            headerTitle,
-                            const SizedBox(height: 4),
-                            Align(
-                              alignment: Alignment.centerRight,
-                              child: viewAllLink,
-                            ),
-                          ],
-                        );
-                      }
-
-                      return Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Expanded(child: headerTitle),
-                          const SizedBox(width: 8),
-                          viewAllLink,
-                        ],
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 10),
-                  ...state.onboardingRequests.take(2).map((req) {
-                    return Container(
-                      margin: const EdgeInsets.only(bottom: 8),
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                      decoration: BoxDecoration(
-                        color: isDark ? const Color(0xFF0F172A) : Colors.white,
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: isDark ? Colors.white10 : const Color(0xFFE2E8F0)),
-                      ),
-                      child: LayoutBuilder(
-                        builder: (context, constraints) {
-                          final isNarrow = constraints.maxWidth < 500;
-
-                          final reqText = Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                req.organizationName,
-                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                'Admin: ${req.adminName} (${req.adminEmail}) • Plan: ${req.requestedPlanName}',
-                                style: TextStyle(fontSize: 11, color: isDark ? Colors.white60 : const Color(0xFF64748B)),
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ],
-                          );
-
-                          final approveBtn = ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF16A34A),
-                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
-                              elevation: 0,
-                            ),
-                            onPressed: () {
-                              notifier.approveOnboardingRequest(req.id);
-                              AppFeedback.showSnackbar(context, message: '${req.organizationName} approved and provisioned!');
-                            },
-                            child: const Text('Approve & Launch', style: TextStyle(fontSize: 11.5, color: Colors.white, fontWeight: FontWeight.bold)),
-                          );
-
-                          if (isNarrow) {
-                            return Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                reqText,
-                                const SizedBox(height: 8),
-                                approveBtn,
-                              ],
-                            );
-                          }
-
-                          return Row(
-                            children: [
-                              Expanded(child: reqText),
-                              const SizedBox(width: 10),
-                              approveBtn,
-                            ],
-                          );
-                        },
-                      ),
-                    );
-                  }),
-                ],
-              ),
-            ),
-            const SizedBox(height: 24),
-          ],
+          // Pending Onboarding Approvals Banner (Commented)
+          // if (state.onboardingRequests.isNotEmpty) ...[
+          //   Container(
+          //     padding: const EdgeInsets.all(16),
+          //     decoration: BoxDecoration(
+          //       color: isDark ? const Color(0xFF1E293B) : const Color(0xFFFFFBEB),
+          //       borderRadius: BorderRadius.circular(12),
+          //       border: Border.all(color: const Color(0xFFFDE68A)),
+          //     ),
+          //     child: Column(
+          //       crossAxisAlignment: CrossAxisAlignment.start,
+          //       children: [
+          //         LayoutBuilder(
+          //           builder: (context, constraints) {
+          //             final isNarrow = constraints.maxWidth < 560;
+          //             final headerTitle = Row(
+          //               children: [
+          //                 const Icon(Icons.pending_actions, color: Color(0xFFD97706), size: 18),
+          //                 const SizedBox(width: 8),
+          //                 Expanded(
+          //                   child: Text(
+          //                     'Pending Tenant Onboarding Approvals (${state.onboardingRequests.length})',
+          //                     style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5, color: Color(0xFFB45309)),
+          //                     maxLines: 2,
+          //                     overflow: TextOverflow.ellipsis,
+          //                   ),
+          //                 ),
+          //               ],
+          //             );
+          //             final viewAllLink = TextButton(
+          //               style: TextButton.styleFrom(
+          //                 padding: EdgeInsets.zero,
+          //                 minimumSize: Size.zero,
+          //                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          //               ),
+          //               onPressed: () => notifier.setNavTab('onboarding'),
+          //               child: const Text('View All in Wizard →', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+          //             );
+          //             if (isNarrow) {
+          //               return Column(
+          //                 crossAxisAlignment: CrossAxisAlignment.stretch,
+          //                 children: [
+          //                   headerTitle,
+          //                   const SizedBox(height: 4),
+          //                   Align(
+          //                     alignment: Alignment.centerRight,
+          //                     child: viewAllLink,
+          //                   ),
+          //                 ],
+          //               );
+          //             }
+          //             return Row(
+          //               mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          //               children: [
+          //                 Expanded(child: headerTitle),
+          //                 const SizedBox(width: 8),
+          //                 viewAllLink,
+          //               ],
+          //             );
+          //           },
+          //         ),
+          //         const SizedBox(height: 10),
+          //         ...state.onboardingRequests.take(2).map((req) {
+          //           return Container(
+          //             margin: const EdgeInsets.only(bottom: 8),
+          //             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          //             decoration: BoxDecoration(
+          //               color: isDark ? const Color(0xFF0F172A) : Colors.white,
+          //               borderRadius: BorderRadius.circular(8),
+          //               border: Border.all(color: isDark ? Colors.white10 : const Color(0xFFE2E8F0)),
+          //             ),
+          //             child: LayoutBuilder(
+          //               builder: (context, constraints) {
+          //                 final isNarrow = constraints.maxWidth < 500;
+          //                 final reqText = Column(
+          //                   crossAxisAlignment: CrossAxisAlignment.start,
+          //                   children: [
+          //                     Text(
+          //                       req.organizationName,
+          //                       style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+          //                       maxLines: 1,
+          //                       overflow: TextOverflow.ellipsis,
+          //                     ),
+          //                     const SizedBox(height: 2),
+          //                     Text(
+          //                       'Admin: ${req.adminName} (${req.adminEmail}) • Plan: ${req.requestedPlanName}',
+          //                       style: TextStyle(fontSize: 11, color: isDark ? Colors.white60 : const Color(0xFF64748B)),
+          //                       maxLines: 2,
+          //                       overflow: TextOverflow.ellipsis,
+          //                     ),
+          //                   ],
+          //                 );
+          //                 final approveBtn = ElevatedButton(
+          //                   style: ElevatedButton.styleFrom(
+          //                     backgroundColor: const Color(0xFF16A34A),
+          //                     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          //                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+          //                     elevation: 0,
+          //                   ),
+          //                   onPressed: () {
+          //                     notifier.approveOnboardingRequest(req.id);
+          //                     AppFeedback.showSnackbar(context, message: '${req.organizationName} approved and provisioned!');
+          //                   },
+          //                   child: const Text('Approve & Launch', style: TextStyle(fontSize: 11.5, color: Colors.white, fontWeight: FontWeight.bold)),
+          //                 );
+          //                 if (isNarrow) {
+          //                   return Column(
+          //                     crossAxisAlignment: CrossAxisAlignment.stretch,
+          //                     children: [
+          //                       reqText,
+          //                       const SizedBox(height: 8),
+          //                       approveBtn,
+          //                     ],
+          //                   );
+          //                 }
+          //                 return Row(
+          //                   children: [
+          //                     Expanded(child: reqText),
+          //                     const SizedBox(width: 10),
+          //                     approveBtn,
+          //                   ],
+          //                 );
+          //               },
+          //             ),
+          //           );
+          //         }),
+          //       ],
+          //     ),
+          //   ),
+          //   const SizedBox(height: 24),
+          // ],
 
           // Active Organizations Table Header & View
           LayoutBuilder(
