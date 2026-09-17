@@ -6,6 +6,7 @@ import '../../../../core/constants/app_spacing.dart';
 import '../../../../core/navigation/navigation_config.dart';
 import '../../../../core/navigation/navigation_service.dart';
 import '../../../../core/permissions/permission_service.dart';
+import '../../../../features/auth/presentation/providers/auth_provider.dart';
 import '../../../../features/business/presentation/providers/business_provider.dart';
 import '../../../../features/subscription/presentation/providers/subscription_provider.dart';
 
@@ -159,67 +160,68 @@ class MobileDrawer extends ConsumerWidget {
     final String currentLoc = state.matchedLocation;
     final topPadding = MediaQuery.of(context).padding.top;
 
+    final authState = ref.watch(authProvider);
+    final String subtitleName = (authState.user?.fullName.trim().isNotEmpty == true)
+        ? authState.user!.fullName.trim()
+        : ((authState.user?.name.trim().isNotEmpty == true)
+            ? authState.user!.name.trim()
+            : (activeBiz?.name ?? 'Tax Bunny Retail Store'));
+
     return Drawer(
       child: Container(
         color: isDark ? const Color(0xFF0F172A) : Colors.white,
         child: Column(
           children: [
-            // Drawer Header
+            // Drawer Header (Centered Tax Bunny + User Name + Divider)
             Container(
-              padding: EdgeInsets.fromLTRB(16, topPadding + 16, 16, 20),
-              decoration: BoxDecoration(
-                border: Border(
-                  bottom: BorderSide(
-                    color: isDark
-                        ? const Color(0xFF1E2E4A)
-                        : AppColors.borderLight,
-                  ),
-                ),
-              ),
-              child: Row(
+              padding: EdgeInsets.fromLTRB(16, topPadding + 16, 16, 14),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          activeBiz?.name ?? 'Retail Store',
-                          style: TextStyle(
-                            color: isDark
-                                ? Colors.white70
-                                : const Color(0xFF64748B),
-                            fontSize: 12,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(
+                        Icons.bolt,
+                        color: Color(0xFF2DD4BF),
+                        size: 26,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'TAX BUNNY',
+                        style: TextStyle(
+                          fontSize: 18.5,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 0.8,
+                          color: isDark ? Colors.white : const Color(0xFF0F172A),
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-                  Container(
-                    width: 38,
-                    height: 38,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: isDark
-                            ? Colors.white24
-                            : AppColors.borderLight,
-                        width: 1.5,
-                      ),
+                  const SizedBox(height: 6),
+                  Text(
+                    subtitleName,
+                    style: TextStyle(
+                      color: isDark
+                          ? Colors.white70
+                          : const Color(0xFF64748B),
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
                     ),
-                    child: IconButton(
-                      icon: Icon(
-                        Icons.person_outline,
-                        color: isDark ? Colors.white70 : Colors.black87,
-                        size: 18,
-                      ),
-                      padding: EdgeInsets.zero,
-                      onPressed: () {
-                        Navigator.pop(context);
-                        context.push('/profile');
-                      },
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 16),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Divider(
+                      height: 1,
+                      thickness: 1,
+                      color: isDark
+                          ? const Color(0xFF1E2E4A)
+                          : AppColors.borderLight,
                     ),
                   ),
                 ],
