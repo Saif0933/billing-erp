@@ -26,13 +26,13 @@ class _TermsConditionsPageState extends State<TermsConditionsPage> {
       content:
           'Welcome to Tax Bunny ("Service", "Application", "Platform", "We", "Us", or "Our"). '
           'These Terms & Conditions ("Terms") constitute a legally binding agreement between your business entity, retail shop, firm, freelancer practice, or organization '
-          '("User", "Merchant", "Organization", "Subscriber", or "You") and Tax Bunny. Tax Bunny is a commercial multi-tenant Software-as-a-Service (SaaS) '
+          '("User", "Merchant", "Organization", "Account Holder", or "You") and Tax Bunny. Tax Bunny is a commercial multi-tenant '
           'cloud billing, Point of Sale (POS), inventory management, customer ledger (Khata), and invoicing platform. '
-          'By accessing, registering, subscribing to, or using Tax Bunny, you agree to comply with and be bound by these Terms.',
+          'By accessing, registering, or using Tax Bunny, you agree to comply with and be bound by these Terms.',
       bullets: [
         'Applicable to all mobile applications, web portals, APIs, platform admin dashboards, and thermal printing utilities.',
         'Supports both Non-GST businesses (small shops, retail counters, service providers) and GST-registered commercial enterprises.',
-        'Software is offered and sold on a commercial SaaS Subscription basis (Monthly, Quarterly, Annual, or Enterprise packages).',
+        'Software provides comprehensive cloud-backed multi-tenant billing, inventory tracking, and POS invoicing features.',
         'You confirm that you possess full legal authority to bind your organization or business practice to these Terms.',
       ],
     ),
@@ -46,16 +46,17 @@ class _TermsConditionsPageState extends State<TermsConditionsPage> {
       content:
           'Tax Bunny operates under a secure dual-tier multi-tenant authentication architecture. '
           'Both Platform Administrators and Organization Users log into the system using verified Email and Password credentials. '
-          'Platform Administrators manage tenant onboarding, subscription lifecycles, and issue authorized master Organization Login credentials (Email & Password) '
-          'to subscribing merchants.',
+          'Platform Administrators manage tenant onboarding, workspace provisioning, and issue authorized master Organization Login credentials (Email & Password) '
+          'to registered merchants.',
       bullets: [
-        'Platform Admin Role: Manages overall system infrastructure, subscription plans, tenant provisioning, and issues the official Organization Administrator login credentials (Email & Password).',
-        'Organization Tenant Login: Subscribed merchants and organizations access their dedicated, logically isolated workspace using the Email and Password provisioned and authorized by the Platform.',
+        'Platform Admin Role: Manages overall system infrastructure, workspace provisioning, and issues the official Organization Administrator login credentials (Email & Password).',
+        'Organization Tenant Login: Registered merchants and organizations access their dedicated, logically isolated workspace using the Email and Password provisioned and authorized by the Platform.',
         'Staff & Team Management (RBAC): Organization Admins can create sub-accounts with role-based permissions (Store Manager, Cashier, Accountant) within their tenant workspace.',
         'Credential Safeguards: Users are strictly responsible for maintaining password confidentiality. Passwords should be changed upon first login and never shared with unauthorized third parties.',
         'Prompt Security Reporting: If you suspect any compromise of your Organization login credentials, immediately contact support at samsaif933@gmail.com or +91 9334804356.',
       ],
     ),
+    /*
     _TermsSection(
       index: '03',
       id: 'saas_subscription_sales',
@@ -75,15 +76,16 @@ class _TermsConditionsPageState extends State<TermsConditionsPage> {
         'Fair Refund Policy: Annual subscription purchases are eligible for a 7-day money-back satisfaction guarantee; monthly subscriptions can be cancelled at any time without long-term lock-in.',
       ],
     ),
+    */
     _TermsSection(
-      index: '04',
+      index: '03',
       id: 'license_usage',
       category: 'License',
-      title: 'SaaS License Grant, Permitted Use & IP Rights',
+      title: 'Software License Grant, Permitted Use & IP Rights',
       icon: Icons.vpn_key_rounded,
       tag: 'License',
       content:
-          'Subject to active subscription compliance, Tax Bunny grants your organization a non-exclusive, non-transferable, revocable, worldwide license '
+          'Subject to these Terms, Tax Bunny grants your organization a non-exclusive, non-transferable, revocable, worldwide license '
           'to access and use the platform for your internal commercial business operations. All software architecture, design, code, logos, and '
           'trademarks remain the exclusive intellectual property of Tax Bunny.',
       bullets: [
@@ -94,7 +96,7 @@ class _TermsConditionsPageState extends State<TermsConditionsPage> {
       ],
     ),
     _TermsSection(
-      index: '05',
+      index: '04',
       id: 'gst_non_gst_compliance',
       category: 'Compliance',
       title: 'Non-GST & GST Invoicing, Tax Disclaimer & User Responsibility',
@@ -112,7 +114,7 @@ class _TermsConditionsPageState extends State<TermsConditionsPage> {
       ],
     ),
     _TermsSection(
-      index: '06',
+      index: '05',
       id: 'hardware_offline',
       category: 'Hardware',
       title: 'Hardware Integrations, Thermal Printers & Offline Mode Sync',
@@ -128,7 +130,7 @@ class _TermsConditionsPageState extends State<TermsConditionsPage> {
       ],
     ),
     _TermsSection(
-      index: '07',
+      index: '06',
       id: 'data_ownership',
       category: 'Data',
       title: '100% User Data Ownership & Unrestricted Portability',
@@ -143,6 +145,7 @@ class _TermsConditionsPageState extends State<TermsConditionsPage> {
         'We will never sell, lease, or monetize your customer records or trade secrets to third parties, competitors, or marketing brokers.',
       ],
     ),
+    /*
     _TermsSection(
       index: '08',
       id: 'subscription_lifecycle_grace',
@@ -160,8 +163,9 @@ class _TermsConditionsPageState extends State<TermsConditionsPage> {
         'Tenant Decommissioning: Unrenewed workspaces may be archived and securely decommissioned after the 30-day grace period in accordance with statutory data retention standards.',
       ],
     ),
+    */
     _TermsSection(
-      index: '09',
+      index: '07',
       id: 'fair_use_prohibitions',
       category: 'Compliance',
       title: 'Fair Usage Policy & Prohibited Business Activities',
@@ -178,7 +182,7 @@ class _TermsConditionsPageState extends State<TermsConditionsPage> {
       ],
     ),
     _TermsSection(
-      index: '10',
+      index: '08',
       id: 'sla_availability',
       category: 'SLA',
       title: 'Service Availability, 99.9% Target SLA & Maintenance',
@@ -194,7 +198,7 @@ class _TermsConditionsPageState extends State<TermsConditionsPage> {
       ],
     ),
     _TermsSection(
-      index: '11',
+      index: '09',
       id: 'liability_disclaimer',
       category: 'Legal',
       title: 'Limitation of Liability & Statutory Warranty Disclaimers',
@@ -206,11 +210,11 @@ class _TermsConditionsPageState extends State<TermsConditionsPage> {
       bullets: [
         'In no event shall Tax Bunny, its developers, employees, or affiliates be liable for indirect, incidental, special, punitive, or consequential damages.',
         'This includes any loss of business profits, customer goodwill, commercial stoppage, or penalties resulting from merchant data entry mistakes.',
-        'Our aggregate legal liability under any claim arising out of these Terms shall not exceed the total subscription fee paid by you in the preceding 3 months.',
+        'Our aggregate legal liability under any claim arising out of these Terms shall not exceed ₹1,000 or the maximum extent permissible under applicable law.',
       ],
     ),
     _TermsSection(
-      index: '12',
+      index: '10',
       id: 'termination_export_contact',
       category: 'Legal',
       title: 'Account Deletion, Dispute Resolution & Official Developer Support',
@@ -223,7 +227,7 @@ class _TermsConditionsPageState extends State<TermsConditionsPage> {
         'Official Developer Email: samsaif933@gmail.com',
         'Official Support Helpline: +91 9334804356',
         'Self-Serve Account Deletion: Settings > Business Profile > Delete Account (or email samsaif933@gmail.com).',
-        'Support SLA: All inquiries, technical issues, and subscription billing requests are addressed within 24 to 48 business hours.',
+        'Support SLA: All inquiries, technical issues, and customer support requests are addressed within 24 to 48 business hours.',
       ],
     ),
   ];
@@ -438,7 +442,7 @@ class _TermsConditionsPageState extends State<TermsConditionsPage> {
           ),
           const SizedBox(height: 6),
           Text(
-            'Master SaaS Agreement, Platform & Organization login credentials matrix, subscription sales policies, Non-GST & GST support, and 100% data ownership commitments.',
+            'Master Application Agreement, Platform & Organization login credentials matrix, Non-GST & GST support, and 100% data ownership commitments.',
             style: TextStyle(
               fontSize: isMobile ? 12.5 : 14,
               height: 1.45,
@@ -453,7 +457,7 @@ class _TermsConditionsPageState extends State<TermsConditionsPage> {
               _buildPillBadge(
                   'Email/Password Auth', Icons.vpn_key_rounded, isMobile),
               _buildPillBadge(
-                  'SaaS Subscription Plans', Icons.card_membership_rounded, isMobile),
+                  'Cloud Sync & Khata', Icons.cloud_done_rounded, isMobile),
               _buildPillBadge(
                   '100% Data Ownership', Icons.folder_shared_rounded, isMobile),
               _buildPillBadge(
@@ -506,9 +510,9 @@ class _TermsConditionsPageState extends State<TermsConditionsPage> {
         color: const Color(0xFF6366F1),
       ),
       _HighlightItem(
-        icon: Icons.card_membership_rounded,
-        title: 'SaaS Subscription Plans',
-        subtitle: 'Flexible Commercial Sales Model',
+        icon: Icons.cloud_done_rounded,
+        title: 'Cloud Sync & Khata',
+        subtitle: 'Real-Time Ledger & Invoices',
         color: const Color(0xFF10B981),
       ),
       _HighlightItem(
@@ -639,8 +643,8 @@ class _TermsConditionsPageState extends State<TermsConditionsPage> {
         },
         decoration: InputDecoration(
           hintText: isMobile
-              ? 'Search login, subscription, terms...'
-              : 'Search login credentials, SaaS subscriptions, non-GST/GST, SLAs, refunds...',
+              ? 'Search login, terms, GST, data...'
+              : 'Search login credentials, non-GST/GST, SLAs, data ownership, legal...',
           hintStyle: TextStyle(
             fontSize: isMobile ? 12 : 13,
             color: isDark ? Colors.white38 : const Color(0xFF94A3B8),
@@ -702,7 +706,6 @@ class _TermsConditionsPageState extends State<TermsConditionsPage> {
       'All',
       'General',
       'Account',
-      'Subscriptions',
       'License',
       'Compliance',
       'Hardware',
@@ -986,7 +989,7 @@ class _TermsConditionsPageState extends State<TermsConditionsPage> {
                 ),
                 const SizedBox(height: 3),
                 Text(
-                  'For legal agreements, tenant onboarding, subscription plan sales, or billing assistance, contact our developer desk at samsaif933@gmail.com or call +91 9334804356.',
+                  'For legal agreements, tenant onboarding, or platform technical assistance, contact our developer desk at samsaif933@gmail.com or call +91 9334804356.',
                   style: TextStyle(
                     fontSize: isMobile ? 11.5 : 12.5,
                     color: mutedText,

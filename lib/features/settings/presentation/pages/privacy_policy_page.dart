@@ -31,7 +31,7 @@ class _PrivacyPolicyPageState extends State<PrivacyPolicyPage> {
       bullets: [
         'Multi-Tenant Architecture: Designed for both Non-GST businesses (small shops, service providers) and GST-registered merchants.',
         'No GST Mandatory: Having a GST registration is NOT required to use Tax Bunny; non-GST users can freely issue non-tax bills, estimates, cash receipts, and manage stock.',
-        'SaaS Commercial Model: Offered on paid subscription tiers with complete tenant data isolation and zero ad tracking.',
+        'Multi-Tenant Data Privacy: Complete tenant data isolation, isolated organization vaults, and zero ad tracking.',
         'Strict Zero-Monetization: We NEVER sell, rent, trade, or monetize your personal, customer, or financial records to third parties.',
       ],
     ),
@@ -66,7 +66,7 @@ class _PrivacyPolicyPageState extends State<PrivacyPolicyPage> {
         'Store & Business Profile: Store/shop name, business name, owner name, login email, contact phone number, address, and optional GSTIN/PAN (only if entered).',
         'Customer & Vendor Directory: Customer name, phone number, billing/shipping address, customer ledger balances, and credit/debit records (Khata).',
         'Invoicing & Financial Data: Sales bills, quotations, purchase records, item catalogs, optional tax rates (for GST users) or zero-tax items (for Non-GST users), and payment modes (Cash, UPI ID reference, Cheque, Bank Transfer).',
-        'Subscription & Payment Info: Subscription tier records, renewal dates, and payment transaction references generated via PCI-DSS compliant gateways (Tax Bunny never stores raw credit/debit card numbers or banking PINs).',
+        // 'Subscription & Payment Info: Optional transaction references generated via compliant gateways (Tax Bunny never stores raw credit/debit card numbers or banking PINs).',
         'Device & Diagnostic Data: Device model, operating system version, Firebase installation token (for push alerts), IP address, and crash reports.',
       ],
     ),
@@ -83,7 +83,7 @@ class _PrivacyPolicyPageState extends State<PrivacyPolicyPage> {
       bullets: [
         'Camera (android.permission.CAMERA): Used strictly for scanning product barcodes/QR codes in the POS/Billing screen and capturing photos of physical receipts, invoices, or product images. No biometric, facial recognition, or unauthorized background capture is ever performed.',
         'Storage & Media Access (Photos/Files): Used to allow you to upload your business logo, save generated PDF invoices to your device, import/export CSV/Excel/JSON spreadsheets, and share invoice receipts.',
-        'Push Notifications (android.permission.POST_NOTIFICATIONS): Used to deliver real-time operational alerts, such as low inventory stock warnings, invoice payment reminders, subscription renewal notices, and security alerts via Firebase Cloud Messaging.',
+        'Push Notifications (android.permission.POST_NOTIFICATIONS): Used to deliver real-time operational alerts, such as low inventory stock warnings, invoice payment reminders, and security alerts via Firebase Cloud Messaging.',
         'Internet & Network State (INTERNET, ACCESS_NETWORK_STATE): Used to securely synchronize your billing data with cloud databases, verify active network connections, and enable multi-device sync.',
         'Vibration (android.permission.VIBRATE): Used solely to provide tactile haptic confirmation when a barcode or QR code is successfully scanned.',
       ],
@@ -96,13 +96,13 @@ class _PrivacyPolicyPageState extends State<PrivacyPolicyPage> {
       icon: Icons.settings_suggest_rounded,
       highlight: '100% Functional Billing Processing • Zero Advertising Trackers',
       content:
-          'Your data is processed solely to operate the Tax Bunny platform, manage your SaaS subscription, generate standard bills, maintain customer credit balances, '
+          'Your data is processed solely to operate the Tax Bunny platform, generate standard bills, maintain customer credit balances, '
           'and provide real-time business reports. We do not engage in behavioural advertising, ad retargeting, or commercial data selling.',
       bullets: [
         'Generating non-tax retail bills, estimates, cash memos, or GST-compliant tax invoices depending on user preference.',
         'Calculating real-time bill totals, discounts, customer outstanding balances (Khata), and inventory stock balances.',
         'Enforcing Role-Based Access Control (RBAC) across your staff (Admins, Cashiers, Accountants).',
-        'Managing subscription renewals, multi-device synchronization, and offline-to-cloud data caching.',
+        'Managing multi-device synchronization and offline-to-cloud data caching.',
         'Delivering critical product updates, system alerts, and customer support assistance.',
       ],
     ),
@@ -131,10 +131,10 @@ class _PrivacyPolicyPageState extends State<PrivacyPolicyPage> {
       icon: Icons.cloud_queue_rounded,
       highlight: 'Certified SOC 2 & ISO 27001 Cloud Infrastructure',
       content:
-          'Tax Bunny partners with trusted, industry-standard third-party service providers to deliver cloud hosting, push notifications, and subscription payment processing.',
+          'Tax Bunny partners with trusted, industry-standard third-party service providers to deliver cloud hosting and push notifications.',
       bullets: [
         'Google Firebase: Used for Firebase Cloud Messaging (push notifications) and crash reporting. Bound by Google\'s enterprise data privacy terms.',
-        'Payment Gateways: Subscription fees are processed via RBI/PCI-DSS certified payment gateways (e.g. Razorpay/Stripe). Tax Bunny never stores credit/debit card numbers, CVVs, or net-banking passwords.',
+        // 'Payment Gateways: Processed via certified secure channels. Tax Bunny never stores raw credit/debit card numbers, CVVs, or net-banking passwords.',
         'Data Processing Agreements (DPAs): All third parties are legally prohibited from utilizing your business records for any purpose other than providing contracted infrastructure services.',
       ],
     ),
@@ -201,7 +201,7 @@ class _PrivacyPolicyPageState extends State<PrivacyPolicyPage> {
       bullets: [
         'Official Developer & Support Email: samsaif933@gmail.com',
         'Official Support Helpline: +91 9334804356',
-        'Grievance Redressal: Inquiries, subscription requests, and compliance requests are resolved within 24 to 48 business hours.',
+        'Grievance Redressal: Inquiries, data privacy requests, and compliance queries are resolved within 24 to 48 business hours.',
         'App Developer / Publisher: Tax Bunny (Contact: samsaif933@gmail.com).',
       ],
     ),
@@ -426,7 +426,7 @@ class _PrivacyPolicyPageState extends State<PrivacyPolicyPage> {
           ),
           const SizedBox(height: 6),
           Text(
-            'How Tax Bunny protects your organization credentials, store ledgers, customer registries, non-GST/GST bills, and SaaS subscription data with AES-256 cryptographic vaults and zero-monetization guarantees.',
+            'How Tax Bunny protects your organization credentials, store ledgers, customer registries, non-GST/GST bills, and business operational data with AES-256 cryptographic vaults and zero-monetization guarantees.',
             style: TextStyle(
               fontSize: isMobile ? 12.5 : 14,
               height: 1.45,
@@ -618,7 +618,7 @@ class _PrivacyPolicyPageState extends State<PrivacyPolicyPage> {
         decoration: InputDecoration(
           hintText: isMobile
               ? 'Search login, security, deletion...'
-              : 'Search login authentication, passwords, subscriptions, non-GST/GST, data isolation...',
+              : 'Search login authentication, passwords, permissions, non-GST/GST, data isolation...',
           hintStyle: TextStyle(
             fontSize: isMobile ? 12 : 13,
             color: isDark ? Colors.white38 : const Color(0xFF94A3B8),

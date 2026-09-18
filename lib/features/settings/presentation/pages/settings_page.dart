@@ -31,12 +31,14 @@ class SettingsPage extends StatelessWidget {
             icon: Icons.person_outline,
             route: '/profile',
           ),
+          /*
           _SettingsItem(
             title: 'SaaS Subscription Plan',
             subtitle: 'Change plans, view renewals, and features checklist',
             icon: Icons.credit_card_outlined,
             route: '/subscription',
           ),
+          */
         ],
       ),
       _SettingsGroup(
@@ -100,7 +102,7 @@ class SettingsPage extends StatelessWidget {
         items: [
           _SettingsItem(
             title: 'Terms & Conditions',
-            subtitle: 'Review enterprise SaaS terms, SLAs, and liability policies',
+            subtitle: 'Review terms of use, SLAs, and liability policies',
             icon: Icons.gavel_outlined,
             route: '/settings/terms-conditions',
           ),

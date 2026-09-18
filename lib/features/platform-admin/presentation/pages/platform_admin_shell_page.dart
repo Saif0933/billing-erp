@@ -516,7 +516,7 @@ class _PlatformAdminShellPageState
                   final tabs = [
                     'dashboard',
                     'organizations',
-                    'subscriptions',
+                    // 'subscriptions',
                     'onboarding',
                   ];
                   notifier.setNavTab(tabs[index]);
@@ -532,11 +532,13 @@ class _PlatformAdminShellPageState
                     selectedIcon: Icon(Icons.domain),
                     label: 'Organization',
                   ),
+                  /*
                   const NavigationDestination(
                     icon: Icon(Icons.card_membership_outlined),
                     selectedIcon: Icon(Icons.card_membership),
                     label: 'Plans',
                   ),
+                  */
                   NavigationDestination(
                     icon: Badge(
                       isLabelVisible: state.onboardingRequests.isNotEmpty,
@@ -585,6 +587,7 @@ class _PlatformAdminShellPageState
                       isDark: isDark,
                       badgeCount: state.tenants.length,
                     ),
+                    /*
                     _buildSidebarItem(
                       title: 'SaaS Subscriptions',
                       icon: Icons.card_membership_outlined,
@@ -594,6 +597,7 @@ class _PlatformAdminShellPageState
                       onTap: () => notifier.setNavTab('subscriptions'),
                       isDark: isDark,
                     ),
+                    */
                     _buildSidebarItem(
                       title: 'Tenant Onboarding',
                       icon: Icons.person_add_alt_1_outlined,
@@ -733,10 +737,10 @@ class _PlatformAdminShellPageState
     switch (tab) {
       case 'organizations':
         return 1;
-      case 'subscriptions':
-        return 2;
+      // case 'subscriptions':
+      //   return 2;
       case 'onboarding':
-        return 3;
+        return 2;
       case 'dashboard':
       default:
         return 0;
@@ -935,6 +939,7 @@ class _PlatformAdminShellPageState
               isDark: isDark,
               badgeCount: state.tenants.length,
             ),
+            /*
             _buildSidebarItem(
               title: 'SaaS Subscriptions',
               icon: Icons.card_membership_outlined,
@@ -947,6 +952,7 @@ class _PlatformAdminShellPageState
               },
               isDark: isDark,
             ),
+            */
             _buildSidebarItem(
               title: 'Tenant Onboarding',
               icon: Icons.person_add_alt_1_outlined,

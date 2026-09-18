@@ -260,6 +260,7 @@ class NavigationConfig {
       route: '/reports',
       requiredFeature: SubscriptionFeature.reports,
     ),
+    /*
     NavigationItem(
       id: 'subscription_group',
       title: 'Billing & Plan',
@@ -280,6 +281,7 @@ class NavigationConfig {
         ),
       ],
     ),
+    */
     NavigationItem(
       id: 'settings_group',
       title: 'Settings & Administration',
