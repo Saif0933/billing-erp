@@ -18,137 +18,191 @@ class _PrivacyPolicyPageState extends State<PrivacyPolicyPage> {
   final List<_PolicySection> _sections = const [
     _PolicySection(
       index: '01',
-      id: 'collection',
-      category: 'Data Types',
-      title: 'Information We Collect & Ingestion Scope',
-      icon: Icons.data_usage_rounded,
-      highlight: 'Business Profile, Ledgers, GSTIN/PAN & Invoicing Records',
+      id: 'overview',
+      category: 'Overview',
+      title: 'Privacy Commitment & Scope of Tax Bunny',
+      icon: Icons.shield_rounded,
+      highlight: 'Strict Zero-Monetization • DPDP 2023 & GDPR Aligned',
       content:
-          'We collect business profile data, contact details, user login credentials, client billing directories, '
-          'tax identification numbers (GSTIN/PAN), and transaction logs required to operate our enterprise billing, '
-          'inventory tracking, and financial accounting modules.',
+          'Tax Bunny ("We", "Our", "Us", or "Platform") is committed to safeguarding the privacy, financial records, and operational data '
+          'of all our business users, small retail merchants, shopkeepers, service providers, freelancers, and enterprise organizations. '
+          'This Privacy Policy explains how Tax Bunny collects, uses, stores, secures, and handles information across our multi-tenant SaaS '
+          'billing, POS counter, inventory management, customer ledger (Khata), and accounting software on Android, iOS, and Web platforms.',
       bullets: [
-        'Business legal names, trade names, PAN, and active GSTIN registrations',
-        'Customer & vendor directory records, phone numbers, and addresses',
-        'Item catalogs, HSN/SAC codes, pricing lists, and stock balance levels',
-        'System audit trails with timestamped user activity and IP logs',
+        'Multi-Tenant Architecture: Designed for both Non-GST businesses (small shops, service providers) and GST-registered merchants.',
+        'No GST Mandatory: Having a GST registration is NOT required to use Tax Bunny; non-GST users can freely issue non-tax bills, estimates, cash receipts, and manage stock.',
+        'SaaS Commercial Model: Offered on paid subscription tiers with complete tenant data isolation and zero ad tracking.',
+        'Strict Zero-Monetization: We NEVER sell, rent, trade, or monetize your personal, customer, or financial records to third parties.',
       ],
     ),
     _PolicySection(
       index: '02',
-      id: 'usage',
-      category: 'Processing',
-      title: 'Data Processing & Strict Zero-Monetization Rule',
-      icon: Icons.settings_suggest_rounded,
-      highlight: '100% Zero Data Monetization • Strictly Functional Processing',
+      id: 'auth_credentials',
+      category: 'Authentication',
+      title: 'Platform Admin & Organization Login (Email & Password)',
+      icon: Icons.vpn_key_rounded,
+      highlight: 'Bcrypt Hashing • JWT Bearer Tokens • Zero Plaintext Storage',
       content:
-          'Your data is processed strictly to provide platform functionalities, calculate invoice totals and tax liabilities, '
-          'generate financial reports, facilitate automated recurring billing schedulers, and verify user permissions (RBAC). '
-          'We never sell, rent, or monetize your proprietary business data or customer contact records.',
+          'Tax Bunny utilizes secure Email and Password authentication for both Platform Administrators and Organization Users. '
+          'Platform Administrators provision subscribed organizations and issue initial authorized Organization Login credentials (Email & Password).',
       bullets: [
-        'Generating sales invoices, credit notes, receipts, and e-way bill payloads',
-        'Real-time calculation of CGST, SGST, IGST, and statutory financial ledgers',
-        'Enforcing Role-Based Access Control (RBAC) across team accounts',
-        'No algorithmic ad profiling, third-party tracking, or commercial data selling',
+        'Secure Password Hashing: All passwords are cryptographically salted and hashed using irreversible one-way hashing algorithms (such as bcrypt/Argon2). Plaintext passwords are NEVER stored or visible to Platform Admins or employees.',
+        'Session Security: Authenticated sessions use industry-standard JSON Web Tokens (JWT) transmitted strictly over encrypted TLS 1.3 HTTPS channels with automated token expiry.',
+        'Role-Based Staff Access (RBAC): Organization Admins can provision and control staff sub-logins (Cashiers, Accountants, Managers) within their isolated tenant space.',
+        'Zero Cross-Tenant Leakage: Organization credentials grant access strictly to that specific organization\'s database vault; no tenant can access or view another organization\'s workspace.',
       ],
     ),
     _PolicySection(
       index: '03',
-      id: 'security_encryption',
-      category: 'Security',
-      title: 'Multi-Tenant Cryptographic Vault & AES-256 Isolation',
-      icon: Icons.lock_rounded,
-      highlight: 'AES-256 At Rest • TLS 1.3 In Transit • Row-Level Database Isolation',
+      id: 'collection_data',
+      category: 'Data Types',
+      title: 'Information We Collect & Ingestion Scope',
+      icon: Icons.data_usage_rounded,
+      highlight: 'Store Profile, Invoices, Customer Registries & Inventory',
       content:
-          'We implement enterprise-grade security protocols including AES-256 encryption at rest and TLS 1.3 encryption in transit. '
-          'Tenant data is logically isolated using database-level row and tenant key isolation architectures to prevent cross-tenant data leakage. '
-          'Audit trails record every state-altering administrative action.',
+          'To deliver billing, POS counter sales, invoicing, and accounting features, Tax Bunny processes business and transactional data provided '
+          'directly by you as well as technical diagnostics necessary for cloud synchronization.',
       bullets: [
-        'Isolated tenant encryption keys with automated hardware security modules',
-        'Zero-trust network architecture with multi-factor authentication enforcement',
-        'Granular immutable security audit trails recording all ledger edits',
-        'Continuous automated vulnerability scanning and DDoS mitigation filters',
+        'Store & Business Profile: Store/shop name, business name, owner name, login email, contact phone number, address, and optional GSTIN/PAN (only if entered).',
+        'Customer & Vendor Directory: Customer name, phone number, billing/shipping address, customer ledger balances, and credit/debit records (Khata).',
+        'Invoicing & Financial Data: Sales bills, quotations, purchase records, item catalogs, optional tax rates (for GST users) or zero-tax items (for Non-GST users), and payment modes (Cash, UPI ID reference, Cheque, Bank Transfer).',
+        'Subscription & Payment Info: Subscription tier records, renewal dates, and payment transaction references generated via PCI-DSS compliant gateways (Tax Bunny never stores raw credit/debit card numbers or banking PINs).',
+        'Device & Diagnostic Data: Device model, operating system version, Firebase installation token (for push alerts), IP address, and crash reports.',
       ],
     ),
     _PolicySection(
       index: '04',
-      id: 'third_party',
-      category: 'Infrastructure',
-      title: 'Third-Party Integrations & Tier-IV Cloud Hosting',
-      icon: Icons.cloud_queue_rounded,
-      highlight: 'ISO 27001 & SOC 2 Certified Cloud Data Centers',
+      id: 'permissions',
+      category: 'Permissions',
+      title: 'Android Device Permissions & Hardware Usage Disclosures',
+      icon: Icons.phonelink_lock_rounded,
+      highlight: 'Camera, Storage, Notifications & Hardware Integrations',
       content:
-          'We partner with tier-IV certified cloud service providers and compliant payment gateways for processing subscription payments. '
-          'All third-party data processors are bound by strict Data Protection Agreements (DPAs) and confidentiality obligations.',
+          'To deliver core point-of-sale, thermal printing, and barcode scanning features, Tax Bunny requests specific device permissions. '
+          'Each permission is strictly utilized for functional business tasks as detailed below:',
       bullets: [
-        'Geographically redundant cloud backups with automated failover replication',
-        'PCI-DSS compliant payment tokenization for SaaS recurring subscriptions',
-        'Strict DPAs ensuring third parties cannot access unencrypted tenant ledgers',
+        'Camera (android.permission.CAMERA): Used strictly for scanning product barcodes/QR codes in the POS/Billing screen and capturing photos of physical receipts, invoices, or product images. No biometric, facial recognition, or unauthorized background capture is ever performed.',
+        'Storage & Media Access (Photos/Files): Used to allow you to upload your business logo, save generated PDF invoices to your device, import/export CSV/Excel/JSON spreadsheets, and share invoice receipts.',
+        'Push Notifications (android.permission.POST_NOTIFICATIONS): Used to deliver real-time operational alerts, such as low inventory stock warnings, invoice payment reminders, subscription renewal notices, and security alerts via Firebase Cloud Messaging.',
+        'Internet & Network State (INTERNET, ACCESS_NETWORK_STATE): Used to securely synchronize your billing data with cloud databases, verify active network connections, and enable multi-device sync.',
+        'Vibration (android.permission.VIBRATE): Used solely to provide tactile haptic confirmation when a barcode or QR code is successfully scanned.',
       ],
     ),
     _PolicySection(
       index: '05',
-      id: 'cookies_storage',
-      category: 'Storage',
-      title: 'Local Storage, Security Tokens & Preferences',
-      icon: Icons.cookie_rounded,
-      highlight: 'Secure HTTP-Only Tokens & Zero Ad Trackers',
+      id: 'usage_processing',
+      category: 'Processing',
+      title: 'How We Use Your Data & Zero Ad-Targeting Guarantee',
+      icon: Icons.settings_suggest_rounded,
+      highlight: '100% Functional Billing Processing • Zero Advertising Trackers',
       content:
-          'The platform uses secure HTTP-only session cookies and local storage tokens strictly for user authentication, '
-          'theme preferences, and caching frequently referenced master records to optimize performance.',
+          'Your data is processed solely to operate the Tax Bunny platform, manage your SaaS subscription, generate standard bills, maintain customer credit balances, '
+          'and provide real-time business reports. We do not engage in behavioural advertising, ad retargeting, or commercial data selling.',
       bullets: [
-        'JWT bearer authentication tokens with short expiration lifespans',
-        'Local encrypted device cache for offline-resilient master data lookups',
-        'Zero tracking pixels, ad cookies, or third-party behavioral analytics',
+        'Generating non-tax retail bills, estimates, cash memos, or GST-compliant tax invoices depending on user preference.',
+        'Calculating real-time bill totals, discounts, customer outstanding balances (Khata), and inventory stock balances.',
+        'Enforcing Role-Based Access Control (RBAC) across your staff (Admins, Cashiers, Accountants).',
+        'Managing subscription renewals, multi-device synchronization, and offline-to-cloud data caching.',
+        'Delivering critical product updates, system alerts, and customer support assistance.',
       ],
     ),
     _PolicySection(
       index: '06',
-      id: 'data_rights',
-      category: 'Portability',
-      title: 'User Privacy Rights & Full Data Portability',
-      icon: Icons.file_download_rounded,
-      highlight: '1-Click Full Data Export • Permanent Deletion Safeguards',
+      id: 'security_encryption',
+      category: 'Security',
+      title: 'Cryptographic Security & Multi-Tenant Data Isolation',
+      icon: Icons.enhanced_encryption_rounded,
+      highlight: 'AES-256 at Rest • TLS 1.3 in Transit • Row-Level Tenant Isolation',
       content:
-          'Your organization maintains full control over its data. Administrators may export complete historical ledgers, '
-          'sales invoices, customer records, and product inventory tables in JSON or CSV formats at any time via the Import/Export module. '
-          'You may also request permanent data deletion upon termination of services.',
+          'We implement enterprise-grade security architectures to protect your financial and business data against unauthorized access, '
+          'alteration, disclosure, or destruction.',
       bullets: [
-        'Instant unrestricted export in standard spreadsheet (CSV) and JSON formats',
-        'Right to rectify, correct, or anonymize past customer record profiles',
-        '30-day post-cancellation grace period before cryptographic zero-wipe',
+        'Data Encryption: All sensitive data is encrypted at rest using AES-256 encryption and in transit using modern TLS 1.3 cryptographic protocols.',
+        'Tenant Isolation: Logical row-level and organization-level database isolation guarantees that no other tenant or external organization can view or access your business records.',
+        'Immutable Audit Trails: State-altering financial and ledger modifications are logged with user identity and timestamps to prevent fraudulent manipulation.',
+        'Automated Cloud Backups: Geo-redundant continuous database backups to prevent accidental data loss.',
       ],
     ),
     _PolicySection(
       index: '07',
-      id: 'retention',
-      category: 'Compliance',
-      title: 'Statutory Retention & Regulatory Audits',
-      icon: Icons.history_toggle_off_rounded,
-      highlight: '7-Year Statutory Tax Record Alignment',
+      id: 'third_party_processors',
+      category: 'Third Party',
+      title: 'Third-Party Service Providers & Cloud Hosting',
+      icon: Icons.cloud_queue_rounded,
+      highlight: 'Certified SOC 2 & ISO 27001 Cloud Infrastructure',
       content:
-          'Financial records are maintained in accordance with standard statutory tax audit requirements for a default period of 7 years '
-          'unless you explicitly request earlier expungement following account closure. De-identified operational metrics may be retained for capacity planning.',
+          'Tax Bunny partners with trusted, industry-standard third-party service providers to deliver cloud hosting, push notifications, and subscription payment processing.',
       bullets: [
-        'Automated archival retention schedules aligned with GST & Income Tax laws',
-        'Option for custom enterprise retention period policies upon request',
-        'Secure cryptographic erasure upon verified end-of-lifecycle notices',
+        'Google Firebase: Used for Firebase Cloud Messaging (push notifications) and crash reporting. Bound by Google\'s enterprise data privacy terms.',
+        'Payment Gateways: Subscription fees are processed via RBI/PCI-DSS certified payment gateways (e.g. Razorpay/Stripe). Tax Bunny never stores credit/debit card numbers, CVVs, or net-banking passwords.',
+        'Data Processing Agreements (DPAs): All third parties are legally prohibited from utilizing your business records for any purpose other than providing contracted infrastructure services.',
       ],
     ),
     _PolicySection(
       index: '08',
-      id: 'dpo_contact',
-      category: 'Grievance',
-      title: 'Data Protection Officer (DPO) & Redressal',
-      icon: Icons.contact_support_rounded,
-      highlight: 'Dedicated Redressal Team • < 24 Hour Response SLA',
+      id: 'data_retention_deletion',
+      category: 'Account & Deletion',
+      title: 'Account Deletion, Data Portability & Retention Policy',
+      icon: Icons.delete_forever_rounded,
+      highlight: 'Self-Serve In-App Deletion & Direct Email Deletion Support',
       content:
-          'If you have questions about privacy rights, GDPR/DPDP compliance, or wish to report a security incident, '
-          'please contact our Data Protection Officer at privacy@platform.com or through the in-app support channel.',
+          'In full compliance with Google Play Store policies and international data privacy regulations, Tax Bunny provides clear and '
+          'accessible mechanisms for data export, account deletion, and permanent data erasure.',
       bullets: [
-        'Official email desk: privacy@platform.com',
-        'Dedicated compliance officer assigned to enterprise accounts',
-        'Formal incident response and grievance redressal within 24 business hours',
+        'Full Data Portability: You may export your entire business transaction history, customer registers, inventory lists, and ledgers in CSV, Excel, PDF, or JSON formats at any time without fees.',
+        'In-App Account Deletion: You can initiate account deletion directly from the mobile app by navigating to Settings > Business Profile > Delete Account.',
+        'Direct Email Deletion Request: You can also request complete account and data deletion by emailing samsaif933@gmail.com or calling +91 9334804356 with the subject "Delete My Tax Bunny Account".',
+        'Deletion Timeline & Purging: Upon verified deletion request, your account is immediately deactivated, and all associated tenant records, customer registries, and transaction logs are permanently purged from active production servers within 30 days.',
+      ],
+    ),
+    _PolicySection(
+      index: '09',
+      id: 'user_rights',
+      category: 'User Rights',
+      title: 'Your Data Protection Rights (GDPR / DPDP 2023)',
+      icon: Icons.verified_user_rounded,
+      highlight: 'Right to Access, Rectify, Restrict, Port & Erase',
+      content:
+          'Regardless of your geographic location, Tax Bunny guarantees the following fundamental data privacy rights for all users:',
+      bullets: [
+        'Right to Access: Request a copy of all personal and business data associated with your user account.',
+        'Right to Rectification: Modify or update inaccurate business names, tax details, or contact information directly in the App.',
+        'Right to Erasure (Right to be Forgotten): Request permanent deletion of your account and records as outlined in Section 08.',
+        'Right to Restriction & Objection: Restrict specific non-essential data processing activities or withdraw consent at any time.',
+      ],
+    ),
+    _PolicySection(
+      index: '10',
+      id: 'children_privacy',
+      category: 'Children',
+      title: 'Children\'s Privacy Protection (COPPA Compliance)',
+      icon: Icons.family_restroom_rounded,
+      highlight: 'Business Commercial Software • Age 18+ Verification',
+      content:
+          'Tax Bunny is an enterprise billing, POS, and financial accounting platform designed strictly for commercial enterprises, '
+          'registered businesses, shopkeepers, and adults aged 18 and above. We do NOT knowingly collect or solicit personal information from children '
+          'under 13 (or under 16/18 where applicable by local law).',
+      bullets: [
+        'Our service is not directed to children under 13.',
+        'If we become aware that personal information of a child under 13 has been collected without verified parental consent, we will take immediate steps to expunge such data from our databases.',
+        'Parents or guardians who believe their child has provided data to Tax Bunny may contact samsaif933@gmail.com for immediate removal.',
+      ],
+    ),
+    _PolicySection(
+      index: '11',
+      id: 'policy_updates_contact',
+      category: 'Contact & DPO',
+      title: 'Developer Contact, Grievance Officer & Help Desk',
+      icon: Icons.contact_support_rounded,
+      highlight: 'Official Developer Support • < 24-48 Hour Response SLA',
+      content:
+          'We may periodically update this Privacy Policy to reflect enhancements in our application or statutory regulatory requirements. '
+          'Any updates will be posted on this screen with a revised effective date.',
+      bullets: [
+        'Official Developer & Support Email: samsaif933@gmail.com',
+        'Official Support Helpline: +91 9334804356',
+        'Grievance Redressal: Inquiries, subscription requests, and compliance requests are resolved within 24 to 48 business hours.',
+        'App Developer / Publisher: Tax Bunny (Contact: samsaif933@gmail.com).',
       ],
     ),
   ];
@@ -195,7 +249,8 @@ class _PrivacyPolicyPageState extends State<PrivacyPolicyPage> {
             final screenWidth = constraints.maxWidth;
             final isMobile = screenWidth < 600;
             final isTablet = screenWidth >= 600 && screenWidth < 960;
-            final horizontalPadding = isMobile ? 12.0 : (isTablet ? 16.0 : 24.0);
+            final horizontalPadding =
+                isMobile ? 12.0 : (isTablet ? 16.0 : 24.0);
 
             return SingleChildScrollView(
               padding: EdgeInsets.fromLTRB(
@@ -212,7 +267,8 @@ class _PrivacyPolicyPageState extends State<PrivacyPolicyPage> {
                     children: [
                       _buildHeroBanner(isDark: isDark, isMobile: isMobile),
                       const SizedBox(height: 16),
-                      _buildPrivacyPillars(isDark: isDark, screenWidth: screenWidth),
+                      _buildPrivacyPillars(
+                          isDark: isDark, screenWidth: screenWidth),
                       const SizedBox(height: 16),
                       _buildSearchBar(
                         isDark: isDark,
@@ -241,7 +297,8 @@ class _PrivacyPolicyPageState extends State<PrivacyPolicyPage> {
                           ),
                         ),
                       const SizedBox(height: 20),
-                      _buildUserRightsGrid(isDark: isDark, screenWidth: screenWidth),
+                      _buildUserRightsGrid(
+                          isDark: isDark, screenWidth: screenWidth),
                       const SizedBox(height: 16),
                       _buildSecurityGuaranteeCard(
                         context: context,
@@ -317,7 +374,7 @@ class _PrivacyPolicyPageState extends State<PrivacyPolicyPage> {
                     ),
                     SizedBox(width: 5),
                     Text(
-                      'ZERO-TRUST PRIVACY FRAMEWORK',
+                      'TAX BUNNY PRIVACY POLICY',
                       style: TextStyle(
                         fontSize: 10,
                         fontWeight: FontWeight.w800,
@@ -341,10 +398,11 @@ class _PrivacyPolicyPageState extends State<PrivacyPolicyPage> {
                 child: const Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.verified_rounded, size: 11, color: Color(0xFF6EE7B7)),
+                    Icon(Icons.verified_rounded,
+                        size: 11, color: Color(0xFF6EE7B7)),
                     SizedBox(width: 5),
                     Text(
-                      'DPDP 2023 & GDPR Aligned',
+                      'Google Play & DPDP 2023 Compliant',
                       style: TextStyle(
                         fontSize: 10.5,
                         fontWeight: FontWeight.bold,
@@ -360,17 +418,17 @@ class _PrivacyPolicyPageState extends State<PrivacyPolicyPage> {
           Text(
             'Privacy & Data Security Policy',
             style: TextStyle(
-              fontSize: isMobile ? 20 : 26,
+              fontSize: isMobile ? 22 : 28,
               fontWeight: FontWeight.w900,
               color: Colors.white,
               letterSpacing: -0.6,
             ),
           ),
-          const SizedBox(height: 5),
+          const SizedBox(height: 6),
           Text(
-            'How we safeguard your business financial records, customer registries, tax ledgers, and transaction vaults with cryptographic isolation and zero-monetization guarantees.',
+            'How Tax Bunny protects your organization credentials, store ledgers, customer registries, non-GST/GST bills, and SaaS subscription data with AES-256 cryptographic vaults and zero-monetization guarantees.',
             style: TextStyle(
-              fontSize: isMobile ? 12 : 13.5,
+              fontSize: isMobile ? 12.5 : 14,
               height: 1.45,
               color: Colors.white.withValues(alpha: 0.92),
             ),
@@ -380,10 +438,10 @@ class _PrivacyPolicyPageState extends State<PrivacyPolicyPage> {
             spacing: 6,
             runSpacing: 6,
             children: [
-              _buildPillBadge('AES-256 In-Rest', Icons.lock_outline, isMobile),
-              _buildPillBadge('Cryptographic Multi-Tenancy', Icons.domain_verification_rounded, isMobile),
-              _buildPillBadge('No Commercial Data Sale', Icons.block_rounded, isMobile),
-              _buildPillBadge('100% Export Freedom', Icons.file_download_outlined, isMobile),
+              _buildPillBadge('Encrypted Credentials', Icons.vpn_key_rounded, isMobile),
+              _buildPillBadge('Zero Data Selling', Icons.block_rounded, isMobile),
+              _buildPillBadge('Tenant Isolation', Icons.domain_verification_rounded, isMobile),
+              _buildPillBadge('Instant Account Deletion', Icons.delete_sweep_rounded, isMobile),
             ],
           ),
         ],
@@ -422,30 +480,35 @@ class _PrivacyPolicyPageState extends State<PrivacyPolicyPage> {
     );
   }
 
-  Widget _buildPrivacyPillars({required bool isDark, required double screenWidth}) {
+  Widget _buildPrivacyPillars(
+      {required bool isDark, required double screenWidth}) {
     final pillars = [
       _PillarItem(
-        icon: Icons.shield_rounded,
-        title: 'Zero Data Sale',
-        description: 'Your business ledgers & clients are never monetized or shared.',
+        icon: Icons.vpn_key_rounded,
+        title: 'Encrypted Credentials',
+        description:
+            'Passwords hashed with one-way bcrypt; never stored in plaintext.',
         color: const Color(0xFF10B981),
       ),
       _PillarItem(
         icon: Icons.enhanced_encryption_rounded,
         title: 'AES-256 Vaults',
-        description: 'Military-grade encryption at rest with TLS 1.3 transport security.',
+        description:
+            'Military-grade encryption at rest with TLS 1.3 transport security.',
         color: const Color(0xFF0EA5E9),
       ),
       _PillarItem(
         icon: Icons.dns_rounded,
-        title: 'Row Isolation',
-        description: 'Guaranteed database-level separation across multi-tenant domains.',
+        title: 'Tenant Isolation',
+        description:
+            'Guaranteed database-level separation across multi-tenant domains.',
         color: const Color(0xFF8B5CF6),
       ),
       _PillarItem(
         icon: Icons.cloud_download_rounded,
-        title: 'Full Export Portability',
-        description: 'Download 100% of your business data in standard CSV/JSON anytime.',
+        title: 'Full Export Freedom',
+        description:
+            'Download 100% of your business data in standard CSV/Excel/JSON anytime.',
         color: const Color(0xFFF59E0B),
       ),
     ];
@@ -453,7 +516,8 @@ class _PrivacyPolicyPageState extends State<PrivacyPolicyPage> {
     final isVeryNarrow = screenWidth < 460;
     final isTabletOrMobile = screenWidth < 740;
     final count = isVeryNarrow ? 1 : (isTabletOrMobile ? 2 : 4);
-    final cardWidth = (screenWidth - (count - 1) * 10 - (screenWidth < 600 ? 24 : 48)) / count;
+    final cardWidth =
+        (screenWidth - (count - 1) * 10 - (screenWidth < 600 ? 24 : 48)) / count;
 
     return Wrap(
       spacing: 10,
@@ -553,8 +617,8 @@ class _PrivacyPolicyPageState extends State<PrivacyPolicyPage> {
         },
         decoration: InputDecoration(
           hintText: isMobile
-              ? 'Search encryption, GST, privacy...'
-              : 'Search privacy practices, data isolation, encryption, GST records...',
+              ? 'Search login, security, deletion...'
+              : 'Search login authentication, passwords, subscriptions, non-GST/GST, data isolation...',
           hintStyle: TextStyle(
             fontSize: isMobile ? 12 : 13,
             color: isDark ? Colors.white38 : const Color(0xFF94A3B8),
@@ -578,7 +642,9 @@ class _PrivacyPolicyPageState extends State<PrivacyPolicyPage> {
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Text(
-                        isMobile ? '$matchCount/$totalCount' : '$matchCount / $totalCount matched',
+                        isMobile
+                            ? '$matchCount/$totalCount'
+                            : '$matchCount / $totalCount matched',
                         style: const TextStyle(
                           fontSize: 10.5,
                           fontWeight: FontWeight.bold,
@@ -589,7 +655,8 @@ class _PrivacyPolicyPageState extends State<PrivacyPolicyPage> {
                     IconButton(
                       icon: const Icon(Icons.close_rounded, size: 17),
                       padding: const EdgeInsets.all(4),
-                      constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                      constraints:
+                          const BoxConstraints(minWidth: 32, minHeight: 32),
                       onPressed: () {
                         _searchController.clear();
                         setState(() {
@@ -601,8 +668,8 @@ class _PrivacyPolicyPageState extends State<PrivacyPolicyPage> {
                 )
               : null,
           border: InputBorder.none,
-          contentPadding:
-              EdgeInsets.symmetric(horizontal: 14, vertical: isMobile ? 12 : 15),
+          contentPadding: EdgeInsets.symmetric(
+              horizontal: 14, vertical: isMobile ? 12 : 15),
         ),
       ),
     );
@@ -611,14 +678,17 @@ class _PrivacyPolicyPageState extends State<PrivacyPolicyPage> {
   Widget _buildCategoryChips({required bool isDark}) {
     final categories = [
       'All',
+      'Overview',
+      'Authentication',
       'Data Types',
+      'Permissions',
       'Processing',
       'Security',
-      'Infrastructure',
-      'Storage',
-      'Portability',
-      'Compliance',
-      'Grievance',
+      'Third Party',
+      'Account & Deletion',
+      'User Rights',
+      'Children',
+      'Contact & DPO',
     ];
 
     return SingleChildScrollView(
@@ -698,7 +768,8 @@ class _PrivacyPolicyPageState extends State<PrivacyPolicyPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: EdgeInsets.fromLTRB(isMobile ? 12 : 16, 12, isMobile ? 12 : 16, 10),
+            padding: EdgeInsets.fromLTRB(
+                isMobile ? 12 : 16, 12, isMobile ? 12 : 16, 10),
             child: Row(
               children: [
                 Container(
@@ -840,26 +911,31 @@ class _PrivacyPolicyPageState extends State<PrivacyPolicyPage> {
     );
   }
 
-  Widget _buildUserRightsGrid({required bool isDark, required double screenWidth}) {
+  Widget _buildUserRightsGrid(
+      {required bool isDark, required double screenWidth}) {
     final rights = [
       _RightItem(
         title: 'Right to Access',
-        description: 'Examine all logged customer and financial records.',
+        description:
+            'Review all logged customer profiles, stock catalogs, and financial records.',
         icon: Icons.visibility_outlined,
       ),
       _RightItem(
         title: 'Right to Rectify',
-        description: 'Correct inaccuracies in ledgers, items, or user profiles.',
+        description:
+            'Correct inaccuracies in ledgers, items, tax numbers, or user profiles.',
         icon: Icons.edit_note_rounded,
       ),
       _RightItem(
         title: 'Right to Portability',
-        description: 'Export complete datasets in JSON/CSV at any time.',
+        description:
+            'Export complete datasets in JSON/CSV/PDF at any time without fees.',
         icon: Icons.file_download_outlined,
       ),
       _RightItem(
         title: 'Right to Erasure',
-        description: 'Request permanent tenant cryptographic deletion.',
+        description:
+            'Permanently delete your account and wipe all tenant databases.',
         icon: Icons.delete_outline_rounded,
       ),
     ];
@@ -931,7 +1007,8 @@ class _PrivacyPolicyPageState extends State<PrivacyPolicyPage> {
                       ),
                       child: Row(
                         children: [
-                          Icon(r.icon, size: 18, color: const Color(0xFF059669)),
+                          Icon(r.icon,
+                              size: 18, color: const Color(0xFF059669)),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Column(
@@ -1013,9 +1090,7 @@ class _PrivacyPolicyPageState extends State<PrivacyPolicyPage> {
         color: isDark ? const Color(0xFF131D31) : const Color(0xFFF0FDF4),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isDark
-              ? Colors.white12
-              : const Color(0xFFBBF7D0),
+          color: isDark ? Colors.white12 : const Color(0xFFBBF7D0),
         ),
       ),
       child: Row(
@@ -1028,7 +1103,7 @@ class _PrivacyPolicyPageState extends State<PrivacyPolicyPage> {
               borderRadius: BorderRadius.circular(10),
             ),
             child: const Icon(
-              Icons.verified_user_rounded,
+              Icons.contact_support_rounded,
               size: 20,
               color: Color(0xFF059669),
             ),
@@ -1039,12 +1114,15 @@ class _PrivacyPolicyPageState extends State<PrivacyPolicyPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Official Privacy & DPO Redressal Desk',
-                  style: TextStyle(fontSize: isMobile ? 13 : 14, fontWeight: FontWeight.bold),
+                  'Tax Bunny Privacy & Developer Support Desk',
+                  style: TextStyle(
+                    fontSize: isMobile ? 13 : 14,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 const SizedBox(height: 3),
                 Text(
-                  'Our certified Data Protection Officers continuously audit platform security. For compliance queries, statutory reports, or grievance redressal, email privacy@platform.com.',
+                  'For compliance inquiries, data deletion requests, or questions regarding Google Play Data Safety, contact our official support desk at samsaif933@gmail.com or call +91 9334804356.',
                   style: TextStyle(
                     fontSize: isMobile ? 11.5 : 12.5,
                     color: mutedText,
@@ -1052,43 +1130,83 @@ class _PrivacyPolicyPageState extends State<PrivacyPolicyPage> {
                   ),
                 ),
                 const SizedBox(height: 8),
-                InkWell(
-                  borderRadius: BorderRadius.circular(8),
-                  onTap: () {
-                    AppFeedback.showSnackbar(
-                      context,
-                      message: 'Data Protection Officer email: privacy@platform.com',
-                    );
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 5,
-                    ),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF059669),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 6,
+                  children: [
+                    InkWell(
                       borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.mail_outline_rounded, size: 13, color: Colors.white),
-                        const SizedBox(width: 5),
-                        Flexible(
-                          child: Text(
-                            isMobile ? 'Email DPO (privacy@platform.com)' : 'Contact DPO Desk (privacy@platform.com)',
-                            style: const TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
+                      onTap: () {
+                        AppFeedback.showSnackbar(
+                          context,
+                          message:
+                              'Developer Support Email: samsaif933@gmail.com',
+                        );
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 5,
                         ),
-                      ],
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF059669),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.mail_outline_rounded,
+                                size: 13, color: Colors.white),
+                            SizedBox(width: 5),
+                            Text(
+                              'samsaif933@gmail.com',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
-                  ),
+                    InkWell(
+                      borderRadius: BorderRadius.circular(8),
+                      onTap: () {
+                        AppFeedback.showSnackbar(
+                          context,
+                          message:
+                              'Developer Helpline: +91 9334804356',
+                        );
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 5,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF047857),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.phone_rounded,
+                                size: 13, color: Colors.white),
+                            SizedBox(width: 5),
+                            Text(
+                              '+91 9334804356',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),

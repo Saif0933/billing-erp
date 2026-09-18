@@ -182,10 +182,20 @@ class MobileDrawer extends ConsumerWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(
-                        Icons.bolt,
-                        color: Color(0xFF2DD4BF),
-                        size: 26,
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(6),
+                        child: Image.asset(
+                          'assets/images/app_icon.png',
+                          width: 26,
+                          height: 26,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) =>
+                              const Icon(
+                            Icons.bolt,
+                            color: Color(0xFF2DD4BF),
+                            size: 26,
+                          ),
+                        ),
                       ),
                       const SizedBox(width: 8),
                       Text(

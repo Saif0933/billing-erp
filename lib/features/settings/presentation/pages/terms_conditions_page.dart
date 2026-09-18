@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_spacing.dart';
+import '../../../../shared/widgets/feedback.dart';
 
 class TermsConditionsPage extends StatefulWidget {
   const TermsConditionsPage({super.key});
@@ -12,96 +13,218 @@ class TermsConditionsPage extends StatefulWidget {
 class _TermsConditionsPageState extends State<TermsConditionsPage> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
+  String _selectedCategory = 'All';
 
   final List<_TermsSection> _sections = const [
     _TermsSection(
       index: '01',
       id: 'acceptance',
-      title: 'Acceptance of Terms & Enterprise Scope',
-      icon: Icons.verified_user_outlined,
+      category: 'General',
+      title: 'Preamble, Acceptance of Terms & Multi-Tenant SaaS Scope',
+      icon: Icons.gavel_rounded,
       tag: 'Mandatory',
       content:
-          'By accessing or using this multi-tenant cloud billing and enterprise resource platform ("Service"), '
-          'you agree to be bound by these Terms and Conditions ("Terms"). If you represent an organization or business entity, '
-          'you warrant that you have full legal authority to bind that entity to these Terms. If you do not agree to these Terms, '
-          'you must immediately cease using the platform.',
+          'Welcome to Tax Bunny ("Service", "Application", "Platform", "We", "Us", or "Our"). '
+          'These Terms & Conditions ("Terms") constitute a legally binding agreement between your business entity, retail shop, firm, freelancer practice, or organization '
+          '("User", "Merchant", "Organization", "Subscriber", or "You") and Tax Bunny. Tax Bunny is a commercial multi-tenant Software-as-a-Service (SaaS) '
+          'cloud billing, Point of Sale (POS), inventory management, customer ledger (Khata), and invoicing platform. '
+          'By accessing, registering, subscribing to, or using Tax Bunny, you agree to comply with and be bound by these Terms.',
+      bullets: [
+        'Applicable to all mobile applications, web portals, APIs, platform admin dashboards, and thermal printing utilities.',
+        'Supports both Non-GST businesses (small shops, retail counters, service providers) and GST-registered commercial enterprises.',
+        'Software is offered and sold on a commercial SaaS Subscription basis (Monthly, Quarterly, Annual, or Enterprise packages).',
+        'You confirm that you possess full legal authority to bind your organization or business practice to these Terms.',
+      ],
     ),
     _TermsSection(
       index: '02',
-      id: 'saas_license',
-      title: 'SaaS License, Subscriptions & Access Rights',
-      icon: Icons.vpn_key_outlined,
-      tag: 'Access',
+      id: 'platform_org_login',
+      category: 'Account',
+      title: 'Platform Admin Provisioning & Organization Login (Email & Password)',
+      icon: Icons.admin_panel_settings_rounded,
+      tag: 'Authentication',
       content:
-          'We grant your organization a non-exclusive, non-transferable, revocable subscription license to access '
-          'and use the platform in accordance with your subscribed plan. You are solely responsible for safeguarding all administrative '
-          'and team user credentials, preventing unauthorized access, and maintaining accurate business profile records.',
+          'Tax Bunny operates under a secure dual-tier multi-tenant authentication architecture. '
+          'Both Platform Administrators and Organization Users log into the system using verified Email and Password credentials. '
+          'Platform Administrators manage tenant onboarding, subscription lifecycles, and issue authorized master Organization Login credentials (Email & Password) '
+          'to subscribing merchants.',
+      bullets: [
+        'Platform Admin Role: Manages overall system infrastructure, subscription plans, tenant provisioning, and issues the official Organization Administrator login credentials (Email & Password).',
+        'Organization Tenant Login: Subscribed merchants and organizations access their dedicated, logically isolated workspace using the Email and Password provisioned and authorized by the Platform.',
+        'Staff & Team Management (RBAC): Organization Admins can create sub-accounts with role-based permissions (Store Manager, Cashier, Accountant) within their tenant workspace.',
+        'Credential Safeguards: Users are strictly responsible for maintaining password confidentiality. Passwords should be changed upon first login and never shared with unauthorized third parties.',
+        'Prompt Security Reporting: If you suspect any compromise of your Organization login credentials, immediately contact support at samsaif933@gmail.com or +91 9334804356.',
+      ],
     ),
     _TermsSection(
       index: '03',
-      id: 'billing_gst',
-      title: 'Financial Billing, Invoicing & GST Tax Accuracy',
-      icon: Icons.receipt_long_outlined,
-      tag: 'Compliance',
+      id: 'saas_subscription_sales',
+      category: 'Subscriptions',
+      title: 'Commercial SaaS Subscription Model, Plans & Sales Terms',
+      icon: Icons.card_membership_rounded,
+      tag: 'Commercial Sales',
       content:
-          'The platform provides tools for generating sales invoices, purchase records, e-way bills, and calculating GST tax liabilities. '
-          'You acknowledge that your organization is solely responsible for verifying the accuracy of tax percentages, HSN/SAC codes, '
-          'customer details, and statutory tax filings with governmental authorities.',
+          'Tax Bunny is commercial business software provided on a paid Subscription basis. Subscribers can select from flexible tiers '
+          '(such as Free Trial, Monthly, Quarterly, Annual, or Custom Enterprise packages) to access platform features, cloud synchronization, '
+          'multi-device support, POS counter sales, and thermal printer integrations.',
+      bullets: [
+        'Subscription Sales & Activation: Access to premium modules, multi-store support, and unlimited invoice generation is activated upon purchase of an active SaaS subscription plan.',
+        'Billing Cycles & Advance Payment: Subscriptions are billed in advance on a recurring or term basis. Invoices and payment receipts are issued automatically for every transaction.',
+        'Payment Gateways: Payments are processed securely via certified RBI and PCI-DSS compliant payment gateways (UPI, Cards, Net Banking). Tax Bunny never stores raw credit card CVVs or banking PINs.',
+        'Upgrades & Downgrades: Organizations may upgrade to higher tiers or add additional store counters at any time with pro-rated billing adjustments.',
+        'Fair Refund Policy: Annual subscription purchases are eligible for a 7-day money-back satisfaction guarantee; monthly subscriptions can be cancelled at any time without long-term lock-in.',
+      ],
     ),
     _TermsSection(
       index: '04',
-      id: 'data_ownership',
-      title: 'Data Ownership & Intellectual Property',
-      icon: Icons.folder_shared_outlined,
-      tag: 'Ownership',
+      id: 'license_usage',
+      category: 'License',
+      title: 'SaaS License Grant, Permitted Use & IP Rights',
+      icon: Icons.vpn_key_rounded,
+      tag: 'License',
       content:
-          'All business records, client ledgers, inventory counts, and financial transaction data entered into your tenant space '
-          'remain the exclusive property of your organization. We claim no intellectual property rights over your proprietary business data. '
-          'You may export your complete data records at any time using our standard export utilities.',
+          'Subject to active subscription compliance, Tax Bunny grants your organization a non-exclusive, non-transferable, revocable, worldwide license '
+          'to access and use the platform for your internal commercial business operations. All software architecture, design, code, logos, and '
+          'trademarks remain the exclusive intellectual property of Tax Bunny.',
+      bullets: [
+        'Permitted for commercial retail sales, non-GST/GST billing, stock management, quotations, customer khata ledgers, and thermal printing.',
+        'You may not reverse engineer, decompile, disassemble, or extract source code from the Tax Bunny application.',
+        'You may not resell, rent, sublicense, or distribute the Tax Bunny platform to third parties as a standalone white-label service without written authorization.',
+        'Automated scraping, bot crawling, or stress-testing of Tax Bunny backend APIs is strictly prohibited.',
+      ],
     ),
     _TermsSection(
       index: '05',
-      id: 'uptime_maintenance',
-      title: 'Service Availability, SLAs & System Maintenance',
-      icon: Icons.cloud_done_outlined,
-      tag: 'Service SLA',
+      id: 'gst_non_gst_compliance',
+      category: 'Compliance',
+      title: 'Non-GST & GST Invoicing, Tax Disclaimer & User Responsibility',
+      icon: Icons.receipt_long_rounded,
+      tag: 'Tax Disclaimer',
       content:
-          'We endeavor to maintain 99.9% application availability. Scheduled system upgrades, security patches, and server maintenance '
-          'will be announced in advance when feasible. We are not liable for transient interruptions arising from telecommunication failures, '
-          'third-party API downtime, or circumstances beyond reasonable control.',
+          'Tax Bunny is an independent business utility software designed to generate both Non-GST (regular retail bills, estimates, cash memos, bills of supply) '
+          'and GST-compliant tax invoices. Having a GSTIN registration is NOT mandatory to use Tax Bunny. Tax Bunny does NOT act as a government entity, '
+          'tax authority, chartered accountant, or legal tax consultant.',
+      bullets: [
+        'Non-GST Businesses: Small shopkeepers, local retailers, and service providers without a GST registration can issue simple non-tax bills, estimates, receipts, and maintain customer khata without entering any GSTIN.',
+        'GST-Registered Businesses: Users who have a valid GSTIN can optionally configure GST rates (CGST, SGST, IGST), HSN/SAC codes, and print tax invoices.',
+        'User Responsibility: The User retains sole legal responsibility for verifying tax applicability, turnover thresholds, invoice amounts, customer details, and filing mandatory returns with government tax departments if legally required.',
+        'Tax Bunny shall not be held liable for any statutory penalties, tax assessments, or disputes arising from merchant data entry or tax classification decisions.',
+      ],
     ),
     _TermsSection(
       index: '06',
-      id: 'liability',
-      title: 'Limitation of Liability & Statutory Disclaimers',
-      icon: Icons.shield_outlined,
-      tag: 'Liability',
+      id: 'hardware_offline',
+      category: 'Hardware',
+      title: 'Hardware Integrations, Thermal Printers & Offline Mode Sync',
+      icon: Icons.print_rounded,
+      tag: 'Hardware',
       content:
-          'To the maximum extent permitted by applicable law, the Service is provided "AS IS" and "AS AVAILABLE". '
-          'In no event shall the platform providers or affiliates be liable for indirect, incidental, punitive, or consequential damages, '
-          'including loss of profits, commercial interruption, or tax penalties resulting from data entry errors.',
+          'Tax Bunny supports seamless integration with third-party thermal receipt printers (ESC/POS via Bluetooth/USB/Network), barcode scanners, '
+          'and camera-based QR code readers. The application also provides offline-resilient billing capabilities.',
+      bullets: [
+        'Hardware compatibility depends on standard ESC/POS printer protocols and mobile device Bluetooth/USB drivers.',
+        'Tax Bunny is not liable for third-party hardware failures, printer mechanism jams, or Bluetooth connection drops outside the app\'s control.',
+        'Invoices generated during offline mode are stored securely in local device storage and must be synced to the cloud once an active internet connection is restored to maintain ledger consistency.',
+      ],
     ),
     _TermsSection(
       index: '07',
-      id: 'termination',
-      title: 'Term, Renewal & Account Termination Safeguards',
-      icon: Icons.cancel_outlined,
-      tag: 'Termination',
+      id: 'data_ownership',
+      category: 'Data',
+      title: '100% User Data Ownership & Unrestricted Portability',
+      icon: Icons.folder_shared_rounded,
+      tag: 'Ownership',
       content:
-          'Either party may terminate the subscription upon 30 days prior written notice. Upon account cancellation, '
-          'you will retain 30 days of read-only access to download backups, after which the tenant database will be securely decommissioned '
-          'in accordance with data retention compliance standards.',
+          'You retain 100% complete and exclusive ownership of all business records, item catalogs, customer databases, sales invoices, purchase logs, '
+          'and financial transactions entered into your Tax Bunny workspace. Tax Bunny claims zero ownership or proprietary rights over your business data.',
+      bullets: [
+        'Your business data belongs exclusively to your organization at all times.',
+        'You may export complete historical sales, inventory, ledgers, and customer lists in standard formats (CSV, Excel, PDF, JSON) at any time.',
+        'We will never sell, lease, or monetize your customer records or trade secrets to third parties, competitors, or marketing brokers.',
+      ],
     ),
     _TermsSection(
       index: '08',
-      id: 'governing_law',
-      title: 'Governing Law & Legal Jurisdiction',
-      icon: Icons.gavel_outlined,
-      tag: 'Legal',
+      id: 'subscription_lifecycle_grace',
+      category: 'Subscriptions',
+      title: 'Subscription Expiry, Renewal Grace Period & Tenant Lifecycle',
+      icon: Icons.timer_outlined,
+      tag: 'Lifecycle',
       content:
-          'These Terms shall be governed by and construed in accordance with the laws of the applicable jurisdiction, '
-          'without regard to conflict of law principles. Any dispute arising under these Terms shall be resolved exclusively in the '
-          'competent courts of jurisdiction.',
+          'When an organization subscription reaches its expiration date without renewal, Tax Bunny ensures business continuity with clear '
+          'lifecycle protection standards.',
+      bullets: [
+        'Renewal Reminders: Automated notifications are sent via email and in-app alerts prior to subscription expiration.',
+        '30-Day Read-Only Grace Period: Upon subscription expiry, your account enters a 30-day read-only grace period allowing you to view and download full data exports (CSV, Excel, PDF).',
+        'Reactivation: Organizations can reactivate full billing capabilities immediately by renewing their subscription during or after the grace period.',
+        'Tenant Decommissioning: Unrenewed workspaces may be archived and securely decommissioned after the 30-day grace period in accordance with statutory data retention standards.',
+      ],
+    ),
+    _TermsSection(
+      index: '09',
+      id: 'fair_use_prohibitions',
+      category: 'Compliance',
+      title: 'Fair Usage Policy & Prohibited Business Activities',
+      icon: Icons.shield_outlined,
+      tag: 'Acceptable Use',
+      content:
+          'You agree to use Tax Bunny strictly for lawful commercial, retail, or professional business purposes. Any misuse of the platform to conduct '
+          'fraudulent transactions, issue fictitious invoices, or violate local laws is strictly prohibited and constitutes grounds for immediate termination.',
+      bullets: [
+        'No generation of fake, counterfeit, or unlawful financial records.',
+        'No uploading of malicious software, spyware, viruses, or attempts to disrupt backend infrastructure.',
+        'No infringement of third-party copyrights, trademarks, or personal privacy.',
+        'Tax Bunny reserves the right to cooperate fully with statutory law enforcement agencies upon receipt of valid legal court orders.',
+      ],
+    ),
+    _TermsSection(
+      index: '10',
+      id: 'sla_availability',
+      category: 'SLA',
+      title: 'Service Availability, 99.9% Target SLA & Maintenance',
+      icon: Icons.cloud_done_rounded,
+      tag: 'Service SLA',
+      content:
+          'We endeavor to maintain a 99.9% uptime availability for all cloud synchronization, reporting, and database storage servers. Scheduled maintenance '
+          'is performed during off-peak business hours with advance notifications provided to administrators.',
+      bullets: [
+        'Continuous automated cloud backups with geo-redundant database replication.',
+        'Tax Bunny is not liable for temporary service delays caused by national ISP outages, cloud infrastructure disruptions, or force majeure events.',
+        'Critical security patches and platform bug fixes are rolled out seamlessly without requiring data migration on your part.',
+      ],
+    ),
+    _TermsSection(
+      index: '11',
+      id: 'liability_disclaimer',
+      category: 'Legal',
+      title: 'Limitation of Liability & Statutory Warranty Disclaimers',
+      icon: Icons.balance_rounded,
+      tag: 'Liability',
+      content:
+          'To the maximum extent permitted by applicable law, Tax Bunny is provided on an "AS IS" and "AS AVAILABLE" basis without warranties of any kind, '
+          'either express or implied. Tax Bunny does not guarantee that the software will be completely error-free or uninterrupted at all times.',
+      bullets: [
+        'In no event shall Tax Bunny, its developers, employees, or affiliates be liable for indirect, incidental, special, punitive, or consequential damages.',
+        'This includes any loss of business profits, customer goodwill, commercial stoppage, or penalties resulting from merchant data entry mistakes.',
+        'Our aggregate legal liability under any claim arising out of these Terms shall not exceed the total subscription fee paid by you in the preceding 3 months.',
+      ],
+    ),
+    _TermsSection(
+      index: '12',
+      id: 'termination_export_contact',
+      category: 'Legal',
+      title: 'Account Deletion, Dispute Resolution & Official Developer Support',
+      icon: Icons.contact_mail_rounded,
+      tag: 'Support & Legal',
+      content:
+          'You have the right to delete your Tax Bunny account at any time either through the app or by submitting a written request to our developer support desk. '
+          'These Terms shall be governed by applicable statutory laws, and disputes shall be resolved through mutual discussion before competent legal forums.',
+      bullets: [
+        'Official Developer Email: samsaif933@gmail.com',
+        'Official Support Helpline: +91 9334804356',
+        'Self-Serve Account Deletion: Settings > Business Profile > Delete Account (or email samsaif933@gmail.com).',
+        'Support SLA: All inquiries, technical issues, and subscription billing requests are addressed within 24 to 48 business hours.',
+      ],
     ),
   ];
 
@@ -124,11 +247,17 @@ class _TermsConditionsPageState extends State<TermsConditionsPage> {
     final border = isDark ? Colors.white12 : const Color(0xFFE2E8F0);
 
     final filteredSections = _sections.where((section) {
+      final matchesCategory = _selectedCategory == 'All' ||
+          section.category == _selectedCategory;
+
+      if (!matchesCategory) return false;
+
       if (_searchQuery.isEmpty) return true;
       final query = _searchQuery.toLowerCase();
       return section.title.toLowerCase().contains(query) ||
           section.content.toLowerCase().contains(query) ||
-          section.tag.toLowerCase().contains(query);
+          section.tag.toLowerCase().contains(query) ||
+          section.bullets.any((b) => b.toLowerCase().contains(query));
     }).toList();
 
     return Scaffold(
@@ -140,7 +269,8 @@ class _TermsConditionsPageState extends State<TermsConditionsPage> {
             final screenWidth = constraints.maxWidth;
             final isMobile = screenWidth < 600;
             final isTablet = screenWidth >= 600 && screenWidth < 960;
-            final horizontalPadding = isMobile ? 12.0 : (isTablet ? 16.0 : 24.0);
+            final horizontalPadding =
+                isMobile ? 12.0 : (isTablet ? 16.0 : 24.0);
 
             return SingleChildScrollView(
               padding: EdgeInsets.fromLTRB(
@@ -157,7 +287,8 @@ class _TermsConditionsPageState extends State<TermsConditionsPage> {
                     children: [
                       _buildHeroBanner(isDark: isDark, isMobile: isMobile),
                       const SizedBox(height: 16),
-                      _buildQuickHighlights(isDark: isDark, screenWidth: screenWidth),
+                      _buildQuickHighlights(
+                          isDark: isDark, screenWidth: screenWidth),
                       const SizedBox(height: 16),
                       _buildSearchBar(
                         isDark: isDark,
@@ -168,7 +299,9 @@ class _TermsConditionsPageState extends State<TermsConditionsPage> {
                         totalCount: _sections.length,
                         isMobile: isMobile,
                       ),
-                      const SizedBox(height: 14),
+                      const SizedBox(height: 12),
+                      _buildCategoryChips(isDark: isDark),
+                      const SizedBox(height: 16),
                       if (filteredSections.isEmpty)
                         _buildEmptyState(isDark: isDark, mutedText: mutedText)
                       else
@@ -185,6 +318,7 @@ class _TermsConditionsPageState extends State<TermsConditionsPage> {
                         ),
                       const SizedBox(height: 20),
                       _buildFooterNotice(
+                        context: context,
                         isDark: isDark,
                         surface: surface,
                         border: border,
@@ -205,25 +339,28 @@ class _TermsConditionsPageState extends State<TermsConditionsPage> {
   Widget _buildHeroBanner({required bool isDark, required bool isMobile}) {
     return Container(
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(isMobile ? 16 : 20),
+        borderRadius: BorderRadius.circular(isMobile ? 16 : 22),
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Color(0xFF312E81),
+            Color(0xFF1E1B4B),
+            Color(0xFF3730A3),
             Color(0xFF4F46E5),
-            Color(0xFF7C3AED),
           ],
         ),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF4F46E5).withValues(alpha: 0.25),
-            blurRadius: isMobile ? 14 : 20,
-            offset: const Offset(0, 6),
+            color: const Color(0xFF4F46E5).withValues(alpha: 0.3),
+            blurRadius: isMobile ? 16 : 24,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
-      padding: EdgeInsets.all(isMobile ? 16 : 24),
+      padding: EdgeInsets.symmetric(
+        horizontal: isMobile ? 16 : 24,
+        vertical: isMobile ? 18 : 24,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -246,10 +383,11 @@ class _TermsConditionsPageState extends State<TermsConditionsPage> {
                 child: const Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.shield_rounded, size: 13, color: Colors.white),
+                    Icon(Icons.verified_user_rounded,
+                        size: 13, color: Colors.white),
                     SizedBox(width: 6),
                     Text(
-                      'LEGAL & GOVERNANCE',
+                      'TAX BUNNY SAAS AGREEMENT',
                       style: TextStyle(
                         fontSize: 10,
                         fontWeight: FontWeight.w800,
@@ -276,7 +414,7 @@ class _TermsConditionsPageState extends State<TermsConditionsPage> {
                     Icon(Icons.circle, size: 6, color: Color(0xFF34D399)),
                     SizedBox(width: 5),
                     Text(
-                      'Active • Version 2.4',
+                      'Active • Version 3.2',
                       style: TextStyle(
                         fontSize: 10.5,
                         fontWeight: FontWeight.bold,
@@ -292,19 +430,65 @@ class _TermsConditionsPageState extends State<TermsConditionsPage> {
           Text(
             'Terms & Conditions',
             style: TextStyle(
-              fontSize: isMobile ? 20 : 26,
+              fontSize: isMobile ? 22 : 28,
               fontWeight: FontWeight.w900,
               color: Colors.white,
               letterSpacing: -0.5,
             ),
           ),
-          const SizedBox(height: 5),
+          const SizedBox(height: 6),
           Text(
-            'Master Service Agreement, SaaS licensing rules, GST responsibility matrix, and data ownership commitments governing your enterprise workspace.',
+            'Master SaaS Agreement, Platform & Organization login credentials matrix, subscription sales policies, Non-GST & GST support, and 100% data ownership commitments.',
             style: TextStyle(
-              fontSize: isMobile ? 12 : 13.5,
+              fontSize: isMobile ? 12.5 : 14,
               height: 1.45,
-              color: Colors.white.withValues(alpha: 0.9),
+              color: Colors.white.withValues(alpha: 0.92),
+            ),
+          ),
+          SizedBox(height: isMobile ? 10 : 14),
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            children: [
+              _buildPillBadge(
+                  'Email/Password Auth', Icons.vpn_key_rounded, isMobile),
+              _buildPillBadge(
+                  'SaaS Subscription Plans', Icons.card_membership_rounded, isMobile),
+              _buildPillBadge(
+                  '100% Data Ownership', Icons.folder_shared_rounded, isMobile),
+              _buildPillBadge(
+                  'Non-GST & GST Ready', Icons.receipt_long_rounded, isMobile),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPillBadge(String label, IconData icon, bool isMobile) {
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: isMobile ? 7 : 9,
+        vertical: isMobile ? 2.5 : 3.5,
+      ),
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.2),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.2),
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: isMobile ? 11 : 12, color: const Color(0xFFA5B4FC)),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: isMobile ? 10 : 11,
+              color: Colors.white,
+              fontWeight: FontWeight.w600,
             ),
           ),
         ],
@@ -312,24 +496,25 @@ class _TermsConditionsPageState extends State<TermsConditionsPage> {
     );
   }
 
-  Widget _buildQuickHighlights({required bool isDark, required double screenWidth}) {
+  Widget _buildQuickHighlights(
+      {required bool isDark, required double screenWidth}) {
     final highlights = [
       _HighlightItem(
-        icon: Icons.cloud_done_rounded,
-        title: '99.9% Uptime SLA',
-        subtitle: 'Enterprise Cloud Guarantee',
+        icon: Icons.vpn_key_rounded,
+        title: 'Platform & Org Login',
+        subtitle: 'Secure Email & Password Access',
         color: const Color(0xFF6366F1),
       ),
       _HighlightItem(
-        icon: Icons.lock_person_rounded,
-        title: '100% Data Ownership',
-        subtitle: 'Unrestricted Portability',
+        icon: Icons.card_membership_rounded,
+        title: 'SaaS Subscription Plans',
+        subtitle: 'Flexible Commercial Sales Model',
         color: const Color(0xFF10B981),
       ),
       _HighlightItem(
-        icon: Icons.account_balance_rounded,
-        title: 'Statutory GST Ready',
-        subtitle: 'Audited Invoice Formats',
+        icon: Icons.storefront_rounded,
+        title: 'Non-GST & GST Ready',
+        subtitle: 'Works For All Business Types',
         color: const Color(0xFFF59E0B),
       ),
     ];
@@ -370,6 +555,13 @@ class _TermsConditionsPageState extends State<TermsConditionsPage> {
         border: Border.all(
           color: isDark ? Colors.white10 : const Color(0xFFE2E8F0),
         ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.03),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Row(
         children: [
@@ -447,8 +639,8 @@ class _TermsConditionsPageState extends State<TermsConditionsPage> {
         },
         decoration: InputDecoration(
           hintText: isMobile
-              ? 'Search clauses, terms, SLAs...'
-              : 'Search within terms, clauses, SLAs, GST policies...',
+              ? 'Search login, subscription, terms...'
+              : 'Search login credentials, SaaS subscriptions, non-GST/GST, SLAs, refunds...',
           hintStyle: TextStyle(
             fontSize: isMobile ? 12 : 13,
             color: isDark ? Colors.white38 : const Color(0xFF94A3B8),
@@ -456,7 +648,7 @@ class _TermsConditionsPageState extends State<TermsConditionsPage> {
           prefixIcon: const Icon(
             Icons.search_rounded,
             size: 20,
-            color: Color(0xFF6366F1),
+            color: Color(0xFF4F46E5),
           ),
           suffixIcon: _searchQuery.isNotEmpty
               ? Row(
@@ -472,7 +664,9 @@ class _TermsConditionsPageState extends State<TermsConditionsPage> {
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Text(
-                        isMobile ? '$matchCount/$totalCount' : '$matchCount / $totalCount clauses',
+                        isMobile
+                            ? '$matchCount/$totalCount'
+                            : '$matchCount / $totalCount clauses',
                         style: const TextStyle(
                           fontSize: 10.5,
                           fontWeight: FontWeight.bold,
@@ -483,7 +677,8 @@ class _TermsConditionsPageState extends State<TermsConditionsPage> {
                     IconButton(
                       icon: const Icon(Icons.close_rounded, size: 17),
                       padding: const EdgeInsets.all(4),
-                      constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                      constraints:
+                          const BoxConstraints(minWidth: 32, minHeight: 32),
                       onPressed: () {
                         _searchController.clear();
                         setState(() {
@@ -495,9 +690,73 @@ class _TermsConditionsPageState extends State<TermsConditionsPage> {
                 )
               : null,
           border: InputBorder.none,
-          contentPadding:
-              EdgeInsets.symmetric(horizontal: 14, vertical: isMobile ? 12 : 15),
+          contentPadding: EdgeInsets.symmetric(
+              horizontal: 14, vertical: isMobile ? 12 : 15),
         ),
+      ),
+    );
+  }
+
+  Widget _buildCategoryChips({required bool isDark}) {
+    final categories = [
+      'All',
+      'General',
+      'Account',
+      'Subscriptions',
+      'License',
+      'Compliance',
+      'Hardware',
+      'Data',
+      'SLA',
+      'Legal',
+    ];
+
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: categories.map((cat) {
+          final isSelected = _selectedCategory == cat;
+          return Padding(
+            padding: const EdgeInsets.only(right: 6),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(20),
+              onTap: () {
+                setState(() {
+                  _selectedCategory = cat;
+                });
+              },
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 150),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 11, vertical: 5.5),
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? const Color(0xFF4F46E5)
+                      : (isDark
+                          ? const Color(0xFF1E293B)
+                          : const Color(0xFFE2E8F0)),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: isSelected
+                        ? const Color(0xFF4F46E5)
+                        : (isDark ? Colors.white10 : Colors.transparent),
+                  ),
+                ),
+                child: Text(
+                  cat,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight:
+                        isSelected ? FontWeight.bold : FontWeight.w600,
+                    color: isSelected
+                        ? Colors.white
+                        : (isDark ? Colors.white70 : const Color(0xFF475569)),
+                  ),
+                ),
+              ),
+            ),
+          );
+        }).toList(),
       ),
     );
   }
@@ -515,7 +774,7 @@ class _TermsConditionsPageState extends State<TermsConditionsPage> {
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         color: surface,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(color: border),
         boxShadow: [
           BoxShadow(
@@ -529,12 +788,13 @@ class _TermsConditionsPageState extends State<TermsConditionsPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: EdgeInsets.fromLTRB(isMobile ? 12 : 16, 12, isMobile ? 12 : 16, 10),
+            padding: EdgeInsets.fromLTRB(
+                isMobile ? 12 : 16, 12, isMobile ? 12 : 16, 10),
             child: Row(
               children: [
                 Container(
                   padding:
-                      const EdgeInsets.symmetric(horizontal: 7, vertical: 3.5),
+                      const EdgeInsets.symmetric(horizontal: 7.5, vertical: 3.5),
                   decoration: BoxDecoration(
                     gradient: const LinearGradient(
                       colors: [Color(0xFF4F46E5), Color(0xFF7C3AED)],
@@ -585,13 +845,69 @@ class _TermsConditionsPageState extends State<TermsConditionsPage> {
           const Divider(height: 1),
           Padding(
             padding: EdgeInsets.all(isMobile ? 12 : 16),
-            child: Text(
-              section.content,
-              style: TextStyle(
-                fontSize: isMobile ? 12.5 : 13.5,
-                height: 1.55,
-                color: secondaryText,
-              ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  section.content,
+                  style: TextStyle(
+                    fontSize: isMobile ? 12.5 : 13.5,
+                    height: 1.55,
+                    color: secondaryText,
+                  ),
+                ),
+                if (section.bullets.isNotEmpty) ...[
+                  const SizedBox(height: 10),
+                  Container(
+                    padding: EdgeInsets.all(isMobile ? 10 : 12),
+                    decoration: BoxDecoration(
+                      color: isDark
+                          ? const Color(0xFF0F172A)
+                          : const Color(0xFFF8FAFC),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: isDark
+                            ? Colors.white.withValues(alpha: 0.05)
+                            : const Color(0xFFE2E8F0),
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: section.bullets.map((bullet) {
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 2.5),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Padding(
+                                padding: EdgeInsets.only(top: 3),
+                                child: Icon(
+                                  Icons.check_circle_rounded,
+                                  size: 13,
+                                  color: Color(0xFF4F46E5),
+                                ),
+                              ),
+                              const SizedBox(width: 7),
+                              Expanded(
+                                child: Text(
+                                  bullet,
+                                  style: TextStyle(
+                                    fontSize: isMobile ? 11.5 : 12.5,
+                                    height: 1.4,
+                                    color: isDark
+                                        ? Colors.white70
+                                        : const Color(0xFF334155),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                ],
+              ],
             ),
           ),
         ],
@@ -625,6 +941,7 @@ class _TermsConditionsPageState extends State<TermsConditionsPage> {
   }
 
   Widget _buildFooterNotice({
+    required BuildContext context,
     required bool isDark,
     required Color surface,
     required Color border,
@@ -634,22 +951,24 @@ class _TermsConditionsPageState extends State<TermsConditionsPage> {
     return Container(
       padding: EdgeInsets.all(isMobile ? 14 : 18),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: border),
+        color: isDark ? const Color(0xFF1E293B) : const Color(0xFFEEF2FF),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isDark ? Colors.white12 : const Color(0xFFC7D2FE),
+        ),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            padding: const EdgeInsets.all(7),
+            padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: const Color(0xFF4F46E5).withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(8),
+              color: const Color(0xFF4F46E5).withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(10),
             ),
             child: const Icon(
-              Icons.info_outline_rounded,
-              size: 18,
+              Icons.contact_support_rounded,
+              size: 20,
               color: Color(0xFF4F46E5),
             ),
           ),
@@ -659,17 +978,97 @@ class _TermsConditionsPageState extends State<TermsConditionsPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Enterprise Custom SLAs & Legal Questions',
-                  style: TextStyle(fontSize: isMobile ? 12 : 13, fontWeight: FontWeight.bold),
+                  'Tax Bunny Developer & Support Helpline',
+                  style: TextStyle(
+                    fontSize: isMobile ? 13 : 14,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 const SizedBox(height: 3),
                 Text(
-                  'Organizations requiring dedicated enterprise agreements, custom data retention policies, or offline BAA agreements can reach out to our legal compliance counsel at legal@platform.com.',
+                  'For legal agreements, tenant onboarding, subscription plan sales, or billing assistance, contact our developer desk at samsaif933@gmail.com or call +91 9334804356.',
                   style: TextStyle(
-                    fontSize: isMobile ? 11 : 12,
+                    fontSize: isMobile ? 11.5 : 12.5,
                     color: mutedText,
                     height: 1.45,
                   ),
+                ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 6,
+                  children: [
+                    InkWell(
+                      borderRadius: BorderRadius.circular(8),
+                      onTap: () {
+                        AppFeedback.showSnackbar(
+                          context,
+                          message: 'Email: samsaif933@gmail.com',
+                        );
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 5,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF4F46E5),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.mail_outline_rounded,
+                                size: 13, color: Colors.white),
+                            SizedBox(width: 5),
+                            Text(
+                              'samsaif933@gmail.com',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    InkWell(
+                      borderRadius: BorderRadius.circular(8),
+                      onTap: () {
+                        AppFeedback.showSnackbar(
+                          context,
+                          message: 'Helpline: +91 9334804356',
+                        );
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 5,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF10B981),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.phone_rounded,
+                                size: 13, color: Colors.white),
+                            SizedBox(width: 5),
+                            Text(
+                              '+91 9334804356',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -683,18 +1082,22 @@ class _TermsConditionsPageState extends State<TermsConditionsPage> {
 class _TermsSection {
   final String index;
   final String id;
+  final String category;
   final String title;
   final IconData icon;
   final String tag;
   final String content;
+  final List<String> bullets;
 
   const _TermsSection({
     required this.index,
     required this.id,
+    required this.category,
     required this.title,
     required this.icon,
     required this.tag,
     required this.content,
+    required this.bullets,
   });
 }
 
