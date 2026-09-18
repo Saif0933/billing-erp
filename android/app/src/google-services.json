@@ -9,7 +9,7 @@
       "client_info": {
         "mobilesdk_app_id": "1:1069729124626:android:512c536786f5f01000e3cb",
         "android_client_info": {
-          "package_name": "com.example.frontend"
+          "package_name": "com.taxbunny.billing"
         }
       },
       "oauth_client": [],
