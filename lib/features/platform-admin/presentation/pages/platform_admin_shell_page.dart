@@ -296,32 +296,7 @@ class _PlatformAdminShellPageState
                 ),
                 const SizedBox(width: 8),
 
-                // Return to Tenant App Button
-                if (screenWidth >= 768) ...[
-                  OutlinedButton.icon(
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: const Color(0xFF4F46E5),
-                      side: const BorderSide(color: Color(0xFF4F46E5)),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 6,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    icon: const Icon(Icons.storefront_outlined, size: 15),
-                    label: const Text(
-                      'Tenant Billing App',
-                      style: TextStyle(
-                        fontSize: 11.5,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    onPressed: () => context.go('/dashboard'),
-                  ),
-                  const SizedBox(width: 8),
-                ],
+
 
                 // Dynamic SuperAdmin Avatar & Menu
                 PopupMenuButton<String>(

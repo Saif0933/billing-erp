@@ -4,16 +4,83 @@ import '../providers/platform_admin_provider.dart';
 import '../widgets/platform_kpi_card.dart';
 import '../widgets/platform_tenant_table.dart';
 
-class PlatformAdminDashboardPage extends ConsumerWidget {
+class PlatformAdminDashboardPage extends ConsumerStatefulWidget {
   const PlatformAdminDashboardPage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<PlatformAdminDashboardPage> createState() =>
+      _PlatformAdminDashboardPageState();
+}
+
+class _PlatformAdminDashboardPageState
+    extends ConsumerState<PlatformAdminDashboardPage> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(platformAdminProvider.notifier).loadOrganizations();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final state = ref.watch(platformAdminProvider);
     final notifier = ref.read(platformAdminProvider.notifier);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final screenWidth = MediaQuery.of(context).size.width;
     final isMobile = screenWidth < 768;
+
+    if (state.isLoading && !state.hasLoaded) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(40.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 60,
+                height: 60,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF4F46E5).withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: const Color(0xFF4F46E5).withValues(alpha: 0.25),
+                  ),
+                ),
+                child: const Center(
+                  child: SizedBox(
+                    width: 28,
+                    height: 28,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 3,
+                      valueColor:
+                          AlwaysStoppedAnimation<Color>(Color(0xFF4F46E5)),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+              Text(
+                'Loading SuperAdmin Dashboard...',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: isDark ? Colors.white : const Color(0xFF0F172A),
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                'Synchronizing tenant metrics and platform telemetry',
+                style: TextStyle(
+                  fontSize: 13,
+                  color: isDark ? Colors.white54 : const Color(0xFF64748B),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
 
     return SingleChildScrollView(
       padding: EdgeInsets.symmetric(

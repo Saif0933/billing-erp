@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../shared/widgets/feedback.dart';
@@ -64,7 +65,7 @@ class PlatformTenantTable extends ConsumerWidget {
       );
     }
 
-    // Desktop Data Table with Horizontal Scroll Protection
+    // Desktop Data Table with Full Width Background & Horizontal Scroll Protection
     return Container(
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF1E293B) : Colors.white,
@@ -75,18 +76,21 @@ class PlatformTenantTable extends ConsumerWidget {
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(12),
-        child: SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(minWidth: 920),
-            child: DataTable(
-              headingRowColor: WidgetStateProperty.all(
-                isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
-              ),
-              dataRowMinHeight: 64,
-              dataRowMaxHeight: 68,
-              horizontalMargin: 20,
-              columnSpacing: 24,
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final tableWidth = math.max(constraints.maxWidth, 920.0);
+            return SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: SizedBox(
+                width: tableWidth,
+                child: DataTable(
+                  headingRowColor: WidgetStateProperty.all(
+                    isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+                  ),
+                  dataRowMinHeight: 64,
+                  dataRowMaxHeight: 68,
+                  horizontalMargin: 20,
+                  columnSpacing: 24,
               columns: const [
                 DataColumn(label: Text('ORGANIZATION', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11.5))),
                 DataColumn(label: Text('STATUS', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11.5))),
@@ -243,9 +247,11 @@ class PlatformTenantTable extends ConsumerWidget {
               }).toList(),
             ),
           ),
-        ),
-      ),
-    );
+        );
+      },
+    ),
+  ),
+);
   }
 
   Widget _buildTenantCard(
