@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_spacing.dart';
+import '../../../../shared/layouts/widgets/public_legal_top_header.dart';
 import '../../../../shared/widgets/feedback.dart';
 
 class TermsConditionsPage extends StatefulWidget {
@@ -11,10 +12,6 @@ class TermsConditionsPage extends StatefulWidget {
 }
 
 class _TermsConditionsPageState extends State<TermsConditionsPage> {
-  final TextEditingController _searchController = TextEditingController();
-  String _searchQuery = '';
-  String _selectedCategory = 'All';
-
   final List<_TermsSection> _sections = const [
     _TermsSection(
       index: '01',
@@ -233,12 +230,6 @@ class _TermsConditionsPageState extends State<TermsConditionsPage> {
   ];
 
   @override
-  void dispose() {
-    _searchController.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final primaryText =
@@ -250,23 +241,10 @@ class _TermsConditionsPageState extends State<TermsConditionsPage> {
     final surface = isDark ? const Color(0xFF1E293B) : Colors.white;
     final border = isDark ? Colors.white12 : const Color(0xFFE2E8F0);
 
-    final filteredSections = _sections.where((section) {
-      final matchesCategory = _selectedCategory == 'All' ||
-          section.category == _selectedCategory;
-
-      if (!matchesCategory) return false;
-
-      if (_searchQuery.isEmpty) return true;
-      final query = _searchQuery.toLowerCase();
-      return section.title.toLowerCase().contains(query) ||
-          section.content.toLowerCase().contains(query) ||
-          section.tag.toLowerCase().contains(query) ||
-          section.bullets.any((b) => b.toLowerCase().contains(query));
-    }).toList();
-
     return Scaffold(
       backgroundColor:
           isDark ? const Color(0xFF0B1120) : const Color(0xFFF8FAFC),
+      appBar: const PublicLegalTopHeader(),
       body: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) {
@@ -294,32 +272,17 @@ class _TermsConditionsPageState extends State<TermsConditionsPage> {
                       _buildQuickHighlights(
                           isDark: isDark, screenWidth: screenWidth),
                       const SizedBox(height: 16),
-                      _buildSearchBar(
-                        isDark: isDark,
-                        surface: surface,
-                        border: border,
-                        secondaryText: secondaryText,
-                        matchCount: filteredSections.length,
-                        totalCount: _sections.length,
-                        isMobile: isMobile,
-                      ),
-                      const SizedBox(height: 12),
-                      _buildCategoryChips(isDark: isDark),
-                      const SizedBox(height: 16),
-                      if (filteredSections.isEmpty)
-                        _buildEmptyState(isDark: isDark, mutedText: mutedText)
-                      else
-                        ...filteredSections.map(
-                          (section) => _buildSectionCard(
-                            section: section,
-                            isDark: isDark,
-                            surface: surface,
-                            border: border,
-                            primaryText: primaryText,
-                            secondaryText: secondaryText,
-                            isMobile: isMobile,
-                          ),
+                      ..._sections.map(
+                        (section) => _buildSectionCard(
+                          section: section,
+                          isDark: isDark,
+                          surface: surface,
+                          border: border,
+                          primaryText: primaryText,
+                          secondaryText: secondaryText,
+                          isMobile: isMobile,
                         ),
+                      ),
                       const SizedBox(height: 20),
                       _buildFooterNotice(
                         context: context,
@@ -374,33 +337,72 @@ class _TermsConditionsPageState extends State<TermsConditionsPage> {
             crossAxisAlignment: WrapCrossAlignment.center,
             alignment: WrapAlignment.spaceBetween,
             children: [
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.18),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.25),
-                  ),
-                ),
-                child: const Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.verified_user_rounded,
-                        size: 13, color: Colors.white),
-                    SizedBox(width: 6),
-                    Text(
-                      'TAX BUNNY SAAS AGREEMENT',
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 0.8,
-                        color: Colors.white,
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (Navigator.of(context).canPop()) ...[
+                    InkWell(
+                      onTap: () => Navigator.of(context).pop(),
+                      borderRadius: BorderRadius.circular(20),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 5),
+                        margin: const EdgeInsets.only(right: 8),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.22),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.35),
+                          ),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.arrow_back_rounded,
+                                size: 14, color: Colors.white),
+                            SizedBox(width: 4),
+                            Text(
+                              'Back',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ],
-                ),
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.18),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.25),
+                      ),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.verified_user_rounded,
+                            size: 13, color: Colors.white),
+                        SizedBox(width: 6),
+                        Text(
+                          'TAX BUNNY SAAS AGREEMENT',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 0.8,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
               Container(
                 padding:
@@ -612,157 +614,7 @@ class _TermsConditionsPageState extends State<TermsConditionsPage> {
     );
   }
 
-  Widget _buildSearchBar({
-    required bool isDark,
-    required Color surface,
-    required Color border,
-    required Color secondaryText,
-    required int matchCount,
-    required int totalCount,
-    required bool isMobile,
-  }) {
-    return Container(
-      decoration: BoxDecoration(
-        color: surface,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: border),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: TextField(
-        controller: _searchController,
-        onChanged: (val) {
-          setState(() {
-            _searchQuery = val.trim();
-          });
-        },
-        decoration: InputDecoration(
-          hintText: isMobile
-              ? 'Search login, terms, GST, data...'
-              : 'Search login credentials, non-GST/GST, SLAs, data ownership, legal...',
-          hintStyle: TextStyle(
-            fontSize: isMobile ? 12 : 13,
-            color: isDark ? Colors.white38 : const Color(0xFF94A3B8),
-          ),
-          prefixIcon: const Icon(
-            Icons.search_rounded,
-            size: 20,
-            color: Color(0xFF4F46E5),
-          ),
-          suffixIcon: _searchQuery.isNotEmpty
-              ? Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 7,
-                        vertical: 2.5,
-                      ),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF4F46E5).withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Text(
-                        isMobile
-                            ? '$matchCount/$totalCount'
-                            : '$matchCount / $totalCount clauses',
-                        style: const TextStyle(
-                          fontSize: 10.5,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF4F46E5),
-                        ),
-                      ),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.close_rounded, size: 17),
-                      padding: const EdgeInsets.all(4),
-                      constraints:
-                          const BoxConstraints(minWidth: 32, minHeight: 32),
-                      onPressed: () {
-                        _searchController.clear();
-                        setState(() {
-                          _searchQuery = '';
-                        });
-                      },
-                    ),
-                  ],
-                )
-              : null,
-          border: InputBorder.none,
-          contentPadding: EdgeInsets.symmetric(
-              horizontal: 14, vertical: isMobile ? 12 : 15),
-        ),
-      ),
-    );
-  }
 
-  Widget _buildCategoryChips({required bool isDark}) {
-    final categories = [
-      'All',
-      'General',
-      'Account',
-      'License',
-      'Compliance',
-      'Hardware',
-      'Data',
-      'SLA',
-      'Legal',
-    ];
-
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        children: categories.map((cat) {
-          final isSelected = _selectedCategory == cat;
-          return Padding(
-            padding: const EdgeInsets.only(right: 6),
-            child: InkWell(
-              borderRadius: BorderRadius.circular(20),
-              onTap: () {
-                setState(() {
-                  _selectedCategory = cat;
-                });
-              },
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 150),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 11, vertical: 5.5),
-                decoration: BoxDecoration(
-                  color: isSelected
-                      ? const Color(0xFF4F46E5)
-                      : (isDark
-                          ? const Color(0xFF1E293B)
-                          : const Color(0xFFE2E8F0)),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: isSelected
-                        ? const Color(0xFF4F46E5)
-                        : (isDark ? Colors.white10 : Colors.transparent),
-                  ),
-                ),
-                child: Text(
-                  cat,
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight:
-                        isSelected ? FontWeight.bold : FontWeight.w600,
-                    color: isSelected
-                        ? Colors.white
-                        : (isDark ? Colors.white70 : const Color(0xFF475569)),
-                  ),
-                ),
-              ),
-            ),
-          );
-        }).toList(),
-      ),
-    );
-  }
 
   Widget _buildSectionCard({
     required _TermsSection section,
@@ -918,30 +770,7 @@ class _TermsConditionsPageState extends State<TermsConditionsPage> {
     );
   }
 
-  Widget _buildEmptyState({
-    required bool isDark,
-    required Color mutedText,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 40),
-      child: Center(
-        child: Column(
-          children: [
-            Icon(Icons.search_off_rounded, size: 48, color: mutedText),
-            const SizedBox(height: 12),
-            Text(
-              'No matching terms or clauses found',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 15,
-                color: mutedText,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+
 
   Widget _buildFooterNotice({
     required BuildContext context,

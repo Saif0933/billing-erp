@@ -311,7 +311,8 @@ class _AppShellState extends ConsumerState<AppShell> {
 
     final isMobile = ResponsiveBreakpoints.isMobile(context);
     final isPosTerminal = currentLoc == '/pos' || currentLoc.startsWith('/pos');
-    final showTopHeader = !isPosTerminal;
+    final isTermsOrPrivacy = currentLoc.contains('terms') || currentLoc.contains('privacy');
+    final showTopHeader = !isPosTerminal && !isTermsOrPrivacy;
 
     // Show Bottom Navigation Bar ONLY on the main tabs: Home (/dashboard), Sales (/sales), POS (/pos), Stock (/inventory)
     final isMainTab = currentLoc == '/dashboard' ||
@@ -363,11 +364,11 @@ class _AppShellState extends ConsumerState<AppShell> {
         appBar: showTopHeader
             ? ResponsiveTopHeader(scaffoldKey: _scaffoldKey)
             : null,
-        drawer: (isMobile && showTopHeader) ? const MobileDrawer() : null,
+        drawer: (isMobile && showTopHeader && !isTermsOrPrivacy) ? const MobileDrawer() : null,
         body: Row(
           children: [
-            // Sidebar for Desktop & Tablet (Hidden on POS Sales Terminal for full screen width)
-            if (!isMobile && !isPosTerminal) const DesktopSidebar(),
+            // Sidebar for Desktop & Tablet (Hidden on POS Sales Terminal and Terms/Privacy pages for full screen width)
+            if (!isMobile && !isPosTerminal && !isTermsOrPrivacy) const DesktopSidebar(),
             // Content Area
             Expanded(child: widget.child),
           ],

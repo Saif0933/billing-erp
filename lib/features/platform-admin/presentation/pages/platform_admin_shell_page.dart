@@ -66,6 +66,15 @@ class _PlatformAdminShellPageState
         ? adminName.split(' ').first
         : adminName;
 
+    final isTermsOrPrivacy = state.selectedNavTab == 'terms-conditions' ||
+        state.selectedNavTab == 'terms_conditions' ||
+        state.selectedNavTab == 'terms-and-conditions' ||
+        state.selectedNavTab == 'terms' ||
+        state.selectedNavTab == 'privacy-policy' ||
+        state.selectedNavTab == 'privacy_policy' ||
+        state.selectedNavTab == 'privacy-and-policy' ||
+        state.selectedNavTab == 'privacy';
+
     Widget contentBody;
     switch (state.selectedNavTab) {
       case 'organizations':
@@ -141,7 +150,36 @@ class _PlatformAdminShellPageState
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Row(
               children: [
-                if (!isDesktop) ...[
+                if (isTermsOrPrivacy) ...[
+                  InkWell(
+                    borderRadius: BorderRadius.circular(8),
+                    onTap: () => notifier.setNavTab('dashboard'),
+                    child: Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: isDark
+                            ? const Color(0xFF0F172A)
+                            : const Color(0xFFF1F5F9),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: isDark
+                              ? Colors.white12
+                              : const Color(0xFFE2E8F0),
+                        ),
+                      ),
+                      alignment: Alignment.center,
+                      child: Icon(
+                        Icons.arrow_back_rounded,
+                        size: 20,
+                        color: isDark
+                            ? Colors.white70
+                            : const Color(0xFF334155),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                ] else if (!isDesktop) ...[
                   Builder(
                     builder: (scaffoldCtx) => InkWell(
                       borderRadius: BorderRadius.circular(8),
@@ -497,7 +535,7 @@ class _PlatformAdminShellPageState
             ),
           ),
         ),
-        drawer: !isDesktop
+        drawer: (!isDesktop && !isTermsOrPrivacy)
             ? _buildDrawer(
                 context,
                 ref,
@@ -509,7 +547,7 @@ class _PlatformAdminShellPageState
                 isDark,
               )
             : null,
-        bottomNavigationBar: !isDesktop
+        bottomNavigationBar: (!isDesktop && !isTermsOrPrivacy)
             ? NavigationBar(
                 selectedIndex: _getTabIndex(state.selectedNavTab),
                 onDestinationSelected: (index) {
@@ -553,8 +591,8 @@ class _PlatformAdminShellPageState
             : null,
         body: Row(
           children: [
-            // Desktop Sidebar
-            if (isDesktop)
+            // Desktop Sidebar (Hidden on Terms & Conditions and Privacy Policy screens)
+            if (isDesktop && !isTermsOrPrivacy)
               Container(
                 width: 240,
                 decoration: BoxDecoration(

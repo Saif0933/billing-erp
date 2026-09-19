@@ -254,30 +254,40 @@ class _ResponsiveTopHeaderState extends ConsumerState<ResponsiveTopHeader> {
 
                 const SizedBox(width: actionGap),
 
-                // Emerald Lightning Bolt Logo with Glowing Shadow
+                // Tax Bunny App Icon Logo
                 Container(
                   width: buttonSize,
                   height: buttonSize,
                   decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [Color(0xFF10B981), Color(0xFF059669)],
-                    ),
                     borderRadius: BorderRadius.circular(10),
                     boxShadow: [
                       BoxShadow(
-                        color: const Color(0xFF10B981).withValues(alpha: 0.35),
-                        blurRadius: 8,
+                        color: const Color(0xFF10B981).withValues(alpha: 0.25),
+                        blurRadius: 6,
                         offset: const Offset(0, 2),
                       ),
                     ],
                   ),
-                  alignment: Alignment.center,
-                  child: Icon(
-                    Icons.bolt_rounded,
-                    color: Colors.white,
-                    size: isVeryCompact ? 18 : 20,
+                  clipBehavior: Clip.antiAlias,
+                  child: Image.asset(
+                    'assets/images/app_icon.png',
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) => Container(
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [Color(0xFF10B981), Color(0xFF059669)],
+                        ),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      alignment: Alignment.center,
+                      child: Icon(
+                        Icons.bolt_rounded,
+                        color: Colors.white,
+                        size: isVeryCompact ? 18 : 20,
+                      ),
+                    ),
                   ),
                 ),
 

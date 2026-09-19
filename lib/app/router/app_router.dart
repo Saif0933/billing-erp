@@ -180,6 +180,14 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const TermsConditionsPage(),
       ),
       GoRoute(
+        path: '/terms_conditions',
+        builder: (context, state) => const TermsConditionsPage(),
+      ),
+      GoRoute(
+        path: '/terms_and_conditions',
+        builder: (context, state) => const TermsConditionsPage(),
+      ),
+      GoRoute(
         path: '/terms',
         builder: (context, state) => const TermsConditionsPage(),
       ),
@@ -189,6 +197,14 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/privacy-and-policy',
+        builder: (context, state) => const PrivacyPolicyPage(),
+      ),
+      GoRoute(
+        path: '/privacy_policy',
+        builder: (context, state) => const PrivacyPolicyPage(),
+      ),
+      GoRoute(
+        path: '/privacy_and_policy',
         builder: (context, state) => const PrivacyPolicyPage(),
       ),
       GoRoute(
@@ -535,33 +551,39 @@ final routerProvider = Provider<GoRouter>((ref) {
     ],
     errorBuilder: (context, state) => const RouteNotFoundPage(),
     redirect: (context, state) {
-      final authState = ref.read(authProvider);
-      final businessState = ref.read(businessProvider);
       final loc = state.matchedLocation;
-      
-      if (authState.status == AuthStatus.splash) {
-        return '/splash';
-      }
+      final uriPath = state.uri.path;
 
-      // Allow public & legal policy pages for all users without redirection
+      // Allow public & legal policy pages for all users without redirection (accessible without login)
       final legalRoutes = [
         '/settings/terms-conditions',
         '/settings/privacy-policy',
         '/settings/terms-and-conditions',
         '/settings/privacy-and-policy',
         '/terms-conditions',
-        '/privacy-policy',
         '/terms-and-conditions',
-        '/privacy-and-policy',
+        '/terms_conditions',
+        '/terms_and_conditions',
         '/terms',
+        '/privacy-policy',
+        '/privacy-and-policy',
+        '/privacy_policy',
+        '/privacy_and_policy',
         '/privacy',
         '/platform-admin/terms-conditions',
         '/platform-admin/privacy-policy',
         '/platform-admin/terms-and-conditions',
         '/platform-admin/privacy-and-policy',
       ];
-      if (legalRoutes.contains(loc)) {
+      if (legalRoutes.contains(loc) || legalRoutes.contains(uriPath)) {
         return null;
+      }
+
+      final authState = ref.read(authProvider);
+      final businessState = ref.read(businessProvider);
+      
+      if (authState.status == AuthStatus.splash) {
+        return '/splash';
       }
 
       final isPlatformAdminRoute = loc.startsWith('/platform-admin');

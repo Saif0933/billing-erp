@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_spacing.dart';
+import '../../../../shared/layouts/widgets/public_legal_top_header.dart';
 import '../../../../shared/widgets/feedback.dart';
 
 class PrivacyPolicyPage extends StatefulWidget {
@@ -11,10 +12,6 @@ class PrivacyPolicyPage extends StatefulWidget {
 }
 
 class _PrivacyPolicyPageState extends State<PrivacyPolicyPage> {
-  final TextEditingController _searchController = TextEditingController();
-  String _searchQuery = '';
-  String _selectedCategory = 'All';
-
   final List<_PolicySection> _sections = const [
     _PolicySection(
       index: '01',
@@ -208,12 +205,6 @@ class _PrivacyPolicyPageState extends State<PrivacyPolicyPage> {
   ];
 
   @override
-  void dispose() {
-    _searchController.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final primaryText =
@@ -225,24 +216,10 @@ class _PrivacyPolicyPageState extends State<PrivacyPolicyPage> {
     final surface = isDark ? const Color(0xFF1E293B) : Colors.white;
     final border = isDark ? Colors.white12 : const Color(0xFFE2E8F0);
 
-    final filteredSections = _sections.where((section) {
-      final matchesCategory = _selectedCategory == 'All' ||
-          section.category == _selectedCategory;
-
-      if (!matchesCategory) return false;
-
-      if (_searchQuery.isEmpty) return true;
-      final query = _searchQuery.toLowerCase();
-      return section.title.toLowerCase().contains(query) ||
-          section.content.toLowerCase().contains(query) ||
-          section.category.toLowerCase().contains(query) ||
-          section.highlight.toLowerCase().contains(query) ||
-          section.bullets.any((b) => b.toLowerCase().contains(query));
-    }).toList();
-
     return Scaffold(
       backgroundColor:
           isDark ? const Color(0xFF070E1B) : const Color(0xFFF4F7FB),
+      appBar: const PublicLegalTopHeader(),
       body: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) {
@@ -270,32 +247,17 @@ class _PrivacyPolicyPageState extends State<PrivacyPolicyPage> {
                       _buildPrivacyPillars(
                           isDark: isDark, screenWidth: screenWidth),
                       const SizedBox(height: 16),
-                      _buildSearchBar(
-                        isDark: isDark,
-                        surface: surface,
-                        border: border,
-                        secondaryText: secondaryText,
-                        matchCount: filteredSections.length,
-                        totalCount: _sections.length,
-                        isMobile: isMobile,
-                      ),
-                      const SizedBox(height: 12),
-                      _buildCategoryChips(isDark: isDark),
-                      const SizedBox(height: 16),
-                      if (filteredSections.isEmpty)
-                        _buildEmptyState(isDark: isDark, mutedText: mutedText)
-                      else
-                        ...filteredSections.map(
-                          (section) => _buildSectionCard(
-                            section: section,
-                            isDark: isDark,
-                            surface: surface,
-                            border: border,
-                            primaryText: primaryText,
-                            secondaryText: secondaryText,
-                            isMobile: isMobile,
-                          ),
+                      ..._sections.map(
+                        (section) => _buildSectionCard(
+                          section: section,
+                          isDark: isDark,
+                          surface: surface,
+                          border: border,
+                          primaryText: primaryText,
+                          secondaryText: secondaryText,
+                          isMobile: isMobile,
                         ),
+                      ),
                       const SizedBox(height: 20),
                       _buildUserRightsGrid(
                           isDark: isDark, screenWidth: screenWidth),
@@ -354,36 +316,75 @@ class _PrivacyPolicyPageState extends State<PrivacyPolicyPage> {
             crossAxisAlignment: WrapCrossAlignment.center,
             alignment: WrapAlignment.spaceBetween,
             children: [
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.18),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.28),
-                  ),
-                ),
-                child: const Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.shield_outlined,
-                      size: 13,
-                      color: Colors.white,
-                    ),
-                    SizedBox(width: 5),
-                    Text(
-                      'TAX BUNNY PRIVACY POLICY',
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 0.8,
-                        color: Colors.white,
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (Navigator.of(context).canPop()) ...[
+                    InkWell(
+                      onTap: () => Navigator.of(context).pop(),
+                      borderRadius: BorderRadius.circular(20),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 5),
+                        margin: const EdgeInsets.only(right: 8),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.22),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.35),
+                          ),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.arrow_back_rounded,
+                                size: 14, color: Colors.white),
+                            SizedBox(width: 4),
+                            Text(
+                              'Back',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ],
-                ),
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.18),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.28),
+                      ),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.shield_outlined,
+                          size: 13,
+                          color: Colors.white,
+                        ),
+                        SizedBox(width: 5),
+                        Text(
+                          'TAX BUNNY PRIVACY POLICY',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 0.8,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
               Container(
                 padding:
@@ -586,160 +587,7 @@ class _PrivacyPolicyPageState extends State<PrivacyPolicyPage> {
     );
   }
 
-  Widget _buildSearchBar({
-    required bool isDark,
-    required Color surface,
-    required Color border,
-    required Color secondaryText,
-    required int matchCount,
-    required int totalCount,
-    required bool isMobile,
-  }) {
-    return Container(
-      decoration: BoxDecoration(
-        color: surface,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: border),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: TextField(
-        controller: _searchController,
-        onChanged: (val) {
-          setState(() {
-            _searchQuery = val.trim();
-          });
-        },
-        decoration: InputDecoration(
-          hintText: isMobile
-              ? 'Search login, security, deletion...'
-              : 'Search login authentication, passwords, permissions, non-GST/GST, data isolation...',
-          hintStyle: TextStyle(
-            fontSize: isMobile ? 12 : 13,
-            color: isDark ? Colors.white38 : const Color(0xFF94A3B8),
-          ),
-          prefixIcon: const Icon(
-            Icons.search_rounded,
-            size: 20,
-            color: Color(0xFF059669),
-          ),
-          suffixIcon: _searchQuery.isNotEmpty
-              ? Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 7,
-                        vertical: 2.5,
-                      ),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF10B981).withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Text(
-                        isMobile
-                            ? '$matchCount/$totalCount'
-                            : '$matchCount / $totalCount matched',
-                        style: const TextStyle(
-                          fontSize: 10.5,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF059669),
-                        ),
-                      ),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.close_rounded, size: 17),
-                      padding: const EdgeInsets.all(4),
-                      constraints:
-                          const BoxConstraints(minWidth: 32, minHeight: 32),
-                      onPressed: () {
-                        _searchController.clear();
-                        setState(() {
-                          _searchQuery = '';
-                        });
-                      },
-                    ),
-                  ],
-                )
-              : null,
-          border: InputBorder.none,
-          contentPadding: EdgeInsets.symmetric(
-              horizontal: 14, vertical: isMobile ? 12 : 15),
-        ),
-      ),
-    );
-  }
 
-  Widget _buildCategoryChips({required bool isDark}) {
-    final categories = [
-      'All',
-      'Overview',
-      'Authentication',
-      'Data Types',
-      'Permissions',
-      'Processing',
-      'Security',
-      'Third Party',
-      'Account & Deletion',
-      'User Rights',
-      'Children',
-      'Contact & DPO',
-    ];
-
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        children: categories.map((cat) {
-          final isSelected = _selectedCategory == cat;
-          return Padding(
-            padding: const EdgeInsets.only(right: 6),
-            child: InkWell(
-              borderRadius: BorderRadius.circular(20),
-              onTap: () {
-                setState(() {
-                  _selectedCategory = cat;
-                });
-              },
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 150),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 11, vertical: 5.5),
-                decoration: BoxDecoration(
-                  color: isSelected
-                      ? const Color(0xFF059669)
-                      : (isDark
-                          ? const Color(0xFF1E293B)
-                          : const Color(0xFFE2E8F0)),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: isSelected
-                        ? const Color(0xFF059669)
-                        : (isDark ? Colors.white10 : Colors.transparent),
-                  ),
-                ),
-                child: Text(
-                  cat,
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight:
-                        isSelected ? FontWeight.bold : FontWeight.w600,
-                    color: isSelected
-                        ? Colors.white
-                        : (isDark ? Colors.white70 : const Color(0xFF475569)),
-                  ),
-                ),
-              ),
-            ),
-          );
-        }).toList(),
-      ),
-    );
-  }
 
   Widget _buildSectionCard({
     required _PolicySection section,
@@ -1050,30 +898,7 @@ class _PrivacyPolicyPageState extends State<PrivacyPolicyPage> {
     );
   }
 
-  Widget _buildEmptyState({
-    required bool isDark,
-    required Color mutedText,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 40),
-      child: Center(
-        child: Column(
-          children: [
-            Icon(Icons.search_off_rounded, size: 48, color: mutedText),
-            const SizedBox(height: 12),
-            Text(
-              'No matching privacy clauses found',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 15,
-                color: mutedText,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+
 
   Widget _buildSecurityGuaranteeCard({
     required BuildContext context,
