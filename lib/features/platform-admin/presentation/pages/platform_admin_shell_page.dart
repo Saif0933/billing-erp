@@ -66,7 +66,8 @@ class _PlatformAdminShellPageState
         ? adminName.split(' ').first
         : adminName;
 
-    final isTermsOrPrivacy = state.selectedNavTab == 'terms-conditions' ||
+    final isTermsOrPrivacy =
+        state.selectedNavTab == 'terms-conditions' ||
         state.selectedNavTab == 'terms_conditions' ||
         state.selectedNavTab == 'terms-and-conditions' ||
         state.selectedNavTab == 'terms' ||
@@ -648,76 +649,8 @@ class _PlatformAdminShellPageState
                           ? state.onboardingRequests.length
                           : null,
                     ),
-                    const SizedBox(height: 8),
-                    const Divider(height: 1),
-                    const SizedBox(height: 8),
-                    _buildSidebarItem(
-                      title: 'Terms & Conditions',
-                      icon: Icons.gavel_outlined,
-                      activeIcon: Icons.gavel_rounded,
-                      tabId: 'terms-conditions',
-                      isSelected: state.selectedNavTab == 'terms-conditions' ||
-                          state.selectedNavTab == 'terms',
-                      onTap: () => notifier.setNavTab('terms-conditions'),
-                      isDark: isDark,
-                    ),
-                    _buildSidebarItem(
-                      title: 'Privacy Policy',
-                      icon: Icons.privacy_tip_outlined,
-                      activeIcon: Icons.privacy_tip_rounded,
-                      tabId: 'privacy-policy',
-                      isSelected: state.selectedNavTab == 'privacy-policy' ||
-                          state.selectedNavTab == 'privacy',
-                      onTap: () => notifier.setNavTab('privacy-policy'),
-                      isDark: isDark,
-                    ),
                     const Spacer(),
                     const Divider(height: 1),
-                    Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: isDark
-                              ? const Color(0xFF0F172A)
-                              : const Color(0xFFF1F5F9),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Row(
-                          children: [
-                            const Icon(
-                              Icons.health_and_safety_outlined,
-                              size: 20,
-                              color: Color(0xFF16A34A),
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Text(
-                                    'Multi-Tenant Cloud',
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  Text(
-                                    'Uptime: 99.98% • Latency: 38ms',
-                                    style: TextStyle(
-                                      fontSize: 9.5,
-                                      color: isDark
-                                          ? Colors.white60
-                                          : const Color(0xFF64748B),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
                     Padding(
                       padding: const EdgeInsets.only(
                         left: 16,
@@ -1005,35 +938,6 @@ class _PlatformAdminShellPageState
               badgeCount: state.onboardingRequests.isNotEmpty
                   ? state.onboardingRequests.length
                   : null,
-            ),
-            const SizedBox(height: 8),
-            const Divider(height: 1),
-            const SizedBox(height: 8),
-            _buildSidebarItem(
-              title: 'Terms & Conditions',
-              icon: Icons.gavel_outlined,
-              activeIcon: Icons.gavel_rounded,
-              tabId: 'terms-conditions',
-              isSelected: state.selectedNavTab == 'terms-conditions' ||
-                  state.selectedNavTab == 'terms',
-              onTap: () {
-                notifier.setNavTab('terms-conditions');
-                Navigator.pop(context);
-              },
-              isDark: isDark,
-            ),
-            _buildSidebarItem(
-              title: 'Privacy Policy',
-              icon: Icons.privacy_tip_outlined,
-              activeIcon: Icons.privacy_tip_rounded,
-              tabId: 'privacy-policy',
-              isSelected: state.selectedNavTab == 'privacy-policy' ||
-                  state.selectedNavTab == 'privacy',
-              onTap: () {
-                notifier.setNavTab('privacy-policy');
-                Navigator.pop(context);
-              },
-              isDark: isDark,
             ),
             const Spacer(),
             ListTile(

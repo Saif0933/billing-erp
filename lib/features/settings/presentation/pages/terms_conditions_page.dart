@@ -37,7 +37,8 @@ class _TermsConditionsPageState extends State<TermsConditionsPage> {
       index: '02',
       id: 'platform_org_login',
       category: 'Account',
-      title: 'Platform Admin Provisioning & Organization Login (Email & Password)',
+      title:
+          'Platform Admin Provisioning & Organization Login (Email & Password)',
       icon: Icons.admin_panel_settings_rounded,
       tag: 'Authentication',
       content:
@@ -214,7 +215,8 @@ class _TermsConditionsPageState extends State<TermsConditionsPage> {
       index: '10',
       id: 'termination_export_contact',
       category: 'Legal',
-      title: 'Account Deletion, Dispute Resolution & Official Developer Support',
+      title:
+          'Account Deletion, Dispute Resolution & Official Developer Support',
       icon: Icons.contact_mail_rounded,
       tag: 'Support & Legal',
       content:
@@ -232,18 +234,22 @@ class _TermsConditionsPageState extends State<TermsConditionsPage> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primaryText =
-        isDark ? AppColors.textDarkPrimary : AppColors.textLightPrimary;
-    final secondaryText =
-        isDark ? AppColors.textDarkSecondary : AppColors.textLightSecondary;
-    final mutedText =
-        isDark ? AppColors.textDarkMuted : AppColors.textLightMuted;
+    final primaryText = isDark
+        ? AppColors.textDarkPrimary
+        : AppColors.textLightPrimary;
+    final secondaryText = isDark
+        ? AppColors.textDarkSecondary
+        : AppColors.textLightSecondary;
+    final mutedText = isDark
+        ? AppColors.textDarkMuted
+        : AppColors.textLightMuted;
     final surface = isDark ? const Color(0xFF1E293B) : Colors.white;
     final border = isDark ? Colors.white12 : const Color(0xFFE2E8F0);
 
     return Scaffold(
-      backgroundColor:
-          isDark ? const Color(0xFF0B1120) : const Color(0xFFF8FAFC),
+      backgroundColor: isDark
+          ? const Color(0xFF0B1120)
+          : const Color(0xFFF8FAFC),
       appBar: const PublicLegalTopHeader(),
       body: SafeArea(
         child: LayoutBuilder(
@@ -251,8 +257,9 @@ class _TermsConditionsPageState extends State<TermsConditionsPage> {
             final screenWidth = constraints.maxWidth;
             final isMobile = screenWidth < 600;
             final isTablet = screenWidth >= 600 && screenWidth < 960;
-            final horizontalPadding =
-                isMobile ? 12.0 : (isTablet ? 16.0 : 24.0);
+            final horizontalPadding = isMobile
+                ? 12.0
+                : (isTablet ? 16.0 : 24.0);
 
             return SingleChildScrollView(
               padding: EdgeInsets.fromLTRB(
@@ -270,7 +277,9 @@ class _TermsConditionsPageState extends State<TermsConditionsPage> {
                       _buildHeroBanner(isDark: isDark, isMobile: isMobile),
                       const SizedBox(height: 16),
                       _buildQuickHighlights(
-                          isDark: isDark, screenWidth: screenWidth),
+                        isDark: isDark,
+                        screenWidth: screenWidth,
+                      ),
                       const SizedBox(height: 16),
                       ..._sections.map(
                         (section) => _buildSectionCard(
@@ -310,11 +319,7 @@ class _TermsConditionsPageState extends State<TermsConditionsPage> {
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            Color(0xFF1E1B4B),
-            Color(0xFF3730A3),
-            Color(0xFF4F46E5),
-          ],
+          colors: [Color(0xFF1E1B4B), Color(0xFF3730A3), Color(0xFF4F46E5)],
         ),
         boxShadow: [
           BoxShadow(
@@ -346,7 +351,9 @@ class _TermsConditionsPageState extends State<TermsConditionsPage> {
                       borderRadius: BorderRadius.circular(20),
                       child: Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 5),
+                          horizontal: 10,
+                          vertical: 5,
+                        ),
                         margin: const EdgeInsets.only(right: 8),
                         decoration: BoxDecoration(
                           color: Colors.white.withValues(alpha: 0.22),
@@ -358,8 +365,11 @@ class _TermsConditionsPageState extends State<TermsConditionsPage> {
                         child: const Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(Icons.arrow_back_rounded,
-                                size: 14, color: Colors.white),
+                            Icon(
+                              Icons.arrow_back_rounded,
+                              size: 14,
+                              color: Colors.white,
+                            ),
                             SizedBox(width: 4),
                             Text(
                               'Back',
@@ -375,8 +385,10 @@ class _TermsConditionsPageState extends State<TermsConditionsPage> {
                     ),
                   ],
                   Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.white.withValues(alpha: 0.18),
                       borderRadius: BorderRadius.circular(20),
@@ -387,8 +399,11 @@ class _TermsConditionsPageState extends State<TermsConditionsPage> {
                     child: const Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.verified_user_rounded,
-                            size: 13, color: Colors.white),
+                        Icon(
+                          Icons.verified_user_rounded,
+                          size: 13,
+                          color: Colors.white,
+                        ),
                         SizedBox(width: 6),
                         Text(
                           'TAX BUNNY SAAS AGREEMENT',
@@ -405,8 +420,10 @@ class _TermsConditionsPageState extends State<TermsConditionsPage> {
                 ],
               ),
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
                   color: const Color(0xFF10B981).withValues(alpha: 0.25),
                   borderRadius: BorderRadius.circular(20),
@@ -457,13 +474,25 @@ class _TermsConditionsPageState extends State<TermsConditionsPage> {
             runSpacing: 6,
             children: [
               _buildPillBadge(
-                  'Email/Password Auth', Icons.vpn_key_rounded, isMobile),
+                'Email/Password Auth',
+                Icons.vpn_key_rounded,
+                isMobile,
+              ),
               _buildPillBadge(
-                  'Cloud Sync & Khata', Icons.cloud_done_rounded, isMobile),
+                'Cloud Sync & Khata',
+                Icons.cloud_done_rounded,
+                isMobile,
+              ),
               _buildPillBadge(
-                  '100% Data Ownership', Icons.folder_shared_rounded, isMobile),
+                '100% Data Ownership',
+                Icons.folder_shared_rounded,
+                isMobile,
+              ),
               _buildPillBadge(
-                  'Non-GST & GST Ready', Icons.receipt_long_rounded, isMobile),
+                'Non-GST & GST Ready',
+                Icons.receipt_long_rounded,
+                isMobile,
+              ),
             ],
           ),
         ],
@@ -480,9 +509,7 @@ class _TermsConditionsPageState extends State<TermsConditionsPage> {
       decoration: BoxDecoration(
         color: Colors.black.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: Colors.white.withValues(alpha: 0.2),
-        ),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -502,8 +529,10 @@ class _TermsConditionsPageState extends State<TermsConditionsPage> {
     );
   }
 
-  Widget _buildQuickHighlights(
-      {required bool isDark, required double screenWidth}) {
+  Widget _buildQuickHighlights({
+    required bool isDark,
+    required double screenWidth,
+  }) {
     final highlights = [
       _HighlightItem(
         icon: Icons.vpn_key_rounded,
@@ -614,8 +643,6 @@ class _TermsConditionsPageState extends State<TermsConditionsPage> {
     );
   }
 
-
-
   Widget _buildSectionCard({
     required _TermsSection section,
     required bool isDark,
@@ -644,12 +671,18 @@ class _TermsConditionsPageState extends State<TermsConditionsPage> {
         children: [
           Padding(
             padding: EdgeInsets.fromLTRB(
-                isMobile ? 12 : 16, 12, isMobile ? 12 : 16, 10),
+              isMobile ? 12 : 16,
+              12,
+              isMobile ? 12 : 16,
+              10,
+            ),
             child: Row(
               children: [
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 7.5, vertical: 3.5),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 7.5,
+                    vertical: 3.5,
+                  ),
                   decoration: BoxDecoration(
                     gradient: const LinearGradient(
                       colors: [Color(0xFF4F46E5), Color(0xFF7C3AED)],
@@ -679,8 +712,10 @@ class _TermsConditionsPageState extends State<TermsConditionsPage> {
                 ),
                 const SizedBox(width: 6),
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 7,
+                    vertical: 2.5,
+                  ),
                   decoration: BoxDecoration(
                     color: const Color(0xFF4F46E5).withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(6),
@@ -770,8 +805,6 @@ class _TermsConditionsPageState extends State<TermsConditionsPage> {
     );
   }
 
-
-
   Widget _buildFooterNotice({
     required BuildContext context,
     required bool isDark,
@@ -850,8 +883,11 @@ class _TermsConditionsPageState extends State<TermsConditionsPage> {
                         child: const Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(Icons.mail_outline_rounded,
-                                size: 13, color: Colors.white),
+                            Icon(
+                              Icons.mail_outline_rounded,
+                              size: 13,
+                              color: Colors.white,
+                            ),
                             SizedBox(width: 5),
                             Text(
                               'samsaif933@gmail.com',
@@ -885,8 +921,11 @@ class _TermsConditionsPageState extends State<TermsConditionsPage> {
                         child: const Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(Icons.phone_rounded,
-                                size: 13, color: Colors.white),
+                            Icon(
+                              Icons.phone_rounded,
+                              size: 13,
+                              color: Colors.white,
+                            ),
                             SizedBox(width: 5),
                             Text(
                               '+91 9334804356',

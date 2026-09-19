@@ -91,7 +91,8 @@ class _PrivacyPolicyPageState extends State<PrivacyPolicyPage> {
       category: 'Processing',
       title: 'How We Use Your Data & Zero Ad-Targeting Guarantee',
       icon: Icons.settings_suggest_rounded,
-      highlight: '100% Functional Billing Processing • Zero Advertising Trackers',
+      highlight:
+          '100% Functional Billing Processing • Zero Advertising Trackers',
       content:
           'Your data is processed solely to operate the Tax Bunny platform, generate standard bills, maintain customer credit balances, '
           'and provide real-time business reports. We do not engage in behavioural advertising, ad retargeting, or commercial data selling.',
@@ -109,7 +110,8 @@ class _PrivacyPolicyPageState extends State<PrivacyPolicyPage> {
       category: 'Security',
       title: 'Cryptographic Security & Multi-Tenant Data Isolation',
       icon: Icons.enhanced_encryption_rounded,
-      highlight: 'AES-256 at Rest • TLS 1.3 in Transit • Row-Level Tenant Isolation',
+      highlight:
+          'AES-256 at Rest • TLS 1.3 in Transit • Row-Level Tenant Isolation',
       content:
           'We implement enterprise-grade security architectures to protect your financial and business data against unauthorized access, '
           'alteration, disclosure, or destruction.',
@@ -207,18 +209,22 @@ class _PrivacyPolicyPageState extends State<PrivacyPolicyPage> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primaryText =
-        isDark ? AppColors.textDarkPrimary : AppColors.textLightPrimary;
-    final secondaryText =
-        isDark ? AppColors.textDarkSecondary : AppColors.textLightSecondary;
-    final mutedText =
-        isDark ? AppColors.textDarkMuted : AppColors.textLightMuted;
+    final primaryText = isDark
+        ? AppColors.textDarkPrimary
+        : AppColors.textLightPrimary;
+    final secondaryText = isDark
+        ? AppColors.textDarkSecondary
+        : AppColors.textLightSecondary;
+    final mutedText = isDark
+        ? AppColors.textDarkMuted
+        : AppColors.textLightMuted;
     final surface = isDark ? const Color(0xFF1E293B) : Colors.white;
     final border = isDark ? Colors.white12 : const Color(0xFFE2E8F0);
 
     return Scaffold(
-      backgroundColor:
-          isDark ? const Color(0xFF070E1B) : const Color(0xFFF4F7FB),
+      backgroundColor: isDark
+          ? const Color(0xFF070E1B)
+          : const Color(0xFFF4F7FB),
       appBar: const PublicLegalTopHeader(),
       body: SafeArea(
         child: LayoutBuilder(
@@ -226,8 +232,9 @@ class _PrivacyPolicyPageState extends State<PrivacyPolicyPage> {
             final screenWidth = constraints.maxWidth;
             final isMobile = screenWidth < 600;
             final isTablet = screenWidth >= 600 && screenWidth < 960;
-            final horizontalPadding =
-                isMobile ? 12.0 : (isTablet ? 16.0 : 24.0);
+            final horizontalPadding = isMobile
+                ? 12.0
+                : (isTablet ? 16.0 : 24.0);
 
             return SingleChildScrollView(
               padding: EdgeInsets.fromLTRB(
@@ -245,7 +252,9 @@ class _PrivacyPolicyPageState extends State<PrivacyPolicyPage> {
                       _buildHeroBanner(isDark: isDark, isMobile: isMobile),
                       const SizedBox(height: 16),
                       _buildPrivacyPillars(
-                          isDark: isDark, screenWidth: screenWidth),
+                        isDark: isDark,
+                        screenWidth: screenWidth,
+                      ),
                       const SizedBox(height: 16),
                       ..._sections.map(
                         (section) => _buildSectionCard(
@@ -260,7 +269,9 @@ class _PrivacyPolicyPageState extends State<PrivacyPolicyPage> {
                       ),
                       const SizedBox(height: 20),
                       _buildUserRightsGrid(
-                          isDark: isDark, screenWidth: screenWidth),
+                        isDark: isDark,
+                        screenWidth: screenWidth,
+                      ),
                       const SizedBox(height: 16),
                       _buildSecurityGuaranteeCard(
                         context: context,
@@ -289,11 +300,7 @@ class _PrivacyPolicyPageState extends State<PrivacyPolicyPage> {
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            Color(0xFF064E3B),
-            Color(0xFF047857),
-            Color(0xFF0D9488),
-          ],
+          colors: [Color(0xFF064E3B), Color(0xFF047857), Color(0xFF0D9488)],
         ),
         boxShadow: [
           BoxShadow(
@@ -325,7 +332,9 @@ class _PrivacyPolicyPageState extends State<PrivacyPolicyPage> {
                       borderRadius: BorderRadius.circular(20),
                       child: Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 5),
+                          horizontal: 10,
+                          vertical: 5,
+                        ),
                         margin: const EdgeInsets.only(right: 8),
                         decoration: BoxDecoration(
                           color: Colors.white.withValues(alpha: 0.22),
@@ -337,8 +346,11 @@ class _PrivacyPolicyPageState extends State<PrivacyPolicyPage> {
                         child: const Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(Icons.arrow_back_rounded,
-                                size: 14, color: Colors.white),
+                            Icon(
+                              Icons.arrow_back_rounded,
+                              size: 14,
+                              color: Colors.white,
+                            ),
                             SizedBox(width: 4),
                             Text(
                               'Back',
@@ -354,8 +366,10 @@ class _PrivacyPolicyPageState extends State<PrivacyPolicyPage> {
                     ),
                   ],
                   Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.white.withValues(alpha: 0.18),
                       borderRadius: BorderRadius.circular(20),
@@ -387,8 +401,10 @@ class _PrivacyPolicyPageState extends State<PrivacyPolicyPage> {
                 ],
               ),
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
                   color: const Color(0xFF10B981).withValues(alpha: 0.3),
                   borderRadius: BorderRadius.circular(20),
@@ -399,8 +415,11 @@ class _PrivacyPolicyPageState extends State<PrivacyPolicyPage> {
                 child: const Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.verified_rounded,
-                        size: 11, color: Color(0xFF6EE7B7)),
+                    Icon(
+                      Icons.verified_rounded,
+                      size: 11,
+                      color: Color(0xFF6EE7B7),
+                    ),
                     SizedBox(width: 5),
                     Text(
                       'Google Play & DPDP 2023 Compliant',
@@ -439,10 +458,26 @@ class _PrivacyPolicyPageState extends State<PrivacyPolicyPage> {
             spacing: 6,
             runSpacing: 6,
             children: [
-              _buildPillBadge('Encrypted Credentials', Icons.vpn_key_rounded, isMobile),
-              _buildPillBadge('Zero Data Selling', Icons.block_rounded, isMobile),
-              _buildPillBadge('Tenant Isolation', Icons.domain_verification_rounded, isMobile),
-              _buildPillBadge('Instant Account Deletion', Icons.delete_sweep_rounded, isMobile),
+              _buildPillBadge(
+                'Encrypted Credentials',
+                Icons.vpn_key_rounded,
+                isMobile,
+              ),
+              _buildPillBadge(
+                'Zero Data Selling',
+                Icons.block_rounded,
+                isMobile,
+              ),
+              _buildPillBadge(
+                'Tenant Isolation',
+                Icons.domain_verification_rounded,
+                isMobile,
+              ),
+              _buildPillBadge(
+                'Instant Account Deletion',
+                Icons.delete_sweep_rounded,
+                isMobile,
+              ),
             ],
           ),
         ],
@@ -459,9 +494,7 @@ class _PrivacyPolicyPageState extends State<PrivacyPolicyPage> {
       decoration: BoxDecoration(
         color: Colors.black.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: Colors.white.withValues(alpha: 0.2),
-        ),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -481,8 +514,10 @@ class _PrivacyPolicyPageState extends State<PrivacyPolicyPage> {
     );
   }
 
-  Widget _buildPrivacyPillars(
-      {required bool isDark, required double screenWidth}) {
+  Widget _buildPrivacyPillars({
+    required bool isDark,
+    required double screenWidth,
+  }) {
     final pillars = [
       _PillarItem(
         icon: Icons.vpn_key_rounded,
@@ -518,7 +553,8 @@ class _PrivacyPolicyPageState extends State<PrivacyPolicyPage> {
     final isTabletOrMobile = screenWidth < 740;
     final count = isVeryNarrow ? 1 : (isTabletOrMobile ? 2 : 4);
     final cardWidth =
-        (screenWidth - (count - 1) * 10 - (screenWidth < 600 ? 24 : 48)) / count;
+        (screenWidth - (count - 1) * 10 - (screenWidth < 600 ? 24 : 48)) /
+        count;
 
     return Wrap(
       spacing: 10,
@@ -587,8 +623,6 @@ class _PrivacyPolicyPageState extends State<PrivacyPolicyPage> {
     );
   }
 
-
-
   Widget _buildSectionCard({
     required _PolicySection section,
     required bool isDark,
@@ -617,12 +651,18 @@ class _PrivacyPolicyPageState extends State<PrivacyPolicyPage> {
         children: [
           Padding(
             padding: EdgeInsets.fromLTRB(
-                isMobile ? 12 : 16, 12, isMobile ? 12 : 16, 10),
+              isMobile ? 12 : 16,
+              12,
+              isMobile ? 12 : 16,
+              10,
+            ),
             child: Row(
               children: [
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 7.5, vertical: 3.5),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 7.5,
+                    vertical: 3.5,
+                  ),
                   decoration: BoxDecoration(
                     gradient: const LinearGradient(
                       colors: [Color(0xFF059669), Color(0xFF0D9488)],
@@ -668,8 +708,10 @@ class _PrivacyPolicyPageState extends State<PrivacyPolicyPage> {
                 ),
                 const SizedBox(width: 6),
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 7,
+                    vertical: 2.5,
+                  ),
                   decoration: BoxDecoration(
                     color: const Color(0xFF10B981).withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(6),
@@ -759,8 +801,10 @@ class _PrivacyPolicyPageState extends State<PrivacyPolicyPage> {
     );
   }
 
-  Widget _buildUserRightsGrid(
-      {required bool isDark, required double screenWidth}) {
+  Widget _buildUserRightsGrid({
+    required bool isDark,
+    required double screenWidth,
+  }) {
     final rights = [
       _RightItem(
         title: 'Right to Access',
@@ -832,7 +876,8 @@ class _PrivacyPolicyPageState extends State<PrivacyPolicyPage> {
           const SizedBox(height: 12),
           LayoutBuilder(
             builder: (context, constraints) {
-              final width = (constraints.maxWidth - (isNarrow ? 0 : 10)) /
+              final width =
+                  (constraints.maxWidth - (isNarrow ? 0 : 10)) /
                   (isNarrow ? 1 : 2);
               return Wrap(
                 spacing: 10,
@@ -855,8 +900,11 @@ class _PrivacyPolicyPageState extends State<PrivacyPolicyPage> {
                       ),
                       child: Row(
                         children: [
-                          Icon(r.icon,
-                              size: 18, color: const Color(0xFF059669)),
+                          Icon(
+                            r.icon,
+                            size: 18,
+                            color: const Color(0xFF059669),
+                          ),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Column(
@@ -897,8 +945,6 @@ class _PrivacyPolicyPageState extends State<PrivacyPolicyPage> {
       ),
     );
   }
-
-
 
   Widget _buildSecurityGuaranteeCard({
     required BuildContext context,
@@ -980,8 +1026,11 @@ class _PrivacyPolicyPageState extends State<PrivacyPolicyPage> {
                         child: const Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(Icons.mail_outline_rounded,
-                                size: 13, color: Colors.white),
+                            Icon(
+                              Icons.mail_outline_rounded,
+                              size: 13,
+                              color: Colors.white,
+                            ),
                             SizedBox(width: 5),
                             Text(
                               'samsaif933@gmail.com',
@@ -1000,8 +1049,7 @@ class _PrivacyPolicyPageState extends State<PrivacyPolicyPage> {
                       onTap: () {
                         AppFeedback.showSnackbar(
                           context,
-                          message:
-                              'Developer Helpline: +91 9334804356',
+                          message: 'Developer Helpline: +91 9334804356',
                         );
                       },
                       child: Container(
@@ -1016,8 +1064,11 @@ class _PrivacyPolicyPageState extends State<PrivacyPolicyPage> {
                         child: const Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(Icons.phone_rounded,
-                                size: 13, color: Colors.white),
+                            Icon(
+                              Icons.phone_rounded,
+                              size: 13,
+                              color: Colors.white,
+                            ),
                             SizedBox(width: 5),
                             Text(
                               '+91 9334804356',
