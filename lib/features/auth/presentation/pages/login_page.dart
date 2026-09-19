@@ -47,11 +47,13 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     super.dispose();
   }
 
+  /*
   void _switchPortal(LoginPortalType type) {
     setState(() {
       _portalType = type;
     });
   }
+  */
 
   Future<void> _handleLogin() async {
     if (!_formKey.currentState!.validate()) return;
@@ -150,6 +152,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
+                  /*
                   // Portal Mode Segmented Selector
                   Container(
                     padding: const EdgeInsets.all(4),
@@ -289,12 +292,13 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                     ),
                   ),
                   const SizedBox(height: AppSpacing.lg),
+                  */
 
                   // Title & Subtitle based on selected portal
                   Text(
                     isSuperAdmin
                         ? 'Platform Control Plane'
-                        : 'Organization Portal',
+                        : 'Organization Account',
                     style: AppTypography.headlineLarge.copyWith(
                       color: isSuperAdmin
                           ? const Color(0xFF4F46E5)

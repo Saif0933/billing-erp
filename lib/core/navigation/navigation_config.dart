@@ -336,12 +336,14 @@ class NavigationConfig {
           icon: Icons.privacy_tip_outlined,
           route: '/settings/privacy-policy',
         ),
+        /*
         NavigationItem(
           id: 'platform_admin',
           title: 'Platform SuperAdmin',
           icon: Icons.admin_panel_settings_outlined,
           route: '/platform-admin',
         ),
+        */
       ],
     ),
   ];
