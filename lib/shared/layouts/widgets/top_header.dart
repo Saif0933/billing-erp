@@ -26,160 +26,272 @@ class ResponsiveTopHeader extends ConsumerStatefulWidget
 }
 
 class _ResponsiveTopHeaderState extends ConsumerState<ResponsiveTopHeader> {
-  final _searchController = TextEditingController();
   final _searchRepo = SearchRepository();
-  List<SearchResult> _searchResults = [];
-  bool _isSearching = false;
 
-  void _onSearchChanged(String query) async {
-    if (query.trim().isEmpty) {
-      setState(() {
-        _searchResults = [];
-        _isSearching = false;
-      });
-      return;
+  (IconData, Color, String) _getCategoryStyle(SearchCategory category) {
+    switch (category) {
+      case SearchCategory.navigation:
+        return (Icons.explore_rounded, const Color(0xFF3B82F6), 'PAGE');
+      case SearchCategory.customers:
+        return (Icons.people_alt_rounded, const Color(0xFF10B981), 'CUSTOMER');
+      case SearchCategory.suppliers:
+        return (Icons.local_shipping_rounded, const Color(0xFF8B5CF6), 'SUPPLIER');
+      case SearchCategory.products:
+        return (Icons.inventory_2_rounded, const Color(0xFFF59E0B), 'PRODUCT');
+      case SearchCategory.services:
+        return (Icons.miscellaneous_services_rounded, const Color(0xFFEC4899), 'SERVICE');
+      case SearchCategory.invoices:
+        return (Icons.receipt_long_rounded, const Color(0xFF06B6D4), 'INVOICE');
+      case SearchCategory.payments:
+        return (Icons.payment_rounded, const Color(0xFFEF4444), 'PAYMENT');
+      case SearchCategory.receipts:
+        return (Icons.account_balance_wallet_rounded, const Color(0xFF10B981), 'RECEIPT');
+      case SearchCategory.general:
+        return (Icons.search_rounded, const Color(0xFF64748B), 'GENERAL');
     }
-    final billingState = ref.read(billingRepositoryProvider);
-    final results = await _searchRepo.search(query, billingState);
-    setState(() {
-      _searchResults = results;
-      _isSearching = true;
-    });
   }
 
-  void _showSearchModal(BuildContext context) {
+  void _showSearchModal(BuildContext context, {String initialQuery = ''}) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final modalController = TextEditingController(text: initialQuery);
+
     showDialog(
       context: context,
-      builder: (context) {
+      builder: (ctx) {
         return StatefulBuilder(
-          builder: (context, setModalState) {
-            return Dialog(
-              backgroundColor: isDark ? const Color(0xFF0F1B3B) : Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-                side: BorderSide(
-                  color: isDark ? const Color(0xFF1E2E4A) : AppColors.borderLight,
-                ),
-              ),
-              insetPadding: const EdgeInsets.all(AppSpacing.md),
-              child: Container(
-                constraints: const BoxConstraints(
-                  maxWidth: 600,
-                  maxHeight: 420,
-                ),
-                padding: const EdgeInsets.all(AppSpacing.md),
-                child: Column(
-                  children: [
-                    TextField(
-                      autofocus: true,
-                      style: TextStyle(
-                        color: isDark ? Colors.white : Colors.black87,
-                        fontSize: 14,
-                      ),
-                      decoration: InputDecoration(
-                        hintText: 'Search customers, invoices, products...',
-                        hintStyle: TextStyle(
-                          color: isDark ? const Color(0xFF64748B) : Colors.grey,
-                          fontSize: 13,
-                        ),
-                        prefixIcon: const Icon(Icons.search_rounded, color: Color(0xFF10B981)),
-                        filled: true,
-                        fillColor: isDark ? const Color(0xFF131D35) : const Color(0xFFF1F5F9),
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 12,
-                        ),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(
-                            color: isDark ? const Color(0xFF1E2E4A) : AppColors.borderLight,
-                          ),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(
-                            color: isDark ? const Color(0xFF1E2E4A) : AppColors.borderLight,
-                          ),
-                        ),
-                        focusedBorder: const OutlineInputBorder(
-                          borderRadius: BorderRadius.all(Radius.circular(12)),
-                          borderSide: BorderSide(
-                            color: Color(0xFF10B981),
-                            width: 1.5,
-                          ),
-                        ),
-                      ),
-                      onChanged: (val) async {
-                        final billingState = ref.read(
-                          billingRepositoryProvider,
-                        );
-                        final results = await _searchRepo.search(
-                          val,
-                          billingState,
-                        );
-                        setModalState(() {
-                          _searchResults = results;
-                        });
-                      },
+          builder: (ctx, setModalState) {
+            final billingState = ref.read(billingRepositoryProvider);
+            final currentText = modalController.text;
+
+            return FutureBuilder<List<SearchResult>>(
+              future: _searchRepo.search(currentText, billingState),
+              builder: (context, snapshot) {
+                final results = snapshot.data ?? (currentText.isEmpty ? _searchRepo.getInitialSuggestions() : []);
+                final isLoading = snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData;
+
+                return Dialog(
+                  backgroundColor: isDark ? const Color(0xFF0F1B3B) : Colors.white,
+                  surfaceTintColor: Colors.transparent,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    side: BorderSide(
+                      color: isDark ? const Color(0xFF1E2E4A) : AppColors.borderLight,
                     ),
-                    const SizedBox(height: AppSpacing.md),
-                    Expanded(
-                      child: _searchResults.isEmpty
-                          ? Center(
-                              child: Text(
-                                'No results matching query.',
+                  ),
+                  insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+                  child: Container(
+                    constraints: const BoxConstraints(
+                      maxWidth: 620,
+                      maxHeight: 520,
+                    ),
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        // Search Input Bar
+                        TextField(
+                          controller: modalController,
+                          autofocus: true,
+                          style: TextStyle(
+                            color: isDark ? Colors.white : const Color(0xFF0F172A),
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                          ),
+                          decoration: InputDecoration(
+                            hintText: 'Search pages, customers, invoices, products, suppliers...',
+                            hintStyle: TextStyle(
+                              color: isDark ? const Color(0xFF64748B) : Colors.grey.shade500,
+                              fontSize: 13,
+                            ),
+                            prefixIcon: const Icon(Icons.search_rounded, color: Color(0xFF10B981), size: 20),
+                            suffixIcon: currentText.isNotEmpty
+                                ? IconButton(
+                                    icon: const Icon(Icons.clear_rounded, size: 18),
+                                    color: isDark ? Colors.white54 : Colors.grey.shade600,
+                                    onPressed: () {
+                                      modalController.clear();
+                                      setModalState(() {});
+                                    },
+                                  )
+                                : null,
+                            filled: true,
+                            fillColor: isDark ? const Color(0xFF131D35) : const Color(0xFFF8FAFC),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 12,
+                            ),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(
+                                color: isDark ? const Color(0xFF1E2E4A) : AppColors.borderLight,
+                              ),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(
+                                color: isDark ? const Color(0xFF1E2E4A) : AppColors.borderLight,
+                              ),
+                            ),
+                            focusedBorder: const OutlineInputBorder(
+                              borderRadius: BorderRadius.all(Radius.circular(12)),
+                              borderSide: BorderSide(
+                                color: Color(0xFF10B981),
+                                width: 1.5,
+                              ),
+                            ),
+                          ),
+                          onChanged: (val) {
+                            setModalState(() {});
+                          },
+                        ),
+                        const SizedBox(height: 12),
+
+                        // Section Header / Count
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              currentText.trim().isEmpty
+                                  ? 'QUICK SHORTCUTS'
+                                  : 'SEARCH RESULTS (${results.length})',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w800,
+                                color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                                letterSpacing: 0.6,
+                              ),
+                            ),
+                            if (currentText.trim().isEmpty)
+                              Text(
+                                'Type to search anything',
                                 style: TextStyle(
+                                  fontSize: 11,
                                   color: isDark ? const Color(0xFF64748B) : Colors.grey,
                                 ),
                               ),
-                            )
-                          : ListView.separated(
-                              itemCount: _searchResults.length,
-                              separatorBuilder: (context, index) => Divider(
-                                color: isDark ? const Color(0xFF1E2E4A) : Colors.black12,
-                                height: 1,
-                              ),
-                              itemBuilder: (context, index) {
-                                final item = _searchResults[index];
-                                return ListTile(
-                                  contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                  title: Text(
-                                    item.title,
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      color: isDark ? Colors.white : Colors.black87,
-                                    ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+
+                        // Results List
+                        Expanded(
+                          child: isLoading
+                              ? const Center(
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Color(0xFF10B981),
                                   ),
-                                  subtitle: Text(
-                                    item.subtitle,
-                                    style: TextStyle(
-                                      color: isDark ? const Color(0xFF94A3B8) : Colors.black54,
-                                      fontSize: 12,
+                                )
+                              : results.isEmpty
+                                  ? Center(
+                                      child: Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(
+                                            Icons.search_off_rounded,
+                                            size: 40,
+                                            color: isDark ? const Color(0xFF64748B) : Colors.grey.shade400,
+                                          ),
+                                          const SizedBox(height: 8),
+                                          Text(
+                                            'No matching results found for "$currentText"',
+                                            style: TextStyle(
+                                              color: isDark ? const Color(0xFF94A3B8) : Colors.grey.shade600,
+                                              fontSize: 13,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    )
+                                  : ListView.separated(
+                                      itemCount: results.length,
+                                      separatorBuilder: (ctx, index) => Divider(
+                                        color: isDark ? const Color(0xFF1E2E4A) : const Color(0xFFF1F5F9),
+                                        height: 1,
+                                      ),
+                                      itemBuilder: (ctx, index) {
+                                        final item = results[index];
+                                        final (iconData, iconColor, categoryBadge) = _getCategoryStyle(item.category);
+
+                                        return ListTile(
+                                          contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                          leading: Container(
+                                            width: 36,
+                                            height: 36,
+                                            decoration: BoxDecoration(
+                                              color: iconColor.withValues(alpha: 0.12),
+                                              borderRadius: BorderRadius.circular(8),
+                                            ),
+                                            child: Icon(iconData, size: 18, color: iconColor),
+                                          ),
+                                          title: Row(
+                                            children: [
+                                              Expanded(
+                                                child: Text(
+                                                  item.title,
+                                                  style: TextStyle(
+                                                    fontWeight: FontWeight.w600,
+                                                    fontSize: 13.5,
+                                                    color: isDark ? Colors.white : const Color(0xFF0F172A),
+                                                  ),
+                                                  maxLines: 1,
+                                                  overflow: TextOverflow.ellipsis,
+                                                ),
+                                              ),
+                                              const SizedBox(width: 8),
+                                              Container(
+                                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                                decoration: BoxDecoration(
+                                                  color: iconColor.withValues(alpha: 0.12),
+                                                  borderRadius: BorderRadius.circular(4),
+                                                ),
+                                                child: Text(
+                                                  categoryBadge,
+                                                  style: TextStyle(
+                                                    fontSize: 9.5,
+                                                    fontWeight: FontWeight.w700,
+                                                    color: iconColor,
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                          subtitle: Padding(
+                                            padding: const EdgeInsets.only(top: 2),
+                                            child: Text(
+                                              item.subtitle,
+                                              style: TextStyle(
+                                                color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                                                fontSize: 11.5,
+                                              ),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ),
+                                          trailing: Icon(
+                                            Icons.arrow_forward_ios_rounded,
+                                            size: 13,
+                                            color: isDark ? Colors.white38 : Colors.grey.shade400,
+                                          ),
+                                          onTap: () {
+                                            Navigator.pop(ctx);
+                                            context.push(item.route);
+                                          },
+                                        );
+                                      },
                                     ),
-                                  ),
-                                  trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 12, color: Color(0xFF10B981)),
-                                  onTap: () {
-                                    Navigator.pop(context);
-                                    context.push(item.route);
-                                  },
-                                );
-                              },
-                            ),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-              ),
+                  ),
+                );
+              },
             );
           },
         );
       },
-    ).then((_) {
-      setState(() {
-        _searchResults = [];
-        _isSearching = false;
-      });
-    });
+    );
   }
 
   @override
@@ -213,7 +325,6 @@ class _ResponsiveTopHeaderState extends ConsumerState<ResponsiveTopHeader> {
             final isVeryCompact = availableWidth < 480;
             final showFullSearch = availableWidth >= 850;
             final showProfileDetails = availableWidth >= 950;
-            final showHelpIcon = availableWidth >= 750;
 
             final buttonSize = isVeryCompact ? 32.0 : 36.0;
             const actionGap = 8.0;
@@ -317,96 +428,61 @@ class _ResponsiveTopHeaderState extends ConsumerState<ResponsiveTopHeader> {
                   Expanded(
                     child: Center(
                       child: ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 400),
+                        constraints: const BoxConstraints(maxWidth: 420),
                         child: Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 16),
-                          child: SizedBox(
-                            height: 38,
-                            child: Stack(
-                              alignment: Alignment.centerRight,
-                              children: [
-                                TextField(
-                                  controller: _searchController,
-                                  style: TextStyle(
-                                    fontSize: 12.5,
-                                    color: isDark ? Colors.white : Colors.black87,
-                                  ),
-                                  decoration: InputDecoration(
-                                    hintText: 'Search customers, invoices, products or anything...',
-                                    hintStyle: TextStyle(
-                                      fontSize: 12,
-                                      color: isDark ? const Color(0xFF64748B) : Colors.grey,
-                                    ),
-                                    prefixIcon: Icon(
-                                      Icons.search_rounded,
-                                      size: 18,
-                                      color: isDark ? const Color(0xFF64748B) : Colors.grey,
-                                    ),
-                                    filled: true,
-                                    fillColor: isDark ? const Color(0xFF131D35) : const Color(0xFFF1F5F9),
-                                    contentPadding: const EdgeInsets.symmetric(
-                                      vertical: 8.0,
-                                      horizontal: 12.0,
-                                    ),
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                      borderSide: BorderSide(
-                                        color: isDark ? const Color(0xFF1E2E4A) : AppColors.borderLight,
-                                      ),
-                                    ),
-                                    enabledBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                      borderSide: BorderSide(
-                                        color: isDark ? const Color(0xFF1E2E4A) : AppColors.borderLight,
-                                      ),
-                                    ),
-                                    focusedBorder: const OutlineInputBorder(
-                                      borderRadius: BorderRadius.all(Radius.circular(12)),
-                                      borderSide: BorderSide(
-                                        color: Color(0xFF10B981),
-                                        width: 1.2,
-                                      ),
-                                    ),
-                                  ),
-                                  onChanged: _onSearchChanged,
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(12),
+                            onTap: () => _showSearchModal(context),
+                            child: Container(
+                              height: 38,
+                              padding: const EdgeInsets.symmetric(horizontal: 12),
+                              decoration: BoxDecoration(
+                                color: isDark ? const Color(0xFF131D35) : const Color(0xFFF1F5F9),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: isDark ? const Color(0xFF1E2E4A) : AppColors.borderLight,
                                 ),
-                                Positioned(
-                                  right: 8,
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      if (_isSearching)
-                                        IconButton(
-                                          icon: const Icon(Icons.close_rounded, size: 14, color: Colors.grey),
-                                          onPressed: () {
-                                            _searchController.clear();
-                                            _onSearchChanged('');
-                                          },
-                                        )
-                                      else
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2.5),
-                                          decoration: BoxDecoration(
-                                            color: isDark ? const Color(0xFF1E2E4A) : Colors.grey.shade200,
-                                            borderRadius: BorderRadius.circular(6),
-                                            border: Border.all(
-                                              color: isDark ? Colors.white12 : Colors.grey.shade300,
-                                              width: 0.8,
-                                            ),
-                                          ),
-                                          child: Text(
-                                            'Ctrl + K',
-                                            style: TextStyle(
-                                              fontSize: 9.5,
-                                              color: isDark ? const Color(0xFF94A3B8) : Colors.black54,
-                                              fontWeight: FontWeight.w700,
-                                            ),
-                                          ),
-                                        ),
-                                    ],
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.search_rounded,
+                                    size: 18,
+                                    color: isDark ? const Color(0xFF64748B) : Colors.grey.shade600,
                                   ),
-                                ),
-                              ],
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      'Search customers, invoices, products or pages...',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: isDark ? const Color(0xFF64748B) : Colors.grey.shade500,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2.5),
+                                    decoration: BoxDecoration(
+                                      color: isDark ? const Color(0xFF1E2E4A) : Colors.grey.shade200,
+                                      borderRadius: BorderRadius.circular(6),
+                                      border: Border.all(
+                                        color: isDark ? Colors.white12 : Colors.grey.shade300,
+                                        width: 0.8,
+                                      ),
+                                    ),
+                                    child: Text(
+                                      'Ctrl + K',
+                                      style: TextStyle(
+                                        fontSize: 9.5,
+                                        color: isDark ? const Color(0xFF94A3B8) : Colors.black54,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                         ),
@@ -504,34 +580,6 @@ class _ResponsiveTopHeaderState extends ConsumerState<ResponsiveTopHeader> {
                     );
                   },
                 ),
-
-                if (showHelpIcon) ...[
-                  const SizedBox(width: actionGap),
-                  Tooltip(
-                    message: 'Help & Documentation',
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(10),
-                      onTap: () {},
-                      child: Container(
-                        width: buttonSize,
-                        height: buttonSize,
-                        decoration: BoxDecoration(
-                          color: isDark ? const Color(0xFF131D35) : const Color(0xFFF1F5F9),
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(
-                            color: isDark ? const Color(0xFF1E2E4A) : AppColors.borderLight,
-                          ),
-                        ),
-                        alignment: Alignment.center,
-                        child: Icon(
-                          Icons.help_outline_rounded,
-                          size: 19,
-                          color: isDark ? const Color(0xFF94A3B8) : Colors.black87,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
 
                 const SizedBox(width: actionGap),
 
