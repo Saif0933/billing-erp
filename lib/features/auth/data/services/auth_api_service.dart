@@ -94,4 +94,23 @@ class AuthApiService {
     final data = (json['data'] as Map<String, dynamic>?) ?? json;
     return UserModel.fromJson(data);
   }
+
+  /// Delete Organization / User Account
+  Future<Map<String, dynamic>> deleteAccount({
+    required String email,
+    required String password,
+    String? reason,
+  }) async {
+    final response = await _apiClient.post(
+      ApiEndpoints.deleteAccount,
+      data: {
+        'email': email.trim(),
+        'password': password.trim(),
+        if (reason != null && reason.trim().isNotEmpty) 'reason': reason.trim(),
+      },
+    );
+
+    return response.data as Map<String, dynamic>;
+  }
 }
+

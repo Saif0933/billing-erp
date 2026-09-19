@@ -12,6 +12,7 @@ import '../../features/auth/presentation/pages/login_page.dart';
 import '../../features/auth/presentation/pages/register_page.dart';
 import '../../features/auth/presentation/pages/forgot_password_page.dart';
 import '../../features/auth/presentation/pages/otp_page.dart';
+import '../../features/auth/presentation/pages/delete_account_page.dart';
 import '../../features/onboarding/presentation/pages/onboarding_page.dart';
 import '../../features/business/presentation/pages/business_selection_page.dart';
 import '../../features/business/presentation/pages/create_business_page.dart';
@@ -218,6 +219,14 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/privacy',
         builder: (context, state) => const PrivacyPolicyPage(),
+      ),
+      GoRoute(
+        path: '/delete-account',
+        builder: (context, state) => const DeleteAccountPage(),
+      ),
+      GoRoute(
+        path: '/delete_account',
+        builder: (context, state) => const DeleteAccountPage(),
       ),
       ShellRoute(
         builder: (context, state, child) => AppShell(
@@ -504,6 +513,10 @@ final routerProvider = Provider<GoRouter>((ref) {
             path: '/settings/privacy-and-policy',
             builder: (context, state) => const PrivacyPolicyPage(),
           ),
+          GoRoute(
+            path: '/settings/delete-account',
+            builder: (context, state) => const DeleteAccountPage(),
+          ),
 
           // Phase 3: Accounting Routes
           GoRoute(
@@ -580,6 +593,9 @@ final routerProvider = Provider<GoRouter>((ref) {
         '/privacy_policy',
         '/privacy_and_policy',
         '/privacy',
+        '/delete-account',
+        '/delete_account',
+        '/settings/delete-account',
         '/platform-admin/terms-conditions',
         '/platform-admin/privacy-policy',
         '/platform-admin/terms-and-conditions',

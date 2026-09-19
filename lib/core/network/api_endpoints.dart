@@ -7,6 +7,7 @@ class ApiEndpoints {
   static const String refreshToken = '/api/v1/auth/refresh-token';
   static const String logout = '/api/v1/auth/logout';
   static const String getMe = '/api/v1/auth/me';
+  static const String deleteAccount = '/api/v1/auth/delete-account';
 
   // Business & multi-tenant endpoints
   static const String businesses = '/api/v1/businesses';

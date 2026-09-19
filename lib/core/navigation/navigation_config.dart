@@ -306,12 +306,14 @@ class NavigationConfig {
           icon: Icons.palette_outlined,
           route: '/settings/invoice-customization',
         ),
+        /*
         NavigationItem(
           id: 'users',
           title: 'Team & RBAC Access',
           icon: Icons.people_outline,
           route: '/settings/users',
         ),
+        */
         NavigationItem(
           id: 'audit_logs',
           title: 'Security Audit Trail',
@@ -335,6 +337,12 @@ class NavigationConfig {
           title: 'Privacy Policy',
           icon: Icons.privacy_tip_outlined,
           route: '/settings/privacy-policy',
+        ),
+        NavigationItem(
+          id: 'delete_account',
+          title: 'Delete Account',
+          icon: Icons.delete_forever_outlined,
+          route: '/delete-account',
         ),
         /*
         NavigationItem(

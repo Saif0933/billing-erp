@@ -44,12 +44,14 @@ class SettingsPage extends StatelessWidget {
       _SettingsGroup(
         title: 'Business Configuration',
         items: [
+          /*
           _SettingsItem(
             title: 'Business Details',
             subtitle: 'Edit legal names, GSTIN, PAN, and contacts',
             icon: Icons.business_outlined,
             route: '/business-selection',
           ),
+          */
           _SettingsItem(
             title: 'Invoice Customization Templates',
             subtitle:
@@ -75,6 +77,7 @@ class SettingsPage extends StatelessWidget {
       _SettingsGroup(
         title: 'Team, Safety & Migration',
         items: [
+          /*
           _SettingsItem(
             title: 'Users & Custom Permissions (RBAC)',
             subtitle:
@@ -82,6 +85,7 @@ class SettingsPage extends StatelessWidget {
             icon: Icons.people_outline,
             route: '/settings/users',
           ),
+          */
           _SettingsItem(
             title: 'Security Audit Logs',
             subtitle: 'Examine ledger, adjustments, invoices updates trail',
@@ -111,6 +115,12 @@ class SettingsPage extends StatelessWidget {
             subtitle: 'Understand data protection, isolation, and privacy rights',
             icon: Icons.privacy_tip_outlined,
             route: '/settings/privacy-policy',
+          ),
+          _SettingsItem(
+            title: 'Delete Account',
+            subtitle: 'Permanently delete organization data and credentials',
+            icon: Icons.delete_forever_outlined,
+            route: '/delete-account',
           ),
         ],
       ),
