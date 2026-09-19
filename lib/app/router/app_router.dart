@@ -176,6 +176,14 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const TermsConditionsPage(),
       ),
       GoRoute(
+        path: '/term-conditions',
+        builder: (context, state) => const TermsConditionsPage(),
+      ),
+      GoRoute(
+        path: '/term-condations',
+        builder: (context, state) => const TermsConditionsPage(),
+      ),
+      GoRoute(
         path: '/terms-and-conditions',
         builder: (context, state) => const TermsConditionsPage(),
       ),
@@ -561,6 +569,8 @@ final routerProvider = Provider<GoRouter>((ref) {
         '/settings/terms-and-conditions',
         '/settings/privacy-and-policy',
         '/terms-conditions',
+        '/term-conditions',
+        '/term-condations',
         '/terms-and-conditions',
         '/terms_conditions',
         '/terms_and_conditions',
