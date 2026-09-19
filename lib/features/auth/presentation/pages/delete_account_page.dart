@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_spacing.dart';
-import '../../../../core/constants/app_typography.dart';
 import '../../../../core/responsive/responsive_breakpoints.dart';
 import '../../../../shared/layouts/widgets/public_legal_top_header.dart';
 import '../../../../shared/widgets/app_button.dart';
@@ -23,8 +22,7 @@ class _DeleteAccountPageState extends ConsumerState<DeleteAccountPage> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  final _confirmationController = TextEditingController();
-  
+
   String? _selectedReason = 'Closing business / No longer needed';
   bool _isConfirmed = false;
   bool _isObscure = true;
@@ -45,7 +43,6 @@ class _DeleteAccountPageState extends ConsumerState<DeleteAccountPage> {
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
-    _confirmationController.dispose();
     super.dispose();
   }
 
@@ -63,15 +60,23 @@ class _DeleteAccountPageState extends ConsumerState<DeleteAccountPage> {
 
     final email = _emailController.text.trim();
     final password = _passwordController.text.trim();
+    final isMobile = ResponsiveBreakpoints.isMobile(context);
 
-    // Confirm dialog for high safety
+    // Responsive safety confirmation dialog
     final shouldProceed = await showDialog<bool>(
       context: context,
+      barrierDismissible: false,
       builder: (dialogCtx) {
         final isDark = Theme.of(dialogCtx).brightness == Brightness.dark;
         return AlertDialog(
           backgroundColor: isDark ? const Color(0xFF0F172A) : Colors.white,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          contentPadding: EdgeInsets.fromLTRB(
+            isMobile ? 16 : 24,
+            isMobile ? 16 : 20,
+            isMobile ? 16 : 24,
+            isMobile ? 12 : 20,
+          ),
           title: Row(
             children: [
               Container(
@@ -80,36 +85,78 @@ class _DeleteAccountPageState extends ConsumerState<DeleteAccountPage> {
                   color: Colors.red.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Icon(Icons.warning_amber_rounded, color: Colors.red, size: 24),
+                child: const Icon(Icons.warning_amber_rounded, color: Colors.red, size: 22),
               ),
-              const SizedBox(width: 12),
-              const Expanded(
+              const SizedBox(width: 10),
+              Expanded(
                 child: Text(
                   'Final Deletion Confirmation',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    fontSize: isMobile ? 15 : 17,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             ],
           ),
           content: Text(
             'Are you absolutely sure you want to permanently delete the account for "$email"? All active sessions, business records, and POS data will be permanently deactivated.',
-            style: const TextStyle(fontSize: 13.5, height: 1.4),
+            style: TextStyle(
+              fontSize: isMobile ? 12.5 : 13.5,
+              height: 1.45,
+              color: isDark ? Colors.white70 : const Color(0xFF334155),
+            ),
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogCtx).pop(false),
-              child: const Text('Cancel', style: TextStyle(fontWeight: FontWeight.w600)),
-            ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFDC2626),
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-              ),
-              onPressed: () => Navigator.of(dialogCtx).pop(true),
-              child: const Text('Yes, Delete My Account', style: TextStyle(fontWeight: FontWeight.bold)),
-            ),
-          ],
+          actionsPadding: EdgeInsets.symmetric(
+            horizontal: isMobile ? 12 : 16,
+            vertical: isMobile ? 10 : 14,
+          ),
+          actions: isMobile
+              ? [
+                  // Mobile stacked buttons to avoid any horizontal overflow
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFDC2626),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        ),
+                        onPressed: () => Navigator.of(dialogCtx).pop(true),
+                        child: const Text(
+                          'Yes, Delete My Account',
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      TextButton(
+                        onPressed: () => Navigator.of(dialogCtx).pop(false),
+                        child: const Text(
+                          'Cancel',
+                          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                        ),
+                      ),
+                    ],
+                  ),
+                ]
+              : [
+                  // Desktop / Tablet side-by-side buttons
+                  TextButton(
+                    onPressed: () => Navigator.of(dialogCtx).pop(false),
+                    child: const Text('Cancel', style: TextStyle(fontWeight: FontWeight.w600)),
+                  ),
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFDC2626),
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    ),
+                    onPressed: () => Navigator.of(dialogCtx).pop(true),
+                    child: const Text('Yes, Delete My Account', style: TextStyle(fontWeight: FontWeight.bold)),
+                  ),
+                ],
         );
       },
     );
@@ -153,20 +200,30 @@ class _DeleteAccountPageState extends ConsumerState<DeleteAccountPage> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isMobile = ResponsiveBreakpoints.isMobile(context);
+    final isTablet = ResponsiveBreakpoints.isTablet(context);
+
+    // Responsive horizontal padding
+    final horizontalPadding = isMobile
+        ? 14.0
+        : (isTablet ? AppSpacing.lg : AppSpacing.xxl);
+
+    // Responsive vertical padding
+    final verticalPadding = isMobile ? 16.0 : AppSpacing.xxl;
 
     return Scaffold(
       backgroundColor: isDark ? const Color(0xFF070D1E) : const Color(0xFFF8FAFC),
       appBar: const PublicLegalTopHeader(),
       body: Center(
         child: SingleChildScrollView(
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
           padding: EdgeInsets.symmetric(
-            horizontal: isMobile ? AppSpacing.md : AppSpacing.xl,
-            vertical: isMobile ? AppSpacing.lg : AppSpacing.xxl,
+            horizontal: horizontalPadding,
+            vertical: verticalPadding,
           ),
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 620),
+            constraints: const BoxConstraints(maxWidth: 640),
             child: _isDeletedSuccess
-                ? _buildSuccessView(isDark)
+                ? _buildSuccessView(isDark, isMobile)
                 : _buildDeleteFormView(isDark, isMobile),
           ),
         ),
@@ -174,19 +231,22 @@ class _DeleteAccountPageState extends ConsumerState<DeleteAccountPage> {
     );
   }
 
-  Widget _buildSuccessView(bool isDark) {
+  Widget _buildSuccessView(bool isDark, bool isMobile) {
     return Container(
-      padding: const EdgeInsets.all(32),
+      padding: EdgeInsets.symmetric(
+        horizontal: isMobile ? 20 : 36,
+        vertical: isMobile ? 24 : 36,
+      ),
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF0F172A) : Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(isMobile ? 16 : 20),
         border: Border.all(
           color: isDark ? const Color(0xFF1E2E4A) : AppColors.borderLight,
         ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: isDark ? 0.4 : 0.06),
-            blurRadius: 20,
+            blurRadius: isMobile ? 14 : 20,
             offset: const Offset(0, 8),
           ),
         ],
@@ -195,22 +255,23 @@ class _DeleteAccountPageState extends ConsumerState<DeleteAccountPage> {
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            width: 72,
-            height: 72,
+            width: isMobile ? 60 : 72,
+            height: isMobile ? 60 : 72,
             decoration: BoxDecoration(
               color: const Color(0xFF10B981).withValues(alpha: 0.12),
               shape: BoxShape.circle,
             ),
-            child: const Icon(
+            child: Icon(
               Icons.check_circle_rounded,
-              color: Color(0xFF10B981),
-              size: 44,
+              color: const Color(0xFF10B981),
+              size: isMobile ? 36 : 44,
             ),
           ),
           const SizedBox(height: AppSpacing.lg),
           Text(
             'Account Successfully Deleted',
-            style: AppTypography.headlineMedium.copyWith(
+            style: TextStyle(
+              fontSize: isMobile ? 18 : 22,
               fontWeight: FontWeight.bold,
               color: isDark ? Colors.white : const Color(0xFF0F172A),
             ),
@@ -219,7 +280,8 @@ class _DeleteAccountPageState extends ConsumerState<DeleteAccountPage> {
           const SizedBox(height: AppSpacing.sm),
           Text(
             _successMessage,
-            style: AppTypography.bodyMedium.copyWith(
+            style: TextStyle(
+              fontSize: isMobile ? 12.5 : 14,
               color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
               height: 1.5,
             ),
@@ -237,22 +299,25 @@ class _DeleteAccountPageState extends ConsumerState<DeleteAccountPage> {
   }
 
   Widget _buildDeleteFormView(bool isDark, bool isMobile) {
+    // Card responsive padding
+    final cardPadding = isMobile ? 16.0 : 32.0;
+
     return Container(
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF0F172A) : Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(isMobile ? 16 : 20),
         border: Border.all(
           color: isDark ? const Color(0xFF1E2E4A) : AppColors.borderLight,
         ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: isDark ? 0.4 : 0.06),
-            blurRadius: 24,
+            blurRadius: isMobile ? 16 : 24,
             offset: const Offset(0, 10),
           ),
         ],
       ),
-      padding: EdgeInsets.all(isMobile ? 20 : 32),
+      padding: EdgeInsets.all(cardPadding),
       child: Form(
         key: _formKey,
         child: Column(
@@ -261,57 +326,66 @@ class _DeleteAccountPageState extends ConsumerState<DeleteAccountPage> {
             // Top Danger Header Badge
             Row(
               children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFEF4444).withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: const Color(0xFFEF4444).withValues(alpha: 0.3),
-                    ),
-                  ),
-                  child: const Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.shield_outlined, color: Color(0xFFEF4444), size: 14),
-                      SizedBox(width: 6),
-                      Text(
-                        'PUBLIC DATA DELETION PORTAL',
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w800,
-                          color: Color(0xFFEF4444),
-                          letterSpacing: 0.5,
-                        ),
+                Flexible(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFEF4444).withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: const Color(0xFFEF4444).withValues(alpha: 0.3),
                       ),
-                    ],
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.shield_outlined, color: Color(0xFFEF4444), size: 14),
+                        const SizedBox(width: 6),
+                        Flexible(
+                          child: Text(
+                            'PUBLIC DATA DELETION PORTAL',
+                            style: TextStyle(
+                              fontSize: isMobile ? 10 : 11,
+                              fontWeight: FontWeight.w800,
+                              color: const Color(0xFFEF4444),
+                              letterSpacing: 0.5,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ],
             ),
             const SizedBox(height: AppSpacing.md),
 
-            // Title & Subtitle
+            // Title & Subtitle (Responsive Typography)
             Text(
               'Delete Organization Account',
-              style: AppTypography.headlineMedium.copyWith(
+              style: TextStyle(
+                fontSize: isMobile ? 20 : 24,
                 fontWeight: FontWeight.bold,
+                letterSpacing: -0.3,
                 color: isDark ? Colors.white : const Color(0xFF0F172A),
               ),
             ),
-            const SizedBox(height: AppSpacing.xs),
+            const SizedBox(height: 6),
             Text(
               'Enter your organization login credentials to permanently delete your account, business records, and revoke all active sessions.',
-              style: AppTypography.bodySmall.copyWith(
+              style: TextStyle(
+                fontSize: isMobile ? 12 : 13.5,
                 color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
-                height: 1.4,
+                height: 1.45,
               ),
             ),
             const SizedBox(height: AppSpacing.lg),
 
             // Warning Notice Box
             Container(
-              padding: const EdgeInsets.all(16),
+              padding: EdgeInsets.all(isMobile ? 12 : 16),
               decoration: BoxDecoration(
                 color: const Color(0xFFEF4444).withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(12),
@@ -322,16 +396,18 @@ class _DeleteAccountPageState extends ConsumerState<DeleteAccountPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Row(
+                  Row(
                     children: [
-                      Icon(Icons.warning_amber_rounded, color: Color(0xFFEF4444), size: 18),
-                      SizedBox(width: 8),
-                      Text(
-                        'What happens when you delete your account:',
-                        style: TextStyle(
-                          fontSize: 12.5,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFFEF4444),
+                      const Icon(Icons.warning_amber_rounded, color: Color(0xFFEF4444), size: 18),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'What happens when you delete your account:',
+                          style: TextStyle(
+                            fontSize: isMobile ? 11.5 : 12.5,
+                            fontWeight: FontWeight.bold,
+                            color: const Color(0xFFEF4444),
+                          ),
                         ),
                       ),
                     ],
@@ -340,23 +416,27 @@ class _DeleteAccountPageState extends ConsumerState<DeleteAccountPage> {
                   _buildImpactBullet(
                     'Workspace Deactivation: Your business profiles, stock records, and POS data will be permanently deactivated.',
                     isDark,
+                    isMobile,
                   ),
                   _buildImpactBullet(
                     'Billing & Invoices: Access to past GST/Non-GST invoices and payment receipts will be terminated.',
                     isDark,
+                    isMobile,
                   ),
                   _buildImpactBullet(
                     'Session Invalidation: All team members, cashiers, and active app sessions will be immediately signed out.',
                     isDark,
+                    isMobile,
                   ),
                   _buildImpactBullet(
                     'Irreversible Action: This action cannot be undone once confirmed.',
                     isDark,
+                    isMobile,
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: AppSpacing.xl),
+            const SizedBox(height: AppSpacing.lg),
 
             // Email Address Input
             AppTextField(
@@ -405,14 +485,14 @@ class _DeleteAccountPageState extends ConsumerState<DeleteAccountPage> {
             Text(
               'Reason for Deletion (Optional)',
               style: TextStyle(
-                fontSize: 12.5,
+                fontSize: isMobile ? 11.5 : 12.5,
                 fontWeight: FontWeight.w600,
                 color: isDark ? Colors.white70 : const Color(0xFF334155),
               ),
             ),
             const SizedBox(height: 6),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
               decoration: BoxDecoration(
                 color: isDark ? const Color(0xFF131D35) : const Color(0xFFF8FAFC),
                 borderRadius: BorderRadius.circular(10),
@@ -432,9 +512,11 @@ class _DeleteAccountPageState extends ConsumerState<DeleteAccountPage> {
                       child: Text(
                         r,
                         style: TextStyle(
-                          fontSize: 13,
+                          fontSize: isMobile ? 12 : 13,
                           color: isDark ? Colors.white : const Color(0xFF0F172A),
                         ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     );
                   }).toList(),
@@ -466,7 +548,7 @@ class _DeleteAccountPageState extends ConsumerState<DeleteAccountPage> {
                         child: Text(
                           'I acknowledge that deleting my organization account is permanent and irreversible. All data, customer ledgers, and billing history will be permanently deactivated.',
                           style: TextStyle(
-                            fontSize: 12,
+                            fontSize: isMobile ? 11.5 : 12,
                             color: isDark ? const Color(0xFFCBD5E1) : const Color(0xFF475569),
                             height: 1.4,
                           ),
@@ -494,9 +576,12 @@ class _DeleteAccountPageState extends ConsumerState<DeleteAccountPage> {
               child: TextButton.icon(
                 onPressed: () => context.go('/login'),
                 icon: const Icon(Icons.arrow_back_rounded, size: 16),
-                label: const Text(
+                label: Text(
                   'Cancel and Return to Login',
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                  style: TextStyle(
+                    fontSize: isMobile ? 12 : 13,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
             ),
@@ -506,18 +591,25 @@ class _DeleteAccountPageState extends ConsumerState<DeleteAccountPage> {
     );
   }
 
-  Widget _buildImpactBullet(String text, bool isDark) {
+  Widget _buildImpactBullet(String text, bool isDark, bool isMobile) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('• ', style: TextStyle(color: Color(0xFFEF4444), fontSize: 13, fontWeight: FontWeight.bold)),
+          const Text(
+            '• ',
+            style: TextStyle(
+              color: Color(0xFFEF4444),
+              fontSize: 13,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
           Expanded(
             child: Text(
               text,
               style: TextStyle(
-                fontSize: 11.5,
+                fontSize: isMobile ? 11 : 12,
                 color: isDark ? const Color(0xFFE2E8F0) : const Color(0xFF334155),
                 height: 1.35,
               ),
