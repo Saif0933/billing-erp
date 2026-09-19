@@ -164,15 +164,15 @@ class OrganizationTenantDto {
   /// Convert to JSON payload for backend POST / PUT
   Map<String, dynamic> toJson({bool isUpdate = false, String? password}) {
     final map = <String, dynamic>{
-      'name': name,
-      'code': code,
-      'domain': domain,
-      'gstin': gstin.isNotEmpty ? gstin : null,
-      'contactPerson': contactPerson,
-      'contactEmail': contactEmail,
-      'contactPhone': contactPhone.isNotEmpty ? contactPhone : null,
-      'planName': planName,
-      'status': status,
+      'name': name.trim(),
+      'code': code.trim().toUpperCase(),
+      'domain': domain.trim().toLowerCase(),
+      'gstin': gstin.trim().isNotEmpty ? gstin.trim().toUpperCase() : null,
+      'contactPerson': contactPerson.trim().isNotEmpty ? contactPerson.trim() : null,
+      'contactEmail': contactEmail.trim().isNotEmpty ? contactEmail.trim().toLowerCase() : null,
+      'contactPhone': contactPhone.trim().isNotEmpty ? contactPhone.trim() : null,
+      'planName': planName.trim().isNotEmpty ? planName.trim() : 'Growth',
+      'status': status.trim().toLowerCase(),
       'maxUsersLimit': maxUsersLimit,
       'storageLimitGb': storageLimitGb,
     };

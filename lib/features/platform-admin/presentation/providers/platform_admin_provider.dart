@@ -314,63 +314,38 @@ class PlatformAdminNotifier extends StateNotifier<PlatformAdminState> {
   }
 
   Future<void> addTenant(OrganizationTenant tenant, {String? password}) async {
-    // 1. Optimistic update
-    final updatedList = [tenant, ...state.tenants];
-    state = state.copyWith(tenants: updatedList);
-    _recalculateKpis();
-
-    // 2. Sync with backend API
     if (_apiService != null) {
-      try {
-        final serverTenant = await _apiService.createOrganization(tenant, password: password);
-        final syncedList = state.tenants.map((t) => t.id == tenant.id ? serverTenant : t).toList();
-        state = state.copyWith(tenants: syncedList);
-        _recalculateKpis();
-      } catch (_) {
-        // Retain optimistic state
-      }
+      final serverTenant = await _apiService.createOrganization(tenant, password: password);
+      final updatedList = [serverTenant, ...state.tenants.where((t) => t.id != serverTenant.id)];
+      state = state.copyWith(tenants: updatedList);
+      _recalculateKpis();
+    } else {
+      final updatedList = [tenant, ...state.tenants];
+      state = state.copyWith(tenants: updatedList);
+      _recalculateKpis();
     }
   }
 
   Future<void> updateTenant(OrganizationTenant tenant) async {
-    // 1. Optimistic update
-    final updatedList = state.tenants.map((t) {
-      if (t.id == tenant.id) {
-        return tenant;
-      }
-      return t;
-    }).toList();
-
-    state = state.copyWith(tenants: updatedList);
-    _recalculateKpis();
-
-    // 2. Sync with backend API
     if (_apiService != null) {
-      try {
-        final serverTenant = await _apiService.updateOrganization(tenant);
-        final syncedList = state.tenants.map((t) => t.id == tenant.id ? serverTenant : t).toList();
-        state = state.copyWith(tenants: syncedList);
-        _recalculateKpis();
-      } catch (_) {
-        // Retain optimistic state
-      }
+      final serverTenant = await _apiService.updateOrganization(tenant);
+      final syncedList = state.tenants.map((t) => t.id == tenant.id ? serverTenant : t).toList();
+      state = state.copyWith(tenants: syncedList);
+      _recalculateKpis();
+    } else {
+      final updatedList = state.tenants.map((t) => t.id == tenant.id ? tenant : t).toList();
+      state = state.copyWith(tenants: updatedList);
+      _recalculateKpis();
     }
   }
 
   Future<void> deleteTenant(String tenantId) async {
-    // 1. Optimistic update
+    if (_apiService != null) {
+      await _apiService.deleteOrganization(tenantId);
+    }
     final updatedList = state.tenants.where((t) => t.id != tenantId).toList();
     state = state.copyWith(tenants: updatedList);
     _recalculateKpis();
-
-    // 2. Sync with backend API
-    if (_apiService != null) {
-      try {
-        await _apiService.deleteOrganization(tenantId);
-      } catch (_) {
-        // Retain optimistic state
-      }
-    }
   }
 
   Future<Map<String, dynamic>?> impersonateTenant(String tenantId) async {

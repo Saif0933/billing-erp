@@ -66,8 +66,13 @@ class _PlatformTenantModalState extends ConsumerState<PlatformTenantModal> {
     super.dispose();
   }
 
-  void _save() {
+  bool _isSaving = false;
+
+  Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
+    if (_isSaving) return;
+
+    setState(() => _isSaving = true);
 
     final isNew = widget.tenant == null;
     final notifier = ref.read(platformAdminProvider.notifier);
@@ -94,15 +99,33 @@ class _PlatformTenantModalState extends ConsumerState<PlatformTenantModal> {
       renewalDate: widget.tenant?.renewalDate ?? DateTime.now().add(const Duration(days: 30)),
     );
 
-    if (isNew) {
-      notifier.addTenant(updatedTenant);
-      AppFeedback.showSnackbar(context, message: 'Organization "${updatedTenant.name}" created successfully!');
-    } else {
-      notifier.updateTenant(updatedTenant);
-      AppFeedback.showSnackbar(context, message: 'Organization "${updatedTenant.name}" updated successfully!');
+    try {
+      if (isNew) {
+        await notifier.addTenant(updatedTenant);
+        if (mounted) {
+          AppFeedback.showSnackbar(context, message: 'Organization "${updatedTenant.name}" created successfully!');
+          Navigator.pop(context);
+        }
+      } else {
+        await notifier.updateTenant(updatedTenant);
+        if (mounted) {
+          AppFeedback.showSnackbar(context, message: 'Organization "${updatedTenant.name}" updated successfully!');
+          Navigator.pop(context);
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        AppFeedback.showSnackbar(
+          context,
+          message: 'Failed to save organization: ${e.toString().replaceAll("Exception:", "").trim()}',
+          isError: true,
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isSaving = false);
+      }
     }
-
-    Navigator.pop(context);
   }
 
   @override
@@ -358,7 +381,7 @@ class _PlatformTenantModalState extends ConsumerState<PlatformTenantModal> {
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
                     TextButton(
-                      onPressed: () => Navigator.pop(context),
+                      onPressed: _isSaving ? null : () => Navigator.pop(context),
                       child: const Text('Cancel'),
                     ),
                     const SizedBox(width: 12),
@@ -368,12 +391,23 @@ class _PlatformTenantModalState extends ConsumerState<PlatformTenantModal> {
                         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                       ),
-                      icon: const Icon(Icons.check, size: 18, color: Colors.white),
+                      icon: _isSaving
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Icon(Icons.check, size: 18, color: Colors.white),
                       label: Text(
-                        isNew ? 'Create Tenant' : 'Save Changes',
+                        _isSaving
+                            ? 'Saving...'
+                            : (isNew ? 'Create Tenant' : 'Save Changes'),
                         style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
                       ),
-                      onPressed: _save,
+                      onPressed: _isSaving ? null : _save,
                     ),
                   ],
                 ),
