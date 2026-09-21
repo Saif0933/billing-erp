@@ -5,13 +5,13 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../shared/widgets/feedback.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../settings/presentation/pages/privacy_policy_page.dart';
+import '../../../settings/presentation/pages/terms_conditions_page.dart';
 import '../providers/platform_admin_provider.dart';
 import 'platform_admin_dashboard_page.dart';
 import 'platform_admin_onboarding_page.dart';
 import 'platform_admin_organization_page.dart';
 import 'platform_admin_subscription_page.dart';
-import '../../../settings/presentation/pages/terms_conditions_page.dart';
-import '../../../settings/presentation/pages/privacy_policy_page.dart';
 
 class PlatformAdminShellPage extends ConsumerStatefulWidget {
   final String? initialTab;
@@ -295,8 +295,6 @@ class _PlatformAdminShellPageState
                   ),
                 ),
                 const SizedBox(width: 8),
-
-
 
                 // Dynamic SuperAdmin Avatar & Menu
                 PopupMenuButton<String>(
