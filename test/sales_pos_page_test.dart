@@ -47,6 +47,7 @@ void main() {
     expect(find.text('Search product by name, barcode or SKU...'), findsOneWidget);
     expect(find.text('F2'), findsOneWidget);
 
+
     // Verify Top Action Buttons
     expect(find.text('Customer'), findsOneWidget);
     expect(find.text('Hold Bill'), findsOneWidget);
@@ -58,6 +59,7 @@ void main() {
     expect(find.text('Snacks'), findsOneWidget);
     expect(find.text('Dairy'), findsOneWidget);
     expect(find.text('Grocery'), findsOneWidget);
+
 
     // Verify Current Bill Panel
     expect(find.text('Current Bill'), findsOneWidget);
