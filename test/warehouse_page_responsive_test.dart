@@ -28,22 +28,27 @@ void main() {
       expect(find.text('Transfer'), findsOneWidget);
       expect(find.text('History'), findsOneWidget);
 
+
       // Tab 1: Configured Godowns section header & add button
       expect(find.text('Configured Godowns'), findsOneWidget);
       expect(find.text('Add New Godown'), findsOneWidget);
+
 
       // Verify mobile cards are rendered with warehouse codes
       expect(find.text('M-WH'), findsWidgets);
       expect(find.text('R-ST'), findsWidgets);
 
+
       // Switch to Tab 2: Stock Transfer
       await tester.tap(find.text('Transfer'));
       await tester.pumpAndSettle();
+
 
       expect(find.text('Transfer Configurations'), findsOneWidget);
       expect(find.text('Add Items to Transfer'), findsOneWidget);
       expect(find.text('Add Item'), findsOneWidget);
       expect(find.text('Confirm Transfer'), findsOneWidget);
+
 
       // Switch to Tab 3: History Logs
       await tester.tap(find.text('History'));
