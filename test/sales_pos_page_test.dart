@@ -66,17 +66,20 @@ void main() {
     expect(find.text('Bill No. TB/25-26/000123'), findsOneWidget);
     expect(find.text('Walk-in Customer'), findsOneWidget);
 
+
     // Verify Table Headers
     expect(find.text('Product'), findsOneWidget);
     expect(find.text('Qty'), findsOneWidget);
     expect(find.text('Rate (₹)'), findsOneWidget);
     expect(find.text('Amount (₹)'), findsOneWidget);
 
+
     // Verify Financials matching reference image
     expect(find.text('Subtotal'), findsOneWidget);
     expect(find.text('₹ 203.00'), findsOneWidget);
     expect(find.text('Total Amount'), findsOneWidget);
     expect(find.text('₹ 213.16'), findsOneWidget);
+
 
     // Verify Action Buttons
     expect(find.text('Save as Draft'), findsOneWidget);
