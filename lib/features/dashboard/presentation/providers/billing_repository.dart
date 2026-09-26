@@ -1,11 +1,11 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../../core/models/billing_models.dart';
-import '../../../../core/models/warehouse_models.dart';
-import '../../../../core/models/recurring_billing_models.dart';
-import '../../../business/presentation/providers/business_provider.dart';
 
 import '../../../../core/models/accounting_models.dart';
+import '../../../../core/models/billing_models.dart';
 import '../../../../core/models/manufacturing_models.dart';
+import '../../../../core/models/recurring_billing_models.dart';
+import '../../../../core/models/warehouse_models.dart';
+import '../../../business/presentation/providers/business_provider.dart';
 import '../../../notifications/data/models/notification_model.dart';
 import '../../../sales/presentation/providers/pos_provider.dart';
 
@@ -115,9 +115,12 @@ class BillingState {
       stockTransfers: stockTransfers ?? this.stockTransfers,
       recurringSchedules: recurringSchedules ?? this.recurringSchedules,
       auditLogs: auditLogs ?? this.auditLogs,
-      activePOSSession: activePOSSession != null ? activePOSSession() : this.activePOSSession,
+      activePOSSession: activePOSSession != null
+          ? activePOSSession()
+          : this.activePOSSession,
       heldPOSCarts: heldPOSCarts ?? this.heldPOSCarts,
-      invoiceBrandingConfig: invoiceBrandingConfig ?? this.invoiceBrandingConfig,
+      invoiceBrandingConfig:
+          invoiceBrandingConfig ?? this.invoiceBrandingConfig,
       customUsers: customUsers ?? this.customUsers,
       accounts: accounts ?? this.accounts,
       journalEntries: journalEntries ?? this.journalEntries,
@@ -135,47 +138,48 @@ class BillingNotifier extends StateNotifier<BillingState> {
   final Ref _ref;
 
   BillingNotifier(this._ref)
-      : super(
-          const BillingState(
-            customers: [],
-            suppliers: [],
-            products: [],
-            services: [],
-            invoices: [],
-            purchases: [],
-            receipts: [],
-            payments: [],
-            expenses: [],
-            stockMovements: [],
-            ledgerEntries: [],
-            warehouses: [],
-            stockTransfers: [],
-            recurringSchedules: [],
-            auditLogs: [],
-            heldPOSCarts: [],
-            invoiceBrandingConfig: InvoiceBrandingConfig(
-              logoUrl: '',
-              primaryColor: '#2563EB',
-              fontName: 'Inter',
-              bankName: 'Bunny Central Bank',
-              bankAccountNumber: '1234567890',
-              bankIfsc: 'BCB0001234',
-              upiId: 'taxbunny@upi',
-              authorizedSignatoryName: 'Rahul Sharma',
-              termsConditions: '1. Goods once sold will not be taken back.\n2. Interest @ 18% will be charged if payment is not made within credit period.',
-              footerText: 'Thank you for choosing Bunny Farms!',
-            ),
-            customUsers: [],
-            accounts: [],
-            journalEntries: [],
-            bankAccounts: [],
-            accountingPeriods: [],
-            boms: [],
-            productionOrders: [],
-            jobWorkOrders: [],
-            notifications: [],
+    : super(
+        const BillingState(
+          customers: [],
+          suppliers: [],
+          products: [],
+          services: [],
+          invoices: [],
+          purchases: [],
+          receipts: [],
+          payments: [],
+          expenses: [],
+          stockMovements: [],
+          ledgerEntries: [],
+          warehouses: [],
+          stockTransfers: [],
+          recurringSchedules: [],
+          auditLogs: [],
+          heldPOSCarts: [],
+          invoiceBrandingConfig: InvoiceBrandingConfig(
+            logoUrl: '',
+            primaryColor: '#2563EB',
+            fontName: 'Inter',
+            bankName: 'Bunny Central Bank',
+            bankAccountNumber: '1234567890',
+            bankIfsc: 'BCB0001234',
+            upiId: 'taxbunny@upi',
+            authorizedSignatoryName: 'Rahul Sharma',
+            termsConditions:
+                '1. Goods once sold will not be taken back.\n2. Interest @ 18% will be charged if payment is not made within credit period.',
+            footerText: 'Thank you for choosing Bunny Farms!',
           ),
-        ) {
+          customUsers: [],
+          accounts: [],
+          journalEntries: [],
+          bankAccounts: [],
+          accountingPeriods: [],
+          boms: [],
+          productionOrders: [],
+          jobWorkOrders: [],
+          notifications: [],
+        ),
+      ) {
     _loadInitialMockData();
   }
 
@@ -478,7 +482,8 @@ class BillingNotifier extends StateNotifier<BillingState> {
         bankIfsc: 'BCB0001234',
         upiId: 'taxbunny@upi',
         authorizedSignatoryName: 'Rahul Sharma',
-        termsConditions: '1. Goods once sold will not be taken back.\n2. Interest @ 18% will be charged if payment is not made within credit period.',
+        termsConditions:
+            '1. Goods once sold will not be taken back.\n2. Interest @ 18% will be charged if payment is not made within credit period.',
         footerText: 'Thank you for choosing Bunny Farms!',
       ),
       customUsers: [
@@ -495,7 +500,7 @@ class BillingNotifier extends StateNotifier<BillingState> {
             'export': true,
             'cancel': true,
             'approve': true,
-          }
+          },
         },
         const {
           'name': 'Gopal (Accountant)',
@@ -510,7 +515,7 @@ class BillingNotifier extends StateNotifier<BillingState> {
             'export': true,
             'cancel': false,
             'approve': true,
-          }
+          },
         },
         const {
           'name': 'Rita (Sales)',
@@ -525,7 +530,7 @@ class BillingNotifier extends StateNotifier<BillingState> {
             'export': false,
             'cancel': false,
             'approve': false,
-          }
+          },
         },
       ],
       accounts: _getDefaultAccounts('biz_01'),
@@ -546,7 +551,9 @@ class BillingNotifier extends StateNotifier<BillingState> {
 
   Future<void> updateCustomer(Customer c) async {
     state = state.copyWith(
-      customers: state.customers.map((cust) => cust.id == c.id ? c : cust).toList(),
+      customers: state.customers
+          .map((cust) => cust.id == c.id ? c : cust)
+          .toList(),
     );
   }
 
@@ -567,7 +574,9 @@ class BillingNotifier extends StateNotifier<BillingState> {
 
   Future<void> updateSupplier(Supplier s) async {
     state = state.copyWith(
-      suppliers: state.suppliers.map((supp) => supp.id == s.id ? s : supp).toList(),
+      suppliers: state.suppliers
+          .map((supp) => supp.id == s.id ? s : supp)
+          .toList(),
     );
   }
 
@@ -584,7 +593,6 @@ class BillingNotifier extends StateNotifier<BillingState> {
   void setPurchases(List<Purchase> list) {
     state = state.copyWith(purchases: list);
   }
-
 
   // --- Product CRUD ---
   Future<void> addProduct(Product p) async {
@@ -611,7 +619,9 @@ class BillingNotifier extends StateNotifier<BillingState> {
 
   Future<void> updateProduct(Product p) async {
     state = state.copyWith(
-      products: state.products.map((prod) => prod.id == p.id ? p : prod).toList(),
+      products: state.products
+          .map((prod) => prod.id == p.id ? p : prod)
+          .toList(),
     );
   }
 
@@ -625,10 +635,19 @@ class BillingNotifier extends StateNotifier<BillingState> {
     state = state.copyWith(products: list);
   }
 
-  Future<void> adjustStock(String productId, double adjustmentQuantity, String reason, {String warehouseId = 'main'}) async {
+  Future<void> adjustStock(
+    String productId,
+    double adjustmentQuantity,
+    String reason, {
+    String warehouseId = 'main',
+  }) async {
     final product = state.products.firstWhere((p) => p.id == productId);
-    final Map<String, double> updatedWarehouseStocks = Map.from(product.warehouseStocks);
-    final double existingStock = updatedWarehouseStocks[warehouseId] ?? (warehouseId == 'main' ? product.currentStock : 0.0);
+    final Map<String, double> updatedWarehouseStocks = Map.from(
+      product.warehouseStocks,
+    );
+    final double existingStock =
+        updatedWarehouseStocks[warehouseId] ??
+        (warehouseId == 'main' ? product.currentStock : 0.0);
     updatedWarehouseStocks[warehouseId] = existingStock + adjustmentQuantity;
 
     final updatedProduct = product.copyWith(
@@ -646,10 +665,18 @@ class BillingNotifier extends StateNotifier<BillingState> {
       warehouseId: warehouseId,
     );
 
-    _writeAuditLog('Manual Stock Adjustment', 'Product', productId, 'Stock: ${product.currentStock}', 'Stock: ${updatedProduct.currentStock}');
+    _writeAuditLog(
+      'Manual Stock Adjustment',
+      'Product',
+      productId,
+      'Stock: ${product.currentStock}',
+      'Stock: ${updatedProduct.currentStock}',
+    );
 
     state = state.copyWith(
-      products: state.products.map((p) => p.id == productId ? updatedProduct : p).toList(),
+      products: state.products
+          .map((p) => p.id == productId ? updatedProduct : p)
+          .toList(),
       stockMovements: [...state.stockMovements, movement],
     );
   }
@@ -661,7 +688,9 @@ class BillingNotifier extends StateNotifier<BillingState> {
 
   Future<void> updateService(Service s) async {
     state = state.copyWith(
-      services: state.services.map((serv) => serv.id == s.id ? s : serv).toList(),
+      services: state.services
+          .map((serv) => serv.id == s.id ? s : serv)
+          .toList(),
     );
   }
 
@@ -674,7 +703,6 @@ class BillingNotifier extends StateNotifier<BillingState> {
   void setServices(List<Service> list) {
     state = state.copyWith(services: list);
   }
-
 
   // --- Invoice Creation & Confirmation Engine ---
   Future<void> addInvoice(Invoice invoice) async {
@@ -707,7 +735,9 @@ class BillingNotifier extends StateNotifier<BillingState> {
   }
 
   Future<void> confirmInvoice(String invoiceId) async {
-    final invoiceIndex = state.invoices.indexWhere((inv) => inv.id == invoiceId);
+    final invoiceIndex = state.invoices.indexWhere(
+      (inv) => inv.id == invoiceId,
+    );
     if (invoiceIndex == -1) return;
 
     final invoice = state.invoices[invoiceIndex];
@@ -715,7 +745,9 @@ class BillingNotifier extends StateNotifier<BillingState> {
 
     final confirmedInvoice = invoice.copyWith(status: InvoiceStatus.confirmed);
     state = state.copyWith(
-      invoices: state.invoices.map((inv) => inv.id == invoiceId ? confirmedInvoice : inv).toList(),
+      invoices: state.invoices
+          .map((inv) => inv.id == invoiceId ? confirmedInvoice : inv)
+          .toList(),
     );
 
     await _processInvoiceConfirmation(confirmedInvoice);
@@ -729,15 +761,24 @@ class BillingNotifier extends StateNotifier<BillingState> {
 
     for (var item in invoice.items) {
       if (item.isProduct) {
-        final prodIndex = updatedProducts.indexWhere((p) => p.id == item.productId);
+        final prodIndex = updatedProducts.indexWhere(
+          (p) => p.id == item.productId,
+        );
         if (prodIndex != -1) {
           final prod = updatedProducts[prodIndex];
           // For Credit Notes (Returns), stock increases. Otherwise (Sales), stock decreases.
-          final stockChange = invoice.isCreditNote ? item.quantity : -item.quantity;
+          final stockChange = invoice.isCreditNote
+              ? item.quantity
+              : -item.quantity;
 
-          final Map<String, double> updatedWarehouseStocks = Map.from(prod.warehouseStocks);
-          final double existingStock = updatedWarehouseStocks[invoice.warehouseId] ?? (invoice.warehouseId == 'main' ? prod.currentStock : 0.0);
-          updatedWarehouseStocks[invoice.warehouseId] = existingStock + stockChange;
+          final Map<String, double> updatedWarehouseStocks = Map.from(
+            prod.warehouseStocks,
+          );
+          final double existingStock =
+              updatedWarehouseStocks[invoice.warehouseId] ??
+              (invoice.warehouseId == 'main' ? prod.currentStock : 0.0);
+          updatedWarehouseStocks[invoice.warehouseId] =
+              existingStock + stockChange;
 
           final updatedProd = prod.copyWith(
             currentStock: prod.currentStock + stockChange,
@@ -751,7 +792,9 @@ class BillingNotifier extends StateNotifier<BillingState> {
               productId: item.productId,
               productName: item.name,
               quantity: stockChange,
-              type: invoice.isCreditNote ? StockMovementType.salesReturn : StockMovementType.sale,
+              type: invoice.isCreditNote
+                  ? StockMovementType.salesReturn
+                  : StockMovementType.sale,
               date: invoice.invoiceDate,
               referenceNumber: invoice.invoiceNumber,
               warehouseId: invoice.warehouseId,
@@ -763,21 +806,29 @@ class BillingNotifier extends StateNotifier<BillingState> {
 
     // 2. Update Customer Outstanding Balance
     final List<Customer> updatedCustomers = List.from(state.customers);
-    final custIndex = updatedCustomers.indexWhere((c) => c.id == invoice.customerId);
+    final custIndex = updatedCustomers.indexWhere(
+      (c) => c.id == invoice.customerId,
+    );
     if (custIndex != -1) {
       final cust = updatedCustomers[custIndex];
       // For credit notes, outstanding decreases. For standard invoices, outstanding increases.
-      final outstandingChange = invoice.isCreditNote ? -invoice.grandTotal : invoice.grandTotal;
-      final updatedCust = cust.copyWith(currentBalance: cust.currentBalance + outstandingChange);
+      final outstandingChange = invoice.isCreditNote
+          ? -invoice.grandTotal
+          : invoice.grandTotal;
+      final updatedCust = cust.copyWith(
+        currentBalance: cust.currentBalance + outstandingChange,
+      );
       updatedCustomers[custIndex] = updatedCust;
     }
 
     // 3. Create Ledger Entry
     final double debit = invoice.isCreditNote ? 0.0 : invoice.grandTotal;
     final double credit = invoice.isCreditNote ? invoice.grandTotal : 0.0;
-    
+
     // Calculate running balance for the ledger of this customer
-    final lastRunning = state.ledgerEntries.isNotEmpty ? state.ledgerEntries.last.runningBalance : 0.0;
+    final lastRunning = state.ledgerEntries.isNotEmpty
+        ? state.ledgerEntries.last.runningBalance
+        : 0.0;
     final double runningChange = debit - credit;
     final newLedgerEntry = LedgerEntry(
       id: 'led_inv_${invoice.id}',
@@ -789,10 +840,18 @@ class BillingNotifier extends StateNotifier<BillingState> {
       credit: credit,
       runningBalance: lastRunning + runningChange,
       referenceNumber: invoice.invoiceNumber,
-      type: invoice.isCreditNote ? LedgerTransactionType.creditNote : LedgerTransactionType.sale,
+      type: invoice.isCreditNote
+          ? LedgerTransactionType.creditNote
+          : LedgerTransactionType.sale,
     );
 
-    _writeAuditLog('Confirm Invoice', 'Invoice', invoice.id, 'Status: DRAFT', 'Status: CONFIRMED');
+    _writeAuditLog(
+      'Confirm Invoice',
+      'Invoice',
+      invoice.id,
+      'Status: DRAFT',
+      'Status: CONFIRMED',
+    );
 
     state = state.copyWith(
       products: updatedProducts,
@@ -821,9 +880,13 @@ class BillingNotifier extends StateNotifier<BillingState> {
     final purchase = state.purchases[purchaseIndex];
     if (purchase.status != PurchaseStatus.draft) return;
 
-    final confirmedPurchase = purchase.copyWith(status: PurchaseStatus.confirmed);
+    final confirmedPurchase = purchase.copyWith(
+      status: PurchaseStatus.confirmed,
+    );
     state = state.copyWith(
-      purchases: state.purchases.map((p) => p.id == purchaseId ? confirmedPurchase : p).toList(),
+      purchases: state.purchases
+          .map((p) => p.id == purchaseId ? confirmedPurchase : p)
+          .toList(),
     );
 
     await _processPurchaseConfirmation(confirmedPurchase);
@@ -835,15 +898,24 @@ class BillingNotifier extends StateNotifier<BillingState> {
     final List<StockMovement> newMovements = List.from(state.stockMovements);
 
     for (var item in purchase.items) {
-      final prodIndex = updatedProducts.indexWhere((p) => p.id == item.productId);
+      final prodIndex = updatedProducts.indexWhere(
+        (p) => p.id == item.productId,
+      );
       if (prodIndex != -1) {
         final prod = updatedProducts[prodIndex];
         // For Debit Notes (Returns), stock decreases. For standard purchases, stock increases.
-        final stockChange = purchase.isDebitNote ? -item.quantity : item.quantity;
+        final stockChange = purchase.isDebitNote
+            ? -item.quantity
+            : item.quantity;
 
-        final Map<String, double> updatedWarehouseStocks = Map.from(prod.warehouseStocks);
-        final double existingStock = updatedWarehouseStocks[purchase.warehouseId] ?? (purchase.warehouseId == 'main' ? prod.currentStock : 0.0);
-        updatedWarehouseStocks[purchase.warehouseId] = existingStock + stockChange;
+        final Map<String, double> updatedWarehouseStocks = Map.from(
+          prod.warehouseStocks,
+        );
+        final double existingStock =
+            updatedWarehouseStocks[purchase.warehouseId] ??
+            (purchase.warehouseId == 'main' ? prod.currentStock : 0.0);
+        updatedWarehouseStocks[purchase.warehouseId] =
+            existingStock + stockChange;
 
         final updatedProd = prod.copyWith(
           currentStock: prod.currentStock + stockChange,
@@ -857,7 +929,9 @@ class BillingNotifier extends StateNotifier<BillingState> {
             productId: item.productId,
             productName: item.name,
             quantity: stockChange,
-            type: purchase.isDebitNote ? StockMovementType.purchaseReturn : StockMovementType.purchase,
+            type: purchase.isDebitNote
+                ? StockMovementType.purchaseReturn
+                : StockMovementType.purchase,
             date: purchase.purchaseDate,
             referenceNumber: purchase.purchaseNumber,
             warehouseId: purchase.warehouseId,
@@ -868,12 +942,18 @@ class BillingNotifier extends StateNotifier<BillingState> {
 
     // 2. Update Supplier Outstanding Payable Balance
     final List<Supplier> updatedSuppliers = List.from(state.suppliers);
-    final suppIndex = updatedSuppliers.indexWhere((s) => s.id == purchase.supplierId);
+    final suppIndex = updatedSuppliers.indexWhere(
+      (s) => s.id == purchase.supplierId,
+    );
     if (suppIndex != -1) {
       final supp = updatedSuppliers[suppIndex];
       // For debit notes, payable decreases. For standard purchases, payable increases.
-      final balanceChange = purchase.isDebitNote ? -purchase.grandTotal : purchase.grandTotal;
-      final updatedSupp = supp.copyWith(currentBalance: supp.currentBalance + balanceChange);
+      final balanceChange = purchase.isDebitNote
+          ? -purchase.grandTotal
+          : purchase.grandTotal;
+      final updatedSupp = supp.copyWith(
+        currentBalance: supp.currentBalance + balanceChange,
+      );
       updatedSuppliers[suppIndex] = updatedSupp;
     }
 
@@ -881,7 +961,9 @@ class BillingNotifier extends StateNotifier<BillingState> {
     final double debit = purchase.isDebitNote ? purchase.grandTotal : 0.0;
     final double credit = purchase.isDebitNote ? 0.0 : purchase.grandTotal;
 
-    final lastRunning = state.ledgerEntries.isNotEmpty ? state.ledgerEntries.last.runningBalance : 0.0;
+    final lastRunning = state.ledgerEntries.isNotEmpty
+        ? state.ledgerEntries.last.runningBalance
+        : 0.0;
     // Debits increase asset/decrease liability. Credits increase liability/decrease asset.
     // For supplier ledger (running balance represent assets - liability), credits decrease it.
     final double runningChange = debit - credit;
@@ -896,10 +978,18 @@ class BillingNotifier extends StateNotifier<BillingState> {
       credit: credit,
       runningBalance: lastRunning + runningChange,
       referenceNumber: purchase.purchaseNumber,
-      type: purchase.isDebitNote ? LedgerTransactionType.debitNote : LedgerTransactionType.purchase,
+      type: purchase.isDebitNote
+          ? LedgerTransactionType.debitNote
+          : LedgerTransactionType.purchase,
     );
 
-    _writeAuditLog('Confirm Purchase', 'Purchase', purchase.id, 'Status: DRAFT', 'Status: CONFIRMED');
+    _writeAuditLog(
+      'Confirm Purchase',
+      'Purchase',
+      purchase.id,
+      'Status: DRAFT',
+      'Status: CONFIRMED',
+    );
 
     state = state.copyWith(
       products: updatedProducts,
@@ -919,10 +1009,14 @@ class BillingNotifier extends StateNotifier<BillingState> {
     // 2. Update invoice balances & status according to allocations
     final List<Invoice> updatedInvoices = List.from(state.invoices);
     for (var alloc in receipt.allocations) {
-      final idx = updatedInvoices.indexWhere((inv) => inv.id == alloc.invoiceId);
+      final idx = updatedInvoices.indexWhere(
+        (inv) => inv.id == alloc.invoiceId,
+      );
       if (idx != -1) {
         final inv = updatedInvoices[idx];
-        final double newBal = double.parse((inv.balanceAmount - alloc.amountAllocated).toStringAsFixed(2));
+        final double newBal = double.parse(
+          (inv.balanceAmount - alloc.amountAllocated).toStringAsFixed(2),
+        );
         InvoiceStatus newStatus = inv.status;
         if (newBal <= 0) {
           newStatus = InvoiceStatus.paid;
@@ -938,20 +1032,27 @@ class BillingNotifier extends StateNotifier<BillingState> {
 
     // 3. Update Customer Balance (reduces outstanding)
     final List<Customer> updatedCustomers = List.from(state.customers);
-    final custIdx = updatedCustomers.indexWhere((c) => c.id == receipt.customerId);
+    final custIdx = updatedCustomers.indexWhere(
+      (c) => c.id == receipt.customerId,
+    );
     if (custIdx != -1) {
       final cust = updatedCustomers[custIdx];
       updatedCustomers[custIdx] = cust.copyWith(
-        currentBalance: double.parse((cust.currentBalance - receipt.amount).toStringAsFixed(2)),
+        currentBalance: double.parse(
+          (cust.currentBalance - receipt.amount).toStringAsFixed(2),
+        ),
       );
     }
 
     // 4. Create Ledger Entry
-    final lastRunning = state.ledgerEntries.isNotEmpty ? state.ledgerEntries.last.runningBalance : 0.0;
+    final lastRunning = state.ledgerEntries.isNotEmpty
+        ? state.ledgerEntries.last.runningBalance
+        : 0.0;
     final ledgerEntry = LedgerEntry(
       id: 'led_rec_${receipt.id}',
       date: receipt.date,
-      particulars: 'Payment Receipt (${receipt.paymentMode}) - Ref: ${receipt.referenceNumber}',
+      particulars:
+          'Payment Receipt (${receipt.paymentMode}) - Ref: ${receipt.referenceNumber}',
       debit: 0.0,
       credit: receipt.amount,
       runningBalance: lastRunning - receipt.amount,
@@ -979,7 +1080,9 @@ class BillingNotifier extends StateNotifier<BillingState> {
       final idx = updatedPurchases.indexWhere((p) => p.id == alloc.purchaseId);
       if (idx != -1) {
         final pur = updatedPurchases[idx];
-        final double newBal = double.parse((pur.balanceAmount - alloc.amountAllocated).toStringAsFixed(2));
+        final double newBal = double.parse(
+          (pur.balanceAmount - alloc.amountAllocated).toStringAsFixed(2),
+        );
         PurchaseStatus newStatus = pur.status;
         if (newBal <= 0) {
           newStatus = PurchaseStatus.paid;
@@ -995,20 +1098,27 @@ class BillingNotifier extends StateNotifier<BillingState> {
 
     // 3. Update Supplier Balance (reduces outstanding)
     final List<Supplier> updatedSuppliers = List.from(state.suppliers);
-    final suppIdx = updatedSuppliers.indexWhere((s) => s.id == payment.supplierId);
+    final suppIdx = updatedSuppliers.indexWhere(
+      (s) => s.id == payment.supplierId,
+    );
     if (suppIdx != -1) {
       final supp = updatedSuppliers[suppIdx];
       updatedSuppliers[suppIdx] = supp.copyWith(
-        currentBalance: double.parse((supp.currentBalance - payment.amount).toStringAsFixed(2)),
+        currentBalance: double.parse(
+          (supp.currentBalance - payment.amount).toStringAsFixed(2),
+        ),
       );
     }
 
     // 4. Create Ledger Entry
-    final lastRunning = state.ledgerEntries.isNotEmpty ? state.ledgerEntries.last.runningBalance : 0.0;
+    final lastRunning = state.ledgerEntries.isNotEmpty
+        ? state.ledgerEntries.last.runningBalance
+        : 0.0;
     final ledgerEntry = LedgerEntry(
       id: 'led_pay_${payment.id}',
       date: payment.date,
-      particulars: 'Payment Outward (${payment.paymentMode}) - Ref: ${payment.referenceNumber}',
+      particulars:
+          'Payment Outward (${payment.paymentMode}) - Ref: ${payment.referenceNumber}',
       debit: payment.amount,
       credit: 0.0,
       runningBalance: lastRunning + payment.amount,
@@ -1058,17 +1168,22 @@ class BillingNotifier extends StateNotifier<BillingState> {
     if (invoice.status == InvoiceStatus.confirmed ||
         invoice.status == InvoiceStatus.partiallyPaid ||
         invoice.status == InvoiceStatus.paid) {
-      
       // 1. Reverse stock
       final List<Product> updatedProducts = List.from(state.products);
       final List<StockMovement> newMovements = List.from(state.stockMovements);
       for (var item in invoice.items) {
         if (item.isProduct) {
-          final pIdx = updatedProducts.indexWhere((p) => p.id == item.productId);
+          final pIdx = updatedProducts.indexWhere(
+            (p) => p.id == item.productId,
+          );
           if (pIdx != -1) {
             final prod = updatedProducts[pIdx];
-            final stockChange = invoice.isCreditNote ? -item.quantity : item.quantity; // reverse the change
-            updatedProducts[pIdx] = prod.copyWith(currentStock: prod.currentStock + stockChange);
+            final stockChange = invoice.isCreditNote
+                ? -item.quantity
+                : item.quantity; // reverse the change
+            updatedProducts[pIdx] = prod.copyWith(
+              currentStock: prod.currentStock + stockChange,
+            );
 
             newMovements.add(
               StockMovement(
@@ -1087,28 +1202,40 @@ class BillingNotifier extends StateNotifier<BillingState> {
 
       // 2. Reverse Customer Balance
       final List<Customer> updatedCustomers = List.from(state.customers);
-      final cIdx = updatedCustomers.indexWhere((c) => c.id == invoice.customerId);
+      final cIdx = updatedCustomers.indexWhere(
+        (c) => c.id == invoice.customerId,
+      );
       if (cIdx != -1) {
         final cust = updatedCustomers[cIdx];
-        final balanceOffset = invoice.isCreditNote ? invoice.grandTotal : -invoice.grandTotal;
-        updatedCustomers[cIdx] = cust.copyWith(currentBalance: cust.currentBalance + balanceOffset);
+        final balanceOffset = invoice.isCreditNote
+            ? invoice.grandTotal
+            : -invoice.grandTotal;
+        updatedCustomers[cIdx] = cust.copyWith(
+          currentBalance: cust.currentBalance + balanceOffset,
+        );
       }
 
       // 3. Reverse Ledger Entry
-      final lastRunning = state.ledgerEntries.isNotEmpty ? state.ledgerEntries.last.runningBalance : 0.0;
+      final lastRunning = state.ledgerEntries.isNotEmpty
+          ? state.ledgerEntries.last.runningBalance
+          : 0.0;
       final ledgerEntry = LedgerEntry(
         id: 'led_cancel_${invoice.id}',
         date: DateTime.now(),
         particulars: 'Cancelled Invoice: ${invoice.invoiceNumber}',
         debit: invoice.isCreditNote ? invoice.grandTotal : 0.0,
         credit: invoice.isCreditNote ? 0.0 : invoice.grandTotal,
-        runningBalance: lastRunning + (invoice.isCreditNote ? invoice.grandTotal : -invoice.grandTotal),
+        runningBalance:
+            lastRunning +
+            (invoice.isCreditNote ? invoice.grandTotal : -invoice.grandTotal),
         referenceNumber: invoice.invoiceNumber,
         type: LedgerTransactionType.openingBalance, // Reverse adjustment type
       );
 
       state = state.copyWith(
-        invoices: state.invoices.map((inv) => inv.id == invoiceId ? cancelledInvoice : inv).toList(),
+        invoices: state.invoices
+            .map((inv) => inv.id == invoiceId ? cancelledInvoice : inv)
+            .toList(),
         products: updatedProducts,
         stockMovements: newMovements,
         customers: updatedCustomers,
@@ -1119,7 +1246,9 @@ class BillingNotifier extends StateNotifier<BillingState> {
     } else {
       // Just mark cancelled if it was draft
       state = state.copyWith(
-        invoices: state.invoices.map((inv) => inv.id == invoiceId ? cancelledInvoice : inv).toList(),
+        invoices: state.invoices
+            .map((inv) => inv.id == invoiceId ? cancelledInvoice : inv)
+            .toList(),
       );
     }
   }
@@ -1139,7 +1268,6 @@ class BillingNotifier extends StateNotifier<BillingState> {
     if (purchase.status == PurchaseStatus.confirmed ||
         purchase.status == PurchaseStatus.partiallyPaid ||
         purchase.status == PurchaseStatus.paid) {
-      
       // 1. Reverse stock
       final List<Product> updatedProducts = List.from(state.products);
       final List<StockMovement> newMovements = List.from(state.stockMovements);
@@ -1147,8 +1275,12 @@ class BillingNotifier extends StateNotifier<BillingState> {
         final pIdx = updatedProducts.indexWhere((p) => p.id == item.productId);
         if (pIdx != -1) {
           final prod = updatedProducts[pIdx];
-          final stockChange = purchase.isDebitNote ? item.quantity : -item.quantity; // reverse the change
-          updatedProducts[pIdx] = prod.copyWith(currentStock: prod.currentStock + stockChange);
+          final stockChange = purchase.isDebitNote
+              ? item.quantity
+              : -item.quantity; // reverse the change
+          updatedProducts[pIdx] = prod.copyWith(
+            currentStock: prod.currentStock + stockChange,
+          );
 
           newMovements.add(
             StockMovement(
@@ -1166,28 +1298,40 @@ class BillingNotifier extends StateNotifier<BillingState> {
 
       // 2. Reverse Supplier Balance
       final List<Supplier> updatedSuppliers = List.from(state.suppliers);
-      final sIdx = updatedSuppliers.indexWhere((s) => s.id == purchase.supplierId);
+      final sIdx = updatedSuppliers.indexWhere(
+        (s) => s.id == purchase.supplierId,
+      );
       if (sIdx != -1) {
         final supp = updatedSuppliers[sIdx];
-        final balanceOffset = purchase.isDebitNote ? purchase.grandTotal : -purchase.grandTotal;
-        updatedSuppliers[sIdx] = supp.copyWith(currentBalance: supp.currentBalance + balanceOffset);
+        final balanceOffset = purchase.isDebitNote
+            ? purchase.grandTotal
+            : -purchase.grandTotal;
+        updatedSuppliers[sIdx] = supp.copyWith(
+          currentBalance: supp.currentBalance + balanceOffset,
+        );
       }
 
       // 3. Reverse Ledger Entry
-      final lastRunning = state.ledgerEntries.isNotEmpty ? state.ledgerEntries.last.runningBalance : 0.0;
+      final lastRunning = state.ledgerEntries.isNotEmpty
+          ? state.ledgerEntries.last.runningBalance
+          : 0.0;
       final ledgerEntry = LedgerEntry(
         id: 'led_cancel_${purchase.id}',
         date: DateTime.now(),
         particulars: 'Cancelled Purchase Bill: ${purchase.purchaseNumber}',
         debit: purchase.isDebitNote ? 0.0 : purchase.grandTotal,
         credit: purchase.isDebitNote ? purchase.grandTotal : 0.0,
-        runningBalance: lastRunning + (purchase.isDebitNote ? -purchase.grandTotal : purchase.grandTotal),
+        runningBalance:
+            lastRunning +
+            (purchase.isDebitNote ? -purchase.grandTotal : purchase.grandTotal),
         referenceNumber: purchase.purchaseNumber,
         type: LedgerTransactionType.openingBalance,
       );
 
       state = state.copyWith(
-        purchases: state.purchases.map((p) => p.id == purchaseId ? cancelledPurchase : p).toList(),
+        purchases: state.purchases
+            .map((p) => p.id == purchaseId ? cancelledPurchase : p)
+            .toList(),
         products: updatedProducts,
         stockMovements: newMovements,
         suppliers: updatedSuppliers,
@@ -1197,7 +1341,9 @@ class BillingNotifier extends StateNotifier<BillingState> {
       reverseJournalEntry(purchase.id, 'Purchase');
     } else {
       state = state.copyWith(
-        purchases: state.purchases.map((p) => p.id == purchaseId ? cancelledPurchase : p).toList(),
+        purchases: state.purchases
+            .map((p) => p.id == purchaseId ? cancelledPurchase : p)
+            .toList(),
       );
     }
   }
@@ -1214,19 +1360,25 @@ class BillingNotifier extends StateNotifier<BillingState> {
     totalDebit = double.parse(totalDebit.toStringAsFixed(2));
     totalCredit = double.parse(totalCredit.toStringAsFixed(2));
     if (totalDebit != totalCredit) {
-      throw Exception('Accounting Error: Total Debit ($totalDebit) must equal Total Credit ($totalCredit).');
+      throw Exception(
+        'Accounting Error: Total Debit ($totalDebit) must equal Total Credit ($totalCredit).',
+      );
     }
 
     final now = entry.date;
     final periodIndex = state.accountingPeriods.indexWhere(
-      (p) => now.isAfter(p.startDate.subtract(const Duration(days: 1))) &&
-             now.isBefore(p.endDate.add(const Duration(days: 1))),
+      (p) =>
+          now.isAfter(p.startDate.subtract(const Duration(days: 1))) &&
+          now.isBefore(p.endDate.add(const Duration(days: 1))),
     );
 
     if (periodIndex != -1) {
       final period = state.accountingPeriods[periodIndex];
-      if (period.status == PeriodStatus.locked || period.status == PeriodStatus.closed) {
-        throw Exception('Accounting Error: Financial Period ${period.name} is Locked or Closed. Cannot post entries.');
+      if (period.status == PeriodStatus.locked ||
+          period.status == PeriodStatus.closed) {
+        throw Exception(
+          'Accounting Error: Financial Period ${period.name} is Locked or Closed. Cannot post entries.',
+        );
       }
     }
 
@@ -1234,7 +1386,8 @@ class BillingNotifier extends StateNotifier<BillingState> {
       double balChange = 0.0;
       for (var line in entry.lines) {
         if (line.accountId == acc.id) {
-          if (acc.type == AccountType.asset || acc.type == AccountType.expense) {
+          if (acc.type == AccountType.asset ||
+              acc.type == AccountType.expense) {
             balChange += (line.debit - line.credit);
           } else {
             balChange += (line.credit - line.debit);
@@ -1243,7 +1396,9 @@ class BillingNotifier extends StateNotifier<BillingState> {
       }
       if (balChange == 0.0) return acc;
       return acc.copyWith(
-        currentBalance: double.parse((acc.currentBalance + balChange).toStringAsFixed(2)),
+        currentBalance: double.parse(
+          (acc.currentBalance + balChange).toStringAsFixed(2),
+        ),
       );
     }).toList();
 
@@ -1254,19 +1409,28 @@ class BillingNotifier extends StateNotifier<BillingState> {
   }
 
   void reverseJournalEntry(String referenceId, String referenceType) {
-    final entryIndex = state.journalEntries.indexWhere((e) => e.referenceId == referenceId && e.referenceType == referenceType && e.status == JournalStatus.posted);
+    final entryIndex = state.journalEntries.indexWhere(
+      (e) =>
+          e.referenceId == referenceId &&
+          e.referenceType == referenceType &&
+          e.status == JournalStatus.posted,
+    );
     if (entryIndex == -1) return;
     final entry = state.journalEntries[entryIndex];
 
-    final reversedLines = entry.lines.map((line) => JournalEntryLine(
-      id: 'line_rev_${line.id}_${DateTime.now().millisecondsSinceEpoch}',
-      journalEntryId: 'rev_${entry.id}',
-      accountId: line.accountId,
-      accountName: line.accountName,
-      debit: line.credit,
-      credit: line.debit,
-      description: 'Reversal of: ${line.description}',
-    )).toList();
+    final reversedLines = entry.lines
+        .map(
+          (line) => JournalEntryLine(
+            id: 'line_rev_${line.id}_${DateTime.now().millisecondsSinceEpoch}',
+            journalEntryId: 'rev_${entry.id}',
+            accountId: line.accountId,
+            accountName: line.accountName,
+            debit: line.credit,
+            credit: line.debit,
+            description: 'Reversal of: ${line.description}',
+          ),
+        )
+        .toList();
 
     final reversal = JournalEntry(
       id: 'je_rev_${entry.id}_${DateTime.now().millisecondsSinceEpoch}',
@@ -1274,7 +1438,8 @@ class BillingNotifier extends StateNotifier<BillingState> {
       date: DateTime.now(),
       referenceType: entry.referenceType,
       referenceId: entry.referenceId,
-      narration: 'Reversal Entry for cancelled ${entry.referenceType} (Ref: ${entry.id})',
+      narration:
+          'Reversal Entry for cancelled ${entry.referenceType} (Ref: ${entry.id})',
       status: JournalStatus.posted,
       lines: reversedLines,
     );
@@ -1288,7 +1453,13 @@ class BillingNotifier extends StateNotifier<BillingState> {
 
     state = state.copyWith(journalEntries: updatedEntries);
     _postJournalEntry(reversal);
-    _writeAuditLog('Reverse Journal Entry', 'JournalEntry', entry.id, 'Status: POSTED', 'Status: CANCELLED');
+    _writeAuditLog(
+      'Reverse Journal Entry',
+      'JournalEntry',
+      entry.id,
+      'Status: POSTED',
+      'Status: CANCELLED',
+    );
   }
 
   void _createJournalForInvoice(Invoice invoice) {
@@ -1300,64 +1471,76 @@ class BillingNotifier extends StateNotifier<BillingState> {
     final double gstVal = invoice.cgst + invoice.sgst + invoice.igst;
 
     if (invoice.isCreditNote) {
-      lines.add(JournalEntryLine(
-        id: 'line_${entryId}_sales',
-        journalEntryId: entryId,
-        accountId: 'acc_sales',
-        accountName: 'Sales Revenue',
-        debit: salesVal,
-        credit: 0.0,
-        description: 'Sales Return Debit',
-      ));
-      if (gstVal > 0) {
-        lines.add(JournalEntryLine(
-          id: 'line_${entryId}_gst',
+      lines.add(
+        JournalEntryLine(
+          id: 'line_${entryId}_sales',
           journalEntryId: entryId,
-          accountId: 'acc_output_gst',
-          accountName: 'GST Output Tax Liability',
-          debit: gstVal,
+          accountId: 'acc_sales',
+          accountName: 'Sales Revenue',
+          debit: salesVal,
           credit: 0.0,
-          description: 'GST Output Return Debit',
-        ));
-      }
-      lines.add(JournalEntryLine(
-        id: 'line_${entryId}_ar',
-        journalEntryId: entryId,
-        accountId: 'acc_ar',
-        accountName: 'Accounts Receivable',
-        debit: 0.0,
-        credit: debitVal,
-        description: 'Credit Note Customer Credit',
-      ));
-    } else {
-      lines.add(JournalEntryLine(
-        id: 'line_${entryId}_ar',
-        journalEntryId: entryId,
-        accountId: 'acc_ar',
-        accountName: 'Accounts Receivable',
-        debit: debitVal,
-        credit: 0.0,
-        description: 'Sales Invoice Debit',
-      ));
-      lines.add(JournalEntryLine(
-        id: 'line_${entryId}_sales',
-        journalEntryId: entryId,
-        accountId: 'acc_sales',
-        accountName: 'Sales Revenue',
-        debit: 0.0,
-        credit: salesVal,
-        description: 'Sales Revenue Credit',
-      ));
+          description: 'Sales Return Debit',
+        ),
+      );
       if (gstVal > 0) {
-        lines.add(JournalEntryLine(
-          id: 'line_${entryId}_gst',
+        lines.add(
+          JournalEntryLine(
+            id: 'line_${entryId}_gst',
+            journalEntryId: entryId,
+            accountId: 'acc_output_gst',
+            accountName: 'GST Output Tax Liability',
+            debit: gstVal,
+            credit: 0.0,
+            description: 'GST Output Return Debit',
+          ),
+        );
+      }
+      lines.add(
+        JournalEntryLine(
+          id: 'line_${entryId}_ar',
           journalEntryId: entryId,
-          accountId: 'acc_output_gst',
-          accountName: 'GST Output Tax Liability',
+          accountId: 'acc_ar',
+          accountName: 'Accounts Receivable',
           debit: 0.0,
-          credit: gstVal,
-          description: 'GST Output Tax Credit',
-        ));
+          credit: debitVal,
+          description: 'Credit Note Customer Credit',
+        ),
+      );
+    } else {
+      lines.add(
+        JournalEntryLine(
+          id: 'line_${entryId}_ar',
+          journalEntryId: entryId,
+          accountId: 'acc_ar',
+          accountName: 'Accounts Receivable',
+          debit: debitVal,
+          credit: 0.0,
+          description: 'Sales Invoice Debit',
+        ),
+      );
+      lines.add(
+        JournalEntryLine(
+          id: 'line_${entryId}_sales',
+          journalEntryId: entryId,
+          accountId: 'acc_sales',
+          accountName: 'Sales Revenue',
+          debit: 0.0,
+          credit: salesVal,
+          description: 'Sales Revenue Credit',
+        ),
+      );
+      if (gstVal > 0) {
+        lines.add(
+          JournalEntryLine(
+            id: 'line_${entryId}_gst',
+            journalEntryId: entryId,
+            accountId: 'acc_output_gst',
+            accountName: 'GST Output Tax Liability',
+            debit: 0.0,
+            credit: gstVal,
+            description: 'GST Output Tax Credit',
+          ),
+        );
       }
     }
 
@@ -1367,13 +1550,21 @@ class BillingNotifier extends StateNotifier<BillingState> {
       date: invoice.invoiceDate,
       referenceType: 'Invoice',
       referenceId: invoice.id,
-      narration: invoice.isCreditNote ? 'Credit Note Return: ${invoice.invoiceNumber}' : 'Sales Invoice: ${invoice.invoiceNumber}',
+      narration: invoice.isCreditNote
+          ? 'Credit Note Return: ${invoice.invoiceNumber}'
+          : 'Sales Invoice: ${invoice.invoiceNumber}',
       status: JournalStatus.posted,
       lines: lines,
     );
 
     _postJournalEntry(entry);
-    _writeAuditLog('Post Journal Entry', 'Invoice', invoice.id, '', 'Journal Entry: $entryId');
+    _writeAuditLog(
+      'Post Journal Entry',
+      'Invoice',
+      invoice.id,
+      '',
+      'Journal Entry: $entryId',
+    );
   }
 
   void _createJournalForPurchase(Purchase purchase) {
@@ -1385,65 +1576,77 @@ class BillingNotifier extends StateNotifier<BillingState> {
     final double gstVal = purchase.cgst + purchase.sgst + purchase.igst;
 
     if (purchase.isDebitNote) {
-      lines.add(JournalEntryLine(
-        id: 'line_${entryId}_ap',
-        journalEntryId: entryId,
-        accountId: 'acc_ap',
-        accountName: 'Accounts Payable',
-        debit: creditVal,
-        credit: 0.0,
-        description: 'Debit Note Supplier Debit',
-      ));
-      lines.add(JournalEntryLine(
-        id: 'line_${entryId}_pur',
-        journalEntryId: entryId,
-        accountId: 'acc_purchases',
-        accountName: 'Direct Purchases',
-        debit: 0.0,
-        credit: purchaseVal,
-        description: 'Purchase Return Credit',
-      ));
-      if (gstVal > 0) {
-        lines.add(JournalEntryLine(
-          id: 'line_${entryId}_gst',
+      lines.add(
+        JournalEntryLine(
+          id: 'line_${entryId}_ap',
           journalEntryId: entryId,
-          accountId: 'acc_input_gst',
-          accountName: 'GST Input Tax Credit',
+          accountId: 'acc_ap',
+          accountName: 'Accounts Payable',
+          debit: creditVal,
+          credit: 0.0,
+          description: 'Debit Note Supplier Debit',
+        ),
+      );
+      lines.add(
+        JournalEntryLine(
+          id: 'line_${entryId}_pur',
+          journalEntryId: entryId,
+          accountId: 'acc_purchases',
+          accountName: 'Direct Purchases',
           debit: 0.0,
-          credit: gstVal,
-          description: 'GST Input Reverse Credit',
-        ));
+          credit: purchaseVal,
+          description: 'Purchase Return Credit',
+        ),
+      );
+      if (gstVal > 0) {
+        lines.add(
+          JournalEntryLine(
+            id: 'line_${entryId}_gst',
+            journalEntryId: entryId,
+            accountId: 'acc_input_gst',
+            accountName: 'GST Input Tax Credit',
+            debit: 0.0,
+            credit: gstVal,
+            description: 'GST Input Reverse Credit',
+          ),
+        );
       }
     } else {
-      lines.add(JournalEntryLine(
-        id: 'line_${entryId}_pur',
-        journalEntryId: entryId,
-        accountId: 'acc_purchases',
-        accountName: 'Direct Purchases',
-        debit: purchaseVal,
-        credit: 0.0,
-        description: 'Direct Purchase Debit',
-      ));
-      if (gstVal > 0) {
-        lines.add(JournalEntryLine(
-          id: 'line_${entryId}_gst',
+      lines.add(
+        JournalEntryLine(
+          id: 'line_${entryId}_pur',
           journalEntryId: entryId,
-          accountId: 'acc_input_gst',
-          accountName: 'GST Input Tax Credit',
-          debit: gstVal,
+          accountId: 'acc_purchases',
+          accountName: 'Direct Purchases',
+          debit: purchaseVal,
           credit: 0.0,
-          description: 'GST Input Tax Debit',
-        ));
+          description: 'Direct Purchase Debit',
+        ),
+      );
+      if (gstVal > 0) {
+        lines.add(
+          JournalEntryLine(
+            id: 'line_${entryId}_gst',
+            journalEntryId: entryId,
+            accountId: 'acc_input_gst',
+            accountName: 'GST Input Tax Credit',
+            debit: gstVal,
+            credit: 0.0,
+            description: 'GST Input Tax Debit',
+          ),
+        );
       }
-      lines.add(JournalEntryLine(
-        id: 'line_${entryId}_ap',
-        journalEntryId: entryId,
-        accountId: 'acc_ap',
-        accountName: 'Accounts Payable',
-        debit: 0.0,
-        credit: creditVal,
-        description: 'Supplier Credit',
-      ));
+      lines.add(
+        JournalEntryLine(
+          id: 'line_${entryId}_ap',
+          journalEntryId: entryId,
+          accountId: 'acc_ap',
+          accountName: 'Accounts Payable',
+          debit: 0.0,
+          credit: creditVal,
+          description: 'Supplier Credit',
+        ),
+      );
     }
 
     final entry = JournalEntry(
@@ -1452,13 +1655,21 @@ class BillingNotifier extends StateNotifier<BillingState> {
       date: purchase.purchaseDate,
       referenceType: 'Purchase',
       referenceId: purchase.id,
-      narration: purchase.isDebitNote ? 'Debit Note Return: ${purchase.purchaseNumber}' : 'Purchase Bill: ${purchase.purchaseNumber}',
+      narration: purchase.isDebitNote
+          ? 'Debit Note Return: ${purchase.purchaseNumber}'
+          : 'Purchase Bill: ${purchase.purchaseNumber}',
       status: JournalStatus.posted,
       lines: lines,
     );
 
     _postJournalEntry(entry);
-    _writeAuditLog('Post Journal Entry', 'Purchase', purchase.id, '', 'Journal Entry: $entryId');
+    _writeAuditLog(
+      'Post Journal Entry',
+      'Purchase',
+      purchase.id,
+      '',
+      'Journal Entry: $entryId',
+    );
   }
 
   void _createJournalForReceipt(Receipt receipt) {
@@ -1468,24 +1679,28 @@ class BillingNotifier extends StateNotifier<BillingState> {
     final double amount = receipt.amount;
     final bool isBank = receipt.paymentMode.toLowerCase() != 'cash';
 
-    lines.add(JournalEntryLine(
-      id: 'line_${entryId}_cashbank',
-      journalEntryId: entryId,
-      accountId: isBank ? 'acc_bank' : 'acc_cash',
-      accountName: isBank ? 'Bank Account' : 'Cash Account',
-      debit: amount,
-      credit: 0.0,
-      description: 'Payment Received (${receipt.paymentMode})',
-    ));
-    lines.add(JournalEntryLine(
-      id: 'line_${entryId}_ar',
-      journalEntryId: entryId,
-      accountId: 'acc_ar',
-      accountName: 'Accounts Receivable',
-      debit: 0.0,
-      credit: amount,
-      description: 'Customer Account Credit',
-    ));
+    lines.add(
+      JournalEntryLine(
+        id: 'line_${entryId}_cashbank',
+        journalEntryId: entryId,
+        accountId: isBank ? 'acc_bank' : 'acc_cash',
+        accountName: isBank ? 'Bank Account' : 'Cash Account',
+        debit: amount,
+        credit: 0.0,
+        description: 'Payment Received (${receipt.paymentMode})',
+      ),
+    );
+    lines.add(
+      JournalEntryLine(
+        id: 'line_${entryId}_ar',
+        journalEntryId: entryId,
+        accountId: 'acc_ar',
+        accountName: 'Accounts Receivable',
+        debit: 0.0,
+        credit: amount,
+        description: 'Customer Account Credit',
+      ),
+    );
 
     final entry = JournalEntry(
       id: entryId,
@@ -1493,13 +1708,20 @@ class BillingNotifier extends StateNotifier<BillingState> {
       date: receipt.date,
       referenceType: 'Receipt',
       referenceId: receipt.id,
-      narration: 'Receipt Ref: ${receipt.referenceNumber} (Mode: ${receipt.paymentMode})',
+      narration:
+          'Receipt Ref: ${receipt.referenceNumber} (Mode: ${receipt.paymentMode})',
       status: JournalStatus.posted,
       lines: lines,
     );
 
     _postJournalEntry(entry);
-    _writeAuditLog('Post Journal Entry', 'Receipt', receipt.id, '', 'Journal Entry: $entryId');
+    _writeAuditLog(
+      'Post Journal Entry',
+      'Receipt',
+      receipt.id,
+      '',
+      'Journal Entry: $entryId',
+    );
   }
 
   void _createJournalForPayment(Payment payment) {
@@ -1509,24 +1731,28 @@ class BillingNotifier extends StateNotifier<BillingState> {
     final double amount = payment.amount;
     final bool isBank = payment.paymentMode.toLowerCase() != 'cash';
 
-    lines.add(JournalEntryLine(
-      id: 'line_${entryId}_ap',
-      journalEntryId: entryId,
-      accountId: 'acc_ap',
-      accountName: 'Accounts Payable',
-      debit: amount,
-      credit: 0.0,
-      description: 'Supplier Account Debit',
-    ));
-    lines.add(JournalEntryLine(
-      id: 'line_${entryId}_cashbank',
-      journalEntryId: entryId,
-      accountId: isBank ? 'acc_bank' : 'acc_cash',
-      accountName: isBank ? 'Bank Account' : 'Cash Account',
-      debit: 0.0,
-      credit: amount,
-      description: 'Payment Disbursed (${payment.paymentMode})',
-    ));
+    lines.add(
+      JournalEntryLine(
+        id: 'line_${entryId}_ap',
+        journalEntryId: entryId,
+        accountId: 'acc_ap',
+        accountName: 'Accounts Payable',
+        debit: amount,
+        credit: 0.0,
+        description: 'Supplier Account Debit',
+      ),
+    );
+    lines.add(
+      JournalEntryLine(
+        id: 'line_${entryId}_cashbank',
+        journalEntryId: entryId,
+        accountId: isBank ? 'acc_bank' : 'acc_cash',
+        accountName: isBank ? 'Bank Account' : 'Cash Account',
+        debit: 0.0,
+        credit: amount,
+        description: 'Payment Disbursed (${payment.paymentMode})',
+      ),
+    );
 
     final entry = JournalEntry(
       id: entryId,
@@ -1534,13 +1760,20 @@ class BillingNotifier extends StateNotifier<BillingState> {
       date: payment.date,
       referenceType: 'Payment',
       referenceId: payment.id,
-      narration: 'Payment Outward Ref: ${payment.referenceNumber} (Mode: ${payment.paymentMode})',
+      narration:
+          'Payment Outward Ref: ${payment.referenceNumber} (Mode: ${payment.paymentMode})',
       status: JournalStatus.posted,
       lines: lines,
     );
 
     _postJournalEntry(entry);
-    _writeAuditLog('Post Journal Entry', 'Payment', payment.id, '', 'Journal Entry: $entryId');
+    _writeAuditLog(
+      'Post Journal Entry',
+      'Payment',
+      payment.id,
+      '',
+      'Journal Entry: $entryId',
+    );
   }
 
   void _createJournalForExpense(Expense expense) {
@@ -1552,35 +1785,41 @@ class BillingNotifier extends StateNotifier<BillingState> {
     final double netAmount = amount - gst;
     final bool isBank = expense.paymentMode.toLowerCase() != 'cash';
 
-    lines.add(JournalEntryLine(
-      id: 'line_${entryId}_exp',
-      journalEntryId: entryId,
-      accountId: 'acc_expenses',
-      accountName: 'General Expenses (${expense.category})',
-      debit: netAmount,
-      credit: 0.0,
-      description: 'Expense Debit - ${expense.category}',
-    ));
-    if (gst > 0) {
-      lines.add(JournalEntryLine(
-        id: 'line_${entryId}_gst',
+    lines.add(
+      JournalEntryLine(
+        id: 'line_${entryId}_exp',
         journalEntryId: entryId,
-        accountId: 'acc_input_gst',
-        accountName: 'GST Input Tax Credit',
-        debit: gst,
+        accountId: 'acc_expenses',
+        accountName: 'General Expenses (${expense.category})',
+        debit: netAmount,
         credit: 0.0,
-        description: 'Expense GST Input Debit',
-      ));
+        description: 'Expense Debit - ${expense.category}',
+      ),
+    );
+    if (gst > 0) {
+      lines.add(
+        JournalEntryLine(
+          id: 'line_${entryId}_gst',
+          journalEntryId: entryId,
+          accountId: 'acc_input_gst',
+          accountName: 'GST Input Tax Credit',
+          debit: gst,
+          credit: 0.0,
+          description: 'Expense GST Input Debit',
+        ),
+      );
     }
-    lines.add(JournalEntryLine(
-      id: 'line_${entryId}_cashbank',
-      journalEntryId: entryId,
-      accountId: isBank ? 'acc_bank' : 'acc_cash',
-      accountName: isBank ? 'Bank Account' : 'Cash Account',
-      debit: 0.0,
-      credit: amount,
-      description: 'Paid via ${expense.paymentMode}',
-    ));
+    lines.add(
+      JournalEntryLine(
+        id: 'line_${entryId}_cashbank',
+        journalEntryId: entryId,
+        accountId: isBank ? 'acc_bank' : 'acc_cash',
+        accountName: isBank ? 'Bank Account' : 'Cash Account',
+        debit: 0.0,
+        credit: amount,
+        description: 'Paid via ${expense.paymentMode}',
+      ),
+    );
 
     final entry = JournalEntry(
       id: entryId,
@@ -1594,58 +1833,115 @@ class BillingNotifier extends StateNotifier<BillingState> {
     );
 
     _postJournalEntry(entry);
-    _writeAuditLog('Post Journal Entry', 'Expense', expense.id, '', 'Journal Entry: $entryId');
+    _writeAuditLog(
+      'Post Journal Entry',
+      'Expense',
+      expense.id,
+      '',
+      'Journal Entry: $entryId',
+    );
   }
 
   // --- Phase 3: Business Operations Methods ---
 
   Future<void> addAccount(Account acc) async {
     state = state.copyWith(accounts: [...state.accounts, acc]);
-    _writeAuditLog('Create Account', 'Account', acc.id, '', 'Code: ${acc.code}, Name: ${acc.name}');
+    _writeAuditLog(
+      'Create Account',
+      'Account',
+      acc.id,
+      '',
+      'Code: ${acc.code}, Name: ${acc.name}',
+    );
   }
 
   Future<void> updateAccount(Account acc) async {
     state = state.copyWith(
       accounts: state.accounts.map((a) => a.id == acc.id ? acc : a).toList(),
     );
-    _writeAuditLog('Update Account', 'Account', acc.id, 'Old values', 'Code: ${acc.code}, Name: ${acc.name}');
+    _writeAuditLog(
+      'Update Account',
+      'Account',
+      acc.id,
+      'Old values',
+      'Code: ${acc.code}, Name: ${acc.name}',
+    );
   }
 
   Future<void> deactivateAccount(String id) async {
-    final hasTx = state.journalEntries.any((je) => je.lines.any((l) => l.accountId == id));
+    final hasTx = state.journalEntries.any(
+      (je) => je.lines.any((l) => l.accountId == id),
+    );
     if (hasTx) {
-      throw Exception('Cannot delete or deactivate an account that contains active accounting transactions. Please archive instead.');
+      throw Exception(
+        'Cannot delete or deactivate an account that contains active accounting transactions. Please archive instead.',
+      );
     }
     state = state.copyWith(
-      accounts: state.accounts.map((a) => a.id == id ? a.copyWith(isActive: false) : a).toList(),
+      accounts: state.accounts
+          .map((a) => a.id == id ? a.copyWith(isActive: false) : a)
+          .toList(),
     );
-    _writeAuditLog('Deactivate Account', 'Account', id, 'Status: ACTIVE', 'Status: INACTIVE');
+    _writeAuditLog(
+      'Deactivate Account',
+      'Account',
+      id,
+      'Status: ACTIVE',
+      'Status: INACTIVE',
+    );
   }
 
   Future<void> addManualJournalEntry(JournalEntry entry) async {
     _postJournalEntry(entry);
-    _writeAuditLog('Post Manual Journal', 'JournalEntry', entry.id, '', 'Narration: ${entry.narration}');
+    _writeAuditLog(
+      'Post Manual Journal',
+      'JournalEntry',
+      entry.id,
+      '',
+      'Narration: ${entry.narration}',
+    );
   }
 
   Future<void> addBankAccount(BankAccount bank) async {
     state = state.copyWith(bankAccounts: [...state.bankAccounts, bank]);
-    _writeAuditLog('Add Bank Account', 'BankAccount', bank.id, '', 'Bank: ${bank.bankName}');
+    _writeAuditLog(
+      'Add Bank Account',
+      'BankAccount',
+      bank.id,
+      '',
+      'Bank: ${bank.bankName}',
+    );
   }
 
-  Future<void> addBankTransfer(String sourceBankId, String destBankId, double amount, String refNo) async {
+  Future<void> addBankTransfer(
+    String sourceBankId,
+    String destBankId,
+    double amount,
+    String refNo,
+  ) async {
     final srcBank = state.bankAccounts.firstWhere((b) => b.id == sourceBankId);
     final destBank = state.bankAccounts.firstWhere((b) => b.id == destBankId);
 
     if (srcBank.currentBalance < amount) {
-      throw Exception('Insufficient funds in source bank account (${srcBank.bankName}).');
+      throw Exception(
+        'Insufficient funds in source bank account (${srcBank.bankName}).',
+      );
     }
 
     final updatedBanks = state.bankAccounts.map((b) {
       if (b.id == sourceBankId) {
-        return b.copyWith(currentBalance: double.parse((b.currentBalance - amount).toStringAsFixed(2)));
+        return b.copyWith(
+          currentBalance: double.parse(
+            (b.currentBalance - amount).toStringAsFixed(2),
+          ),
+        );
       }
       if (b.id == destBankId) {
-        return b.copyWith(currentBalance: double.parse((b.currentBalance + amount).toStringAsFixed(2)));
+        return b.copyWith(
+          currentBalance: double.parse(
+            (b.currentBalance + amount).toStringAsFixed(2),
+          ),
+        );
       }
       return b;
     }).toList();
@@ -1659,7 +1955,8 @@ class BillingNotifier extends StateNotifier<BillingState> {
       date: DateTime.now(),
       referenceType: 'BankTransfer',
       referenceId: refNo,
-      narration: 'Interbank transfer from ${srcBank.bankName} to ${destBank.bankName} - Ref: $refNo',
+      narration:
+          'Interbank transfer from ${srcBank.bankName} to ${destBank.bankName} - Ref: $refNo',
       status: JournalStatus.posted,
       lines: [
         JournalEntryLine(
@@ -1684,24 +1981,50 @@ class BillingNotifier extends StateNotifier<BillingState> {
     );
 
     _postJournalEntry(entry);
-    _writeAuditLog('Bank Contra Transfer', 'BankAccount', sourceBankId, 'Transfer of ₹$amount to $destBankId', 'Done');
+    _writeAuditLog(
+      'Bank Contra Transfer',
+      'BankAccount',
+      sourceBankId,
+      'Transfer of ₹$amount to $destBankId',
+      'Done',
+    );
   }
 
   Future<void> addBOM(BOM bom) async {
     state = state.copyWith(boms: [...state.boms, bom]);
-    _writeAuditLog('Create BOM', 'BOM', bom.id, '', 'Product: ${bom.finishedProductName}, Version: ${bom.version}');
+    _writeAuditLog(
+      'Create BOM',
+      'BOM',
+      bom.id,
+      '',
+      'Product: ${bom.finishedProductName}, Version: ${bom.version}',
+    );
   }
 
   Future<void> updateBOM(BOM bom) async {
     state = state.copyWith(
       boms: state.boms.map((b) => b.id == bom.id ? bom : b).toList(),
     );
-    _writeAuditLog('Update BOM', 'BOM', bom.id, 'Old recipe', 'Version: ${bom.version}');
+    _writeAuditLog(
+      'Update BOM',
+      'BOM',
+      bom.id,
+      'Old recipe',
+      'Version: ${bom.version}',
+    );
   }
 
   Future<void> addProductionOrder(ProductionOrder order) async {
-    state = state.copyWith(productionOrders: [...state.productionOrders, order]);
-    _writeAuditLog('Create Production Order', 'ProductionOrder', order.id, '', 'No: ${order.productionNumber}, Status: DRAFT');
+    state = state.copyWith(
+      productionOrders: [...state.productionOrders, order],
+    );
+    _writeAuditLog(
+      'Create Production Order',
+      'ProductionOrder',
+      order.id,
+      '',
+      'No: ${order.productionNumber}, Status: DRAFT',
+    );
   }
 
   Future<void> startProduction(String orderId) async {
@@ -1711,11 +2034,16 @@ class BillingNotifier extends StateNotifier<BillingState> {
 
     final List<String> shortages = [];
     for (var consumed in order.consumedItems) {
-      final product = state.products.firstWhere((p) => p.id == consumed.productId);
+      final product = state.products.firstWhere(
+        (p) => p.id == consumed.productId,
+      );
       final double qtyNeeded = consumed.quantityRequired;
-      final double qtyAvailable = product.warehouseStocks[order.rawMaterialWarehouseId] ?? 0.0;
+      final double qtyAvailable =
+          product.warehouseStocks[order.rawMaterialWarehouseId] ?? 0.0;
       if (qtyAvailable < qtyNeeded) {
-        shortages.add('${product.name} (Required: $qtyNeeded, Available: $qtyAvailable)');
+        shortages.add(
+          '${product.name} (Required: $qtyNeeded, Available: $qtyAvailable)',
+        );
       }
     }
 
@@ -1723,19 +2051,30 @@ class BillingNotifier extends StateNotifier<BillingState> {
       final notif = NotificationModel(
         id: 'not_short_${DateTime.now().millisecondsSinceEpoch}',
         title: 'Production Material Shortage',
-        description: 'Shortage for Production Run ${order.productionNumber}: ${shortages.join(", ")}',
+        description:
+            'Shortage for Production Run ${order.productionNumber}: ${shortages.join(", ")}',
         timestamp: DateTime.now(),
         isRead: false,
       );
       state = state.copyWith(notifications: [...state.notifications, notif]);
-      throw Exception('Insufficient raw materials available: ${shortages.join(", ")}');
+      throw Exception(
+        'Insufficient raw materials available: ${shortages.join(", ")}',
+      );
     }
 
     final updated = order.copyWith(status: ProductionStatus.inProgress);
     state = state.copyWith(
-      productionOrders: state.productionOrders.map((o) => o.id == orderId ? updated : o).toList(),
+      productionOrders: state.productionOrders
+          .map((o) => o.id == orderId ? updated : o)
+          .toList(),
     );
-    _writeAuditLog('Start Production', 'ProductionOrder', orderId, 'Status: DRAFT', 'Status: IN_PROGRESS');
+    _writeAuditLog(
+      'Start Production',
+      'ProductionOrder',
+      orderId,
+      'Status: DRAFT',
+      'Status: IN_PROGRESS',
+    );
   }
 
   Future<void> completeProduction({
@@ -1757,9 +2096,13 @@ class BillingNotifier extends StateNotifier<BillingState> {
       final pIdx = updatedProducts.indexWhere((p) => p.id == item.productId);
       if (pIdx != -1) {
         final prod = updatedProducts[pIdx];
-        final Map<String, double> updatedWarehouseStocks = Map.from(prod.warehouseStocks);
-        final double currentStock = updatedWarehouseStocks[order.rawMaterialWarehouseId] ?? 0.0;
-        updatedWarehouseStocks[order.rawMaterialWarehouseId] = currentStock - item.quantityConsumed;
+        final Map<String, double> updatedWarehouseStocks = Map.from(
+          prod.warehouseStocks,
+        );
+        final double currentStock =
+            updatedWarehouseStocks[order.rawMaterialWarehouseId] ?? 0.0;
+        updatedWarehouseStocks[order.rawMaterialWarehouseId] =
+            currentStock - item.quantityConsumed;
 
         final updatedProd = prod.copyWith(
           currentStock: prod.currentStock - item.quantityConsumed,
@@ -1793,9 +2136,13 @@ class BillingNotifier extends StateNotifier<BillingState> {
           scrapValueComputed += (wastage.quantity * prod.purchasePrice * 0.5);
         }
 
-        final Map<String, double> updatedWarehouseStocks = Map.from(prod.warehouseStocks);
-        final double currentStock = updatedWarehouseStocks[order.rawMaterialWarehouseId] ?? 0.0;
-        updatedWarehouseStocks[order.rawMaterialWarehouseId] = currentStock - wastage.quantity;
+        final Map<String, double> updatedWarehouseStocks = Map.from(
+          prod.warehouseStocks,
+        );
+        final double currentStock =
+            updatedWarehouseStocks[order.rawMaterialWarehouseId] ?? 0.0;
+        updatedWarehouseStocks[order.rawMaterialWarehouseId] =
+            currentStock - wastage.quantity;
 
         final updatedProd = prod.copyWith(
           currentStock: prod.currentStock - wastage.quantity,
@@ -1818,14 +2165,20 @@ class BillingNotifier extends StateNotifier<BillingState> {
       }
     }
 
-    final double totalProductionCost = totalRawMaterialCost + laborCost + overheadCost - scrapValueComputed;
+    final double totalProductionCost =
+        totalRawMaterialCost + laborCost + overheadCost - scrapValueComputed;
     final double costPerUnit = totalProductionCost / order.quantity;
 
-    final finishedIdx = updatedProducts.indexWhere((p) => p.id == order.finishedProductId);
+    final finishedIdx = updatedProducts.indexWhere(
+      (p) => p.id == order.finishedProductId,
+    );
     if (finishedIdx != -1) {
       final prod = updatedProducts[finishedIdx];
-      final Map<String, double> updatedWarehouseStocks = Map.from(prod.warehouseStocks);
-      final double currentStock = updatedWarehouseStocks[order.warehouseId] ?? 0.0;
+      final Map<String, double> updatedWarehouseStocks = Map.from(
+        prod.warehouseStocks,
+      );
+      final double currentStock =
+          updatedWarehouseStocks[order.warehouseId] ?? 0.0;
       updatedWarehouseStocks[order.warehouseId] = currentStock + order.quantity;
 
       final updatedProd = prod.copyWith(
@@ -1924,7 +2277,9 @@ class BillingNotifier extends StateNotifier<BillingState> {
     );
 
     state = state.copyWith(
-      productionOrders: state.productionOrders.map((o) => o.id == orderId ? updatedOrder : o).toList(),
+      productionOrders: state.productionOrders
+          .map((o) => o.id == orderId ? updatedOrder : o)
+          .toList(),
       products: updatedProducts,
       stockMovements: newMovements,
     );
@@ -1934,13 +2289,20 @@ class BillingNotifier extends StateNotifier<BillingState> {
     final notif = NotificationModel(
       id: 'not_comp_${DateTime.now().millisecondsSinceEpoch}',
       title: 'Production Completed',
-      description: 'Production Order ${order.productionNumber} completed successfully. Finished goods updated.',
+      description:
+          'Production Order ${order.productionNumber} completed successfully. Finished goods updated.',
       timestamp: DateTime.now(),
       isRead: false,
     );
     state = state.copyWith(notifications: [...state.notifications, notif]);
 
-    _writeAuditLog('Complete Production', 'ProductionOrder', orderId, 'Status: IN_PROGRESS', 'Status: COMPLETED');
+    _writeAuditLog(
+      'Complete Production',
+      'ProductionOrder',
+      orderId,
+      'Status: IN_PROGRESS',
+      'Status: COMPLETED',
+    );
   }
 
   Future<void> cancelProduction(String orderId) async {
@@ -1956,9 +2318,13 @@ class BillingNotifier extends StateNotifier<BillingState> {
         final pIdx = updatedProducts.indexWhere((p) => p.id == item.productId);
         if (pIdx != -1) {
           final prod = updatedProducts[pIdx];
-          final Map<String, double> updatedWarehouseStocks = Map.from(prod.warehouseStocks);
-          final double currentStock = updatedWarehouseStocks[order.rawMaterialWarehouseId] ?? 0.0;
-          updatedWarehouseStocks[order.rawMaterialWarehouseId] = currentStock + item.quantityConsumed;
+          final Map<String, double> updatedWarehouseStocks = Map.from(
+            prod.warehouseStocks,
+          );
+          final double currentStock =
+              updatedWarehouseStocks[order.rawMaterialWarehouseId] ?? 0.0;
+          updatedWarehouseStocks[order.rawMaterialWarehouseId] =
+              currentStock + item.quantityConsumed;
           updatedProducts[pIdx] = prod.copyWith(
             currentStock: prod.currentStock + item.quantityConsumed,
             warehouseStocks: updatedWarehouseStocks,
@@ -1978,12 +2344,18 @@ class BillingNotifier extends StateNotifier<BillingState> {
         }
       }
 
-      final finishedIdx = updatedProducts.indexWhere((p) => p.id == order.finishedProductId);
+      final finishedIdx = updatedProducts.indexWhere(
+        (p) => p.id == order.finishedProductId,
+      );
       if (finishedIdx != -1) {
         final prod = updatedProducts[finishedIdx];
-        final Map<String, double> updatedWarehouseStocks = Map.from(prod.warehouseStocks);
-        final double currentStock = updatedWarehouseStocks[order.warehouseId] ?? 0.0;
-        updatedWarehouseStocks[order.warehouseId] = currentStock - order.quantity;
+        final Map<String, double> updatedWarehouseStocks = Map.from(
+          prod.warehouseStocks,
+        );
+        final double currentStock =
+            updatedWarehouseStocks[order.warehouseId] ?? 0.0;
+        updatedWarehouseStocks[order.warehouseId] =
+            currentStock - order.quantity;
         updatedProducts[finishedIdx] = prod.copyWith(
           currentStock: prod.currentStock - order.quantity,
           warehouseStocks: updatedWarehouseStocks,
@@ -2012,9 +2384,17 @@ class BillingNotifier extends StateNotifier<BillingState> {
 
     final updated = order.copyWith(status: ProductionStatus.cancelled);
     state = state.copyWith(
-      productionOrders: state.productionOrders.map((o) => o.id == orderId ? updated : o).toList(),
+      productionOrders: state.productionOrders
+          .map((o) => o.id == orderId ? updated : o)
+          .toList(),
     );
-    _writeAuditLog('Cancel Production', 'ProductionOrder', orderId, 'Status: ${order.status.displayName}', 'Status: CANCELLED');
+    _writeAuditLog(
+      'Cancel Production',
+      'ProductionOrder',
+      orderId,
+      'Status: ${order.status.displayName}',
+      'Status: CANCELLED',
+    );
   }
 
   Future<void> addJobWorkOrder(JobWorkOrder order) async {
@@ -2023,7 +2403,9 @@ class BillingNotifier extends StateNotifier<BillingState> {
     final pIdx = updatedProducts.indexWhere((p) => p.id == order.rawMaterialId);
     if (pIdx != -1) {
       final prod = updatedProducts[pIdx];
-      final Map<String, double> updatedWarehouseStocks = Map.from(prod.warehouseStocks);
+      final Map<String, double> updatedWarehouseStocks = Map.from(
+        prod.warehouseStocks,
+      );
       final double currentStock = updatedWarehouseStocks['main'] ?? 0.0;
       updatedWarehouseStocks['main'] = currentStock - order.quantitySent;
       updatedProducts[pIdx] = prod.copyWith(
@@ -2053,26 +2435,41 @@ class BillingNotifier extends StateNotifier<BillingState> {
     final notif = NotificationModel(
       id: 'not_jw_${DateTime.now().millisecondsSinceEpoch}',
       title: 'Job Work Sent',
-      description: 'Job Work sent to ${order.jobWorkerName}: ${order.quantitySent} units of ${order.rawMaterialName}.',
+      description:
+          'Job Work sent to ${order.jobWorkerName}: ${order.quantitySent} units of ${order.rawMaterialName}.',
       timestamp: DateTime.now(),
       isRead: false,
     );
     state = state.copyWith(notifications: [...state.notifications, notif]);
 
-    _writeAuditLog('Create Job Work', 'JobWorkOrder', order.id, '', 'Status: SENT');
+    _writeAuditLog(
+      'Create Job Work',
+      'JobWorkOrder',
+      order.id,
+      '',
+      'Status: SENT',
+    );
   }
 
-  Future<void> receiveJobWork(String orderId, double receivedQty, double scrapQty) async {
+  Future<void> receiveJobWork(
+    String orderId,
+    double receivedQty,
+    double scrapQty,
+  ) async {
     final index = state.jobWorkOrders.indexWhere((o) => o.id == orderId);
     if (index == -1) return;
     final order = state.jobWorkOrders[index];
 
     final List<Product> updatedProducts = List.from(state.products);
     final List<StockMovement> newMovements = List.from(state.stockMovements);
-    final pIdx = updatedProducts.indexWhere((p) => p.id == order.finishedProductId);
+    final pIdx = updatedProducts.indexWhere(
+      (p) => p.id == order.finishedProductId,
+    );
     if (pIdx != -1) {
       final prod = updatedProducts[pIdx];
-      final Map<String, double> updatedWarehouseStocks = Map.from(prod.warehouseStocks);
+      final Map<String, double> updatedWarehouseStocks = Map.from(
+        prod.warehouseStocks,
+      );
       final double currentStock = updatedWarehouseStocks['main'] ?? 0.0;
       updatedWarehouseStocks['main'] = currentStock + receivedQty;
       updatedProducts[pIdx] = prod.copyWith(
@@ -2109,17 +2506,31 @@ class BillingNotifier extends StateNotifier<BillingState> {
     );
 
     state = state.copyWith(
-      jobWorkOrders: state.jobWorkOrders.map((o) => o.id == orderId ? updated : o).toList(),
+      jobWorkOrders: state.jobWorkOrders
+          .map((o) => o.id == orderId ? updated : o)
+          .toList(),
       products: updatedProducts,
       stockMovements: newMovements,
     );
 
-    _writeAuditLog('Receive Job Work', 'JobWorkOrder', orderId, 'Status: SENT', 'Status: ${newStatus.displayName}');
+    _writeAuditLog(
+      'Receive Job Work',
+      'JobWorkOrder',
+      orderId,
+      'Status: SENT',
+      'Status: ${newStatus.displayName}',
+    );
   }
 
   // --- Phase 2: Operations Support Methods ---
-  
-  void _writeAuditLog(String action, String entity, String entityId, String prev, String next) {
+
+  void _writeAuditLog(
+    String action,
+    String entity,
+    String entityId,
+    String prev,
+    String next,
+  ) {
     String user = 'system@taxbunny.com';
     try {
       final biz = _ref.read(businessProvider);
@@ -2145,20 +2556,40 @@ class BillingNotifier extends StateNotifier<BillingState> {
 
   Future<void> addWarehouse(Warehouse w) async {
     state = state.copyWith(warehouses: [...state.warehouses, w]);
-    _writeAuditLog('Create Warehouse', 'Warehouse', w.id, '', 'Name: ${w.name}');
+    _writeAuditLog(
+      'Create Warehouse',
+      'Warehouse',
+      w.id,
+      '',
+      'Name: ${w.name}',
+    );
   }
 
   Future<void> updateWarehouse(Warehouse w) async {
     final oldW = state.warehouses.firstWhere((item) => item.id == w.id);
     state = state.copyWith(
-      warehouses: state.warehouses.map((item) => item.id == w.id ? w : item).toList(),
+      warehouses: state.warehouses
+          .map((item) => item.id == w.id ? w : item)
+          .toList(),
     );
-    _writeAuditLog('Update Warehouse', 'Warehouse', w.id, 'Name: ${oldW.name}', 'Name: ${w.name}');
+    _writeAuditLog(
+      'Update Warehouse',
+      'Warehouse',
+      w.id,
+      'Name: ${oldW.name}',
+      'Name: ${w.name}',
+    );
   }
 
   Future<void> transferStock(StockTransfer st) async {
     state = state.copyWith(stockTransfers: [...state.stockTransfers, st]);
-    _writeAuditLog('Initiate Stock Transfer', 'StockTransfer', st.id, '', 'Status: ${st.status.displayName}');
+    _writeAuditLog(
+      'Initiate Stock Transfer',
+      'StockTransfer',
+      st.id,
+      '',
+      'Status: ${st.status.displayName}',
+    );
     if (st.status == StockTransferStatus.confirmed) {
       await _processStockTransferConfirmation(st);
     }
@@ -2171,9 +2602,17 @@ class BillingNotifier extends StateNotifier<BillingState> {
     if (st.status != StockTransferStatus.draft) return;
     final confirmedSt = st.copyWith(status: StockTransferStatus.confirmed);
     state = state.copyWith(
-      stockTransfers: state.stockTransfers.map((item) => item.id == id ? confirmedSt : item).toList(),
+      stockTransfers: state.stockTransfers
+          .map((item) => item.id == id ? confirmedSt : item)
+          .toList(),
     );
-    _writeAuditLog('Confirm Stock Transfer', 'StockTransfer', id, 'Status: DRAFT', 'Status: CONFIRMED');
+    _writeAuditLog(
+      'Confirm Stock Transfer',
+      'StockTransfer',
+      id,
+      'Status: DRAFT',
+      'Status: CONFIRMED',
+    );
     await _processStockTransferConfirmation(confirmedSt);
   }
 
@@ -2182,23 +2621,33 @@ class BillingNotifier extends StateNotifier<BillingState> {
     final List<StockMovement> newMovements = List.from(state.stockMovements);
 
     for (var item in st.items) {
-      final prodIndex = updatedProducts.indexWhere((p) => p.id == item.productId);
+      final prodIndex = updatedProducts.indexWhere(
+        (p) => p.id == item.productId,
+      );
       if (prodIndex != -1) {
         final prod = updatedProducts[prodIndex];
-        
-        // Decrement from source
-        final Map<String, double> updatedSourceStocks = Map.from(prod.warehouseStocks);
-        final double existingSourceStock = updatedSourceStocks[st.sourceWarehouseId] ?? (st.sourceWarehouseId == 'main' ? prod.currentStock : 0.0);
-        updatedSourceStocks[st.sourceWarehouseId] = existingSourceStock - item.quantity;
-        
-        // Increment in destination
-        final Map<String, double> updatedDestStocks = Map.from(updatedSourceStocks);
-        final double existingDestStock = updatedDestStocks[st.destinationWarehouseId] ?? (st.destinationWarehouseId == 'main' ? prod.currentStock : 0.0);
-        updatedDestStocks[st.destinationWarehouseId] = existingDestStock + item.quantity;
 
-        final updatedProd = prod.copyWith(
-          warehouseStocks: updatedDestStocks,
+        // Decrement from source
+        final Map<String, double> updatedSourceStocks = Map.from(
+          prod.warehouseStocks,
         );
+        final double existingSourceStock =
+            updatedSourceStocks[st.sourceWarehouseId] ??
+            (st.sourceWarehouseId == 'main' ? prod.currentStock : 0.0);
+        updatedSourceStocks[st.sourceWarehouseId] =
+            existingSourceStock - item.quantity;
+
+        // Increment in destination
+        final Map<String, double> updatedDestStocks = Map.from(
+          updatedSourceStocks,
+        );
+        final double existingDestStock =
+            updatedDestStocks[st.destinationWarehouseId] ??
+            (st.destinationWarehouseId == 'main' ? prod.currentStock : 0.0);
+        updatedDestStocks[st.destinationWarehouseId] =
+            existingDestStock + item.quantity;
+
+        final updatedProd = prod.copyWith(warehouseStocks: updatedDestStocks);
         updatedProducts[prodIndex] = updatedProd;
 
         // Log Stock Movements for both warehouses
@@ -2235,21 +2684,41 @@ class BillingNotifier extends StateNotifier<BillingState> {
   }
 
   Future<void> addRecurringSchedule(RecurringSchedule rs) async {
-    state = state.copyWith(recurringSchedules: [...state.recurringSchedules, rs]);
-    _writeAuditLog('Create Recurring Schedule', 'RecurringSchedule', rs.id, '', 'Status: ${rs.status.displayName}');
+    state = state.copyWith(
+      recurringSchedules: [...state.recurringSchedules, rs],
+    );
+    _writeAuditLog(
+      'Create Recurring Schedule',
+      'RecurringSchedule',
+      rs.id,
+      '',
+      'Status: ${rs.status.displayName}',
+    );
   }
 
   Future<void> updateRecurringSchedule(RecurringSchedule rs) async {
-    final oldRs = state.recurringSchedules.firstWhere((item) => item.id == rs.id);
-    state = state.copyWith(
-      recurringSchedules: state.recurringSchedules.map((item) => item.id == rs.id ? rs : item).toList(),
+    final oldRs = state.recurringSchedules.firstWhere(
+      (item) => item.id == rs.id,
     );
-    _writeAuditLog('Update Recurring Schedule', 'RecurringSchedule', rs.id, 'Status: ${oldRs.status.displayName}', 'Status: ${rs.status.displayName}');
+    state = state.copyWith(
+      recurringSchedules: state.recurringSchedules
+          .map((item) => item.id == rs.id ? rs : item)
+          .toList(),
+    );
+    _writeAuditLog(
+      'Update Recurring Schedule',
+      'RecurringSchedule',
+      rs.id,
+      'Status: ${oldRs.status.displayName}',
+      'Status: ${rs.status.displayName}',
+    );
   }
 
   Future<void> triggerRecurringBillingRun() async {
     final now = DateTime.now();
-    final List<RecurringSchedule> updatedSchedules = List.from(state.recurringSchedules);
+    final List<RecurringSchedule> updatedSchedules = List.from(
+      state.recurringSchedules,
+    );
     final List<Invoice> generatedInvoices = List.from(state.invoices);
     int generatedCount = 0;
 
@@ -2257,17 +2726,29 @@ class BillingNotifier extends StateNotifier<BillingState> {
       final schedule = updatedSchedules[i];
       if (schedule.status == RecurringScheduleStatus.active &&
           schedule.nextBillingDate.isBefore(now)) {
-        
         // Generate Invoice
-        final double taxable = schedule.items.fold(0.0, (sum, item) => sum + item.taxableValue);
-        final double cgst = schedule.items.fold(0.0, (sum, item) => sum + item.cgst);
-        final double sgst = schedule.items.fold(0.0, (sum, item) => sum + item.sgst);
-        final double igst = schedule.items.fold(0.0, (sum, item) => sum + item.igst);
+        final double taxable = schedule.items.fold(
+          0.0,
+          (sum, item) => sum + item.taxableValue,
+        );
+        final double cgst = schedule.items.fold(
+          0.0,
+          (sum, item) => sum + item.cgst,
+        );
+        final double sgst = schedule.items.fold(
+          0.0,
+          (sum, item) => sum + item.sgst,
+        );
+        final double igst = schedule.items.fold(
+          0.0,
+          (sum, item) => sum + item.igst,
+        );
         final double grand = taxable + cgst + sgst + igst;
 
         final invoice = Invoice(
           id: 'inv_rec_${schedule.id}_${DateTime.now().millisecondsSinceEpoch}',
-          invoiceNumber: 'INV-REC-${DateTime.now().year}-${DateTime.now().month}-${DateTime.now().day}-${generatedInvoices.length}',
+          invoiceNumber:
+              'INV-REC-${DateTime.now().year}-${DateTime.now().month}-${DateTime.now().day}-${generatedInvoices.length}',
           invoiceDate: DateTime.now(),
           customerId: schedule.customerId,
           customerName: schedule.customerName,
@@ -2285,7 +2766,8 @@ class BillingNotifier extends StateNotifier<BillingState> {
           balanceAmount: grand,
           paymentMode: 'Bank Transfer',
           status: InvoiceStatus.confirmed, // Auto confirmed
-          notes: 'Auto generated invoice from recurring schedule: ${schedule.notes}',
+          notes:
+              'Auto generated invoice from recurring schedule: ${schedule.notes}',
           termsConditions: 'Auto generated standard terms.',
           warehouseId: 'main',
         );
@@ -2309,7 +2791,9 @@ class BillingNotifier extends StateNotifier<BillingState> {
             nextDate = schedule.nextBillingDate.add(const Duration(days: 365));
             break;
           case RecurringFrequency.custom:
-            nextDate = schedule.nextBillingDate.add(Duration(days: schedule.customFrequencyDays));
+            nextDate = schedule.nextBillingDate.add(
+              Duration(days: schedule.customFrequencyDays),
+            );
             break;
         }
 
@@ -2331,14 +2815,22 @@ class BillingNotifier extends StateNotifier<BillingState> {
         invoices: generatedInvoices,
         recurringSchedules: updatedSchedules,
       );
-      _writeAuditLog('Recurring Billing Run', 'Scheduler', 'System', 'Schedules Run', '$generatedCount invoices generated');
+      _writeAuditLog(
+        'Recurring Billing Run',
+        'Scheduler',
+        'System',
+        'Schedules Run',
+        '$generatedCount invoices generated',
+      );
     }
   }
 
   Future<void> openPOSSession(double openingCash) async {
     POSSession session;
     try {
-      session = await _ref.read(posApiServiceProvider).openSession(openingCash: openingCash);
+      session = await _ref
+          .read(posApiServiceProvider)
+          .openSession(openingCash: openingCash);
     } catch (_) {
       session = POSSession(
         id: 'pos_session_${DateTime.now().millisecondsSinceEpoch}',
@@ -2349,7 +2841,13 @@ class BillingNotifier extends StateNotifier<BillingState> {
       );
     }
     state = state.copyWith(activePOSSession: () => session);
-    _writeAuditLog('Open POS Register', 'POSSession', session.id, '', 'Opening Cash: ₹$openingCash');
+    _writeAuditLog(
+      'Open POS Register',
+      'POSSession',
+      session.id,
+      '',
+      'Opening Cash: ₹$openingCash',
+    );
   }
 
   Future<void> closePOSSession(double closingCash) async {
@@ -2360,10 +2858,18 @@ class BillingNotifier extends StateNotifier<BillingState> {
       status: POSSessionStatus.closed,
     );
     try {
-      await _ref.read(posApiServiceProvider).closeSession(closingCash: closingCash);
+      await _ref
+          .read(posApiServiceProvider)
+          .closeSession(closingCash: closingCash);
     } catch (_) {}
     state = state.copyWith(activePOSSession: () => null);
-    _writeAuditLog('Close POS Register', 'POSSession', closed.id, 'Status: OPEN', 'Status: CLOSED, Closing Cash: ₹$closingCash');
+    _writeAuditLog(
+      'Close POS Register',
+      'POSSession',
+      closed.id,
+      'Status: OPEN',
+      'Status: CLOSED, Closing Cash: ₹$closingCash',
+    );
   }
 
   Future<void> holdPOSCart(Invoice invoice) async {
@@ -2381,25 +2887,35 @@ class BillingNotifier extends StateNotifier<BillingState> {
         'grandTotal': invoice.grandTotal,
         'balanceAmount': invoice.balanceAmount,
         'paymentMode': invoice.paymentMode,
-        'items': invoice.items.map((i) => {
-          'productId': i.productId,
-          'name': i.name,
-          'hsnSac': i.hsnSac,
-          'quantity': i.quantity,
-          'unit': i.unit,
-          'rate': i.rate,
-          'taxableValue': i.taxableValue,
-          'gstRate': i.gstRate,
-          'cgst': i.cgst,
-          'sgst': i.sgst,
-          'igst': i.igst,
-          'cess': i.cess,
-        }).toList(),
+        'items': invoice.items
+            .map(
+              (i) => {
+                'productId': i.productId,
+                'name': i.name,
+                'hsnSac': i.hsnSac,
+                'quantity': i.quantity,
+                'unit': i.unit,
+                'rate': i.rate,
+                'taxableValue': i.taxableValue,
+                'gstRate': i.gstRate,
+                'cgst': i.cgst,
+                'sgst': i.sgst,
+                'igst': i.igst,
+                'cess': i.cess,
+              },
+            )
+            .toList(),
       };
       await _ref.read(posApiServiceProvider).holdCart(payload);
     } catch (_) {}
     state = state.copyWith(heldPOSCarts: [...state.heldPOSCarts, invoice]);
-    _writeAuditLog('Hold POS Cart', 'POSCart', invoice.id, '', 'Hold Invoice: ${invoice.invoiceNumber}');
+    _writeAuditLog(
+      'Hold POS Cart',
+      'POSCart',
+      invoice.id,
+      '',
+      'Hold Invoice: ${invoice.invoiceNumber}',
+    );
   }
 
   Future<void> resumePOSCart(String cartId) async {
@@ -2407,7 +2923,9 @@ class BillingNotifier extends StateNotifier<BillingState> {
       await _ref.read(posApiServiceProvider).resumeCart(cartId);
     } catch (_) {}
     state = state.copyWith(
-      heldPOSCarts: state.heldPOSCarts.where((inv) => inv.id != cartId).toList(),
+      heldPOSCarts: state.heldPOSCarts
+          .where((inv) => inv.id != cartId)
+          .toList(),
     );
     _writeAuditLog('Resume POS Cart', 'POSCart', cartId, '', 'Resumed cart');
   }
@@ -2417,22 +2935,46 @@ class BillingNotifier extends StateNotifier<BillingState> {
       await _ref.read(posApiServiceProvider).deleteHeldCart(cartId);
     } catch (_) {}
     state = state.copyWith(
-      heldPOSCarts: state.heldPOSCarts.where((inv) => inv.id != cartId).toList(),
+      heldPOSCarts: state.heldPOSCarts
+          .where((inv) => inv.id != cartId)
+          .toList(),
     );
-    _writeAuditLog('Cancel Held POS Cart', 'POSCart', cartId, '', 'Cancelled cart');
+    _writeAuditLog(
+      'Cancel Held POS Cart',
+      'POSCart',
+      cartId,
+      '',
+      'Cancelled cart',
+    );
   }
 
   Future<void> updateInvoiceBranding(InvoiceBrandingConfig config) async {
     state = state.copyWith(invoiceBrandingConfig: config);
-    _writeAuditLog('Update Invoice Branding', 'Branding', 'Settings', 'Old configuration', 'Updated branding settings');
+    _writeAuditLog(
+      'Update Invoice Branding',
+      'Branding',
+      'Settings',
+      'Old configuration',
+      'Updated branding settings',
+    );
   }
 
   Future<void> inviteUser(Map<String, dynamic> user) async {
     state = state.copyWith(customUsers: [...state.customUsers, user]);
-    _writeAuditLog('Invite User', 'UserManagement', user['email'] ?? 'unknown', '', 'Role: ${user['role']}');
+    _writeAuditLog(
+      'Invite User',
+      'UserManagement',
+      user['email'] ?? 'unknown',
+      '',
+      'Role: ${user['role']}',
+    );
   }
 
-  Future<void> updateUserPermissions(String email, String role, Map<String, bool> permissions) async {
+  Future<void> updateUserPermissions(
+    String email,
+    String role,
+    Map<String, bool> permissions,
+  ) async {
     final updated = state.customUsers.map((user) {
       if (user['email'] == email) {
         return {
@@ -2445,33 +2987,248 @@ class BillingNotifier extends StateNotifier<BillingState> {
       return user;
     }).toList();
     state = state.copyWith(customUsers: updated);
-    _writeAuditLog('Update User Permissions', 'UserManagement', email, '', 'Updated role/permissions');
+    _writeAuditLog(
+      'Update User Permissions',
+      'UserManagement',
+      email,
+      '',
+      'Updated role/permissions',
+    );
   }
 }
 
-final billingRepositoryProvider = StateNotifierProvider<BillingNotifier, BillingState>((ref) {
-  return BillingNotifier(ref);
-});
+final billingRepositoryProvider =
+    StateNotifierProvider<BillingNotifier, BillingState>((ref) {
+      return BillingNotifier(ref);
+    });
 
 List<Account> _getDefaultAccounts(String bizId) {
   final now = DateTime.now();
   return [
-    Account(id: 'acc_cash', businessId: bizId, code: '1000', name: 'Cash Account', type: AccountType.asset, groupName: 'Current Assets', isSystemAccount: true, isActive: true, openingDebit: 15000.0, openingCredit: 0.0, currentBalance: 15000.0, createdAt: now),
-    Account(id: 'acc_bank', businessId: bizId, code: '1001', name: 'Bank Account (Bunny Central)', type: AccountType.asset, groupName: 'Bank Accounts', isSystemAccount: true, isActive: true, openingDebit: 250000.0, openingCredit: 0.0, currentBalance: 250000.0, createdAt: now),
-    Account(id: 'acc_ar', businessId: bizId, code: '1100', name: 'Accounts Receivable', type: AccountType.asset, groupName: 'Current Assets', isSystemAccount: true, isActive: true, openingDebit: 32500.0, openingCredit: 0.0, currentBalance: 32500.0, createdAt: now),
-    Account(id: 'acc_ap', businessId: bizId, code: '2100', name: 'Accounts Payable', type: AccountType.liability, groupName: 'Current Liabilities', isSystemAccount: true, isActive: true, openingDebit: 0.0, openingCredit: 65800.0, currentBalance: -65800.0, createdAt: now),
-    Account(id: 'acc_sales', businessId: bizId, code: '4000', name: 'Sales Revenue', type: AccountType.income, groupName: 'Revenue', isSystemAccount: true, isActive: true, openingDebit: 0.0, openingCredit: 0.0, currentBalance: 0.0, createdAt: now),
-    Account(id: 'acc_purchases', businessId: bizId, code: '5000', name: 'Direct Purchases', type: AccountType.expense, groupName: 'Cost of Goods Sold', isSystemAccount: true, isActive: true, openingDebit: 0.0, openingCredit: 0.0, currentBalance: 0.0, createdAt: now),
-    Account(id: 'acc_input_gst', businessId: bizId, code: '1200', name: 'GST Input Tax Credit', type: AccountType.asset, groupName: 'Current Assets', isSystemAccount: true, isActive: true, openingDebit: 5000.0, openingCredit: 0.0, currentBalance: 5000.0, createdAt: now),
-    Account(id: 'acc_output_gst', businessId: bizId, code: '2200', name: 'GST Output Tax Liability', type: AccountType.liability, groupName: 'Current Liabilities', isSystemAccount: true, isActive: true, openingDebit: 0.0, openingCredit: 3500.0, currentBalance: -3500.0, createdAt: now),
-    Account(id: 'acc_raw_stock', businessId: bizId, code: '1300', name: 'Raw Material Stock', type: AccountType.asset, groupName: 'Inventory', isSystemAccount: true, isActive: true, openingDebit: 45000.0, openingCredit: 0.0, currentBalance: 45000.0, createdAt: now),
-    Account(id: 'acc_finished_stock', businessId: bizId, code: '1350', name: 'Finished Goods Stock', type: AccountType.asset, groupName: 'Inventory', isSystemAccount: true, isActive: true, openingDebit: 80000.0, openingCredit: 0.0, currentBalance: 80000.0, createdAt: now),
-    Account(id: 'acc_labor', businessId: bizId, code: '5100', name: 'Production Labor Cost', type: AccountType.expense, groupName: 'Direct Expenses', isSystemAccount: true, isActive: true, openingDebit: 0.0, openingCredit: 0.0, currentBalance: 0.0, createdAt: now),
-    Account(id: 'acc_overhead', businessId: bizId, code: '5200', name: 'Production Overhead', type: AccountType.expense, groupName: 'Direct Expenses', isSystemAccount: true, isActive: true, openingDebit: 0.0, openingCredit: 0.0, currentBalance: 0.0, createdAt: now),
-    Account(id: 'acc_wastage', businessId: bizId, code: '5300', name: 'Production Wastage', type: AccountType.expense, groupName: 'Direct Expenses', isSystemAccount: true, isActive: true, openingDebit: 0.0, openingCredit: 0.0, currentBalance: 0.0, createdAt: now),
-    Account(id: 'acc_scrap', businessId: bizId, code: '4200', name: 'Scrap Sales', type: AccountType.income, groupName: 'Other Income', isSystemAccount: true, isActive: true, openingDebit: 0.0, openingCredit: 0.0, currentBalance: 0.0, createdAt: now),
-    Account(id: 'acc_capital', businessId: bizId, code: '3000', name: 'Capital Account', type: AccountType.equity, groupName: 'Capital', isSystemAccount: true, isActive: true, openingDebit: 0.0, openingCredit: 300000.0, currentBalance: -300000.0, createdAt: now),
-    Account(id: 'acc_retained_earnings', businessId: bizId, code: '3100', name: 'Retained Earnings', type: AccountType.equity, groupName: 'Capital', isSystemAccount: true, isActive: true, openingDebit: 0.0, openingCredit: 16700.0, currentBalance: -16700.0, createdAt: now),
+    Account(
+      id: 'acc_cash',
+      businessId: bizId,
+      code: '1000',
+      name: 'Cash Account',
+      type: AccountType.asset,
+      groupName: 'Current Assets',
+      isSystemAccount: true,
+      isActive: true,
+      openingDebit: 15000.0,
+      openingCredit: 0.0,
+      currentBalance: 15000.0,
+      createdAt: now,
+    ),
+    Account(
+      id: 'acc_bank',
+      businessId: bizId,
+      code: '1001',
+      name: 'Bank Account (Bunny Central)',
+      type: AccountType.asset,
+      groupName: 'Bank Accounts',
+      isSystemAccount: true,
+      isActive: true,
+      openingDebit: 250000.0,
+      openingCredit: 0.0,
+      currentBalance: 250000.0,
+      createdAt: now,
+    ),
+    Account(
+      id: 'acc_ar',
+      businessId: bizId,
+      code: '1100',
+      name: 'Accounts Receivable',
+      type: AccountType.asset,
+      groupName: 'Current Assets',
+      isSystemAccount: true,
+      isActive: true,
+      openingDebit: 32500.0,
+      openingCredit: 0.0,
+      currentBalance: 32500.0,
+      createdAt: now,
+    ),
+    Account(
+      id: 'acc_ap',
+      businessId: bizId,
+      code: '2100',
+      name: 'Accounts Payable',
+      type: AccountType.liability,
+      groupName: 'Current Liabilities',
+      isSystemAccount: true,
+      isActive: true,
+      openingDebit: 0.0,
+      openingCredit: 65800.0,
+      currentBalance: -65800.0,
+      createdAt: now,
+    ),
+    Account(
+      id: 'acc_sales',
+      businessId: bizId,
+      code: '4000',
+      name: 'Sales Revenue',
+      type: AccountType.income,
+      groupName: 'Revenue',
+      isSystemAccount: true,
+      isActive: true,
+      openingDebit: 0.0,
+      openingCredit: 0.0,
+      currentBalance: 0.0,
+      createdAt: now,
+    ),
+    Account(
+      id: 'acc_purchases',
+      businessId: bizId,
+      code: '5000',
+      name: 'Direct Purchases',
+      type: AccountType.expense,
+      groupName: 'Cost of Goods Sold',
+      isSystemAccount: true,
+      isActive: true,
+      openingDebit: 0.0,
+      openingCredit: 0.0,
+      currentBalance: 0.0,
+      createdAt: now,
+    ),
+    Account(
+      id: 'acc_input_gst',
+      businessId: bizId,
+      code: '1200',
+      name: 'GST Input Tax Credit',
+      type: AccountType.asset,
+      groupName: 'Current Assets',
+      isSystemAccount: true,
+      isActive: true,
+      openingDebit: 5000.0,
+      openingCredit: 0.0,
+      currentBalance: 5000.0,
+      createdAt: now,
+    ),
+    Account(
+      id: 'acc_output_gst',
+      businessId: bizId,
+      code: '2200',
+      name: 'GST Output Tax Liability',
+      type: AccountType.liability,
+      groupName: 'Current Liabilities',
+      isSystemAccount: true,
+      isActive: true,
+      openingDebit: 0.0,
+      openingCredit: 3500.0,
+      currentBalance: -3500.0,
+      createdAt: now,
+    ),
+    Account(
+      id: 'acc_raw_stock',
+      businessId: bizId,
+      code: '1300',
+      name: 'Raw Material Stock',
+      type: AccountType.asset,
+      groupName: 'Inventory',
+      isSystemAccount: true,
+      isActive: true,
+      openingDebit: 45000.0,
+      openingCredit: 0.0,
+      currentBalance: 45000.0,
+      createdAt: now,
+    ),
+    Account(
+      id: 'acc_finished_stock',
+      businessId: bizId,
+      code: '1350',
+      name: 'Finished Goods Stock',
+      type: AccountType.asset,
+      groupName: 'Inventory',
+      isSystemAccount: true,
+      isActive: true,
+      openingDebit: 80000.0,
+      openingCredit: 0.0,
+      currentBalance: 80000.0,
+      createdAt: now,
+    ),
+    Account(
+      id: 'acc_labor',
+      businessId: bizId,
+      code: '5100',
+      name: 'Production Labor Cost',
+      type: AccountType.expense,
+      groupName: 'Direct Expenses',
+      isSystemAccount: true,
+      isActive: true,
+      openingDebit: 0.0,
+      openingCredit: 0.0,
+      currentBalance: 0.0,
+      createdAt: now,
+    ),
+    Account(
+      id: 'acc_overhead',
+      businessId: bizId,
+      code: '5200',
+      name: 'Production Overhead',
+      type: AccountType.expense,
+      groupName: 'Direct Expenses',
+      isSystemAccount: true,
+      isActive: true,
+      openingDebit: 0.0,
+      openingCredit: 0.0,
+      currentBalance: 0.0,
+      createdAt: now,
+    ),
+    Account(
+      id: 'acc_wastage',
+      businessId: bizId,
+      code: '5300',
+      name: 'Production Wastage',
+      type: AccountType.expense,
+      groupName: 'Direct Expenses',
+      isSystemAccount: true,
+      isActive: true,
+      openingDebit: 0.0,
+      openingCredit: 0.0,
+      currentBalance: 0.0,
+      createdAt: now,
+    ),
+    Account(
+      id: 'acc_scrap',
+      businessId: bizId,
+      code: '4200',
+      name: 'Scrap Sales',
+      type: AccountType.income,
+      groupName: 'Other Income',
+      isSystemAccount: true,
+      isActive: true,
+      openingDebit: 0.0,
+      openingCredit: 0.0,
+      currentBalance: 0.0,
+      createdAt: now,
+    ),
+    Account(
+      id: 'acc_capital',
+      businessId: bizId,
+      code: '3000',
+      name: 'Capital Account',
+      type: AccountType.equity,
+      groupName: 'Capital',
+      isSystemAccount: true,
+      isActive: true,
+      openingDebit: 0.0,
+      openingCredit: 300000.0,
+      currentBalance: -300000.0,
+      createdAt: now,
+    ),
+    Account(
+      id: 'acc_retained_earnings',
+      businessId: bizId,
+      code: '3100',
+      name: 'Retained Earnings',
+      type: AccountType.equity,
+      groupName: 'Capital',
+      isSystemAccount: true,
+      isActive: true,
+      openingDebit: 0.0,
+      openingCredit: 16700.0,
+      currentBalance: -16700.0,
+      createdAt: now,
+    ),
   ];
 }
 
@@ -2528,8 +3285,20 @@ List<BOM> _getDefaultBOMs(String bizId) {
       finishedProductName: 'Premium Farm Bread (400g)',
       version: 'v1.0',
       items: [
-        BOMItem(productId: 'prod_raw_01', productName: 'Wheat Grain (Raw)', quantity: 0.5, unit: 'Kg', wastagePercentage: 2.0),
-        BOMItem(productId: 'prod_raw_02', productName: 'Baking Yeast Additives', quantity: 0.05, unit: 'Kg', wastagePercentage: 5.0),
+        BOMItem(
+          productId: 'prod_raw_01',
+          productName: 'Wheat Grain (Raw)',
+          quantity: 0.5,
+          unit: 'Kg',
+          wastagePercentage: 2.0,
+        ),
+        BOMItem(
+          productId: 'prod_raw_02',
+          productName: 'Baking Yeast Additives',
+          quantity: 0.05,
+          unit: 'Kg',
+          wastagePercentage: 5.0,
+        ),
       ],
       notes: 'Standard recipe for farm bread.',
       isActive: true,
@@ -2542,14 +3311,16 @@ List<NotificationModel> _getDefaultNotifications() {
     NotificationModel(
       id: 'not_01',
       title: 'Subscription Renewal Warning',
-      description: 'Your trial plan expires in 2 days. Upgrade to Premium to avoid service limits.',
+      description:
+          'Your trial plan expires in 2 days. Upgrade to Premium to avoid service limits.',
       timestamp: DateTime.now().subtract(const Duration(hours: 1)),
       isRead: false,
     ),
     NotificationModel(
       id: 'not_02',
       title: 'Low Stock Alert',
-      description: 'Product "Premium Tax Booklets" has fallen below the safety stock margin of 10 items.',
+      description:
+          'Product "Premium Tax Booklets" has fallen below the safety stock margin of 10 items.',
       timestamp: DateTime.now().subtract(const Duration(hours: 4)),
       isRead: false,
     ),

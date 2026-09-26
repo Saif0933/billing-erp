@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+
+import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_spacing.dart';
 import '../../../../core/constants/app_typography.dart';
-import '../../../../core/constants/app_colors.dart';
 import '../../../../core/models/billing_models.dart';
 import '../../../../core/models/recurring_billing_models.dart';
 import '../../../../core/responsive/responsive.dart';
@@ -51,14 +52,20 @@ class _RecurringBillingPageState extends ConsumerState<RecurringBillingPage> {
 
   void _addScheduleItem() {
     if (_selectedProduct == null) {
-      AppFeedback.showSnackbar(context,
-          message: 'Please select a product!', isError: true);
+      AppFeedback.showSnackbar(
+        context,
+        message: 'Please select a product!',
+        isError: true,
+      );
       return;
     }
     final double qty = double.tryParse(_qtyController.text) ?? 0.0;
     if (qty <= 0) {
-      AppFeedback.showSnackbar(context,
-          message: 'Quantity must be positive!', isError: true);
+      AppFeedback.showSnackbar(
+        context,
+        message: 'Quantity must be positive!',
+        isError: true,
+      );
       return;
     }
 
@@ -91,13 +98,19 @@ class _RecurringBillingPageState extends ConsumerState<RecurringBillingPage> {
 
   void _submitSchedule() async {
     if (_selectedCustomer == null) {
-      AppFeedback.showSnackbar(context,
-          message: 'Please select a customer!', isError: true);
+      AppFeedback.showSnackbar(
+        context,
+        message: 'Please select a customer!',
+        isError: true,
+      );
       return;
     }
     if (_scheduleItems.isEmpty) {
-      AppFeedback.showSnackbar(context,
-          message: 'Please add items to the schedule!', isError: true);
+      AppFeedback.showSnackbar(
+        context,
+        message: 'Please add items to the schedule!',
+        isError: true,
+      );
       return;
     }
 
@@ -109,8 +122,9 @@ class _RecurringBillingPageState extends ConsumerState<RecurringBillingPage> {
       frequency: _selectedFrequency,
       startDate: DateTime.now(),
       endDate: DateTime.now().add(const Duration(days: 365)),
-      nextBillingDate: DateTime.now()
-          .subtract(const Duration(hours: 1)), // Trigger immediately for demo
+      nextBillingDate: DateTime.now().subtract(
+        const Duration(hours: 1),
+      ), // Trigger immediately for demo
       status: RecurringScheduleStatus.active,
       paymentTerms: 'Net 30',
       notes: _notesController.text,
@@ -126,8 +140,10 @@ class _RecurringBillingPageState extends ConsumerState<RecurringBillingPage> {
         _selectedCustomer = null;
         _notesController.clear();
       });
-      AppFeedback.showSnackbar(context,
-          message: 'Recurring billing contract scheduled successfully!');
+      AppFeedback.showSnackbar(
+        context,
+        message: 'Recurring billing contract scheduled successfully!',
+      );
     }
   }
 
@@ -149,10 +165,13 @@ class _RecurringBillingPageState extends ConsumerState<RecurringBillingPage> {
                 children: [
                   const Icon(Icons.lock, size: 48, color: AppColors.warning),
                   const SizedBox(height: AppSpacing.md),
-                  Text('Recurring Billing Gated',
-                      style: AppTypography.titleLarge),
+                  Text(
+                    'Recurring Billing Gated',
+                    style: AppTypography.titleLarge,
+                  ),
                   const Text(
-                      'Upgrade to Premium or Enterprise plan to configure automated recurring client invoice billing.'),
+                    'Upgrade to Premium or Enterprise plan to configure automated recurring client invoice billing.',
+                  ),
                   const SizedBox(height: AppSpacing.lg),
                   AppButton(
                     label: 'Upgrade Subscription Now',
@@ -174,7 +193,8 @@ class _RecurringBillingPageState extends ConsumerState<RecurringBillingPage> {
         color: isDark ? AppColors.surfaceDark : Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-            color: isDark ? AppColors.borderDark : Colors.grey.shade100),
+          color: isDark ? AppColors.borderDark : Colors.grey.shade100,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -185,10 +205,7 @@ class _RecurringBillingPageState extends ConsumerState<RecurringBillingPage> {
               SizedBox(width: 8),
               Text(
                 'New Billing Schedule',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 15,
-                ),
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
               ),
             ],
           ),
@@ -203,7 +220,11 @@ class _RecurringBillingPageState extends ConsumerState<RecurringBillingPage> {
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.people_outline, size: 18, color: Color(0xFF64748B)),
+                  const Icon(
+                    Icons.people_outline,
+                    size: 18,
+                    color: Color(0xFF64748B),
+                  ),
                   const SizedBox(width: 8),
                   const Expanded(
                     child: Text(
@@ -212,9 +233,14 @@ class _RecurringBillingPageState extends ConsumerState<RecurringBillingPage> {
                     ),
                   ),
                   TextButton.icon(
-                    style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
+                    style: TextButton.styleFrom(
+                      visualDensity: VisualDensity.compact,
+                    ),
                     icon: const Icon(Icons.person_add_alt_1_outlined, size: 14),
-                    label: const Text('Add Customer', style: TextStyle(fontSize: 12)),
+                    label: const Text(
+                      'Add Customer',
+                      style: TextStyle(fontSize: 12),
+                    ),
                     onPressed: () => context.push('/customers/new'),
                   ),
                 ],
@@ -265,7 +291,8 @@ class _RecurringBillingPageState extends ConsumerState<RecurringBillingPage> {
         color: isDark ? AppColors.surfaceDark : Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-            color: isDark ? AppColors.borderDark : Colors.grey.shade100),
+          color: isDark ? AppColors.borderDark : Colors.grey.shade100,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -276,10 +303,7 @@ class _RecurringBillingPageState extends ConsumerState<RecurringBillingPage> {
               SizedBox(width: 8),
               Text(
                 'Add Items to Contract',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 15,
-                ),
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
               ),
             ],
           ),
@@ -314,7 +338,9 @@ class _RecurringBillingPageState extends ConsumerState<RecurringBillingPage> {
                     backgroundColor: const Color(0xFF2E7D32),
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 14, vertical: 12),
+                      horizontal: 14,
+                      vertical: 12,
+                    ),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),
@@ -330,8 +356,11 @@ class _RecurringBillingPageState extends ConsumerState<RecurringBillingPage> {
             const SizedBox(
               height: 60,
               child: Center(
-                  child: Text('No items added to contract.',
-                      style: TextStyle(color: Colors.grey, fontSize: 13))),
+                child: Text(
+                  'No items added to contract.',
+                  style: TextStyle(color: Colors.grey, fontSize: 13),
+                ),
+              ),
             )
           else
             ListView.separated(
@@ -343,14 +372,20 @@ class _RecurringBillingPageState extends ConsumerState<RecurringBillingPage> {
                 final item = _scheduleItems[idx];
                 return ListTile(
                   contentPadding: EdgeInsets.zero,
-                  title: Text(item.name,
-                      style: const TextStyle(fontWeight: FontWeight.bold)),
+                  title: Text(
+                    item.name,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
                   subtitle: Text(
-                      '₹${item.rate.toStringAsFixed(2)} x ${item.quantity.toInt()} units',
-                      style: const TextStyle(fontSize: 12)),
+                    '₹${item.rate.toStringAsFixed(2)} x ${item.quantity.toInt()} units',
+                    style: const TextStyle(fontSize: 12),
+                  ),
                   trailing: IconButton(
-                    icon: const Icon(Icons.remove_circle_outline,
-                        color: Colors.red, size: 20),
+                    icon: const Icon(
+                      Icons.remove_circle_outline,
+                      color: Colors.red,
+                      size: 20,
+                    ),
                     onPressed: () {
                       setState(() {
                         _scheduleItems = List.from(_scheduleItems)
@@ -371,7 +406,8 @@ class _RecurringBillingPageState extends ConsumerState<RecurringBillingPage> {
         color: isDark ? AppColors.surfaceDark : Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-            color: isDark ? AppColors.borderDark : Colors.grey.shade100),
+          color: isDark ? AppColors.borderDark : Colors.grey.shade100,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -382,10 +418,7 @@ class _RecurringBillingPageState extends ConsumerState<RecurringBillingPage> {
               SizedBox(width: 8),
               Text(
                 'Active Billing Schedules Directory',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 15,
-                ),
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
               ),
             ],
           ),
@@ -396,8 +429,10 @@ class _RecurringBillingPageState extends ConsumerState<RecurringBillingPage> {
             columns: [
               TableColumnSpec<RecurringSchedule>(
                 label: 'Customer',
-                cellBuilder: (rs) => Text(rs.customerName,
-                    style: const TextStyle(fontWeight: FontWeight.bold)),
+                cellBuilder: (rs) => Text(
+                  rs.customerName,
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
               ),
               TableColumnSpec<RecurringSchedule>(
                 label: 'Cycle',
@@ -406,16 +441,18 @@ class _RecurringBillingPageState extends ConsumerState<RecurringBillingPage> {
               TableColumnSpec<RecurringSchedule>(
                 label: 'Next Run Date',
                 cellBuilder: (rs) => Text(
-                    '${rs.nextBillingDate.day}/${rs.nextBillingDate.month}/${rs.nextBillingDate.year}'),
+                  '${rs.nextBillingDate.day}/${rs.nextBillingDate.month}/${rs.nextBillingDate.year}',
+                ),
               ),
               TableColumnSpec<RecurringSchedule>(
                 label: 'Status',
                 cellBuilder: (rs) {
-                  final isActive =
-                      rs.status == RecurringScheduleStatus.active;
+                  final isActive = rs.status == RecurringScheduleStatus.active;
                   return Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: isActive
                           ? const Color(0xFFE8F5E9)
@@ -442,14 +479,17 @@ class _RecurringBillingPageState extends ConsumerState<RecurringBillingPage> {
                     IconButton(
                       icon: const Icon(Icons.pause_circle_outline, size: 20),
                       onPressed: () async {
-                        final updated =
-                            rs.copyWith(status: RecurringScheduleStatus.paused);
+                        final updated = rs.copyWith(
+                          status: RecurringScheduleStatus.paused,
+                        );
                         await ref
                             .read(billingRepositoryProvider.notifier)
                             .updateRecurringSchedule(updated);
                         if (context.mounted) {
-                          AppFeedback.showSnackbar(context,
-                              message: 'Subscription billing paused.');
+                          AppFeedback.showSnackbar(
+                            context,
+                            message: 'Subscription billing paused.',
+                          );
                         }
                       },
                     ),
@@ -496,17 +536,22 @@ class _RecurringBillingPageState extends ConsumerState<RecurringBillingPage> {
         title: const Text('Recurring Billing Subscriptions'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.play_circle_filled,
-                color: Color(0xFF2E7D32), size: 24),
+            icon: const Icon(
+              Icons.play_circle_filled,
+              color: Color(0xFF2E7D32),
+              size: 24,
+            ),
             tooltip: 'Simulate Scheduler Run',
             onPressed: () async {
               await ref
                   .read(billingRepositoryProvider.notifier)
                   .triggerRecurringBillingRun();
               if (context.mounted) {
-                AppFeedback.showSnackbar(context,
-                    message:
-                        'Billing scheduler evaluated! Active invoices generated.');
+                AppFeedback.showSnackbar(
+                  context,
+                  message:
+                      'Billing scheduler evaluated! Active invoices generated.',
+                );
               }
             },
           ),

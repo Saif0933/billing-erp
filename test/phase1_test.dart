@@ -16,7 +16,6 @@ void main() {
         placeOfSupplyStateCode: '27', // Maharashtra
         customerGstType: 'Regular',
       );
-
       // gross = 1000, discount = 100, taxable = 900
       expect(res.taxableValue, 900.0);
       expect(res.cgstAmount, 45.0); // 4.5% of 900
@@ -81,7 +80,6 @@ void main() {
         igst: 0,
         cess: 0,
       );
-
       final total = item.taxableValue + item.cgst + item.sgst;
 
       final invoice = Invoice(
